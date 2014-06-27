@@ -11,7 +11,6 @@ module Jekyll
     private
     # generate category tag list and write to 'source/_includes/asides/categories_tag.html'
     def write_to_tag_cloud
-      puts self.categories
       puts ' => Creating Categories Tag Cloud'
       lists = {}
       max, min = 1, 1
