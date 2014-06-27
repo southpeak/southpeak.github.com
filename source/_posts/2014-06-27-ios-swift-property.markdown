@@ -109,7 +109,7 @@ Swift中有这么几种属性：
 
 类型属性的访问和设置与实例属性一样，不一样的是，类型属性通过类型来获取和设置，而不是类型的实例
 
-代码清单3
+###### 代码清单3
 
 	struct AudioChannel {
 	    static let threaholdLevel = 10
