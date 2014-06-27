@@ -167,4 +167,4 @@ swift决定捕获的值哪些需要拷贝值，而哪些只拷贝引用。在run
 	alsoIncrementByTen()  // returns a value of 40
 
 
-这样，就引出另一个问题：循环引用。
+这样，就引出另一个问题：循环引用。我们将会在[下一篇文章](http://southpeak.github.io/blog/2014/06/27/ios-swift-closures-2/)中介绍这个问题。
