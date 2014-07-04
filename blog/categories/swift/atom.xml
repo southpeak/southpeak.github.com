@@ -4,7 +4,7 @@
   <title><![CDATA[Category: swift | 南峰子的技术博客]]></title>
   <link href="http://southpeak.github.io/blog/categories/swift/atom.xml" rel="self"/>
   <link href="http://southpeak.github.io/"/>
-  <updated>2014-06-27T21:10:10+08:00</updated>
+  <updated>2014-07-04T19:41:35+08:00</updated>
   <id>http://southpeak.github.io/</id>
   <author>
     <name><![CDATA[南峰子]]></name>
@@ -12,6 +12,513 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Swift中C指针的基本使用方法]]></title>
+    <link href="http://southpeak.github.io/blog/2014/07/02/ios-swift-cpointer/"/>
+    <updated>2014-07-02T20:51:30+08:00</updated>
+    <id>http://southpeak.github.io/blog/2014/07/02/ios-swift-cpointer</id>
+    <content type="html"><![CDATA[<p>Swift尽可能避免让我们直接去访问指针。但当我们需要直接访问内存时，我们可以使用Swift提供的几种指针类型。在下面几个表中列出了各种情况下C类型指针语法与Swift语法对应关系，其中Type作为实际类型的占位符</p>
+
+<p>对于函数参数，有以下对应关系</p>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th>    C语法    </th>
+<th>   Swift语法   </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td> const void * </td>
+<td>  CConstVoidPointer |</td>
+</tr>
+<tr>
+<td></td>
+<td>  void *  </td>
+<td>  CMutableVoidPointer |</td>
+</tr>
+<tr>
+<td></td>
+<td>const Type * </td>
+<td> CConstPointer<Type> |</td>
+</tr>
+<tr>
+<td></td>
+<td>Type *</td>
+<td>CMutablePointer<Type>|</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>对于返回值，变量，二级以上的指针参数，有以下对应关系</p>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th>    C语法    </th>
+<th>   Swift语法   </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td>void * </td>
+<td> COpaquePointer|</td>
+</tr>
+<tr>
+<td></td>
+<td>Type * </td>
+<td> UnsafePointer<Type>|</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>对于类类型，有以下对应关系</p>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th>    C语法    </th>
+<th>   Swift语法   </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td>Type * const * </td>
+<td> CConstPointer<Type> |</td>
+</tr>
+<tr>
+<td></td>
+<td>Type * __strong * </td>
+<td> CMutablePointer<Type> |</td>
+</tr>
+<tr>
+<td></td>
+<td>Type ** </td>
+<td> AutoreleasingUnsafePointer<Type>|</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>下面简单介绍一下这几种类型的指针</p>
+
+<h2>C可变指针</h2>
+
+<p>当我们声明一个包含CMutablePointer<Type>参数的指针时，可以接收以下类型的值</p>
+
+<ol>
+<li>nil, 作为空指针传入</li>
+<li>一个CMutablePointer<Type>值</li>
+<li>一个in-out表达式，它的操作数是Type类型的左值。该表达式作为左值地址传入</li>
+<li>一个in-out Type[]值，它作为数组的首地址指针传入，且在调用时扩展了数据的生命周期</li>
+</ol>
+
+
+<p>假如我们声明了如下一个函数：</p>
+
+<pre><code>func takesAMutablePointer(x: CMutablePointer&lt;Float&gt;) { /*...*/ }
+</code></pre>
+
+<p>那么我们可以用以下任何一种方式来调用</p>
+
+<pre><code>var x: Float = 0.0
+var p: CMutablePointer&lt;Float&gt; = &amp;x
+var a: Float[] = [1.0, 2.0, 3.0]
+
+takesAMutablePointer(nil)
+takesAMutablePointer(p)
+takesAMutablePointer(&amp;x)
+takesAMutablePointer(&amp;a)
+</code></pre>
+
+<p>当声明一个包含CMutableVoidPointer参数的函数时，它可以接收与CMutablePointer<Type>相同的形参，其中Type为任意类型。需要注意的是如果直接传递CMutablePointer<Type>，目前的编译器会直接报编译错误</p>
+
+<pre><code>func takesAMutableVoidPointer(x: CMutableVoidPointer) { /* ... */ }
+
+var x: Float = 0.0, y: Int = 0
+var p: CMutablePointer&lt;Float&gt; = &amp;x, q: CMutablePointer&lt;Int&gt; = &amp;y
+var a: Float[] = [1.0, 2.0, 3.0], b: Int[] = [1, 2, 3]
+
+takesAMutableVoidPointer(nil)
+//takesAMutableVoidPointer(p)   编辑错误:CMutablePointer&lt;Float&gt; is not convertible to CMutableVoidPointer
+//takesAMutableVoidPointer(q)
+takesAMutableVoidPointer(&amp;x)
+takesAMutableVoidPointer(&amp;y)
+takesAMutableVoidPointer(&amp;a)
+takesAMutableVoidPointer(&amp;b)
+</code></pre>
+
+<h2>C常量指针</h2>
+
+<p>当我们声明一个带有CConstPointer<Type>参数的函数时，可以接收以下类型的值：</p>
+
+<ol>
+<li>nil, 作为空指针传入</li>
+<li>一个CMutablePointer<Type>, CMutableVoidPointer, CConstPointer<Type>, CConstVoidPointer, 或者AutoreleasingUnsafePointer<Type>类型的值，如果需要则会转换成CConstPointer<Type></li>
+<li>一个in-out表达式，它的操作数是Type类型的左值。该表达式作为左值地址传入</li>
+<li>一个in-out Type[]值，它作为数组的首地址指针传入，且在调用时扩展了数据的生命周期</li>
+</ol>
+
+
+<p>假如我们声明如下函数:</p>
+
+<pre><code>func takesAConstPointer(x: CConstPointer&lt;Float&gt;) { /*...*/ }
+</code></pre>
+
+<p>那么我们可以用以下任何一种方式来调用</p>
+
+<pre><code>var x: Float = 0.0
+var p: CConstPointer&lt;Float&gt; = nil
+
+takesAConstPointer(nil)
+takesAConstPointer(p)
+takesAConstPointer(&amp;x)
+takesAConstPointer([1.0, 2.0, 3.0])
+</code></pre>
+
+<p>当声明一个包含CConstVoidPointer参数的函数时，它可以接收与CConstPointer<Type>相同的形参，其中Type为任意类型。</p>
+
+<pre><code>func takesAConstVoidPointer(x: CConstVoidPointer) { /* ... */ }
+
+var x: Float = 0.0, y: Int = 0
+var p:CConstPointer&lt;Float&gt; = nil, q: CConstPointer&lt;Int&gt; = nil
+
+takesAConstVoidPointer(nil)
+//takesAConstVoidPointer(p)
+//takesAConstVoidPointer(q)
+takesAConstVoidPointer(&amp;x)
+takesAConstVoidPointer(&amp;y)
+takesAConstVoidPointer([1.0, 2.0, 3.0])
+takesAConstVoidPointer([1, 2, 3])
+</code></pre>
+
+<h2>AutoreleasingUnsafePointer</h2>
+
+<p>当我们声明一个带有AutoreleasingUnsafePointer参数的函数时，可以接收以下类型的值：</p>
+
+<ol>
+<li>nil, 作为空指针传入</li>
+<li>一个AutoreleasingUnsafePointer<Type>值</li>
+<li>一个in-out表达式，其操作数是临时非所属(nonowning)缓冲区，存储了原始值的拷贝。缓冲区的地址被传递给调用函数，且在返回时，缓冲区的值被加载(loaded)、保留(retained)并重新指派(reassigned)给操作数</li>
+</ol>
+
+
+<p>注意上面清单中不包含数组</p>
+
+<p>如果我们声明了以下函数</p>
+
+<pre><code>func takesAnAutoreleasingUnsafePointer(x: AutoreleasingUnsafePointer&lt;NSDate?&gt;) { /*...*/ }
+</code></pre>
+
+<p>则可以用以下方式来调用</p>
+
+<pre><code>var x: NSDate? = nil
+var p: AutoreleasingUnsafePointer&lt;NSDate?&gt; = nil
+
+takesAnAutoreleasingUnsafePointer(nil)
+takesAnAutoreleasingUnsafePointer(p)
+takesAnAutoreleasingUnsafePointer(&amp;x)
+</code></pre>
+
+<p>最后需要注意的是在Swift中，没有导入C函数指针</p>
+
+<p>参考文档：<a href="https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/BuildingCocoaApps/index.html">Using Swift with Cocoa and Objective-C</a></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Swift协议基础]]></title>
+    <link href="http://southpeak.github.io/blog/2014/07/02/ios-swift-protocol/"/>
+    <updated>2014-07-02T14:09:11+08:00</updated>
+    <id>http://southpeak.github.io/blog/2014/07/02/ios-swift-protocol</id>
+    <content type="html"><![CDATA[<p>Swift的Protocol(协议)与Objective-C的协议一样，用于定义一系列的特定任务和功能的集合。Protocol自身并不提供这些任务的实现，只是描述实现看起来应该是什么样的。类、结构体或枚举可以实现一个Protocol，并提供Protocol中任务和功能的具体实现。Protocol可以要求这些实现类型有指定的实例属性、实例方法、类型方法、操作符和下标等。</p>
+
+<p>Protocol的语法如下所示:</p>
+
+<pre><code>protocol SomeProtocol {
+    // 协议定义
+}
+</code></pre>
+
+<p>类、结构体、枚举可以同时实现多个Protocol，如下所示:</p>
+
+<pre><code>struct SomeStructure: SomeProtocol, AnotherProcotol {
+    // 协议定义
+}
+</code></pre>
+
+<p>需要注意的是，子类在实现Protocol时，需要把父类写在前面，后面再跟上Protocol列表。</p>
+
+<p>我们下面介绍Protocol可以定义的一些功能需求</p>
+
+<h2>属性</h2>
+
+<p>Protocol可以要求实现类型提供指定名称和类型的实例属性或类型属性。Protocol不指定属性是存储属性还是计算属性，它只定义属性名和类型。Protocol也可以指定每个属性是只读的还是可读写的。</p>
+
+<p>如果Protocol要求属性是可读写的，那么这个属性不能是常量存储属性或者只读的计算属性；如果Protocol只是要求属性是可读的，则这个属性可以是任何类型的属性，这种情况下我们的实现代码同样可以指定属性为可写的。通常情况下，在Protocol中属性一般定义为变量，具体语法如下所示：</p>
+
+<pre><code>protocol SomeProtocol {
+    var mustBeSettable: Int { get set }
+    var doesNotNeedToBeSettable: Int { get }
+    class var someTypeProperty: Int { get set }
+}
+</code></pre>
+
+<p>如果是类型属性，我们需要在前面加上class，即便是结构体可枚举来实现这个Protocol，也是一样。如上面代码所示。</p>
+
+<p>代码清单1是一个详细的例子，定义了一个协议FullyNamed，其中声明了fullName属性，而在其两个个体的实现类型中，将fullName实现为不同的属性类型</p>
+
+<h6>代码清单1</h6>
+
+<pre><code>protocol FullyNamed {
+    var fullName: String { get }
+}
+
+struct Person: FullyNamed {
+    var fullName: String        // 可读写存储属性
+}
+
+class Sharship: FullyNamed {
+
+    var prefix: String?
+    var name: String?
+
+    var fullName: String {      // 只读的计算属性
+    return (prefix ? prefix! + " " : "") + name
+    }
+}
+</code></pre>
+
+<h2>方法</h2>
+
+<p>在Protocol中声明方法与在类中定义类似，只是没有实现体。另外声明方法是使用可变参数也是可以的，唯一的不同是在Protocol的方法声明中不能指定默认值。</p>
+
+<p>与属性声明一样，如果是类型方法，需要加上class前缀。方法的声明及实现类型的实现如代码清单2所示：</p>
+
+<pre><code>protocol RandomNumberGenerator {
+    func random() -&gt; Double
+}
+
+
+class LinearCongruentialGenerator: RandomNumberGenerator {
+    var lastRandom = 42.0
+    let m = 139968.0
+    let a = 3877.0
+    let c = 29573.0
+    func random() -&gt; Double {
+        lastRandom = ((lastRandom * a + c) % m)
+        return lastRandom / m
+    }
+}
+let generator = LinearCongruentialGenerator()
+
+generator.random()      // 0.37464991998171
+</code></pre>
+
+<p>另外，如果我们需要在方法中修改实例，则在方法前添加mutating关键字，与结构体中方法的定义是一样的。需要注意的是，只有在结构体和枚举的实现中才需要加mutating，类的实现是不需要的。</p>
+
+<h2>该Protocol做为类型</h2>
+
+<p>Protocol可以作为一种类型在代码中使用。因为它是一种类型，所以在很多情况下都可以使用，包括</p>
+
+<ol>
+<li>作为函数、方法、初始化方法的参数或返回值</li>
+<li>作为常量、变量或属性的类型</li>
+<li>作为数组、字典或其它容器的元素</li>
+</ol>
+
+
+<p>基于此，Protocol也可以放入集合中，如数组、字典等。</p>
+
+<p>下面是将Protocol作为类型的例子</p>
+
+<pre><code>class Dice {
+    let sides: Int
+    let generator: RandomNumberGenerator
+    init (sides: Int, generator: RandomNumberGenerator) {
+        self.sides = sides
+        self.generator = generator
+    }
+
+    func roll() -&gt; Int {
+        return Int(generator.random() * Double(sides)) + 1
+    }
+}
+
+// 具体使用
+var dice = Dice(sides: 6, generator: LinearCongruentialGenerator())
+</code></pre>
+
+<h2>代理(Delegation)</h2>
+
+<p>Swift与Objective-C的代理一样，允许将一个类或结构体的一些处理放到另外一个类型中(代理类)。Swift中代理模式的实现就是通过定义一个Protocol来封装代理方法，然后具体的实现类来实现这些代理方法。代理可以用于响应特定的行为，或者从外部资源获取数据，而不需要知道这些资源的类型。</p>
+
+<p>如下是一个实现UITableView代理的简单例子</p>
+
+<pre><code>class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
+
+    var tableView: UITableView?
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        // Do any additional setup after loading the view, typically from a nib.
+
+        tableView = UITableView(frame: self.view.bounds, style: UITableViewStyle.Plain)
+        tableView!.delegate = self
+        tableView!.dataSource = self
+    }
+
+    // 实现UITableViewDataSource
+
+    func tableView(tableView: UITableView!, numberOfRowsInSection section: Int) -&gt; Int {
+        return 20
+    }
+
+    func tableView(tableView: UITableView!, cellForRowAtIndexPath indexPath: NSIndexPath!) -&gt; UITableViewCell! {
+        return nil
+    }
+}
+</code></pre>
+
+<h2>在扩展中实现Protocol</h2>
+
+<p>如果我们想让某个已存在的类型(我们没有源码的情况下)实现某个Protocol，则可以借助扩展。当类型的扩展实现了Protocol时，该类会自动实现Protocol(听着有点绕口)。但如果类型已经实现了Protocol的所有必须的方法(类型未采用Protocol)，这种情况下，若想让类型采用Protocol，则可以使用一个空的扩展来声明类型采用Protocol。如下代码所示：</p>
+
+<pre><code>protocol TextRepresentable {
+    func asText() -&gt; String
+}
+
+struct Hamster {
+    var name: String
+    func asText() -&gt; String {
+        return "A Hamster"
+    }
+}
+
+extension Hamster : TextRepresentable {}
+</code></pre>
+
+<h2>Protocol继承</h2>
+
+<p>一个Protocol可以继承自一个或多个Protocol，并在自己的实现中添加更多的功能需求。Protocol继承的语法与类型继承是一样的，其语法如下所示：</p>
+
+<pre><code>protocol InheritingProtocol : SomeProtocol, AnotherProtocol {
+
+}
+</code></pre>
+
+<p>在上面的例子中，所有实现子InheritingProtocol的类型都必须实现InheritingProtocol、SomeProtocol、AnotherProtocol三者中所有的必要功能。</p>
+
+<h2>Protocol组合</h2>
+
+<p>让一个类型同时实现多个Protocol是很有用的。这种情况下，我们可以使用Protocol组合来将多个Protocol组合成一个整体。其语法如下所示：</p>
+
+<pre><code>protocol&lt;SomeProtocol, AnotherProtocol&gt;
+</code></pre>
+
+<p>我们可以将多个Protocol放在&lt;>中，在使用时，我们将其当成一个整体来处理，这种组合的实际含义是：任何同时实现&lt;>所有Protocol的类型。让我们看看下面的例子：</p>
+
+<pre><code>protocol P1 {
+    var variable1 : String { get }
+}
+
+protocol P2 {
+    var variable2 : Int { get }
+}
+
+struct MyStruct : P1, P2 {
+    var variable1: String
+    var variable2: Int
+}
+
+func funcWithProtocols(protocols: protocol&lt;P1, P2&gt;) {
+
+}
+
+let st = MyStruct(variable1: "v", variable2: 2)
+
+funcWithProtocols(st)
+</code></pre>
+
+<p>需要注意的是，Protocol组合并没有定义一个新的永久的Protocol类型，它仅仅是定义了一个临时的本地Protocol，该Protocol包含了组合中所有的功能。</p>
+
+<h2>检查Protocol的一致性</h2>
+
+<p>我们可以使用is操作符来检查Protocol的一致性，用as操作符来作Protocol转换。</p>
+
+<ol>
+<li>如果is操作符返回true，则一个实例实现了protocol，否则没有</li>
+<li>as?操作符返回protocol类型的可选值，如果实例没有实现protocol，则返回nil</li>
+<li>as操作符强制作类型转换，如果实例没有实现protocol，则引发一个错误</li>
+</ol>
+
+
+<p>需要注意的是，只有当protocol使用@objc属性标记时，才可以检查其一致性。@objc属性表明protocol应该暴露给Objective-C代码。但即使我们的代码不与Objective-C交互，如果需要对protocol进行一致性检测，也需要使用这个属性。另外@objc标明的protocol只能被类实现，而不能被结构体或枚举实现。</p>
+
+<p>我们举个具体的例子：</p>
+
+<pre><code>@objc protocol HasArea {
+    var area: Double { get }
+}
+
+class Circle: HasArea {
+    let pi = 3.1415927
+    var radius: Double
+    var area: Double { return pi * radius * radius }
+    init(radius: Double) { self.radius = radius }
+}
+
+class Country: HasArea {
+    var area: Double
+    init(area: Double) { self.area = area }
+}
+
+class Animal {
+    var legs: Int
+    init(legs: Int) { self.legs = legs }
+}
+
+let objects: AnyObject[] = [
+    Circle(radius: 2.0),
+    Country(area: 243_610),
+    Animal(legs: 4)
+]
+
+for object : AnyObject in objects {
+    if let objectWithArea = object as? HasArea {
+        println("Area is \(objectWithArea.area)")
+    } else {
+        println("Something that doesn't have an area")
+    }
+}
+
+// Area is 12.5663708
+// Area is 243610.0
+// Something that doesn't have an area
+</code></pre>
+
+<h2>可选需求</h2>
+
+<p>与Objective-C类似，Swift的Protocol可以定义一些可选的需求，这些需求在实现类型中可以选择性的实现。我们使用@optional修饰符来定义这些需求。</p>
+
+<p>一个可选的需求可以通过可选链来实现，这个可选链可以满足当某个类型没有实现所采用的Protocol的可选需求。这种调用的基本语法如下：</p>
+
+<pre><code>someOptionalMethod?(someArgument)
+</code></pre>
+
+<p>另外，可选的方法如果有返回值，总是返回一个可选值，以满足可能未被实现的需求。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Swift扩展(Extension)基础]]></title>
@@ -426,188 +933,6 @@ println(AudioChannel.maxInputLevelForAllChannels)   // 10
 <p>在这种情况下，闭包维护了HTMLElement实例的一个unowned引用，而不再是一个强引用。</p>
 
 <p>注：虽然在闭包中多次引用了self，但闭包只会维护HTMLElement实例的一个引用</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Swift闭包一：闭包基础概念]]></title>
-    <link href="http://southpeak.github.io/blog/2014/06/27/ios-swift-closures/"/>
-    <updated>2014-06-27T16:25:56+08:00</updated>
-    <id>http://southpeak.github.io/blog/2014/06/27/ios-swift-closures</id>
-    <content type="html"><![CDATA[<p>熟悉Objective-C的朋友一定知道Objective-C中的block，iOS在6.0后开始大量使用block。而在swift中，也提供了类似的功能：Closures(在Java等语言中翻译为“闭包”)。</p>
-
-<p>Closures是自包含的功能块。它可以捕获和存储其所在上下文的常量和变量的引用。全局函数和嵌套函数其实都是闭包。闭包有以下三种形式：</p>
-
-<ol>
-<li>全局函数：有函数名，但不能获取任何外部值</li>
-<li>嵌套函数：有函数名，同时可以从其上下文中捕获值</li>
-<li>闭包表达式：以一种轻量级的语法定义的未命名闭包，可以从其上下文中捕获值</li>
-</ol>
-
-
-<p>swift对闭包表达式作了一些优化处理，主要包括：</p>
-
-<ol>
-<li>从上下方中推断出参数和返回值</li>
-<li>可以从单一表达式闭包中隐式返回</li>
-<li>速记(Shorthand)参数名</li>
-<li>尾随闭包语法</li>
-</ol>
-
-
-<p>下面会对这几点分别说明</p>
-
-<h2>闭包表达式</h2>
-
-<p>闭包表达式提供了一种更加简洁、专注的方式来实现内嵌函数的功能。闭包表达式的通用格式如下</p>
-
-<pre><code>{(parameters) -&gt; return type in
-    statement   
-}
-</code></pre>
-
-<p>闭包的参数可以是常量、变量、inout、可变参数列表、元组，但是不能提供默认值。返回值可以是通用类型，也可以是元组。闭包实现体位于in关键字后面，该关键字是闭包参数和返回值的声明和实现体的分界。</p>
-
-<h6>代码清单1: 使用sort函数对数组进行排序</h6>
-
-<pre><code>let names = ["Chris", "Alex", "Ewa", "Barry", "Daniella"]
-
-// 方法1：使用普通函数(或内嵌函数)提供排序功能
-func backwards(s1:String, s2:String) -&gt; Bool {
-    return s1 &gt; s2
-}
-
-var reversed = sort(names, backwards)
-
-// 方法2：使用闭包表达式提供排序功能
-reversed = sort(names, {
-        (s1:String, s2:String) -&gt; Bool in
-            return s1 &gt; s2
-    })
-
-// 方法3：类型推断,省略闭包表达式的参数及返回类型
-reversed = sort(names, { s1, s2 in return s1 &gt; s2})
-
-// 方法4：单一表达式：省略return关键字
-reversed = sort(names, { s1, s2 in s1 &gt; s2 })
-
-// 方法5：速记参数名
-reversed = sort(names, { $0 &gt; $1 })
-
-// 方法6：操作符函数
-reversed = sort(names, &gt;)
-</code></pre>
-
-<p>swift标准库提供了sort用来对数据进行排序，它包含两个参数：</p>
-
-<ol>
-<li>待排序的已知类型的数组</li>
-<li>排序函数(闭包)：带有两个类型相同的参数，并返回Bool值来告知第一个参数是显示排在第二个参数之前还是之后。</li>
-</ol>
-
-
-<p>代码清单1提供了几种方式来实现sort的排序函数</p>
-
-<ol>
-<li>方法1：使用普通函数(嵌套函数)，这种方法略显示复杂，且代码不够紧凑</li>
-<li>方法2：内联闭包表达式，参数和返回值都位于大括号内，而不是外部</li>
-<li>方法3：借助于swift强大的类型推断功能，我们甚至可以省略参数和返回值的类型。这样返回箭头->和返回类型都可以省略。在传递闭包给函数时，总是可以推断出参数类型和返回值，所以，我们很少需要明确写出内联闭包的完整格式。</li>
-<li>方法4：如果闭包体只有一行代码，则可以省略retrun关键字，让闭包隐式返回单一表达式的值。</li>
-<li>方法5：速记(Shorthand)参数名：swift为内联闭包提供了速记参数名，可以通过$0, $1, $2等参数名来索引闭包的参数。如果使用这种参数名，则可以直接省略参数列表，而参数的个数和类型可以自动推断出来。in关键字也可以省略</li>
-<li>方法6：更极端的情况是，swift的字符串类型定义了>操作符，该操作符可以看作是带有两个参数的函数，并返回一个Bool值。而这正好符合sort函数的需求，我们可以只是简单的传入一个>，swift可以自动推断出我们想使用的实现。</li>
-</ol>
-
-
-<h2>尾随闭包(Trailing Closures)</h2>
-
-<p>如果将闭包作为函数的最后一个参数，且闭包的实现体很长，则调用函数时可以使用尾随闭包。尾随闭包位于参数列表括号的后面。其格式如下：</p>
-
-<pre><code>someFunctionThatTakesAClosure() {
-    // 尾随闭包实现    
-}
-</code></pre>
-
-<p>因此sort函数同样可以如下实现</p>
-
-<h6>代码清单2: 使用尾随闭包实现sort函数</h6>
-
-<pre><code>// 方法7：尾随闭包
-reversed = sort(names) { $0 &gt; $1 }
-</code></pre>
-
-<p>另外，如果函数只有一个闭包参数，同时将闭包参数实现为尾随闭包，则在调用函数时可以省略参数列表的()，如代码清单3所示：</p>
-
-<h6>代码清单3：函数只有一个闭包参数，同时将闭包参数实现为尾随闭包</h6>
-
-<pre><code>let strings = numbers.map {
-    (var name) -&gt; String in
-    var output = ""
-    while number &gt; 0 {
-        output = digitNames[number % 10]! + output
-        number /= 10
-    }
-
-    return number
-}
-</code></pre>
-
-<h2>获取上下文的值</h2>
-
-<p>和Objective-C的block一样，闭包可以获取定义它的上下文中常量或变量的值，同时可以在闭包体内引用和修改这些常量或变量的值，即使定义这些常量或变量的域已经销毁。</p>
-
-<p>由于内嵌函数也是闭包，因此我们以内嵌函数为例，看看闭包如何获取上下文的常量和变量</p>
-
-<h6>代码清单4：获取上下文值</h6>
-
-<pre><code>func makeIncrementor(amount:Int) -&gt; () -&gt; Int {
-    var runningTotal = 0
-    func incrementor() -&gt; Int {
-        runningTotal += amount
-        return runningTotal
-    }
-
-    return incrementor
-}
-</code></pre>
-
-<p>在代码清单4中，内嵌函数incriminator从上下文获取了两个值runningTotal和amount，其中amount是函数makeIncrementor的参数，runningTotal是函数内部定义的变量。由于incrementor没有修改amount，所以它实际上存储了amount的一份拷贝。而runningTotal在incremetor中被修改了，因此increminator存储了runningTotal的引用，这样确保runningTotal一直有效。</p>
-
-<p>swift决定捕获的值哪些需要拷贝值，而哪些只拷贝引用。在runningTotal不再使用时，swift负责释放其内存。</p>
-
-<h6>代码清单5：makeIncrementor使用</h6>
-
-<pre><code>let incrementByTen = makeIncrementor(amount:10)
-
-incrementByTen()    // returns a value of 10
-incrementByTen()    // returns a value of 20
-incrementByTen()    // returns a value of 30
-
-// 定义另一个incrementor，则它有自己独立的runningTotal
-let incrementBySeven = makeIncrementor(amount:7)
-
-incrementBySeven()  // returns a value of 7
-incrementBySeven()  // returns a value of 14
-incrementBySeven()  // returns a value of 21
-</code></pre>
-
-<h2>引用类型</h2>
-
-<p>在代码清单5中，虽然incrementByTen和incrementBySeven定义为常量，但是闭包仍然可以增加runningTotal的值。这是因为函数和闭包都是引用类型。</p>
-
-<p>当定义一个函数(闭包)常量或变量时，实际上定义的是一个指向函数(闭包)的引用。这意味着如果指定一个闭包给两个不同的常量或变量，则这两个常量和变量将引用同一个函数(闭包)</p>
-
-<h6>代码清单6：引用函数(闭包)</h6>
-
-<pre><code>let incrementByTen = makeIncrementor(amount:10)
-incrementByTen()    // returns a value of 10
-incrementByTen()    // returns a value of 20
-incrementByTen()    // returns a value of 30
-
-let alsoIncrementByTen = incrementByTen
-alsoIncrementByTen()  // returns a value of 40
-</code></pre>
-
-<p>这样，就引出另一个问题：循环引用。我们将会在<a href="http://southpeak.github.io/blog/2014/06/27/ios-swift-closures-2/">下一篇文章</a>中介绍这个问题。</p>
 ]]></content>
   </entry>
   
