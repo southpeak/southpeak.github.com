@@ -99,19 +99,19 @@
 <p>URL加载系统的核心类是NSURL，该类提供了大量方法让我们操作URLs和它指向的资源。另外它还提供了一系列的类来加载URL的内容，上传数据到服务器，管理Cookie存储，控制响应缓存，处理认证存储和授权信息，及自定义协议扩展。</p>
 
 <p>URL Loading System可支持以下协议
-• <a href="ftp://">ftp://</a>
-• <a href="http://">http://</a>
-• <a href="https://">https://</a>
-• file://
-• data://
+1. <a href="ftp://">ftp://</a>
+2. <a href="http://">http://</a>
+3. <a href="https://">https://</a>
+4. file://
+5. data://
 另外它还支持代理服务和网关处理。</p>
 
 <p>URL加载系统定义了用于加载URL的类，另外还定义了一些辅助类来修改加载类的行为。这些辅助类可以分为五大类：
-• 协议支持
-• 授权与认证
-• Cookie存储
-• 配置管理
-• 缓存管理
+1. 协议支持
+2. 授权与认证
+3. Cookie存储
+4. 配置管理
+5. 缓存管理
 整个URL加载系统的结构如下图所示：</p>
 
 <p><img src="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/URLLoadingSystem/Art/nsobject_hierarchy_2x.png" alt="image" /></p>
@@ -122,25 +122,37 @@
 
 <p>在这张图中，我们用得最多的就是URL Loading中的这几个类。这些类允许我们从URL指定的源获取内容。根据不同的需求，我们可以使用不同的类，这主要依赖于我们应用所支持的系统版本，以及我们希望内容是以文件的形式获取还是以数据块的方式获取。对于系统的版本，主要有以下几点作为参考：</p>
 
-<p>• 在iOS7及后续版本中，推荐使用NSURLSession。
-• 对于iOS7以前的版本，可以使用NSURLConnection来获取数据并加载到本地内存中。如果要保存数据，可以再将数据写入磁盘。</p>
+<ol>
+<li>在iOS7及后续版本中，推荐使用NSURLSession。</li>
+<li>对于iOS7以前的版本，可以使用NSURLConnection来获取数据并加载到本地内存中。如果要保存数据，可以再将数据写入磁盘。</li>
+</ol>
+
 
 <p>而对于获取数据，主要看我们是获取数据到内存中还是下载文件并保存。如果只是获取数据到内存中，则有两种方法：</p>
 
-<p>• 对于简单的请求，可以使用NSURLSession
-• 对于复杂的请求（如上传数据请求），提供了NSURLRequest对象来与NSURLSession和NSURLConnection一起使用。</p>
+<ol>
+<li>对于简单的请求，可以使用NSURLSession</li>
+<li>对于复杂的请求（如上传数据请求），提供了NSURLRequest对象来与NSURLSession和NSURLConnection一起使用。</li>
+</ol>
+
 
 <p>不管使用哪种方法，我们都可以获取到响应数据，为此，我们可以如下处理响应</p>
 
-<p>• 提供一个响应处理block。当URL Loading类完成从服务端接收数据时调用该block.
-• 提供自定义有delegate。URL Loading类间断性地调用我们的代理方法来获取数据。在需要的情况下，我们的程序负责收集这些数据。</p>
+<ol>
+<li>提供一个响应处理block。当URL Loading类完成从服务端接收数据时调用该block.</li>
+<li>提供自定义有delegate。URL Loading类间断性地调用我们的代理方法来获取数据。在需要的情况下，我们的程序负责收集这些数据。</li>
+</ol>
+
 
 <p>另外，URL Loading提供了一个返回对象来封装与请求相关的元数据，如MIME类型等。</p>
 
 <p>而如果我们需要下载文件，则有两个基本方法来处理：</p>
 
-<p>• 对于简单请求，可以使用NSURLSession
-• 对于复杂请求，提供了NSURLRequest对象来与NSURLSession和NSURLDownload一起使用。</p>
+<ol>
+<li>对于简单请求，可以使用NSURLSession</li>
+<li>对于复杂请求，提供了NSURLRequest对象来与NSURLSession和NSURLDownload一起使用。</li>
+</ol>
+
 
 <p>相较于NSURLDownload，NSURLSession有两个明显的优势：NSURLSession可用于iOS系统，而NSURLDownload在iOS中不被支持；当应用挂起、终止或异常退出时，下载可以在后台继续进行。</p>
 
@@ -162,10 +174,13 @@
 
 <p>针对认证和证书，URL加载系统提供了以下几个类：</p>
 
-<p>• NSURLCredential：封装了由认证信息和持久化行为组成的证书。
-• NSURLProtectionSpace：表示需要特定证书的区域。一个保护区域可以限制到单独的URL，拥有web服务器的区域，或引用一个代理。
-• NSURLCredientialStorage：一般是一个共享实例，用于管理证书存储和提供NSURLCredential对象到NSURLProductionSpace对象的映射。
-• NSURLAuthenticationChallenge：封装了认证一个请求的的NSURLProtocol实现所需要的信息：一个建议的证书、保护空间、错误信息或者协议用于确定所需要认证的响应、以及认证尝试次数等。初始对象（即请求发送者）必须实现NSURLAuthenticationChallengeSender协议。NSURLAuthenticationChallenge实例被用于NSURLProtocol的子类来告诉URL加载系统需要认证。他们同样为NSURLConnection和NSURLDownload的代理方法提供了便利的自定义认证处理。</p>
+<ol>
+<li>NSURLCredential：封装了由认证信息和持久化行为组成的证书。</li>
+<li>NSURLProtectionSpace：表示需要特定证书的区域。一个保护区域可以限制到单独的URL，拥有web服务器的区域，或引用一个代理。</li>
+<li>NSURLCredientialStorage：一般是一个共享实例，用于管理证书存储和提供NSURLCredential对象到NSURLProductionSpace对象的映射。</li>
+<li>NSURLAuthenticationChallenge：封装了认证一个请求的的NSURLProtocol实现所需要的信息：一个建议的证书、保护空间、错误信息或者协议用于确定所需要认证的响应、以及认证尝试次数等。初始对象（即请求发送者）必须实现NSURLAuthenticationChallengeSender协议。NSURLAuthenticationChallenge实例被用于NSURLProtocol的子类来告诉URL加载系统需要认证。他们同样为NSURLConnection和NSURLDownload的代理方法提供了便利的自定义认证处理。</li>
+</ol>
+
 
 <h2>缓存管理</h2>
 
