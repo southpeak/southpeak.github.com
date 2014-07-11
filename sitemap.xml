@@ -3,6 +3,12 @@
   
   
   <url>
+    <loc>http://southpeak.github.io/blog/2014/07/11/urljia-zai-xi-tong-zhi-er-:nsurlsession/</loc>
+    <lastmod>2014-07-11T22:48:27+08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
     <loc>http://southpeak.github.io/blog/2014/07/11/urljia-zai-xi-tong-zhi-%5B%3F%5D-:ji-ben-jie-gou/</loc>
     <lastmod>2014-07-11T19:10:29+08:00</lastmod>
     <priority>0.8</priority>
@@ -71,14 +77,14 @@
   
   <url>
     <loc>http://southpeak.github.io/blog/archives/</loc>
-    <lastmod>2014-07-11T19:23:27+08:00</lastmod>
+    <lastmod>2014-07-11T23:07:33+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
     <loc>http://southpeak.github.io/</loc>
-    <lastmod>2014-07-11T19:23:27+08:00</lastmod>
+    <lastmod>2014-07-11T23:07:33+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
