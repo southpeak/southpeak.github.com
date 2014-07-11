@@ -4,7 +4,7 @@
   <title><![CDATA[南峰子的技术博客]]></title>
   <link href="http://southpeak.github.io/atom.xml" rel="self"/>
   <link href="http://southpeak.github.io/"/>
-  <updated>2014-07-08T12:22:31+08:00</updated>
+  <updated>2014-07-11T16:14:23+08:00</updated>
   <id>http://southpeak.github.io/</id>
   <author>
     <name><![CDATA[南峰子]]></name>
@@ -12,6 +12,53 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[混合使用Swift和Objective-C]]></title>
+    <link href="http://southpeak.github.io/blog/2014/07/08/mix-swift-and-objective-c/"/>
+    <updated>2014-07-08T16:58:06+08:00</updated>
+    <id>http://southpeak.github.io/blog/2014/07/08/mix-swift-and-objective-c</id>
+    <content type="html"><![CDATA[<p>Swift和Objective-C可以在同一个工程中共存。不管创建工程时选择的是Swift还是Objective-C作为初始语言，我们都可以在工程中添加另一种语言的文件。</p>
+
+<p>混合编程的处理过程在App工程和库工程中稍微有点不同。具体的工作模型如下图所示</p>
+
+<p><img src="https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/BuildingCocoaApps/Art/DAG_2x.png" alt="image" /></p>
+
+<p>下面我们讨论下具体的操作</p>
+
+<h2>同一App工程中导入代码</h2>
+
+<h4>在Swift工程中导入Objective-C</h4>
+
+<p>如果我们需要在一个Swift工程中导入Objective-C代码，需要依托于Objective-C Bridging header(桥接头文件)。在Swift工程中，当我们添加一个Objective-C文件时，如果工程中没有现存的Bridging header文件，则XCode会提示我们是否创建该文件。如果我们点击Yes，则XCode会自动创建头文件，并命名为&#8221;工程名-Bridging-Header.h&#8221;。</p>
+
+<p>我们需要编辑这个文件，以导入我们的Objective-C代码。</p>
+
+<p>如果是从同一个target中导入Objective-C代码，则我们需要做如下操作</p>
+
+<ol>
+<li><p>在Bridging header文件中，import所有需要在Swift中使用的头文件</p>
+
+<p> #import &ldquo;XYZCustomCell.h&rdquo;</p>
+
+<p> #import &ldquo;XYZCustomView.h&rdquo;</p>
+
+<p> #import &ldquo;XYZCustomViewController.h&rdquo;</p></li>
+<li><p>在Build Settings中，确保Swift Compiler Code Generation->Objective-C Bridging Header下的头文件的路径是对的。路径必须直接指向文件本身，而不是文件所在的文件夹。</p></li>
+</ol>
+
+
+<p>所有在Bridging header中的公有Objective-C头文件在Swift都是可见的，并且其中的所有功能在所有Swift中都是可用的，而不需要任何导入处理。可以像使用Swift代码一样使用Objective-C代码。如下所示</p>
+
+<pre><code>let myCell = XYZCustomCell()
+myCell.subtitle = "A custom cell"
+</code></pre>
+
+<h4>在Objective-C中导入Swift</h4>
+
+<p>如果我们要在一个Objective-C工程中导入Swift，则需要依托于XCode-generated header文件。这个自动生成的文件是一个Objective-C头文件，其声明了在我们的target中使用的所有Swift接口。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Swift对C指针实现浅析]]></title>

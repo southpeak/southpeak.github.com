@@ -5,13 +5,13 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Swift闭包二：循环引用 - 南峰子的技术博客</title>
+  <title>混合使用Swift和Objective-C - 南峰子的技术博客</title>
   <meta name="author" content="南峰子">
       
       <meta name="baidu-site-verification" content="LlI1925mn6" />
 
   
-  <meta name="description" content="我们在闭包的基础概念中讲到闭包是引用类型的，因此，与Objective-C的block一样，可能导致循环引用的问题。 问题的产生 当我们给一个类指定一个闭包属性时，这个类的实例便包含了闭包的一个引用。如果在这个闭包中，又引用了类实例本身，这是闭包便创建了一个指向类实例的强引用，这种情况下， &hellip;">
+  <meta name="description" content="Swift和Objective-C可以在同一个工程中共存。不管创建工程时选择的是Swift还是Objective-C作为初始语言，我们都可以在工程中添加另一种语言的文件。 混合编程的处理过程在App工程和库工程中稍微有点不同。具体的工作模型如下图所示 下面我们讨论下具体的操作 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -20,7 +20,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://southpeak.github.io/blog/2014/06/27/ios-swift-closures-2">
+  <link rel="canonical" href="http://southpeak.github.io/blog/2014/07/08/mix-swift-and-objective-c">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="南峰子的技术博客" type="application/atom+xml">
@@ -71,7 +71,7 @@
   
   <header>
     
-      <h1 class="entry-title">Swift闭包二：循环引用</h1>
+      <h1 class="entry-title">混合使用Swift和Objective-C</h1>
     
     
       <p class="meta">
@@ -87,87 +87,52 @@
   
 
 
-<time datetime="2014-06-27T19:10:38+08:00" pubdate data-updated="true">Jun 27<sup>th</sup>, 2014</time>
+<time datetime="2014-07-08T16:58:06+08:00" pubdate data-updated="true">Jul 8<sup>th</sup>, 2014</time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><p>我们在<a href="http://southpeak.github.io/blog/2014/06/27/ios-swift-closures/">闭包的基础概念</a>中讲到闭包是引用类型的，因此，与Objective-C的block一样，可能导致循环引用的问题。</p>
+<div class="entry-content"><p>Swift和Objective-C可以在同一个工程中共存。不管创建工程时选择的是Swift还是Objective-C作为初始语言，我们都可以在工程中添加另一种语言的文件。</p>
 
-<h2>问题的产生</h2>
+<p>混合编程的处理过程在App工程和库工程中稍微有点不同。具体的工作模型如下图所示</p>
 
-<p>当我们给一个类指定一个闭包属性时，这个类的实例便包含了闭包的一个引用。如果在这个闭包中，又引用了类实例本身，这是闭包便创建了一个指向类实例的强引用，这种情况下，又产生了循环引用。</p>
+<p><img src="https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/BuildingCocoaApps/Art/DAG_2x.png" alt="image" /></p>
 
-<p>如代码清单1所示：HTMLElement类定义了一个闭包属性asHTML。在这个闭包中引用了self，即闭包捕获了self，这就意味着闭包维护了一个指向HTMLElement实例的强引用。这样就在两者间创建了一个强引用循环。</p>
+<p>下面我们讨论下具体的操作</p>
 
-<h6>代码清单1：闭包循环引用</h6>
+<h2>同一App工程中导入代码</h2>
 
-<pre><code>class HTMLElement {
+<h4>在Swift工程中导入Objective-C</h4>
 
-    let name:String
-    let text:String?
+<p>如果我们需要在一个Swift工程中导入Objective-C代码，需要依托于Objective-C Bridging header(桥接头文件)。在Swift工程中，当我们添加一个Objective-C文件时，如果工程中没有现存的Bridging header文件，则XCode会提示我们是否创建该文件。如果我们点击Yes，则XCode会自动创建头文件，并命名为&#8221;工程名-Bridging-Header.h&#8221;。</p>
 
-    @lazy var asHTML:() -&gt; String = {
-        if let text = self.text {
-            return "&lt;\(self.name)]]&gt;\(self.text)&lt;/\(self.name)&gt;"
-        } else {
-            return "&lt;\(self.name) /&gt;"
-        }
-    }
+<p>我们需要编辑这个文件，以导入我们的Objective-C代码。</p>
 
-    init(name:String, text:String? = nil) {
-        self.name = name
-        self.text = text
-    }
+<p>如果是从同一个target中导入Objective-C代码，则我们需要做如下操作</p>
 
-    deinit {
-        println("\(name) is being deinitialized")
-    }
-}
+<ol>
+<li><p>在Bridging header文件中，import所有需要在Swift中使用的头文件</p>
+
+<p> #import &ldquo;XYZCustomCell.h&rdquo;</p>
+
+<p> #import &ldquo;XYZCustomView.h&rdquo;</p>
+
+<p> #import &ldquo;XYZCustomViewController.h&rdquo;</p></li>
+<li><p>在Build Settings中，确保Swift Compiler Code Generation->Objective-C Bridging Header下的头文件的路径是对的。路径必须直接指向文件本身，而不是文件所在的文件夹。</p></li>
+</ol>
+
+
+<p>所有在Bridging header中的公有Objective-C头文件在Swift都是可见的，并且其中的所有功能在所有Swift中都是可用的，而不需要任何导入处理。可以像使用Swift代码一样使用Objective-C代码。如下所示</p>
+
+<pre><code>let myCell = XYZCustomCell()
+myCell.subtitle = "A custom cell"
 </code></pre>
 
-<h2>解决方案</h2>
+<h4>在Objective-C中导入Swift</h4>
 
-<p>我们可以通过“捕获列表”来解决这种循环引用问题。“捕获列表”定义了在闭包内部捕获的引用类型的使用规则。与两个类之间的强引用循环一样，我们声明每一个捕获引用为weak或者unowned引用。选择weak或者unowned依赖于两者之间的关系。</p>
-
-<p>一个“捕获列表项”是一个weak(unowned)—类实例引用对。它们放在[]中，项与项之间使用“,”号隔开。</p>
-
-<p>当闭包和捕获实例总是相互引用，且两者同时释放时，我们将“捕获引用”设置为unowned。如果“捕获引用”可能在某个点被设置成nil，则将其设置为weak。weak引用通常都是optional类型，当引用的实例被释放时，被设置成nil。</p>
-
-<p>在代码清单1中，我们可以用unowned来处理这种循环引用问题。如代码清单2所示：</p>
-
-<h6>代码清单2：unowned引用</h6>
-
-<pre><code>class HTMLElement {
-
-    let name:String
-    let text:String?
-
-    @lazy var asHTML:() -&gt; String = {
-        [unowned self] in
-        if let text = self.text {
-            return "&lt;\(self.name)]]&gt;\(self.text)&lt;/\(self.name)&gt;"
-        } else {
-            return "&lt;\(self.name) /&gt;"
-        }
-    }
-
-    init(name:String, text:String? = nil) {
-        self.name = name
-        self.text = text
-    }
-
-    deinit {
-        println("\(name) is being deinitialized")
-    }
-}
-</code></pre>
-
-<p>在这种情况下，闭包维护了HTMLElement实例的一个unowned引用，而不再是一个强引用。</p>
-
-<p>注：虽然在闭包中多次引用了self，但闭包只会维护HTMLElement实例的一个引用</p>
+<p>如果我们要在一个Objective-C工程中导入Swift，则需要依托于XCode-generated header文件。这个自动生成的文件是一个Objective-C头文件，其声明了在我们的target中使用的所有Swift接口。</p>
 </div>
 
 
@@ -190,14 +155,8 @@
   
 
 
-<time datetime="2014-06-27T19:10:38+08:00" pubdate data-updated="true">Jun 27<sup>th</sup>, 2014</time>
+<time datetime="2014-07-08T16:58:06+08:00" pubdate data-updated="true">Jul 8<sup>th</sup>, 2014</time>
       
-
-<span class="categories">
-  
-    <a class='category' href='/blog/categories/ios/'>ios</a>, <a class='category' href='/blog/categories/swift/'>swift</a>
-  
-</span>
 
 
     </p>
@@ -211,10 +170,8 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2014/06/27/ios-swift-closures/" title="Previous Post: Swift闭包一：闭包基础概念">&laquo; Swift闭包一：闭包基础概念</a>
+        <a class="basic-alignment left" href="/blog/2014/07/06/ios-swift-cpointer-2/" title="Previous Post: Swift对C指针实现浅析">&laquo; Swift对C指针实现浅析</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2014/06/27/ios-swift-property/" title="Next Post: Swift属性Property">Swift属性Property &raquo;</a>
       
     </p>
   </footer>
