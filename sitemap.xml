@@ -3,6 +3,12 @@
   
   
   <url>
+    <loc>http://southpeak.github.io/blog/2014/07/11/urljia-zai-xi-tong-zhi-%5B%3F%5D-:ji-ben-jie-gou/</loc>
+    <lastmod>2014-07-11T19:10:29+08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
     <loc>http://southpeak.github.io/blog/2014/07/08/mix-swift-and-objective-c/</loc>
     <lastmod>2014-07-08T16:58:06+08:00</lastmod>
     <priority>0.8</priority>
@@ -65,14 +71,14 @@
   
   <url>
     <loc>http://southpeak.github.io/blog/archives/</loc>
-    <lastmod>2014-07-11T16:14:23+08:00</lastmod>
+    <lastmod>2014-07-11T19:17:58+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
     <loc>http://southpeak.github.io/</loc>
-    <lastmod>2014-07-11T16:14:23+08:00</lastmod>
+    <lastmod>2014-07-11T19:17:58+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
