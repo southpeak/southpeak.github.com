@@ -8,7 +8,7 @@ date: 2014-07-11 19:10:29 +0800
 
 comments: true
 
-categories: iOS
+categories: iOS 网络
 
 ---
 
@@ -17,19 +17,23 @@ URL加载系统是一组类和协议的集合，它允许我们的App访问URL�
 URL加载系统的核心类是NSURL，该类提供了大量方法让我们操作URLs和它指向的资源。另外它还提供了一系列的类来加载URL的内容，上传数据到服务器，管理Cookie存储，控制响应缓存，处理认证存储和授权信息，及自定义协议扩展。
 
 URL Loading System可支持以下协议
+
 1. ftp://
 2. http://
 3. https://
 4. file://
 5. data://
+
 另外它还支持代理服务和网关处理。
 
 URL加载系统定义了用于加载URL的类，另外还定义了一些辅助类来修改加载类的行为。这些辅助类可以分为五大类：
+
 1. 协议支持
 2. 授权与认证
 3. Cookie存储
 4. 配置管理 
 5. 缓存管理
+
 整个URL加载系统的结构如下图所示：
 
 ![image](https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/URLLoadingSystem/Art/nsobject_hierarchy_2x.png)
