@@ -76,10 +76,20 @@ categories: iOS 网络
 
 下面的代码演示了使用用户名和密码创建NSURLCredential对象来响应认证请求
 
-	-(void)connection:(NSURLConnection *)connection didReceiveAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge	{	    if ([challenge previousFailureCount] == 0)
-	    {	        NSURLCredential *newCredential;	        newCredential = [NSURLCredential credentialWithUser:[self preferencesName] password:[self preferencesPassword] persistence:NSURLCredentialPersistenceNone];	        [[challenge sender] useCredential:newCredential forAuthenticationChallenge:challenge];	    }
+	-(void)connection:(NSURLConnection *)connection didReceiveAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge
+		{
+	    if ([challenge previousFailureCount] == 0)
+
+	    {
+	    	        NSURLCredential *newCredential;
+	        newCredential = [NSURLCredential credentialWithUser:[self preferencesName] password:[self preferencesPassword] persistence:NSURLCredentialPersistenceNone];
+	        [[challenge sender] useCredential:newCredential forAuthenticationChallenge:challenge];
+	    }
+
 	    else
-	    {	        [[challenge sender] cancelAuthenticationChallenge:challenge];	        // inform the user that the user name and password	        // in the preferences are incorrect	        [self showPreferencesCredentialsAreIncorrectPanel:self];	    }
+
+	    {	        [[challenge sender] cancelAuthenticationChallenge:challenge];	        // inform the user that the user name and password	        // in the preferences are incorrect	        [self showPreferencesCredentialsAreIncorrectPanel:self];	    }
+
 	}
 
 如果代理没有实现connection:didReceiveAuthenticationChallenge:，而请求需要认证，则有效的证书必须位于URL证书存储中或作为请求URL的一部分。如果证书无效或者认证失败，则底层实现会发送一个continueWithoutCredentialForAuthenticationChallenge:消息。
