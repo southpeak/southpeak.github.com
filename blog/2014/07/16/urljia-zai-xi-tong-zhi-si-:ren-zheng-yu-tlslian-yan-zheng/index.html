@@ -179,10 +179,20 @@
 
 <p>下面的代码演示了使用用户名和密码创建NSURLCredential对象来响应认证请求</p>
 
-<pre><code>-(void)connection:(NSURLConnection *)connection didReceiveAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge {       if ([challenge previousFailureCount] == 0)
-    {           NSURLCredential *newCredential;         newCredential = [NSURLCredential credentialWithUser:[self preferencesName] password:[self preferencesPassword] persistence:NSURLCredentialPersistenceNone];         [[challenge sender] useCredential:newCredential forAuthenticationChallenge:challenge];      }
+<pre><code>-(void)connection:(NSURLConnection *)connection didReceiveAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge
+    {
+    if ([challenge previousFailureCount] == 0)
+
+    {
+                NSURLCredential *newCredential;
+        newCredential = [NSURLCredential credentialWithUser:[self preferencesName] password:[self preferencesPassword] persistence:NSURLCredentialPersistenceNone];
+        [[challenge sender] useCredential:newCredential forAuthenticationChallenge:challenge];
+    }
+
     else
+
     {           [[challenge sender] cancelAuthenticationChallenge:challenge];           // inform the user that the user name and password          // in the preferences are incorrect         [self showPreferencesCredentialsAreIncorrectPanel:self];        }
+
 }
 </code></pre>
 
@@ -247,6 +257,8 @@
         <a class="basic-alignment left" href="/blog/2014/07/15/urljia-zai-xi-tong-zhi-san-:nsurlconnection/" title="Previous Post: URL加载系统之三：NSURLConnection">&laquo; URL加载系统之三：NSURLConnection</a>
       
       
+        <a class="basic-alignment right" href="/blog/2014/07/17/ioszhong-liu-stream-de-shi-yong/" title="Next Post: iOS中流(Stream)的使用">iOS中流(Stream)的使用 &raquo;</a>
+      
     </p>
   </footer>
 </article>
@@ -259,15 +271,19 @@
 <section>
 <h1>分类</h1>
 <ul>
-  <li><a href='/blog/categories/ios'>ios (12)</a></li>
+  <li><a href='/blog/categories/ios'>ios (13)</a></li>
   <li><a href='/blog/categories/swift'>swift (7)</a></li>
-  <li><a href='/blog/categories/网络'>网络 (4)</a></li>
+  <li><a href='/blog/categories/网络'>网络 (5)</a></li>
 </ul>
 </section>
 
 <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/07/17/ioszhong-liu-stream-de-shi-yong/">iOS中流(Stream)的使用</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2014/07/16/urljia-zai-xi-tong-zhi-si-:ren-zheng-yu-tlslian-yan-zheng/">URL加载系统之四：认证与TLS链验证</a>
@@ -303,10 +319,6 @@
     
       <li class="post">
         <a href="/blog/2014/07/02/ios-swift-protocol/">Swift协议基础</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/06/27/ios-swift-extension/">Swift扩展(Extension)基础</a>
       </li>
     
   </ul>
