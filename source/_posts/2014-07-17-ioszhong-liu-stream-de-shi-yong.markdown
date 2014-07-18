@@ -157,14 +157,42 @@ Cocoa中的流对象与Core Foundation中的流对象是对应的。我们可以
 
 代码清单5
 
-	- (void)createNewFile {	    NSOutputStream *oStream = [[NSOutputStream alloc] initToMemory];	    [oStream open];	   	    ￼￼￼uint8_t *readBytes = (uint8_t *)[data mutableBytes];	    uint8_t buf[1024];	    int len = 1024;
-	    	    while (1) {	        if (len == 0) break;
-	        	        if ([oStream hasSpaceAvailable])
-	        {	            (void)strncpy(buf, readBytes, len);	            readBytes += len;	            if ([oStream write:(const uint8_t *)buf maxLength:len] == -1)
-	            {	                [self handleError:[oStream streamError]];	                break;
-	            }	            [bytesWritten setIntValue:[bytesWritten intValue]+len];	            len = (([data length] - [bytesWritten intValue] >= 1024) ? 1024 : [data length] - [bytesWritten intValue]);	        }	    }	    NSData *newData = [oStream propertyForKey:NSStreamDataWrittenToMemoryStreamKey];
-	    	    if (!newData) {	        NSLog(@"No data written to memory!");	    } else {	        [self processData:newData];	    }
-	    	    [oStream close];	    [oStream release];	    oStream = nil;	}
+	- (void)createNewFile {
+	    NSOutputStream *oStream = [[NSOutputStream alloc] initToMemory];
+	    [oStream open];
+	   
+	    ￼￼￼uint8_t *readBytes = (uint8_t *)[data mutableBytes];
+	    uint8_t buf[1024];
+	    int len = 1024;
+	    
+	    while (1) {
+	        if (len == 0) break;
+	        
+	        if ([oStream hasSpaceAvailable])
+	        {
+	            (void)strncpy(buf, readBytes, len);
+	            readBytes += len;
+	            if ([oStream write:(const uint8_t *)buf maxLength:len] == -1)
+	            {
+	                [self handleError:[oStream streamError]];
+	                break;
+	            }
+	            [bytesWritten setIntValue:[bytesWritten intValue]+len];
+	            len = (([data length] - [bytesWritten intValue] >= 1024) ? 1024 : [data length] - [bytesWritten intValue]);
+	        }
+	    }
+	    NSData *newData = [oStream propertyForKey:NSStreamDataWrittenToMemoryStreamKey];
+	    
+	    if (!newData) {
+	        NSLog(@"No data written to memory!");
+	    } else {
+	        [self processData:newData];
+	    }
+	    
+	    [oStream close];
+	    [oStream release];
+	    oStream = nil;
+	}
 
 这种处理方法的问题在于它会阻塞当前线程，直到流处理结束为止，才继续进行后面的操作。而这种问题在处理网络socket流时尤为严重，我们必须等待服务端数据回来后才能继续操作。因此，通常情况下，建议使用run loop方式来处理流事件。
 
