@@ -1,0 +1,481 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Cover Flow特效实现 - 南峰子的技术博客</title>
+  <meta name="author" content="南峰子">
+      
+  <meta name="baidu-site-verification" content="HoscFhWICI" />
+
+  
+  <meta name="description" content="原文发表在cocoachina上，现在把它整理过来。 Cover Flow介绍 Cover flow是苹果首创的将多首歌曲的封面以3D界面的形式显示出来的方式。 随处可见的Cover Flow特效 iTunes:在iTunes音乐中点击搜索框左边“查看”项第三个，即以cover &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://southpeak.github.io/blog/2014/07/18/cover-flowte-xiao-shi-xian">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="南峰子的技术博客" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<!--<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">-->
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">南峰子的技术博客</a></h1>
+  
+    <h2>攀登，一步一个脚印，方能知其乐</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:southpeak.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/categories/ios">iOS开发</a></li>
+  <li><a href="/blog/archives">所有文章</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Cover Flow特效实现</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-07-18T22:12:57+08:00" pubdate data-updated="true">Jul 18<sup>th</sup>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p><a href="http://www.cocoachina.com/bbs/read.php?tid=74500">原文</a>发表在cocoachina上，现在把它整理过来。</p>
+
+<h2>Cover Flow介绍</h2>
+
+<p>Cover flow是苹果首创的将多首歌曲的封面以3D界面的形式显示出来的方式。</p>
+
+<p><img src="http://www.cocoachina.com/bbs/attachment/Fid_6/6_38018_be3432a30663e7e.png" alt="image" /></p>
+
+<h4>随处可见的Cover Flow特效</h4>
+
+<p>iTunes:在iTunes音乐中点击搜索框左边“查看”项第三个，即以cover flow形式显示专辑封面（前提是你得添加插图或音乐自带插图），也可以在全屏模式使用</p>
+
+<p>iPhone/iPod Touch:在竖屏模式播放音乐，iPhone只会显示一张专辑的封面；但当用户将机身旋转为横屏模式后，则能看到多首歌曲的封面以3D界面的形式显示出来，用手指左右的滑动能够进行歌曲的选择，点击相应的专辑封面则会显示该张唱片的曲目，点击相应歌曲即可开始播放。</p>
+
+<p>苹果官网:官网上有以Flash展示的cover flow界面iPod NANO3/4/5:基本类似于在iphone中的操作，利用触摸轮滑动使封面转换Safari</p>
+
+<p>使用 Cover Flow，您可以像在 iTunes 中翻看专辑插图一样轻松地翻看网站。Cover Flow 可以将您的书签和历史记录显示为大图预览，这样您就能立即找到网站。要查看 Cover Flow 如何工作，请单击 Safari“书签”栏左端的打开书本图标来打开书签列表。在“精选”列表中选择“历史记录”或您要查看其标签的精选。使用水平滚动条来翻看网页预览。您还可以使用鼠标上的滚动按钮来翻看预览。如果您的触控板已配置为支持触控板手势，则您可以左右扫动。</p>
+
+<h2>特效制作</h2>
+
+<h4>方法一：UICoverFlowLayer</h4>
+
+<p>正式的SDK并未包含UICoverFlowLayer，但是它仍然是标准的uikit。通过steve nygard的类转储(class-dump), 能从uikit框架中提取 UICoverFlowLayer头文件。</p>
+
+<p>由于UICoverFlowLayer是私有的，无法应用于应用程序(无法通过苹果的审查)，所以在此简单介绍使用方法：</p>
+
+<ol>
+<li>将UICoverFlowLayer.h文件拷贝到工程中创建cover flow视图，并将UICoverFlowLayer图层分配到视图图层中</li>
+<li>视图发送dragFlow:atPoint消息，以处理与Cover Flow图层的触摸和拖动的交互过程构建cover flow视图控制器，分配和初始化视图，并提供委托和数据源方法</li>
+</ol>
+
+
+<p>使用UICoverFlowLayer的方法如下代码所示</p>
+
+<pre><code>UICoverFlowLayer *cfLayer = [[UICoverFlowLayer alloc] initWithFrame:frame numberOfCovers:count];
+
+[[self layer] addSublayer:cfLayer];
+</code></pre>
+
+<h4>方法二：OpenFlow</h4>
+
+<p>OpenFlow是一个用于实现Cover Flow特效的开源库，它是基于Quartz实现的，能很好的实现Cover Flow特效，同时又易于使用。</p>
+
+<p>下载地址：<a href="https://github.com/thefaj/OpenFlow">https://github.com/thefaj/OpenFlow</a></p>
+
+<p>使用OpenFlow的基本步骤如下：</p>
+
+<ol>
+<li>创建工程</li>
+<li>添加OpenFlow源代码到工程中</li>
+<li>添加QuartzCore和CoreGraphics框架到工程中</li>
+<li>定义CoverFlowViewController(自定义)类</li>
+<li>在CoverFlowViewController.h中导入”AFOpenFlowView.h”</li>
+<li>实现AFOpenFlowViewDelegate类和AFOpenFlowDataSource协议</li>
+</ol>
+
+
+<p>定义CoverFlowViewController类的代码如下所示</p>
+
+<pre><code>//  CoverFlowViewController.h
+//  CoverFlow
+//
+//  Created by Avinash on 4/7/10.
+//  Copyright Apple Inc 2010. All rights reserved.
+//
+
+#import "AFOpenFlowView.h"
+@interface CoverFlowViewController : UIViewController  {
+    // Queue to hold the cover flow p_w_picpath
+    NSOperationQueue *loadImagesOperationQueue;
+}
+@end
+</code></pre>
+
+<p>实现CoverFlowViewController类</p>
+
+<p>加载图片</p>
+
+<pre><code>- (void)viewDidLoad {
+    [super viewDidLoad];
+     // loading p_w_picpath into the queue
+    loadImagesOperationQueue = [[NSOperationQueue alloc] init];
+    NSString *imageName;
+    for (int i=0; i &lt; 10; i++) {
+        imageName = [[NSString alloc] initWithFormat:@"cover_%d.jpg", i];
+        [(AFOpenFlowView *)self.view setImage:[UIImage imageNamed:imageName] forIndex:i];
+        [imageName release];
+        NSLog(@"%d is the index",i); 
+   }
+    [(AFOpenFlowView *)self.view setNumberOfImages:10];
+}
+</code></pre>
+
+<p>实现委托方法，以设置Cover Flow默认图片及通知哪幅图片被选中</p>
+
+<pre><code>//delegate protocols
+// delegate protocol to tell which image is selected
+- (void)openFlowView:(AFOpenFlowView *)openFlowView selectionDidChange:(int)index{
+    NSLog(@"%d is selected",index);
+}
+// setting the image 1 as the default pic
+- (UIImage *)defaultImage{
+    return [UIImage imageNamed:@"cover_1.jpg"];
+}
+</code></pre>
+
+<p>修改xib文件中视图的类UIView为AFOpenFlowView(重要)</p>
+
+<p>完成上述步骤之后，就可以运行一下程序看一下效果了。虽然与苹果的Cover Flow效果还是有点差距，但还是不错哦。</p>
+
+<h4>方法三：FlowCover</h4>
+
+<p>FlowCover也是一个开源库，它是基于OpenGL ES。FlowCover的源代码非常简单，只有FlowCoverView和DataCache两个类。这两个类的功能如下：</p>
+
+<ol>
+<li>FlowCoverView：定义主视图。这是一个OpenGL ES视点，可以被嵌套在其它视图中。</li>
+<li>DataCache：提供一个简单的数据缓存方案，保存一定量的对象，当对象超过最大值时，旧的对象会被舍弃。</li>
+</ol>
+
+
+<p>使用FlowCover的基本步骤如下：</p>
+
+<ol>
+<li>创建工程</li>
+<li>添加FlowCover源代码到工程中</li>
+<li>然后就可以像用其它UIView一样使用FlowCoverView了</li>
+</ol>
+
+
+<p>FlowCover中需要实现FlowCoverViewDelegate协议，该协议中主要有三个方法：</p>
+
+<pre><code>-(int)flowCoverNumberImages:(FlowCoverView *)view;
+</code></pre>
+
+<p>返回FlowCoverView视图中显示的图片数量</p>
+
+<pre><code>-(UIImage *)flowCover:(FlowCoverView *)view cover:(int)cover;
+</code></pre>
+
+<p>返回FlowCoverView视图中用cover指定的图片</p>
+
+<pre><code>-(void)flowCover:(FlowCoverView *)view didSelect:(int)cover;
+</code></pre>
+
+<p>当用户触击FlowCoverView中的cover时调用。</p>
+
+<h4>方法四：Tapku框架</h4>
+
+<p>Tapku库是一个开源的iOS框架，它包含CoverFlow, Calendar Grid, Char View等等API，总之还是一个比较强大的库。把Tapku加下工程中还是比较复杂的，有兴趣的童鞋可以去网上搜一下。</p>
+
+<p>Tapku下载地址：<a href="https://github.com/devinross/tapkulibrary">https://github.com/devinross/tapkulibrary</a></p>
+
+<p>Tapku中与Cover Flow相关的类主要有如下两个：</p>
+
+<ol>
+<li>TKCoverflowCoverView: 该类表示的是单个cover。相当于UITableViewCell</li>
+<li>TKCoverflowView:该类相当于UITableView类，用来管理和显示cover flow中图片及实现cover flow效果。</li>
+</ol>
+
+
+<p>同时还有两个相关的协议：TKCoverflowViewDelegate， TKCoverflowViewDataSource，分别是 TKCoverflowView的代理及数据源。这两个协议分别有一个必须实现的方法，分别是
+TKCoverflowViewDelegate协议的</p>
+
+<pre><code>- (void) coverflowView:(TKCoverflowView*)coverflowView coverAtIndexWasBroughtToFront:(int)index;
+</code></pre>
+
+<p>TKCoverflowViewDataSource协议的</p>
+
+<pre><code>- (void) coverflowView:(TKCoverflowView*)coverflowView coverAtIndexWasDoubleTapped:(int)index
+</code></pre>
+
+<p>在工程中使用Tapku的CoverFlow步骤如下</p>
+
+<ol>
+<li>创建工程</li>
+<li>添加Tapku库到工程中(该步骤有点麻烦，而且Tapku库比较大，个人认为可以只把CoverFlow相关的类抽取出来直接用)。</li>
+<li>新建一个视图控制器CoverflowViewController，在该控制器中添加如下代码</li>
+</ol>
+
+
+<p>在头文件CoverflowViewController.h中</p>
+
+<pre><code>@interface CoverflowViewController : UIViewController &lt;TKCoverflowViewDelegate,TKCoverflowViewDataSource,UIScrollViewDelegate&gt; {
+    TKCoverflowView *coverflow; 
+    NSMutableArray *covers; // album covers p_w_picpath
+    ......
+}
+</code></pre>
+
+<p>在CoverflowViewController.m文件中主要有如下处理</p>
+
+<pre><code>//创建视图
+- (void) loadView{
+   [super loadView];
+    ......
+    coverflow = [[TKCoverflowView alloc] initWithFrame:self.view.bounds];
+    coverflow.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    coverflow.coverflowDelegate = self;
+    coverflow.dataSource = self;
+    if([UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPad){
+       coverflow.coverSpacing = 100;
+      coverflow.coverSize = CGSizeMake(300, 300);
+    }
+    [self.view addSubview:coverflow];
+   ......
+}
+</code></pre>
+
+<p>实现代理方法</p>
+
+<pre><code>- (void) coverflowView:(TKCoverflowView*)coverflowView coverAtIndexWasBroughtToFront:(int)index{
+}
+//生成单个cover flow
+- (TKCoverflowCoverView*) coverflowView:(TKCoverflowView*)coverflowView coverAtIndex:(int)index{
+    TKCoverflowCoverView *cover = [coverflowView dequeueReusableCoverView];
+    if(cover == nil){
+       BOOL phone = [UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPhone;
+       CGRect rect = phone ? CGRectMake(0, 0, 224, 300) : CGRectMake(0, 0, 300, 600);
+
+      cover = [[[TKCoverflowCoverView alloc] initWithFrame:rect] autorelease]; // 224
+       cover.baseline = 224;  
+    }
+    cover.image = [covers objectAtIndex:index%[covers count]];
+   return cover;
+}
+- (void) coverflowView:(TKCoverflowView*)coverflowView coverAtIndexWasDoubleTapped:(int)index{
+   TKCoverflowCoverView *cover = [coverflowView coverAtIndex:index];
+    if(cover == nil) return;
+    [UIView beginAnimations:nil context:nil];
+    [UIView setAnimationDuration:1];
+    [UIView setAnimationTransition:UIViewAnimationTransitionFlipFromLeft forView:cover cache:YES];
+    [UIView commitAnimations];
+   NSLog(@"Index: %d",index);
+}
+</code></pre>
+
+<h2>效果比较</h2>
+
+<p>在效果上个人感觉Tapku会好些，渲染流畅，美中不足的是在快速拖动时，停止下来的时候会有抖动的感觉（当然快速拖动这一功能是否需要可视情况而定，如果将此功能禁掉，跟苹果自身的效果还是差不多的）。</p>
+
+<p>OpenFlow的问题在于当改变图像时，新选中的图像会先放大并置于表层，然后才缓动到中间。这是其一个瑕疵。</p>
+
+<p>总体感觉上来讲，苹果自身的CoverFlow的缓动效果还是最好的，有那种渐进渐出的效果，而如上几个开源的库其动画显得有点生硬，有兴趣的童鞋可以试着改进一下。</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">南峰子</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-07-18T22:12:57+08:00" pubdate data-updated="true">Jul 18<sup>th</sup>, 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/ios/'>ios</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/07/17/ioszhong-liu-stream-de-shi-yong/" title="Previous Post: iOS中流(Stream)的使用">&laquo; iOS中流(Stream)的使用</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+<section>
+<h1>分类</h1>
+<ul>
+  <li><a href='/blog/categories/ios'>ios (14)</a></li>
+  <li><a href='/blog/categories/swift'>swift (7)</a></li>
+  <li><a href='/blog/categories/网络'>网络 (5)</a></li>
+</ul>
+</section>
+
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/07/18/cover-flowte-xiao-shi-xian/">Cover Flow特效实现</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/07/17/ioszhong-liu-stream-de-shi-yong/">iOS中流(Stream)的使用</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/07/16/urljia-zai-xi-tong-zhi-si-:ren-zheng-yu-tlslian-yan-zheng/">URL加载系统之四：认证与TLS链验证</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/07/15/urljia-zai-xi-tong-zhi-san-:nsurlconnection/">URL加载系统之三：NSURLConnection</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/07/11/urljia-zai-xi-tong-zhi-er-:nsurlsession/">URL加载系统之二：NSURLSession</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/07/11/urljia-zai-xi-tong-zhi-%5B%3F%5D-:ji-ben-jie-gou/">URL加载系统之一：基本结构</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/07/08/mix-swift-and-objective-c/">混合使用Swift和Objective-C</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/07/06/ios-swift-cpointer-2/">Swift对C指针实现浅析</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/07/05/cover-flow/">Cover flow基本原理及Tapku实现方法</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/07/02/ios-swift-cpointer/">Swift中C指针的基本使用方法</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - 南峰子 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>
