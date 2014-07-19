@@ -11,7 +11,7 @@
   <meta name="baidu-site-verification" content="HoscFhWICI" />
 
   
-  <meta name="description" content="URL加载系统是一组类和协议的集合，它允许我们的App访问URL指定的内容的。 URL加载系统的核心类是NSURL，该类提供了大量方法让我们操作URLs和它指向的资源。另外它还提供了一系列的类来加载URL的内容，上传数据到服务器，管理Cookie存储，控制响应缓存，处理认证存储和授权信息， &hellip;">
+  <meta name="description" content="NSURLSession及相关的类提供通过HTTP协议下载数据的API。该类提供了大量代理方法来支持认证和后台下载(程序未运行或挂起时)功能。 为了使用NSURLSession，我们的应用会创建一系列的会话，每个会话负责协调一组相关数据的传输任务。在每个会话中，我们的应用添加一系列的任务， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -68,6 +68,271 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/07/11/urljia-zai-xi-tong-zhi-er-:nsurlsession/">URL加载系统之二：NSURLSession</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-07-11T22:48:27+08:00" pubdate data-updated="true">Jul 11<sup>th</sup>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>NSURLSession及相关的类提供通过HTTP协议下载数据的API。该类提供了大量代理方法来支持认证和后台下载(程序未运行或挂起时)功能。</p>
+
+<p>为了使用NSURLSession，我们的应用会创建一系列的会话，每个会话负责协调一组相关数据的传输任务。在每个会话中，我们的应用添加一系列的任务，每个任务都表示一个对指定URL的请求。与大多数网络API一样，NSURLSession  API是异步的。如果我们使用系统提供的代理，我们必须提供一个请求完成处理block，以便在请求成功或失败时返回数据给我们的应用。如果我们提供自定义的代理对象，则任务对象调用这些代理方法，并回传从服务端获取的数据（如果是文件下载，则当传输完成时调用）。</p>
+
+<p>NSURLSession提供了status和progress属性，并作为额外的信息传递给代理。同时它支持取消、恢复、挂起操作，并支持断点续传功能。</p>
+
+<p>要掌握NSURLSession的使用，我们需要了解下URL会话的一些内容</p>
+
+<h2>URL会话</h2>
+
+<p>在一个会话中的任务的行为取决于三个方面：</p>
+
+<ol>
+<li>session的类型（由创建会话时的配置对象确定）</li>
+<li>任务的类型</li>
+<li>当任务创建时应用是否在前台</li>
+</ol>
+
+
+<p>NSURLSession支持以下三种会话类型：</p>
+
+<ol>
+<li>默认会话：行为与其它下载URL的Foundation方法类似。使用基于磁盘的缓存策略，并在用户keychain中存储证书。</li>
+<li>短暂会话(Ephemeral sessions)：不存储任何数据在磁盘中；所有的缓存，证书存储等都保存在RAM中并与会话绑定。这样，当应用结束会话时，它们被自动释放。</li>
+<li>后台会话(Background sessions)：类似于默认会话，除了有一个独立的进程来处理所有的数据传输。</li>
+</ol>
+
+
+<p>在一个会话中，NSURLSession支持三种任务类型</p>
+
+<ol>
+<li>数据任务：使用NSData对象来发送和接收数据。数据任务可以分片返回数据，也可以通过完成处理器一次性返回数据。由于数据任务不存储数据到文件，所以不支持后台会话.</li>
+<li>下载任务：以文件的形式接收数据，当程序不运行时支持后台下载</li>
+<li>上传任务：通常以文件的形式发送数据，支持后台上传。</li>
+</ol>
+
+
+<p>NSURLSession支持在程序挂起时在后台传输数据。后台传输只由使用后台会话配置对象创建的会话提供。使用后台会话时，由于实际传输是在一个独立的进程中传输，且重启应用进程相当损耗资源，只有少量特性可以使用，所以有以下限制：</p>
+
+<ol>
+<li>会话必须提供事件分发的代理。</li>
+<li>只支持HTTP和HTTPS协议</li>
+<li>只支持上传和下载任务</li>
+<li>总是伴随着重定义操作</li>
+<li>如果当应用在后台时初始化的后台传输，则配置对象的discretionary属性为true</li>
+</ol>
+
+
+<p>在iOS中，当我们的应用不再运行时，如果后台下载任务完成或者需要证书，则系统会在后台自动重启我们的应用，同时调用UIApplicationDelegate对象的application:handlerEventsForBackgroundURLSession:completionHandler:方法。这个调用会提供启动的应用的session的标识。我们的应用应该存储完成处理器，使用相同的标识来创建后台配置对象，然后使用配置对象来创建会话。新的会话会与运行的后台activity关联。当会话完成后台下载任务时，会给会话代理发送一个URLSessioinDidFinishEventsForBackgroundURLSession:消息。我们的代理对象然后调用存储的完成处理器。</p>
+
+<p>如果在程序挂起时有任何任务完成，则会调用URLSession:downloadTask:didFinishDownloadingToURL:方法。同样的，如果任务需要证书，则NSURLSession对象会在适当的时候调用URLSession:task:didReceiveChallenge:completionHandler: 和URLSession:didReceiveChallenge:completionHandler:方法。</p>
+
+<p>这里需要注意的是必须为每个标识创建一个会话，共享相同标识的多个会话的行为是未定义的。</p>
+
+<p>会话和任务对象实现了NSCopying协议：</p>
+
+<ol>
+<li>当应用拷贝一个会话或任务对象时，会获取相同对象的指针</li>
+<li>当应用拷贝一个配置对象时，会获取一个可单独修改的新的对象</li>
+</ol>
+
+
+<h2>创建并配置NSURLSession</h2>
+
+<p>我们下面举个简单的实例来说明一个NSURLSession与服务端的数据交互。</p>
+
+<h6>代码清单1：声明三种类型会话对象</h6>
+
+<pre><code>@interface URLSession : NSObject &lt;NSURLSessionDelegate, NSURLSessionTaskDelegate, NSURLSessionDataDelegate, NSURLSessionDownloadDelegate&gt;
+
+@property (nonatomic, strong) NSURLSession *backgroundSession;
+@property (nonatomic, strong) NSURLSession *defaultSession;
+@property (nonatomic, strong) NSURLSession *ephemeralSession;
+@property (nonatomic, strong) NSMutableDictionary *completionHandlerDictionary;
+
+- (void)addCompletionHandler:(CompletionHandlerType)handler forSession:(NSString *)identifier;
+
+- (void)callCompletionHandlerForSession:(NSString *)identifier;
+
+@end
+</code></pre>
+
+<p>NSURLSession提供了大量的配置选项，包括：</p>
+
+<ol>
+<li>支持缓存、cookie，认证及协议的私有存储</li>
+<li>认证</li>
+<li>上传下载文件</li>
+<li>每个主机的配置最大数</li>
+<li>超时时间</li>
+<li>支持的TLS最小最小版本</li>
+<li>自定义代理字典</li>
+<li>控制cookie策略</li>
+<li>控制HTTP管道行为</li>
+</ol>
+
+
+<p>由于大部分设置都包含在一个独立的配置对象中，所以我们可以重用这些配置。当我们初始一个会话对象时，我们指定了如下内容</p>
+
+<ol>
+<li>一个配置对象，用于管理其中的会话和任务的行为</li>
+<li>一个代理对象，用于在收到数据时处理输入数据，及会话和任务中的其它事件，如服务端认证、确定一个资源加载请求是否应该转换成下载等。这个对象是可选的。但如果我们需要执行后台传输，则必须提供自定义代理。</li>
+</ol>
+
+
+<p>在实例一个会话对象后，我们不能改变改变配置或代理。</p>
+
+<h6>代码清单2演示了如何创建一个会话</h6>
+
+<pre><code>NSURLSessionConfiguration *defaultConfigObject = [NSURLSessionConfiguration defaultSessionConfiguration];
+        
+// 配置会话的缓存
+NSString *cachePath = @"/MyCacheDirectory";
+        
+NSArray *pathList = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
+NSString *path = [pathList objectAtIndex:0];
+        
+NSString *bundleIdentifier = [[NSBundle mainBundle] bundleIdentifier];
+        
+NSString *fullCachePath = [[path stringByAppendingPathComponent:bundleIdentifier] stringByAppendingPathComponent:cachePath];
+        
+NSLog(@"Cache path: %@", fullCachePath);
+        
+NSURLCache *cache = [[NSURLCache alloc] initWithMemoryCapacity:16384 diskCapacity:268435456 diskPath:cachePath];
+defaultConfigObject.URLCache = cache;
+defaultConfigObject.requestCachePolicy = NSURLRequestUseProtocolCachePolicy;
+        
+self.defaultSession = [NSURLSession sessionWithConfiguration:defaultConfigObject delegate:self delegateQueue:[NSOperationQueue mainQueue]];
+</code></pre>
+
+<p>除了后台配置对象外，我们可以重用会话的配置对象来创建新的会话，正如上面所讲的，拷贝一个配置对象会生成一个新的独立的配置对象。我们可以在任何时候安全的修改配置对象。当创建一个会话时，会话会对配置对象进行深拷贝，所以修改只会影响到新的会话。代理清单3演示了创建一个新的会话，这个会话使用重用的配置对象。</p>
+
+<h6>代码清单3：重用会话对象</h6>
+
+<pre><code>self.ephemeralSession = [NSURLSession sessionWithConfiguration:ephemeralConfigObject delegate:self delegateQueue:[NSOperationQueue mainQueue]];
+        
+ephemeralConfigObject.allowsCellularAccess = YES;
+        
+// ...
+NSURLSession *ephemeralSessionWifiOnly = [NSURLSession sessionWithConfiguration:ephemeralConfigObject delegate:self delegateQueue:[NSOperationQueue mainQueue]];
+</code></pre>
+
+<p>使用NSURLSession获取数据基本就是两步：</p>
+
+<ol>
+<li>创建一个配置对象及基于这个对象的会话</li>
+<li>定义一个请求完成处理器来处理获取到的数据。</li>
+</ol>
+
+
+<p>如果使用系统提供的代理，只需要代码清单4这几行代码即可搞定</p>
+
+<h6>代码清单4：使用系统提供代理</h6>
+
+<pre><code>NSURLSession *delegateFreeSession = [NSURLSession sessionWithConfiguration:defaultConfigObject delegate:self delegateQueue:[NSOperationQueue mainQueue]];
+[delegateFreeSession dataTaskWithRequest:@"http://www.sina.com"
+                               completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {    
+                                   NSLog(@"Got response %@", response);
+                               }];
+</code></pre>
+
+<p>只是系统提供的代理只提供有限的网络行为。如果应用需要更多的处理，如自定义认证或后台下载等，则需要使用自定义的代理。使用自定义代理来获取数据时，代理必须实现以下方法：</p>
+
+<ol>
+<li>URLSession:dataTask:didReceiveData: 从请求提供数据给我们的任务，一次一个数据块</li>
+<li>URLSession:task:didCompleteWithError: 表示任务已经接受了所有的数据。</li>
+</ol>
+
+
+<p>如果我们在URLSession:dataTask:didReceiveData:方法返回后使用数据，则需要将数据存储在某个地方。</p>
+
+<h6>代码清单5：演示了一个数据访问实例：</h6>
+
+<pre><code>NSURL *url = [NSURL URLWithString:@"http://www.sina.com"];
+NSURLSessionDataTask *dataTask = [self.defaultSession dataTaskWithURL:url];
+[dataTask resume];
+</code></pre>
+
+<p>如果远程服务器返回的状态表示需要一个认证，且认证需要连接级别的处理时，NSURLSession将调用认证相关代理方法。这个具体我们后面文章将详细讨论。</p>
+
+<h2>处理iOS后台Activity</h2>
+
+<p>在iOS中使用NSURLSession时，当一个下载完成时，会自动启动我们的应用。应用的代理方法application:handleEventsForBackgroundURLSession:completionHandler: 负责创建一个合适的会话，存储请求完成处理器，并在会话调用会话代理的URLSessionDidFinishEventsForBackgroundURLSession: 方法时调用这个处理器。代码清单6与代码清单7演示了这个处理流程</p>
+
+<h6>代码清单6：iOS后台下载的会话代理方法</h6>
+
+<pre><code>- (void)URLSessionDidFinishEventsForBackgroundURLSession:(NSURLSession *)session
+{
+    NSLog(@"background url session %@", session);
+    
+    if (session.configuration.identifier)
+    {
+        [self callCompletionHandlerForSession:session.configuration.identifier];
+    }
+}
+
+- (void)callCompletionHandlerForSession:(NSString *)identifier
+{
+    CompletionHandlerType handler = [self.completionHandlerDictionary objectForKey:identifier];
+    
+    if (handler) {
+        [self.completionHandlerDictionary removeObjectForKey:identifier];
+        
+        handler();
+    }
+}
+</code></pre>
+
+<h6>代码清单7：iOS后台下载的App 代理方法</h6>
+
+<pre><code>- (void)application:(UIApplication *)application handleEventsForBackgroundURLSession:(NSString *)identifier completionHandler:(void (^)())completionHandler
+{
+    NSURLSessionConfiguration *backgroundConfigObject = [NSURLSessionConfiguration backgroundSessionConfiguration:identifier];
+    
+    URLSession *sessionDelegate = [[URLSession alloc] init];
+    
+    NSURLSession *backgroundSession = [NSURLSession sessionWithConfiguration:backgroundConfigObject
+                                                                    delegate:sessionDelegate
+                                                               delegateQueue:[NSOperationQueue mainQueue]];
+    
+    [sessionDelegate addCompletionHandler:completionHandler forSession:identifier];
+}
+</code></pre>
+
+<p>参考：</p>
+
+<ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/URLLoadingSystem/URLLoadingSystem.html">URL Loading System Programming Guide</a></li>
+</ol>
+
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -747,256 +1012,6 @@ int i = [coverViews indexOfObject:v];
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/07/02/ios-swift-cpointer/">Swift中C指针的基本使用方法</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-07-02T20:51:30+08:00" pubdate data-updated="true">Jul 2<sup>nd</sup>, 2014</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Swift尽可能避免让我们直接去访问指针。但当我们需要直接访问内存时，我们可以使用Swift提供的几种指针类型。在下面几个表中列出了各种情况下C类型指针语法与Swift语法对应关系，其中Type作为实际类型的占位符</p>
-
-<p>对于函数参数，有以下对应关系</p>
-
-<table>
-<thead>
-<tr>
-<th></th>
-<th>    C语法    </th>
-<th>   Swift语法   </th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td></td>
-<td> const void * </td>
-<td>  CConstVoidPointer |</td>
-</tr>
-<tr>
-<td></td>
-<td>  void *  </td>
-<td>  CMutableVoidPointer |</td>
-</tr>
-<tr>
-<td></td>
-<td>const Type * </td>
-<td> CConstPointer<Type> |</td>
-</tr>
-<tr>
-<td></td>
-<td>Type *</td>
-<td>CMutablePointer<Type>|</td>
-</tr>
-</tbody>
-</table>
-
-
-<p>对于返回值，变量，二级以上的指针参数，有以下对应关系</p>
-
-<table>
-<thead>
-<tr>
-<th></th>
-<th>    C语法    </th>
-<th>   Swift语法   </th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td></td>
-<td>void * </td>
-<td> COpaquePointer|</td>
-</tr>
-<tr>
-<td></td>
-<td>Type * </td>
-<td> UnsafePointer<Type>|</td>
-</tr>
-</tbody>
-</table>
-
-
-<p>对于类类型，有以下对应关系</p>
-
-<table>
-<thead>
-<tr>
-<th></th>
-<th>    C语法    </th>
-<th>   Swift语法   </th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td></td>
-<td>Type * const * </td>
-<td> CConstPointer<Type> |</td>
-</tr>
-<tr>
-<td></td>
-<td>Type * __strong * </td>
-<td> CMutablePointer<Type> |</td>
-</tr>
-<tr>
-<td></td>
-<td>Type ** </td>
-<td> AutoreleasingUnsafePointer<Type>|</td>
-</tr>
-</tbody>
-</table>
-
-
-<p>下面简单介绍一下这几种类型的指针</p>
-
-<h2>C可变指针</h2>
-
-<p>当我们声明一个包含CMutablePointer<Type>参数的指针时，可以接收以下类型的值</p>
-
-<ol>
-<li>nil, 作为空指针传入</li>
-<li>一个CMutablePointer<Type>值</li>
-<li>一个in-out表达式，它的操作数是Type类型的左值。该表达式作为左值地址传入</li>
-<li>一个in-out Type[]值，它作为数组的首地址指针传入，且在调用时扩展了数据的生命周期</li>
-</ol>
-
-
-<p>假如我们声明了如下一个函数：</p>
-
-<pre><code>func takesAMutablePointer(x: CMutablePointer&lt;Float&gt;) { /*...*/ }
-</code></pre>
-
-<p>那么我们可以用以下任何一种方式来调用</p>
-
-<pre><code>var x: Float = 0.0
-var p: CMutablePointer&lt;Float&gt; = &amp;x
-var a: Float[] = [1.0, 2.0, 3.0]
-
-takesAMutablePointer(nil)
-takesAMutablePointer(p)
-takesAMutablePointer(&amp;x)
-takesAMutablePointer(&amp;a)
-</code></pre>
-
-<p>当声明一个包含CMutableVoidPointer参数的函数时，它可以接收与CMutablePointer<Type>相同的形参，其中Type为任意类型。需要注意的是如果直接传递CMutablePointer<Type>，目前的编译器会直接报编译错误</p>
-
-<pre><code>func takesAMutableVoidPointer(x: CMutableVoidPointer) { /* ... */ }
-
-var x: Float = 0.0, y: Int = 0
-var p: CMutablePointer&lt;Float&gt; = &amp;x, q: CMutablePointer&lt;Int&gt; = &amp;y
-var a: Float[] = [1.0, 2.0, 3.0], b: Int[] = [1, 2, 3]
-
-takesAMutableVoidPointer(nil)
-//takesAMutableVoidPointer(p)   编辑错误:CMutablePointer&lt;Float&gt; is not convertible to CMutableVoidPointer
-//takesAMutableVoidPointer(q)
-takesAMutableVoidPointer(&amp;x)
-takesAMutableVoidPointer(&amp;y)
-takesAMutableVoidPointer(&amp;a)
-takesAMutableVoidPointer(&amp;b)
-</code></pre>
-
-<h2>C常量指针</h2>
-
-<p>当我们声明一个带有CConstPointer<Type>参数的函数时，可以接收以下类型的值：</p>
-
-<ol>
-<li>nil, 作为空指针传入</li>
-<li>一个CMutablePointer<Type>, CMutableVoidPointer, CConstPointer<Type>, CConstVoidPointer, 或者AutoreleasingUnsafePointer<Type>类型的值，如果需要则会转换成CConstPointer<Type></li>
-<li>一个in-out表达式，它的操作数是Type类型的左值。该表达式作为左值地址传入</li>
-<li>一个in-out Type[]值，它作为数组的首地址指针传入，且在调用时扩展了数据的生命周期</li>
-</ol>
-
-
-<p>假如我们声明如下函数:</p>
-
-<pre><code>func takesAConstPointer(x: CConstPointer&lt;Float&gt;) { /*...*/ }
-</code></pre>
-
-<p>那么我们可以用以下任何一种方式来调用</p>
-
-<pre><code>var x: Float = 0.0
-var p: CConstPointer&lt;Float&gt; = nil
-
-takesAConstPointer(nil)
-takesAConstPointer(p)
-takesAConstPointer(&amp;x)
-takesAConstPointer([1.0, 2.0, 3.0])
-</code></pre>
-
-<p>当声明一个包含CConstVoidPointer参数的函数时，它可以接收与CConstPointer<Type>相同的形参，其中Type为任意类型。</p>
-
-<pre><code>func takesAConstVoidPointer(x: CConstVoidPointer) { /* ... */ }
-
-var x: Float = 0.0, y: Int = 0
-var p:CConstPointer&lt;Float&gt; = nil, q: CConstPointer&lt;Int&gt; = nil
-
-takesAConstVoidPointer(nil)
-//takesAConstVoidPointer(p)
-//takesAConstVoidPointer(q)
-takesAConstVoidPointer(&amp;x)
-takesAConstVoidPointer(&amp;y)
-takesAConstVoidPointer([1.0, 2.0, 3.0])
-takesAConstVoidPointer([1, 2, 3])
-</code></pre>
-
-<h2>AutoreleasingUnsafePointer</h2>
-
-<p>当我们声明一个带有AutoreleasingUnsafePointer参数的函数时，可以接收以下类型的值：</p>
-
-<ol>
-<li>nil, 作为空指针传入</li>
-<li>一个AutoreleasingUnsafePointer<Type>值</li>
-<li>一个in-out表达式，其操作数是临时非所属(nonowning)缓冲区，存储了原始值的拷贝。缓冲区的地址被传递给调用函数，且在返回时，缓冲区的值被加载(loaded)、保留(retained)并重新指派(reassigned)给操作数</li>
-</ol>
-
-
-<p>注意上面清单中不包含数组</p>
-
-<p>如果我们声明了以下函数</p>
-
-<pre><code>func takesAnAutoreleasingUnsafePointer(x: AutoreleasingUnsafePointer&lt;NSDate?&gt;) { /*...*/ }
-</code></pre>
-
-<p>则可以用以下方式来调用</p>
-
-<pre><code>var x: NSDate? = nil
-var p: AutoreleasingUnsafePointer&lt;NSDate?&gt; = nil
-
-takesAnAutoreleasingUnsafePointer(nil)
-takesAnAutoreleasingUnsafePointer(p)
-takesAnAutoreleasingUnsafePointer(&amp;x)
-</code></pre>
-
-<p>最后需要注意的是在Swift中，没有导入C函数指针</p>
-
-<p>参考文档：<a href="https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/BuildingCocoaApps/index.html">Using Swift with Cocoa and Objective-C</a></p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/3">&larr; Older</a>
@@ -1013,15 +1028,19 @@ takesAnAutoreleasingUnsafePointer(&amp;x)
 <section>
 <h1>分类</h1>
 <ul>
-  <li><a href='/blog/categories/ios'>ios (14)</a></li>
+  <li><a href='/blog/categories/ios'>ios (15)</a></li>
   <li><a href='/blog/categories/swift'>swift (7)</a></li>
-  <li><a href='/blog/categories/网络'>网络 (5)</a></li>
+  <li><a href='/blog/categories/网络'>网络 (6)</a></li>
 </ul>
 </section>
 
 <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/07/19/bonjourji-ben-li-lun/">Bonjour基本理论</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2014/07/18/cover-flowte-xiao-shi-xian/">Cover Flow特效实现</a>
@@ -1057,10 +1076,6 @@ takesAnAutoreleasingUnsafePointer(&amp;x)
     
       <li class="post">
         <a href="/blog/2014/07/05/cover-flow/">Cover flow基本原理及Tapku实现方法</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/07/02/ios-swift-cpointer/">Swift中C指针的基本使用方法</a>
       </li>
     
   </ul>
