@@ -179,35 +179,6 @@ TXT记录中的数据的特性和格式特定于每种服务的类型，所有�
 3. 客户端发送一个IP地址的多播请求
 4. 请求解析为IP地址169.254.150.84.然后客户端使用这个IP地址和端口号来连接服务器。这个过程发生在服务被使用时，从而总是查找服务的最新地址和端口号。
 
+参考
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+[Bonjour Overview](https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/NetServices/Introduction.html)

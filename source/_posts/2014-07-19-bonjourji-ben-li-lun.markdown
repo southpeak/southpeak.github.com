@@ -93,3 +93,7 @@ Bonjour以另一种方式来抑制重复响应。如果一个主机将要响应�
 但这不意味着花费一个小时的时间间隔再来查看新的服务。当在网络中启动一个服务时，它会使用几次回退算法来通知它的存在。这样就将服务公告和搜索的网络流量保持在最小，而新的服务也会很快就知晓。
 
 在一个Bonjour配置主机上运行的服务在注册到mDNSResponder守护程序时会自动发出公告。在其它硬件上的服务，如打印机，将使用指数回退算法来公告其存在，这样充分利用了Bonjour的优势。
+
+参考
+
+[Bonjour Overview](https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/NetServices/Introduction.html)
