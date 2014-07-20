@@ -91,7 +91,7 @@ delicious_user:
 delicious_count: 3
 
 # Disqus Comments
-disqus_short_name: south peak
+disqus_short_name: southpeak
 disqus_show_comment_count: true
 
 # Google Analytics
