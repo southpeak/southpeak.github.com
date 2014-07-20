@@ -1,7 +1,7 @@
 ---
 layout: post
 
-title: "Bonjour基本理论"
+title: "Bonjour理论1：基本概念"
 
 date: 2014-07-19 11:38:39 +0800
 
