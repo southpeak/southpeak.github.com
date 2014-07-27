@@ -3,6 +3,12 @@
   
   
   <url>
+    <loc>http://southpeak.github.io/blog/2014/07/27/ibeaconji-zhu-chu-tan/</loc>
+    <lastmod>2014-07-27T15:22:43+08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
     <loc>http://southpeak.github.io/blog/2014/07/20/urljia-zai-xi-tong-zhi-wu-:huan-cun-,-cookiesyu-xie-yi/</loc>
     <lastmod>2014-07-20T22:56:30+08:00</lastmod>
     <priority>0.8</priority>
@@ -119,14 +125,14 @@
   
   <url>
     <loc>http://southpeak.github.io/blog/archives/</loc>
-    <lastmod>2014-07-21T07:34:54+08:00</lastmod>
+    <lastmod>2014-07-27T15:24:46+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
     <loc>http://southpeak.github.io/</loc>
-    <lastmod>2014-07-21T07:34:54+08:00</lastmod>
+    <lastmod>2014-07-27T15:24:46+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
