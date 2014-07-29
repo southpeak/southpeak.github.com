@@ -11,7 +11,7 @@
   <meta name="baidu-site-verification" content="HoscFhWICI" />
 
   
-  <meta name="description" content="流提供了一种简单的方式在不同和介质中交换数据，这种交换方式是与设备无关的。流是在通信路径中串行传输的连续的比特位序列。从编码的角度来看，流是单向的，因此流可以是输入流或输出流。除了基于文件的流外，其它形式的流都是不可查找的，这些流的数据一旦消耗完后，就无法从流对象中再次获取。 &hellip;">
+  <meta name="description" content="原文发表在cocoachina上，现在把它整理过来。 Cover Flow介绍 Cover flow是苹果首创的将多首歌曲的封面以3D界面的形式显示出来的方式。 随处可见的Cover Flow特效 iTunes:在iTunes音乐中点击搜索框左边“查看”项第三个，即以cover &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -68,6 +68,287 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/07/18/cover-flowte-xiao-shi-xian/">Cover Flow特效实现</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-07-18T22:12:57+08:00" pubdate data-updated="true">Jul 18<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/07/18/cover-flowte-xiao-shi-xian/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p><a href="http://www.cocoachina.com/bbs/read.php?tid=74500">原文</a>发表在cocoachina上，现在把它整理过来。</p>
+
+<h2>Cover Flow介绍</h2>
+
+<p>Cover flow是苹果首创的将多首歌曲的封面以3D界面的形式显示出来的方式。</p>
+
+<p><img src="http://www.cocoachina.com/bbs/attachment/Fid_6/6_38018_be3432a30663e7e.png" alt="image" /></p>
+
+<h4>随处可见的Cover Flow特效</h4>
+
+<p>iTunes:在iTunes音乐中点击搜索框左边“查看”项第三个，即以cover flow形式显示专辑封面（前提是你得添加插图或音乐自带插图），也可以在全屏模式使用</p>
+
+<p>iPhone/iPod Touch:在竖屏模式播放音乐，iPhone只会显示一张专辑的封面；但当用户将机身旋转为横屏模式后，则能看到多首歌曲的封面以3D界面的形式显示出来，用手指左右的滑动能够进行歌曲的选择，点击相应的专辑封面则会显示该张唱片的曲目，点击相应歌曲即可开始播放。</p>
+
+<p>苹果官网:官网上有以Flash展示的cover flow界面iPod NANO3/4/5:基本类似于在iphone中的操作，利用触摸轮滑动使封面转换Safari</p>
+
+<p>使用 Cover Flow，您可以像在 iTunes 中翻看专辑插图一样轻松地翻看网站。Cover Flow 可以将您的书签和历史记录显示为大图预览，这样您就能立即找到网站。要查看 Cover Flow 如何工作，请单击 Safari“书签”栏左端的打开书本图标来打开书签列表。在“精选”列表中选择“历史记录”或您要查看其标签的精选。使用水平滚动条来翻看网页预览。您还可以使用鼠标上的滚动按钮来翻看预览。如果您的触控板已配置为支持触控板手势，则您可以左右扫动。</p>
+
+<h2>特效制作</h2>
+
+<h4>方法一：UICoverFlowLayer</h4>
+
+<p>正式的SDK并未包含UICoverFlowLayer，但是它仍然是标准的uikit。通过steve nygard的类转储(class-dump), 能从uikit框架中提取 UICoverFlowLayer头文件。</p>
+
+<p>由于UICoverFlowLayer是私有的，无法应用于应用程序(无法通过苹果的审查)，所以在此简单介绍使用方法：</p>
+
+<ol>
+<li>将UICoverFlowLayer.h文件拷贝到工程中创建cover flow视图，并将UICoverFlowLayer图层分配到视图图层中</li>
+<li>视图发送dragFlow:atPoint消息，以处理与Cover Flow图层的触摸和拖动的交互过程构建cover flow视图控制器，分配和初始化视图，并提供委托和数据源方法</li>
+</ol>
+
+
+<p>使用UICoverFlowLayer的方法如下代码所示</p>
+
+<pre><code>UICoverFlowLayer *cfLayer = [[UICoverFlowLayer alloc] initWithFrame:frame numberOfCovers:count];
+
+[[self layer] addSublayer:cfLayer];
+</code></pre>
+
+<h4>方法二：OpenFlow</h4>
+
+<p>OpenFlow是一个用于实现Cover Flow特效的开源库，它是基于Quartz实现的，能很好的实现Cover Flow特效，同时又易于使用。</p>
+
+<p>下载地址：<a href="https://github.com/thefaj/OpenFlow">https://github.com/thefaj/OpenFlow</a></p>
+
+<p>使用OpenFlow的基本步骤如下：</p>
+
+<ol>
+<li>创建工程</li>
+<li>添加OpenFlow源代码到工程中</li>
+<li>添加QuartzCore和CoreGraphics框架到工程中</li>
+<li>定义CoverFlowViewController(自定义)类</li>
+<li>在CoverFlowViewController.h中导入”AFOpenFlowView.h”</li>
+<li>实现AFOpenFlowViewDelegate类和AFOpenFlowDataSource协议</li>
+</ol>
+
+
+<p>定义CoverFlowViewController类的代码如下所示</p>
+
+<pre><code>//  CoverFlowViewController.h
+//  CoverFlow
+//
+//  Created by Avinash on 4/7/10.
+//  Copyright Apple Inc 2010. All rights reserved.
+//
+
+#import "AFOpenFlowView.h"
+@interface CoverFlowViewController : UIViewController  {
+    // Queue to hold the cover flow p_w_picpath
+    NSOperationQueue *loadImagesOperationQueue;
+}
+@end
+</code></pre>
+
+<p>实现CoverFlowViewController类</p>
+
+<p>加载图片</p>
+
+<pre><code>- (void)viewDidLoad {
+    [super viewDidLoad];
+     // loading p_w_picpath into the queue
+    loadImagesOperationQueue = [[NSOperationQueue alloc] init];
+    NSString *imageName;
+    for (int i=0; i &lt; 10; i++) {
+        imageName = [[NSString alloc] initWithFormat:@"cover_%d.jpg", i];
+        [(AFOpenFlowView *)self.view setImage:[UIImage imageNamed:imageName] forIndex:i];
+        [imageName release];
+        NSLog(@"%d is the index",i); 
+   }
+    [(AFOpenFlowView *)self.view setNumberOfImages:10];
+}
+</code></pre>
+
+<p>实现委托方法，以设置Cover Flow默认图片及通知哪幅图片被选中</p>
+
+<pre><code>//delegate protocols
+// delegate protocol to tell which image is selected
+- (void)openFlowView:(AFOpenFlowView *)openFlowView selectionDidChange:(int)index{
+    NSLog(@"%d is selected",index);
+}
+// setting the image 1 as the default pic
+- (UIImage *)defaultImage{
+    return [UIImage imageNamed:@"cover_1.jpg"];
+}
+</code></pre>
+
+<p>修改xib文件中视图的类UIView为AFOpenFlowView(重要)</p>
+
+<p>完成上述步骤之后，就可以运行一下程序看一下效果了。虽然与苹果的Cover Flow效果还是有点差距，但还是不错哦。</p>
+
+<h4>方法三：FlowCover</h4>
+
+<p>FlowCover也是一个开源库，它是基于OpenGL ES。FlowCover的源代码非常简单，只有FlowCoverView和DataCache两个类。这两个类的功能如下：</p>
+
+<ol>
+<li>FlowCoverView：定义主视图。这是一个OpenGL ES视点，可以被嵌套在其它视图中。</li>
+<li>DataCache：提供一个简单的数据缓存方案，保存一定量的对象，当对象超过最大值时，旧的对象会被舍弃。</li>
+</ol>
+
+
+<p>使用FlowCover的基本步骤如下：</p>
+
+<ol>
+<li>创建工程</li>
+<li>添加FlowCover源代码到工程中</li>
+<li>然后就可以像用其它UIView一样使用FlowCoverView了</li>
+</ol>
+
+
+<p>FlowCover中需要实现FlowCoverViewDelegate协议，该协议中主要有三个方法：</p>
+
+<pre><code>-(int)flowCoverNumberImages:(FlowCoverView *)view;
+</code></pre>
+
+<p>返回FlowCoverView视图中显示的图片数量</p>
+
+<pre><code>-(UIImage *)flowCover:(FlowCoverView *)view cover:(int)cover;
+</code></pre>
+
+<p>返回FlowCoverView视图中用cover指定的图片</p>
+
+<pre><code>-(void)flowCover:(FlowCoverView *)view didSelect:(int)cover;
+</code></pre>
+
+<p>当用户触击FlowCoverView中的cover时调用。</p>
+
+<h4>方法四：Tapku框架</h4>
+
+<p>Tapku库是一个开源的iOS框架，它包含CoverFlow, Calendar Grid, Char View等等API，总之还是一个比较强大的库。把Tapku加下工程中还是比较复杂的，有兴趣的童鞋可以去网上搜一下。</p>
+
+<p>Tapku下载地址：<a href="https://github.com/devinross/tapkulibrary">https://github.com/devinross/tapkulibrary</a></p>
+
+<p>Tapku中与Cover Flow相关的类主要有如下两个：</p>
+
+<ol>
+<li>TKCoverflowCoverView: 该类表示的是单个cover。相当于UITableViewCell</li>
+<li>TKCoverflowView:该类相当于UITableView类，用来管理和显示cover flow中图片及实现cover flow效果。</li>
+</ol>
+
+
+<p>同时还有两个相关的协议：TKCoverflowViewDelegate， TKCoverflowViewDataSource，分别是 TKCoverflowView的代理及数据源。这两个协议分别有一个必须实现的方法，分别是
+TKCoverflowViewDelegate协议的</p>
+
+<pre><code>- (void) coverflowView:(TKCoverflowView*)coverflowView coverAtIndexWasBroughtToFront:(int)index;
+</code></pre>
+
+<p>TKCoverflowViewDataSource协议的</p>
+
+<pre><code>- (void) coverflowView:(TKCoverflowView*)coverflowView coverAtIndexWasDoubleTapped:(int)index
+</code></pre>
+
+<p>在工程中使用Tapku的CoverFlow步骤如下</p>
+
+<ol>
+<li>创建工程</li>
+<li>添加Tapku库到工程中(该步骤有点麻烦，而且Tapku库比较大，个人认为可以只把CoverFlow相关的类抽取出来直接用)。</li>
+<li>新建一个视图控制器CoverflowViewController，在该控制器中添加如下代码</li>
+</ol>
+
+
+<p>在头文件CoverflowViewController.h中</p>
+
+<pre><code>@interface CoverflowViewController : UIViewController &lt;TKCoverflowViewDelegate,TKCoverflowViewDataSource,UIScrollViewDelegate&gt; {
+    TKCoverflowView *coverflow; 
+    NSMutableArray *covers; // album covers p_w_picpath
+    ......
+}
+</code></pre>
+
+<p>在CoverflowViewController.m文件中主要有如下处理</p>
+
+<pre><code>//创建视图
+- (void) loadView{
+   [super loadView];
+    ......
+    coverflow = [[TKCoverflowView alloc] initWithFrame:self.view.bounds];
+    coverflow.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    coverflow.coverflowDelegate = self;
+    coverflow.dataSource = self;
+    if([UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPad){
+       coverflow.coverSpacing = 100;
+      coverflow.coverSize = CGSizeMake(300, 300);
+    }
+    [self.view addSubview:coverflow];
+   ......
+}
+</code></pre>
+
+<p>实现代理方法</p>
+
+<pre><code>- (void) coverflowView:(TKCoverflowView*)coverflowView coverAtIndexWasBroughtToFront:(int)index{
+}
+//生成单个cover flow
+- (TKCoverflowCoverView*) coverflowView:(TKCoverflowView*)coverflowView coverAtIndex:(int)index{
+    TKCoverflowCoverView *cover = [coverflowView dequeueReusableCoverView];
+    if(cover == nil){
+       BOOL phone = [UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPhone;
+       CGRect rect = phone ? CGRectMake(0, 0, 224, 300) : CGRectMake(0, 0, 300, 600);
+
+      cover = [[[TKCoverflowCoverView alloc] initWithFrame:rect] autorelease]; // 224
+       cover.baseline = 224;  
+    }
+    cover.image = [covers objectAtIndex:index%[covers count]];
+   return cover;
+}
+- (void) coverflowView:(TKCoverflowView*)coverflowView coverAtIndexWasDoubleTapped:(int)index{
+   TKCoverflowCoverView *cover = [coverflowView coverAtIndex:index];
+    if(cover == nil) return;
+    [UIView beginAnimations:nil context:nil];
+    [UIView setAnimationDuration:1];
+    [UIView setAnimationTransition:UIViewAnimationTransitionFlipFromLeft forView:cover cache:YES];
+    [UIView commitAnimations];
+   NSLog(@"Index: %d",index);
+}
+</code></pre>
+
+<h2>效果比较</h2>
+
+<p>在效果上个人感觉Tapku会好些，渲染流畅，美中不足的是在快速拖动时，停止下来的时候会有抖动的感觉（当然快速拖动这一功能是否需要可视情况而定，如果将此功能禁掉，跟苹果自身的效果还是差不多的）。</p>
+
+<p>OpenFlow的问题在于当改变图像时，新选中的图像会先放大并置于表层，然后才缓动到中间。这是其一个瑕疵。</p>
+
+<p>总体感觉上来讲，苹果自身的CoverFlow的缓动效果还是最好的，有那种渐进渐出的效果，而如上几个开源的库其动画显得有点生硬，有兴趣的童鞋可以试着改进一下。</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -936,161 +1217,6 @@ NSURLSessionDataTask *dataTask = [self.defaultSession dataTaskWithURL:url];
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/07/11/urljia-zai-xi-tong-zhi-%5B%3F%5D-:ji-ben-jie-gou/">URL加载系统之一：基本结构</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-07-11T19:10:29+08:00" pubdate data-updated="true">Jul 11<sup>th</sup>, 2014</time>
-        
-        
-           | <a href="/blog/2014/07/11/urljia-zai-xi-tong-zhi-%5B%3F%5D-:ji-ben-jie-gou/#comments">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>URL加载系统是一组类和协议的集合，它允许我们的App访问URL指定的内容的。</p>
-
-<p>URL加载系统的核心类是NSURL，该类提供了大量方法让我们操作URLs和它指向的资源。另外它还提供了一系列的类来加载URL的内容，上传数据到服务器，管理Cookie存储，控制响应缓存，处理认证存储和授权信息，及自定义协议扩展。</p>
-
-<p>URL Loading System可支持以下协议</p>
-
-<ol>
-<li><a href="ftp://">ftp://</a></li>
-<li><a href="http://">http://</a></li>
-<li><a href="https://">https://</a></li>
-<li>file://</li>
-<li>data://</li>
-</ol>
-
-
-<p>另外它还支持代理服务和网关处理。</p>
-
-<p>URL加载系统定义了用于加载URL的类，另外还定义了一些辅助类来修改加载类的行为。这些辅助类可以分为五大类：</p>
-
-<ol>
-<li>协议支持</li>
-<li>授权与认证</li>
-<li>Cookie存储</li>
-<li>配置管理</li>
-<li>缓存管理</li>
-</ol>
-
-
-<p>整个URL加载系统的结构如下图所示：</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/URLLoadingSystem/Art/nsobject_hierarchy_2x.png" alt="image" /></p>
-
-<p>下面对这张图做个简单的介绍</p>
-
-<h2>URL Loading</h2>
-
-<p>在这张图中，我们用得最多的就是URL Loading中的这几个类。这些类允许我们从URL指定的源获取内容。根据不同的需求，我们可以使用不同的类，这主要依赖于我们应用所支持的系统版本，以及我们希望内容是以文件的形式获取还是以数据块的方式获取。对于系统的版本，主要有以下几点作为参考：</p>
-
-<ol>
-<li>在iOS7及后续版本中，推荐使用NSURLSession。</li>
-<li>对于iOS7以前的版本，可以使用NSURLConnection来获取数据并加载到本地内存中。如果要保存数据，可以再将数据写入磁盘。</li>
-</ol>
-
-
-<p>而对于获取数据，主要看我们是获取数据到内存中还是下载文件并保存。如果只是获取数据到内存中，则有两种方法：</p>
-
-<ol>
-<li>对于简单的请求，可以使用NSURLSession</li>
-<li>对于复杂的请求（如上传数据请求），提供了NSURLRequest对象来与NSURLSession和NSURLConnection一起使用。</li>
-</ol>
-
-
-<p>不管使用哪种方法，我们都可以获取到响应数据，为此，我们可以如下处理响应</p>
-
-<ol>
-<li>提供一个响应处理block。当URL Loading类完成从服务端接收数据时调用该block.</li>
-<li>提供自定义有delegate。URL Loading类间断性地调用我们的代理方法来获取数据。在需要的情况下，我们的程序负责收集这些数据。</li>
-</ol>
-
-
-<p>另外，URL Loading提供了一个返回对象来封装与请求相关的元数据，如MIME类型等。</p>
-
-<p>而如果我们需要下载文件，则有两个基本方法来处理：</p>
-
-<ol>
-<li>对于简单请求，可以使用NSURLSession</li>
-<li>对于复杂请求，提供了NSURLRequest对象来与NSURLSession和NSURLDownload一起使用。</li>
-</ol>
-
-
-<p>相较于NSURLDownload，NSURLSession有两个明显的优势：NSURLSession可用于iOS系统，而NSURLDownload在iOS中不被支持；当应用挂起、终止或异常退出时，下载可以在后台继续进行。</p>
-
-<p>URL Loading中还提供了两个类用于处理元数据，一个用于表示客户端请求(NSURLRequest)，一个用于表示服务端响应(NSURLResponse)。我们分别介绍一下这两个类。</p>
-
-<h4>NSURLRequest</h4>
-
-<p>NSURLRequest对象封装了URL和协议指定的属性，及依赖于协议的行为。同时也指定了本地缓存策略及连接超时时间。一些协议支持协议指定的属性，如HTTP协议可以添加返回HTTP请求体，请求报头和传输方法到NSURLRequest中。</p>
-
-<p>这里需要注意的是，当我们使用NSURLRequest的子类NSMutableURLRequest初始化一个连接或下载时，将会对NSMutableURLRequest实例进行深拷贝。因此在初始的请求上做修改时不会影响到连接和下载对象。</p>
-
-<h4>NSURLResponse</h4>
-
-<p>一个响应可以分为两个部分：描述内容的元数据和内容数据本身。而NSURLResponse类封装了大部分协议的响应元数据，这些元数据包括MIME类型，期望的Content-Length，编码格式，及提供响应的URL。NSURLResponse的一些子类提供了与协议相关的额外元数据。如NSHTTPURLResponse存储了web服务器返回的响应头和状态码。</p>
-
-<p>需要注意的是NSURLResponse对象只存储响应的元数据，而不存储响应数据本身。响应数据由URL Loading通过响应处理block和对象的代理来接收并处理。</p>
-
-<h2>认证和证书</h2>
-
-<p>针对认证和证书，URL加载系统提供了以下几个类：</p>
-
-<ol>
-<li>NSURLCredential：封装了由认证信息和持久化行为组成的证书。</li>
-<li>NSURLProtectionSpace：表示需要特定证书的区域。一个保护区域可以限制到单独的URL，拥有web服务器的区域，或引用一个代理。</li>
-<li>NSURLCredientialStorage：一般是一个共享实例，用于管理证书存储和提供NSURLCredential对象到NSURLProductionSpace对象的映射。</li>
-<li>NSURLAuthenticationChallenge：封装了认证一个请求的的NSURLProtocol实现所需要的信息：一个建议的证书、保护空间、错误信息或者协议用于确定所需要认证的响应、以及认证尝试次数等。初始对象（即请求发送者）必须实现NSURLAuthenticationChallengeSender协议。NSURLAuthenticationChallenge实例被用于NSURLProtocol的子类来告诉URL加载系统需要认证。他们同样为NSURLConnection和NSURLDownload的代理方法提供了便利的自定义认证处理。</li>
-</ol>
-
-
-<h2>缓存管理</h2>
-
-<p>URL加载系统提供基于磁盘和内存的缓存，允许程序减少对网络连接的依赖，并提供对缓存响应的快速访问。缓存存储在每个app的缓存文件夹下。NSURLConnection会根据缓存策略（初始化NSURLRequest对象中指定的）来查询缓存。</p>
-
-<p>NSURLCache提供了配置缓存大小和磁盘存储位置的方法。同时提供了包含缓存响应的NSCacheURLResponse对象集合的方法。NSCacheURLResponse对象封装了NSURLResponse对象和URL数据，同时提供用户信息字典，这些信息可以用于缓存任何用户数据。</p>
-
-<p>不是所有的协议实现都支持响应缓存。当前只有http和https请求可被缓存。</p>
-
-<p>一个NSURLConnection对象可以通过connection:willCacheResponse:代理访求来控制是否缓存响应，响应是否只应该存储在内存中。</p>
-
-<h2>Cookie存储</h2>
-
-<p>由于HTTP协议是无状态的，所以客户端通常使用cookie来保存URL请求的数据。URL加载系统提供了接口来创建和管理cookie，将cookie作为HTTP请求的一部分来发送，及解析web服务端响应数据时接收cookie.</p>
-
-<p>iOS提供了NSHTTPCookieStorage类来管理一个NSHTTPCookie对象的集合。</p>
-
-<h2>协议支持</h2>
-
-<p>URL加载系统默认支持http, https, file, ftp, data协议。另外，URL加载系统也允许我们注册自己的类来支持额外的系统层级的网络协议。我们也可以添加指定协议的属性到URL请求和URL响应对象</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/3">&larr; Older</a>
@@ -1107,7 +1233,8 @@ NSURLSessionDataTask *dataTask = [self.defaultSession dataTaskWithURL:url];
 <section>
 <h1>分类</h1>
 <ul>
-  <li><a href='/blog/categories/ios'>ios (18)</a></li>
+  <li><a href='/blog/categories/ios'>ios (19)</a></li>
+  <li><a href='/blog/categories/network'>network (1)</a></li>
   <li><a href='/blog/categories/swift'>swift (7)</a></li>
   <li><a href='/blog/categories/网络'>网络 (8)</a></li>
 </ul>
@@ -1116,6 +1243,10 @@ NSURLSessionDataTask *dataTask = [self.defaultSession dataTaskWithURL:url];
 <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/07/29/core-bluetoothkuang-jia-zhi-%5B%3F%5D-:centralyu-peripheral/">Core Bluetooth框架之一：Central与Peripheral</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2014/07/27/ibeaconji-zhu-chu-tan/">iBeacon技术初探</a>
@@ -1151,10 +1282,6 @@ NSURLSessionDataTask *dataTask = [self.defaultSession dataTaskWithURL:url];
     
       <li class="post">
         <a href="/blog/2014/07/11/urljia-zai-xi-tong-zhi-er-:nsurlsession/">URL加载系统之二：NSURLSession</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/07/11/urljia-zai-xi-tong-zhi-%5B%3F%5D-:ji-ben-jie-gou/">URL加载系统之一：基本结构</a>
       </li>
     
   </ul>

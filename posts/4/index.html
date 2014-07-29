@@ -11,7 +11,7 @@
   <meta name="baidu-site-verification" content="HoscFhWICI" />
 
   
-  <meta name="description" content="扩展(Extension)用于为已存在的类、结构体或枚举添加新的功能。它类似于Objecitve-C中的分类，不同的是Swift的扩展没有名字 Swift的扩展可以做以下事情： 添加计算属性和静态计算属性 定义实例方法和类型方法 提供新的初始化方法 定义下标操作符 定义并使用新的嵌套类型 &hellip;">
+  <meta name="description" content="Swift的Protocol(协议)与Objective-C的协议一样，用于定义一系列的特定任务和功能的集合。Protocol自身并不提供这些任务的实现，只是描述实现看起来应该是什么样的。类、结构体或枚举可以实现一个Protocol，并提供Protocol中任务和功能的具体实现。 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -68,6 +68,320 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/07/02/ios-swift-protocol/">Swift协议基础</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-07-02T14:09:11+08:00" pubdate data-updated="true">Jul 2<sup>nd</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/07/02/ios-swift-protocol/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Swift的Protocol(协议)与Objective-C的协议一样，用于定义一系列的特定任务和功能的集合。Protocol自身并不提供这些任务的实现，只是描述实现看起来应该是什么样的。类、结构体或枚举可以实现一个Protocol，并提供Protocol中任务和功能的具体实现。Protocol可以要求这些实现类型有指定的实例属性、实例方法、类型方法、操作符和下标等。</p>
+
+<p>Protocol的语法如下所示:</p>
+
+<pre><code>protocol SomeProtocol {
+    // 协议定义
+}
+</code></pre>
+
+<p>类、结构体、枚举可以同时实现多个Protocol，如下所示:</p>
+
+<pre><code>struct SomeStructure: SomeProtocol, AnotherProcotol {
+    // 协议定义
+}
+</code></pre>
+
+<p>需要注意的是，子类在实现Protocol时，需要把父类写在前面，后面再跟上Protocol列表。</p>
+
+<p>我们下面介绍Protocol可以定义的一些功能需求</p>
+
+<h2>属性</h2>
+
+<p>Protocol可以要求实现类型提供指定名称和类型的实例属性或类型属性。Protocol不指定属性是存储属性还是计算属性，它只定义属性名和类型。Protocol也可以指定每个属性是只读的还是可读写的。</p>
+
+<p>如果Protocol要求属性是可读写的，那么这个属性不能是常量存储属性或者只读的计算属性；如果Protocol只是要求属性是可读的，则这个属性可以是任何类型的属性，这种情况下我们的实现代码同样可以指定属性为可写的。通常情况下，在Protocol中属性一般定义为变量，具体语法如下所示：</p>
+
+<pre><code>protocol SomeProtocol {
+    var mustBeSettable: Int { get set }
+    var doesNotNeedToBeSettable: Int { get }
+    class var someTypeProperty: Int { get set }
+}
+</code></pre>
+
+<p>如果是类型属性，我们需要在前面加上class，即便是结构体可枚举来实现这个Protocol，也是一样。如上面代码所示。</p>
+
+<p>代码清单1是一个详细的例子，定义了一个协议FullyNamed，其中声明了fullName属性，而在其两个个体的实现类型中，将fullName实现为不同的属性类型</p>
+
+<h6>代码清单1</h6>
+
+<pre><code>protocol FullyNamed {
+    var fullName: String { get }
+}
+
+struct Person: FullyNamed {
+    var fullName: String        // 可读写存储属性
+}
+
+class Sharship: FullyNamed {
+
+    var prefix: String?
+    var name: String?
+
+    var fullName: String {      // 只读的计算属性
+    return (prefix ? prefix! + " " : "") + name
+    }
+}
+</code></pre>
+
+<h2>方法</h2>
+
+<p>在Protocol中声明方法与在类中定义类似，只是没有实现体。另外声明方法是使用可变参数也是可以的，唯一的不同是在Protocol的方法声明中不能指定默认值。</p>
+
+<p>与属性声明一样，如果是类型方法，需要加上class前缀。方法的声明及实现类型的实现如代码清单2所示：</p>
+
+<pre><code>protocol RandomNumberGenerator {
+    func random() -&gt; Double
+}
+
+
+class LinearCongruentialGenerator: RandomNumberGenerator {
+    var lastRandom = 42.0
+    let m = 139968.0
+    let a = 3877.0
+    let c = 29573.0
+    func random() -&gt; Double {
+        lastRandom = ((lastRandom * a + c) % m)
+        return lastRandom / m
+    }
+}
+let generator = LinearCongruentialGenerator()
+
+generator.random()      // 0.37464991998171
+</code></pre>
+
+<p>另外，如果我们需要在方法中修改实例，则在方法前添加mutating关键字，与结构体中方法的定义是一样的。需要注意的是，只有在结构体和枚举的实现中才需要加mutating，类的实现是不需要的。</p>
+
+<h2>该Protocol做为类型</h2>
+
+<p>Protocol可以作为一种类型在代码中使用。因为它是一种类型，所以在很多情况下都可以使用，包括</p>
+
+<ol>
+<li>作为函数、方法、初始化方法的参数或返回值</li>
+<li>作为常量、变量或属性的类型</li>
+<li>作为数组、字典或其它容器的元素</li>
+</ol>
+
+
+<p>基于此，Protocol也可以放入集合中，如数组、字典等。</p>
+
+<p>下面是将Protocol作为类型的例子</p>
+
+<pre><code>class Dice {
+    let sides: Int
+    let generator: RandomNumberGenerator
+    init (sides: Int, generator: RandomNumberGenerator) {
+        self.sides = sides
+        self.generator = generator
+    }
+
+    func roll() -&gt; Int {
+        return Int(generator.random() * Double(sides)) + 1
+    }
+}
+
+// 具体使用
+var dice = Dice(sides: 6, generator: LinearCongruentialGenerator())
+</code></pre>
+
+<h2>代理(Delegation)</h2>
+
+<p>Swift与Objective-C的代理一样，允许将一个类或结构体的一些处理放到另外一个类型中(代理类)。Swift中代理模式的实现就是通过定义一个Protocol来封装代理方法，然后具体的实现类来实现这些代理方法。代理可以用于响应特定的行为，或者从外部资源获取数据，而不需要知道这些资源的类型。</p>
+
+<p>如下是一个实现UITableView代理的简单例子</p>
+
+<pre><code>class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
+
+    var tableView: UITableView?
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        // Do any additional setup after loading the view, typically from a nib.
+
+        tableView = UITableView(frame: self.view.bounds, style: UITableViewStyle.Plain)
+        tableView!.delegate = self
+        tableView!.dataSource = self
+    }
+
+    // 实现UITableViewDataSource
+
+    func tableView(tableView: UITableView!, numberOfRowsInSection section: Int) -&gt; Int {
+        return 20
+    }
+
+    func tableView(tableView: UITableView!, cellForRowAtIndexPath indexPath: NSIndexPath!) -&gt; UITableViewCell! {
+        return nil
+    }
+}
+</code></pre>
+
+<h2>在扩展中实现Protocol</h2>
+
+<p>如果我们想让某个已存在的类型(我们没有源码的情况下)实现某个Protocol，则可以借助扩展。当类型的扩展实现了Protocol时，该类会自动实现Protocol(听着有点绕口)。但如果类型已经实现了Protocol的所有必须的方法(类型未采用Protocol)，这种情况下，若想让类型采用Protocol，则可以使用一个空的扩展来声明类型采用Protocol。如下代码所示：</p>
+
+<pre><code>protocol TextRepresentable {
+    func asText() -&gt; String
+}
+
+struct Hamster {
+    var name: String
+    func asText() -&gt; String {
+        return "A Hamster"
+    }
+}
+
+extension Hamster : TextRepresentable {}
+</code></pre>
+
+<h2>Protocol继承</h2>
+
+<p>一个Protocol可以继承自一个或多个Protocol，并在自己的实现中添加更多的功能需求。Protocol继承的语法与类型继承是一样的，其语法如下所示：</p>
+
+<pre><code>protocol InheritingProtocol : SomeProtocol, AnotherProtocol {
+
+}
+</code></pre>
+
+<p>在上面的例子中，所有实现子InheritingProtocol的类型都必须实现InheritingProtocol、SomeProtocol、AnotherProtocol三者中所有的必要功能。</p>
+
+<h2>Protocol组合</h2>
+
+<p>让一个类型同时实现多个Protocol是很有用的。这种情况下，我们可以使用Protocol组合来将多个Protocol组合成一个整体。其语法如下所示：</p>
+
+<pre><code>protocol&lt;SomeProtocol, AnotherProtocol&gt;
+</code></pre>
+
+<p>我们可以将多个Protocol放在&lt;>中，在使用时，我们将其当成一个整体来处理，这种组合的实际含义是：任何同时实现&lt;>所有Protocol的类型。让我们看看下面的例子：</p>
+
+<pre><code>protocol P1 {
+    var variable1 : String { get }
+}
+
+protocol P2 {
+    var variable2 : Int { get }
+}
+
+struct MyStruct : P1, P2 {
+    var variable1: String
+    var variable2: Int
+}
+
+func funcWithProtocols(protocols: protocol&lt;P1, P2&gt;) {
+
+}
+
+let st = MyStruct(variable1: "v", variable2: 2)
+
+funcWithProtocols(st)
+</code></pre>
+
+<p>需要注意的是，Protocol组合并没有定义一个新的永久的Protocol类型，它仅仅是定义了一个临时的本地Protocol，该Protocol包含了组合中所有的功能。</p>
+
+<h2>检查Protocol的一致性</h2>
+
+<p>我们可以使用is操作符来检查Protocol的一致性，用as操作符来作Protocol转换。</p>
+
+<ol>
+<li>如果is操作符返回true，则一个实例实现了protocol，否则没有</li>
+<li>as?操作符返回protocol类型的可选值，如果实例没有实现protocol，则返回nil</li>
+<li>as操作符强制作类型转换，如果实例没有实现protocol，则引发一个错误</li>
+</ol>
+
+
+<p>需要注意的是，只有当protocol使用@objc属性标记时，才可以检查其一致性。@objc属性表明protocol应该暴露给Objective-C代码。但即使我们的代码不与Objective-C交互，如果需要对protocol进行一致性检测，也需要使用这个属性。另外@objc标明的protocol只能被类实现，而不能被结构体或枚举实现。</p>
+
+<p>我们举个具体的例子：</p>
+
+<pre><code>@objc protocol HasArea {
+    var area: Double { get }
+}
+
+class Circle: HasArea {
+    let pi = 3.1415927
+    var radius: Double
+    var area: Double { return pi * radius * radius }
+    init(radius: Double) { self.radius = radius }
+}
+
+class Country: HasArea {
+    var area: Double
+    init(area: Double) { self.area = area }
+}
+
+class Animal {
+    var legs: Int
+    init(legs: Int) { self.legs = legs }
+}
+
+let objects: AnyObject[] = [
+    Circle(radius: 2.0),
+    Country(area: 243_610),
+    Animal(legs: 4)
+]
+
+for object : AnyObject in objects {
+    if let objectWithArea = object as? HasArea {
+        println("Area is \(objectWithArea.area)")
+    } else {
+        println("Something that doesn't have an area")
+    }
+}
+
+// Area is 12.5663708
+// Area is 243610.0
+// Something that doesn't have an area
+</code></pre>
+
+<h2>可选需求</h2>
+
+<p>与Objective-C类似，Swift的Protocol可以定义一些可选的需求，这些需求在实现类型中可以选择性的实现。我们使用@optional修饰符来定义这些需求。</p>
+
+<p>一个可选的需求可以通过可选链来实现，这个可选链可以满足当某个类型没有实现所采用的Protocol的可选需求。这种调用的基本语法如下：</p>
+
+<pre><code>someOptionalMethod?(someArgument)
+</code></pre>
+
+<p>另外，可选的方法如果有返回值，总是返回一个可选值，以满足可能未被实现的需求。</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -787,56 +1101,9 @@ alsoIncrementByTen()  // returns a value of 40
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/06/26/preface/">题记-写在前面</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-06-26T19:34:42+08:00" pubdate data-updated="true">Jun 26<sup>th</sup>, 2014</time>
-        
-        
-           | <a href="/blog/2014/06/26/preface/#comments">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>以前写过一些技术文章，也翻译过一些文章，但都是三天打鱼两天晒网的，没能长久的坚持下来。另外，也是这边写一点那边写一点，零零散散的，时间久了，有些自己都找不着了。年纪越长，越觉得这是种损失。很多东西没能及时整理，也都淡忘了，说来怪可惜的。</p>
-
-<p>细想一下，之前主要是因为太懒。虽然学习过程中会做一些笔记，写写总结，但那都是给自己看的，怎么写都行。但如果要发布出来，就得整理成一篇像样的东西，至少得让人看得懂。就像我们写代码一样，用最少的代码实现所需要的功能，而且性能还要好。写技术文章也一样，用最少的文字将所要讲的东西表述清楚，思路要清晰，表达要清楚。这对于语文一向不好的我，写文章确实是个难题，便懈怠了。现在看来这是莫大的损失，失去了自我提升的机会。</p>
-
-<p>另外还有个原因，就是很多平台的编辑器做得都不咋滴，写出来的东西最后排版出来总是让人觉得不舒服。呵呵，我还是有那么点洁癖，自己看着不舒服，也就不太想去打理了。</p>
-
-<p>最近这段时间看技术博客，发现很多博客都是用octopress发布的。嗨，发现这个还不错，整体排版看着也挺舒服的。这种简洁干练的风格符合我的审美观，这又勾起了我写博客的欲望。于是乎决定把以前写的一些东东都归整归整到这里来，另外确实需要去提升自己这方面的能力，同时更好的总结总结技术，与人一起分享。</p>
-
-<p>我喜欢登山，知道登山的乐趣所在。正如我的副标题一样：攀登，一步一个脚印，方能知其乐。我也希望通过这点滴的积累，来找到更多的乐趣。</p>
-
-<h6>写于2014.06.26，勉</h6>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
+    
+      <a class="prev" href="/posts/5">&larr; Older</a>
     
     <a href="/blog/archives">Blog Archives</a>
     
@@ -850,7 +1117,8 @@ alsoIncrementByTen()  // returns a value of 40
 <section>
 <h1>分类</h1>
 <ul>
-  <li><a href='/blog/categories/ios'>ios (18)</a></li>
+  <li><a href='/blog/categories/ios'>ios (19)</a></li>
+  <li><a href='/blog/categories/network'>network (1)</a></li>
   <li><a href='/blog/categories/swift'>swift (7)</a></li>
   <li><a href='/blog/categories/网络'>网络 (8)</a></li>
 </ul>
@@ -859,6 +1127,10 @@ alsoIncrementByTen()  // returns a value of 40
 <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/07/29/core-bluetoothkuang-jia-zhi-%5B%3F%5D-:centralyu-peripheral/">Core Bluetooth框架之一：Central与Peripheral</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2014/07/27/ibeaconji-zhu-chu-tan/">iBeacon技术初探</a>
@@ -894,10 +1166,6 @@ alsoIncrementByTen()  // returns a value of 40
     
       <li class="post">
         <a href="/blog/2014/07/11/urljia-zai-xi-tong-zhi-er-:nsurlsession/">URL加载系统之二：NSURLSession</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/07/11/urljia-zai-xi-tong-zhi-%5B%3F%5D-:ji-ben-jie-gou/">URL加载系统之一：基本结构</a>
       </li>
     
   </ul>
