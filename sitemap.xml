@@ -3,6 +3,12 @@
   
   
   <url>
+    <loc>http://southpeak.github.io/blog/2014/07/31/core-bluetoothkuang-jia-zhi-er-:hou-tai-chu-li/</loc>
+    <lastmod>2014-07-31T23:28:24+08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
     <loc>http://southpeak.github.io/blog/2014/07/29/core-bluetoothkuang-jia-zhi-%5B%3F%5D-:centralyu-peripheral/</loc>
     <lastmod>2014-07-29T21:52:48+08:00</lastmod>
     <priority>0.8</priority>
@@ -131,14 +137,14 @@
   
   <url>
     <loc>http://southpeak.github.io/blog/archives/</loc>
-    <lastmod>2014-07-29T21:54:18+08:00</lastmod>
+    <lastmod>2014-07-31T23:31:04+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
     <loc>http://southpeak.github.io/</loc>
-    <lastmod>2014-07-29T21:54:18+08:00</lastmod>
+    <lastmod>2014-07-31T23:31:04+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
