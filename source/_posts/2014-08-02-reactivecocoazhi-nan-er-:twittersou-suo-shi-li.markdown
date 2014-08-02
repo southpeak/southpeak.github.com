@@ -13,7 +13,7 @@ categories: iOS ReactiveCocoa
 
 原文由Colin Eberhardt发表于raywenderlich，[ReactiveCocoa Tutorial – The Definitive Introduction: Part 2/2](http://www.raywenderlich.com/62796/reactivecocoa-tutorial-pt2)
 
-第一部分我们学习了ReactiveCocoa处理信号的基本流程，如何发送流事件，以及分割及组合信号。在这一部分中，我们将继续学习ReactiveCocoa更多的特性，包括：
+[第一部分](http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-%5B%3F%5D-:xin-hao/)我们学习了ReactiveCocoa处理信号的基本流程，如何发送流事件，以及分割及组合信号。在这一部分中，我们将继续学习ReactiveCocoa更多的特性，包括：
 
 1. error和completed事件类型
 2. 节流(Throttling)
