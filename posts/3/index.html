@@ -11,7 +11,7 @@
   <meta name="baidu-site-verification" content="HoscFhWICI" />
 
   
-  <meta name="description" content="NSURLConnection提供了简单的接口来创建和取消一个连接，并支持一个代理方法的集合来提供连接的响应，并对连接进行多方面的控制。这个类的方法可以分为5大类：URL加载、缓存管理、认证与证书、cookie存储、协议支持。 创建一个连接 &hellip;">
+  <meta name="description" content="一个NSURLRequest对象经常会遇到认证请求，或者需要从其所连接的服务端请求证书。当需要认证请求时，NSURLConnection、NSURLSession和NSURLDownload类会通知它们的代理对象，以便能正确地做处理。不过需要注意的是，URL加载系统只有在服务端响应包含WWW- &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -68,6 +68,161 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/07/16/urljia-zai-xi-tong-zhi-si-:ren-zheng-yu-tlslian-yan-zheng/">URL加载系统之四：认证与TLS链验证</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-07-16T18:51:03+08:00" pubdate data-updated="true">Jul 16<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/07/16/urljia-zai-xi-tong-zhi-si-:ren-zheng-yu-tlslian-yan-zheng/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>一个NSURLRequest对象经常会遇到认证请求，或者需要从其所连接的服务端请求证书。当需要认证请求时，NSURLConnection、NSURLSession和NSURLDownload类会通知它们的代理对象，以便能正确地做处理。不过需要注意的是，URL加载系统只有在服务端响应包含WWW-Authenticate头时才会调用代理来处理认证请求，而类似于代理认证和TLS信任验证这样的认证类型则不需要这个头。</p>
+
+<h2>确定如何响应一个认证请求</h2>
+
+<p>如果一个NSURLRequest对象需要认证时，则认证请求方式取决于使用的对象的类型：</p>
+
+<ol>
+<li>如果请求是与NSURLSession对象关联，则所有认证请求都会传递给代理，而不考虑认证的类型。</li>
+<li>如果请求是与NSURLConnection或NSURLDownload对象，则对象的代理接收一个connection:canAuthenticateAgainstProtectionSpace: (或者 download:canAuthenticateAgainstProtectionSpace:) 消息。这允许代理对象在尝试再次认证前分析服务端的属性，包括协议和认证方法。如果我们的代理对象不准备认证服务端的受保护空间，则返回NO，且系统尝试使用用户的keychain的信息进行认证。</li>
+<li>如果NSURLConnection或NSURLDownload的代理对象没有实现connection:canAuthenticateAgainstProtectionSpace: (或者 download:canAuthenticateAgainstProtectionSpace:)方法，且保护空间使用客户端证书认证或服务端信任认证，则系统假设我们返回NO。而对象其它所有类型，系统都返回YES。</li>
+</ol>
+
+
+<p>下一步，如果我们的代理对象同意处理认证，但是没有有效的证书（不管是作为请求URL的一部分或者在NSURLCredentialStorage中共享），则代理以收到以下消息：</p>
+
+<ol>
+<li>URLSession:didReceiveChallenge:completionHandler:2. URLSession:task:didReceiveChallenge:completionHandler:3. connection:didReceiveAuthenticationChallenge:4. download:didReceiveAuthenticationChallenge:</li>
+</ol>
+
+
+<p>为了让连接能够继续，则代理对象有三种选择：</p>
+
+<ol>
+<li>提供认证证书</li>
+<li>尝试在没有证书的情况下继续</li>
+<li>取消认证查询</li>
+</ol>
+
+
+<p>为了确保操作的正确流程，传递给这些方法的NSURLAuthenticationChallenge实例会包含一些信息，包括是什么触发了认证查询、查询的尝试次数、任何先前尝试的证书、请求证书的NSURLProtectionSpace对象，及查询的发送者。</p>
+
+<p>如果认证请求事先尝试认证且失败了(如用户在服务端修改了密码)，我们可以通过在认证请求调用proposedCredential来获取尝试凭据。代理可以使用这些证书来填充一个显示给用户的话框。</p>
+
+<p>调用认证请求的previousFailureCount可以返回身份验证尝试次数，这些尝试包括不同认证协议的尝试请求。代理可以将这些方法提供给用户，以确定先前提供的证书是否失败，或限制最大认证尝试次数。</p>
+
+<h2>响应认证请求</h2>
+
+<p>前面说过三种响应我们响应connection:didReceiveAuthenticationChallenge:代理方法的方式，我们将逐一介绍：</p>
+
+<h4>提供证书</h4>
+
+<p>为了进行认证，程序需要使用服务端期望的认证信息创建一个NSURLCredential对象。我们可以调用authenticationMethod来确定服务端的认证方法，这个认证方法是在提供的认证请求的保护空间中。NSURLCredential支持一些方法：</p>
+
+<ol>
+<li>HTTP基本认证(NSURLAuthenticationMethodHTTPBasic)：需要用户名和密码。提示用户输入必要信息并使用credentialWithUser:password:persistence:方法创建一个NSURLCredential对象。</li>
+<li>HTTP数字认证(NSURLAuthenticationMethodHTTPDigest):类似于基本认证，需要用户名和密码。提示用户输入必要信息并使用credentialWithUser:password:persistence:方法创建一个NSURLCredential对象。</li>
+<li>客户端证书认证(NSURLAuthenticationMethodClientCertificate): 需要系统标识和所有服务端认证所需要的证书。然后使用credentialWithIdentity:certificates:persistence:来创建一个NSURLCredential对象。</li>
+<li>服务端信任认证(NSURLAuthenticationMethodServerTrust)需要一个由认证请求的保护空间提供的信任。使用credentialForTrust:来创建一个NSURLCredential对象。</li>
+</ol>
+
+
+<p>在创建NSURLCredential对象后</p>
+
+<ol>
+<li>对于NSURLSession，使用提供的完成处理block将该对象传递给认证请求发送者</li>
+<li>对于NSURLConnection和NSURLDownload，使用useCredential:forAuthenticationChallenge:方法将对象传递给认证请求发送者。</li>
+</ol>
+
+
+<h4>尝试在没有证书的情况下继续</h4>
+
+<p>如果代理选择不提供证书，可以尝试继续操作：</p>
+
+<ol>
+<li>对于NSURLSession，传递下面的值给完成处理block:
+ NSURLSessionAuthChallengePerformDefaultHandling:处理请求。尽管代理没有提供代理方法来处理认证请求
+ NSURLSessionAuthChallengeRejectProtectionSpace:拒绝请求。依赖于服务端响应允许的认证类型，URL加载类可能多次调用这个代理方法。</li>
+<li>对于NSURLConnection和NSURLDownload，在[challenge sender]中调用continueWithoutCredentialsForAuthenticationChallenge:。</li>
+</ol>
+
+
+<p>依赖于协议的实现，这种处理方法可能会导致连接失败而以送connectionDidFailWithError:消息，或者返回可选的不需要认证的URL内容。</p>
+
+<h4>取消连接</h4>
+
+<p>代理可以选择取消认证请求</p>
+
+<ol>
+<li>对于NSURLSession，传递NSURLSessionAuthChallengeCancelAuthenticationChallenge给完成处理block</li>
+<li>对于NSURLConnection和NSURLDownload，在[challenge sender]中调用cancelAuthenticationChallenge:。代理接收connection:didCancelAuthenticationChallenge:消息，以提供用户反馈的机会。</li>
+</ol>
+
+
+<p>下面的代码演示了使用用户名和密码创建NSURLCredential对象来响应认证请求</p>
+
+<pre><code>-(void)connection:(NSURLConnection *)connection didReceiveAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge
+    {
+    if ([challenge previousFailureCount] == 0)
+
+    {
+                NSURLCredential *newCredential;
+        newCredential = [NSURLCredential credentialWithUser:[self preferencesName] password:[self preferencesPassword] persistence:NSURLCredentialPersistenceNone];
+        [[challenge sender] useCredential:newCredential forAuthenticationChallenge:challenge];
+    }
+
+    else
+
+    {           [[challenge sender] cancelAuthenticationChallenge:challenge];           // inform the user that the user name and password          // in the preferences are incorrect         [self showPreferencesCredentialsAreIncorrectPanel:self];        }
+
+}
+</code></pre>
+
+<p>如果代理没有实现connection:didReceiveAuthenticationChallenge:，而请求需要认证，则有效的证书必须位于URL证书存储中或作为请求URL的一部分。如果证书无效或者认证失败，则底层实现会发送一个continueWithoutCredentialForAuthenticationChallenge:消息。</p>
+
+<h2>执行自定义TLS链验证</h2>
+
+<p>在NSURL系统的AIP中，TLS链验证由应用的认证代理方法来处理，但它不是提供证书给服务端以验证用户，而是在TLS握手的过程中校验服务端提供的证书，然后再告诉URL加载系统是否应该接受还是拒绝这些证书。</p>
+
+<p>如果需要以非标准的方法(如接收一个指定的自标识的证书用于测试)来执行链验证，则应用必须如下处理：</p>
+
+<ol>
+<li>对于NSURLSession，实现URLSession:didReceiveChallenge:completionHandler:和URLSession:task:didReceiveChallenge:completionHandler:代理方法。如果实现了两者，由会话级别的方法负责处理认证。</li>
+<li>对于NSURLConnection和NSURLDownload，实现connection:canAuthenticateAgainstProtectionSpace:和download:canAuthenticateAgainstProtectionSpace:方法，如果保护空间有一个NSURLAuthenticationMethodServerTrust类型的认证，则返回YES。然后，实现connection:didReceiveAuthenticationChallenge:或download:didReceiveAuthenticationChallenge:方法来处理认证。</li>
+</ol>
+
+
+<p>在认证处理代理方法中，我们需要确认认证保护空间是否有NSURLAuthenticationMethodServerTrust类型的认证，如果有，则从保护空间获取serverTrust信息。</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -746,269 +901,6 @@ myCell.subtitle = "A custom cell"
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/07/06/ios-swift-cpointer-2/">Swift对C指针实现浅析</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-07-06T13:23:29+08:00" pubdate data-updated="true">Jul 6<sup>th</sup>, 2014</time>
-        
-        
-           | <a href="/blog/2014/07/06/ios-swift-cpointer-2/#comments">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>个人认为，Swift对指针的处理略显复杂。</p>
-
-<p>我们通过调试可以看到存在这样一个类型Builtin.RawPointer，我们可以假设其为C指针在Swife中的内部表示，但不可以直接使用。相反，在Swift中，定义了7种指针类型，可以通过这7种类型来操作C指针。</p>
-
-<h2>COpaquePointer</h2>
-
-<p>在C语言中，常使用typedef来定义一些指针类型的别名，如</p>
-
-<pre><code>typedef struct stack *stack_t
-</code></pre>
-
-<p>该定义表示一个指向栈结构的指针，但并没有给出结构的任何信息，我们不知道该结构都有哪些成员。类似于stack_t这样的指针就是一个不透明的指针。在程序中，我们可以自由的操纵这种指针，但无法反引用以获取指针的内部信息，只有接口的实现才有这种特权。这所以使用不透明指针，在于其隐藏了具体的实现细节，有助于捕获错误。即只能传相同的参数给函数，否则将产一变异错误。(参看《C语言接口与实现：创建可重用软件的技术》)</p>
-
-<p>在Swift中，针对这种不透明指针，定义了一个包装器：COpaquePointer。该类型（实际为结构体）是一个不透明指针的包装器，主要用于Bridge Header中表示C中的复杂结构指针，当我们的指针指向的类型无法在Swift中有效地表示出来时，就可以使用该类型，而如果在Swift能找到对应的类型表示指针指向的类型，则可以使用UnsafePointer。</p>
-
-<p>该类的实现及其扩展实现了四个协议，我们看看其具体代码</p>
-
-<pre><code>struct COpaquePointer : Equatable, Hashable, LogicValue {
-    init()
-    static func null() -&gt; COpaquePointer
-    func getLogicValue() -&gt; Bool
-    var hashValue: Int { get }
-}
-
-extension COpaquePointer {
-
-    /// 将UnsafePointer类型转换为不透明C指针
-    init&lt;T&gt;(_ from: UnsafePointer&lt;T&gt;)
-}
-
-extension COpaquePointer : CVarArg {
-    func encode() -&gt; Word[]
-}
-</code></pre>
-
-<p>可以看到该结构体并没有做太多的事情，仅仅实现了四个协议的接口，同时做了个UnsafePointer类型的转换操作。该类型在Swift使用得比较多，例如在NSData中，bytes属性的类型就是COpaquePointer，而该属性在Objective-C中的类型是const void*。</p>
-
-<h2>UnsafePointer</h2>
-
-<p>UnsafePointer一个泛型结构体，可以说是处理C指针最主要的结构体了。它包装并存储了类型为T的C指针，主要用于与C标准库交互。该类没有提供自动管理内存功能，所以我们在使用的时候需要注意内存的分配与释放。当在Swift能找到与T类型相对应的类型时，可以使用该类型，否则就考虑使用COpaquePointer。</p>
-
-<p>在该类型的声明中，我们可以看到它定义了大量的方法来处理指针，具体如下</p>
-
-<pre><code>struct UnsafePointer&lt;T&gt; : BidirectionalIndex, Comparable, Hashable, LogicValue {    
-    /// 构造一个空指针
-    init()
-
-    /// 将一个不透明指针转换为类型指定的C指针，注意这种转换是不安全的
-    init(_ other: COpaquePointer)
-
-    /// 从给定的内存地址中构造一个UnsafePointer。注意这种转换是不安全的
-    init(_ value: Int)
-
-    /// 从一个不同类型的指针中转换。注意这种转换是不安全的
-    init&lt;U&gt;(_ from: UnsafePointer&lt;U&gt;)
-    static func null() -&gt; UnsafePointer&lt;T&gt;
-    static func alloc(num: Int) -&gt; UnsafePointer&lt;T&gt;
-    func dealloc(num: Int)
-
-    /// 访问底层原始内存，获取并设置其值
-    var memory: T
-
-    /// 初始化指针指向的值，用于构造一个事先未存储对象的对象
-    func initialize(newvalue: T)
-
-    /// 获取指针指向的值，并将其从内存引用的位置移除。
-    /// 后置条件：值被销毁，且内存在再次使用前必须被初始化
-    func move() -&gt; T
-
-    /// 将起始于source处的count个值赋值给未初始化的内存，将原始值转换到原始内存中，并且
-    /// 是从最后开始处理，一直到第一个。使用该方法将值拷贝到可能与原范围重叠的内存区域
-    /// 这要求source的位置先于self或者在self+count之后
-    func moveInitializeBackwardFrom(source: UnsafePointer&lt;T&gt;, count: Int)
-
-    /// Assign from count values beginning at source into initialized
-    /// memory, transforming the source values into raw memory.
-    /// 将起始于source处的count个值赋值给已初始化的内存，将原始值转换到原始内存中
-    func moveAssignFrom(source: UnsafePointer&lt;T&gt;, count: Int)
-
-    /// 拷贝起始于source的count个值到内存中，将源值转换到内存中
-    func moveInitializeFrom(source: UnsafePointer&lt;T&gt;, count: Int)
-
-    /// 拷贝起始于source的count个值到内存中
-    func initializeFrom(source: UnsafePointer&lt;T&gt;, count: Int)
-
-    /// 拷贝C元素到内存中
-    func initializeFrom&lt;C : Collection where T == T&gt;(source: C)
-
-    /// 销毁指针指向的对象
-    func destroy()
-
-    /// 销毁指针指向的count个对象
-    func destroy(count: Int)
-    func getLogicValue() -&gt; Bool
-    subscript (i: Int) -&gt; T
-    var hashValue: Int { get }
-    func succ() -&gt; UnsafePointer&lt;T&gt;
-    func pred() -&gt; UnsafePointer&lt;T&gt;
-
-    /// 以下是将其它类型的指针转换化UnsafePoint的构造器
-    init(_ cp: CConstPointer&lt;T&gt;)
-    init(_ cm: CMutablePointer&lt;T&gt;)
-    init(_ op: AutoreleasingUnsafePointer&lt;T&gt;)
-    init(_ cp: CConstVoidPointer)
-    init(_ cp: CMutableVoidPointer)
-}
-
-extension UnsafePointer&lt;T&gt; : Printable {
-    var description: String { get }
-}
-</code></pre>
-
-<p>UnsafePointer提供了多个构造器，以从其它指针类型创建一个UnsafePointer。另外，CMutablePointer、CMutableVoidPointer、CConstPointer、CConstVoidPointer都提供了一个withUnsafePointer方法，该方法是让这些指针类型在一个闭包中可以像UnsafePointer类型一样使用。我们来看一个例子：</p>
-
-<pre><code>func StringFromCptr(inChars:CMutablePointer&lt;CChar&gt;) -&gt; String {
-
-    var ptr:UnsafePointer&lt;UInt8&gt; = UnsafePointer&lt;UInt8&gt;(0)
-    inChars.withUnsafePointer({ p in ptr = UnsafePointer&lt;UInt8&gt;(p) })
-
-    var str = CString(ptr)
-
-    return NSString(CString:str)
-}
-
-var Len = 10
-var Str = CChar[](count:Len, repeatedValue:CChar(0))
-
-for var i = 0; i &lt; Len; i++ {
-    Str[i] = CChar(i + 65)
-}
-
-var Result = StringFromCptr(&amp;Str)
-
-println("\(Result)")
-
-// 输出：ABCDEFGHIJ
-</code></pre>
-
-<p>目前感觉在通常情况下，UnsafePointer使用得不多，平时接触到的更多的是CMutablePointer、CMutableVoidPointer、CConstPointer、CConstVoidPointer、AutoreleasingUnsafePointer这五种指针类型，这五种指针的基本使用方法我们在<a href="http://southpeak.github.io/blog/2014/07/02/ios-swift-cpointer/">Swift中C指针的基本使用方法</a>有简单介绍过，下面我们也讲讲它们的基本实现。</p>
-
-<h2>AutoreleasingUnsafePointer</h2>
-
-<p>该类型的基本定义是一个指向Objective-C指针的可变指针。这个类型有几种隐式转换来允许传递下面几种参数类型给一个一个C或ObjC API：</p>
-
-<ol>
-<li>nil, 作为null指针传入</li>
-<li>被引用类型的in-out参数，作为一个带有自动释放所有权语义的可回写变量的指针传递</li>
-<li>UnsafePointer<T></li>
-</ol>
-
-
-<p>与CMutablePointer不同的是，Swift不直接支持传递一个指向元素是Objc类指针数组的指针。与UnsafePointer<T>不同的是，AutoreleasingUnsafePointer必须引用一个存储，该存储没有其引用值的引用计数。相反，UnsafePointer的操作假设引用的存储拥有其加载的值且可以对其进行修改。</p>
-
-<p>该类型不像其它的C*Pointer类型一样携带一个所有者指针，因为它只需要引用in-out参数转换的结果，而这个参数已经有一个回写域的生命周期了。</p>
-
-<p>我们来看看其声明：</p>
-
-<pre><code>struct AutoreleasingUnsafePointer&lt;T&gt; : Equatable, LogicValue {
-    func getLogicValue() -&gt; Bool
-
-    /// Access the underlying raw memory, getting and
-    /// setting values.
-    var memory: T
-}
-</code></pre>
-
-<h2>CConstPointer与CConstVoidPointer</h2>
-
-<p>这两个类型都是C常量指针，分别对应于C中的const T<em>和const </em>void。它们没有自己的操作。它的值由owner-value对组成，也正因此，它不能直接传递给C函数。在桥接的过程中，它会维护一个owner的强引用，且指针值被传递到C或者Objective-C的入口点。这允许拥有堆存储的类型(如数组)将自己转换为一个指针，同时仍保证在调用的过程中仍然维护它们的存储。我们可以看下它们的具体实现</p>
-
-<pre><code>struct CConstPointer&lt;T&gt; : Equatable {
-    let owner: AnyObject?
-
-    /// True if this is a scoped pointer, meaning it has a owner reference
-    /// that guarantees the lifetime of the referenced memory.
-    var scoped: Bool { get }
-
-    /// Make the pointer available as an UnsafePointer within a closure.
-    func withUnsafePointer&lt;U&gt;(f: UnsafePointer&lt;T&gt; -&gt; U) -&gt; U
-}
-
-struct CConstVoidPointer : Equatable {
-    let owner: AnyObject?
-
-    /// True if this is a scoped pointer, meaning it has a owner reference
-    /// that guarantees the lifetime of the referenced memory.
-    var scoped: Bool { get }
-
-    /// Make the pointer available as an UnsafePointer within a closure.
-    func withUnsafePointer&lt;T, U&gt;(f: UnsafePointer&lt;T&gt; -&gt; U) -&gt; U
-}
-</code></pre>
-
-<h2>CMutablePointer与CMutableVoidPointer</h2>
-
-<p>这两个类型都是C可变指针，分别对应于C中的T <em>和void </em>，其基本内容同上。</p>
-
-<h2>总结</h2>
-
-<p>由上面的分析，依据类型是否可以直接用于C函数声明，可以将这7种指针类型分为两类：</p>
-
-<ol>
-<li>可直接用于C函数声明：COpaquePointer,UnsafePointer<T>,AutoreleasingUnsafePointer<T>，它们是对Builtin.RawPointer的封装，直接对应于C指针，其sizeof是单位字长</li>
-<li>不可直接用于C函数声明：CMutablePointer<T>, CConstPointer<T>, CMutableVoidPointer, CConstVoidPointer。这几个类型都有一个owner属性用于管理实例的生命周期，可以直接从Swift对象的引用获得，另外还可以使用withUnsafePointer方法，该方法是让这些指针类型在一个闭包中可以像UnsafePointer类型一样使用。</li>
-</ol>
-
-
-<p>另外有两点需要注意</p>
-
-<ol>
-<li>非常量指针都实现了LogicValue协议，因此可以直接使用if a_pointer来判断其是否为NULL。</li>
-<li>nil类型实现了到所有指针类型的隐式类型转换，等价于C中的NULL，可以直接判断。</li>
-</ol>
-
-
-<p>至于这些指针的使用，需要在根据实现情况来具体处理。</p>
-
-<p>参考：</p>
-
-<ol>
-<li>《C语言接口与实现：创建可重用软件的技术》</li>
-<li><a href="http://stackoverflow.com/questions/24089052/swift-string-to-cmutablepointercchar">Swift.String to CMutablePointer<CChar></a></li>
-<li><a href="http://andelf.github.io/blog/2014/06/18/swift-and-c-interop-cont/">Swift and C Interop Cont. (简析 Swift 和 C 的交互，Part 二)</a></li>
-</ol>
-
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/4">&larr; Older</a>
@@ -1025,8 +917,9 @@ struct CConstVoidPointer : Equatable {
 <section>
 <h1>分类</h1>
 <ul>
-  <li><a href='/blog/categories/ios'>ios (21)</a></li>
+  <li><a href='/blog/categories/ios'>ios (22)</a></li>
   <li><a href='/blog/categories/network'>network (3)</a></li>
+  <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (1)</a></li>
   <li><a href='/blog/categories/swift'>swift (7)</a></li>
   <li><a href='/blog/categories/网络'>网络 (8)</a></li>
 </ul>
@@ -1035,6 +928,10 @@ struct CConstVoidPointer : Equatable {
 <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/08/02/reactivecocoazhi-nan-%5B%3F%5D-:xin-hao/">ReactiveCocoa指南一：信号</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2014/08/01/core-bluetoothkuang-jia-zhi-san-:zui-jia-shi-jian/">Core Bluetooth框架之三：最佳实践</a>
@@ -1070,10 +967,6 @@ struct CConstVoidPointer : Equatable {
     
       <li class="post">
         <a href="/blog/2014/07/17/ioszhong-liu-stream-de-shi-yong/">iOS中流(Stream)的使用</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/07/16/urljia-zai-xi-tong-zhi-si-:ren-zheng-yu-tlslian-yan-zheng/">URL加载系统之四：认证与TLS链验证</a>
       </li>
     
   </ul>
