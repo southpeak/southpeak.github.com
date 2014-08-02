@@ -11,7 +11,7 @@
   <meta name="baidu-site-verification" content="HoscFhWICI" />
 
   
-  <meta name="description" content="缓存 URL加载系统为请求提供了基于磁盘和内存的组合响应缓存。这个缓存让应用减少了对网络连接的依赖，提高了性能。 一个NSURLRequest实例通过设置缓存策略来指定本地缓存。默认的缓存策略是NSURLRequestUseProtocolCachePolicy， &hellip;">
+  <meta name="description" content="苹果在WWDC 2013上正式推出了iBeacon，并在iOS7设备上配备了该功能。苹果期望将其做为一种技术标准，这个标准允许移动App(包括iOS或Android设备)监听来自于iBeacon设备上的信号并做出响应。这种iBeacon设备配备有低功耗蓝牙(Bluetooth Low Energy &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -68,6 +68,176 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/07/27/ibeaconji-zhu-chu-tan/">iBeacon技术初探</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-07-27T15:22:43+08:00" pubdate data-updated="true">Jul 27<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/07/27/ibeaconji-zhu-chu-tan/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>苹果在WWDC 2013上正式推出了iBeacon，并在iOS7设备上配备了该功能。苹果期望将其做为一种技术标准，这个标准允许移动App(包括iOS或Android设备)监听来自于iBeacon设备上的信号并做出响应。这种iBeacon设备配备有低功耗蓝牙(Bluetooth Low Energy, BLE)通信功能，并使用BLE向周围发送自己特有的ID，移动设备上的App在接收到该ID后可以做出相应的反应。比如，我们在店铺里设置iBeacon发射器，便可让应用接收到信息并将这一信息通知给服务器，服务器向我们的App返回与该店铺相关的产品或折扣信息。本质上讲，iBeacon技术允许移动应用了解它们在某个局部范围内的位置，并向用户分发基于位置的超文本上下文内容。本文将对iBeacon技术做个简要的介绍。</p>
+
+<h2>低功耗蓝牙技术(Bluetooth Low Energy)</h2>
+
+<p>iBeacon的底层通信技术是采用低功耗蓝牙技术，这种技术是在短距离范围内数据传输的无线区域网络技术。顾名思义，它即要求低功耗，又需要保证传统蓝牙技术的通信范围。</p>
+
+<p>BLE与传统蓝牙有几点不同：</p>
+
+<ol>
+<li>耗电量：BLE是低耗电量的，iBeacon设备使用一个纽扣电池即可持续运作长达3年时间。</li>
+<li>低成本：BLE的成本只相当于传统蓝牙设备的60%-80%</li>
+<li>应用：BLE适用于只要求少量定期传输数据的简单应用。传统的蓝牙适用于需要持续通信和大量数据传输的复杂应用。</li>
+</ol>
+
+
+<p>BLE通信数据包主要由称为&#8221;Advertisements&#8221;的数据或小的数据包组成，并通过无线电波由Beacons或其它BLE设备以有规律的时间间隔来广播。BLE广告是一种单向通信(one-way communication)方法。希望被发现的Beacon设备可以以设定的时间间隔广播或&#8221;广告&#8221;自包含的数据包。这些数据包由智能手机等设备收集，并在设备上触发一些事件，如推送消息、提示等。</p>
+
+<p>苹果iBeacon标准要求广播时间的间隔是100ms。频率超高越耗电，但可以让智能手机或其它监听设备越快地发现iBeacon。标准的BLE广播距离是100m，这使Beacon在室内位置跟踪场景下的效果更理想。</p>
+
+<h2>监听Beacon区域</h2>
+
+<p>Beacon区域监听使用iOS设备的内置无线电来检测用户何时在广告iBeacon信息的BLE设备附近。由于是地理位置的监听，当用户进入或在一个Beacon区域时，我们可以使用这些功能来生成提示或提供其它相关的信息。一个Beacon区域通过以下值的组合来进行标识：</p>
+
+<ol>
+<li>proximity UUID(全局唯一标识)：一个128位值，唯一标识一类或一个组织中的一个或多个Beacon。</li>
+<li>major值，一个16位无符号整数，用于分组有相同proximity UUID值的相关的Beacon。</li>
+<li>minor值，一个16位无符号整数，用于区分具有相同proximity UUID值和major的值。</li>
+</ol>
+
+
+<p>因为一个Beacon区域可以包含多个iBeacon设备，Beacon区域监听支持同时监听多个感兴趣的设备。例如，一个App为了在特定商场提高用户体验，可用使用相同的proximity UUID来监听商场的所有商铺。当用户进入一个商店时，App检测商铺的iBeacon设备并使用major和minor值来获取额外的信息，如用户进入哪家商店或用户在商店的哪个区域(注意：虽然每个iBeacon都必须有一个proximity UUID，但major和minor的值是可选的)。</p>
+
+<h4>定义一个Beacon区域</h4>
+
+<p>我们使用<strong>CLBeaconRegion</strong>类的初始化方法来定义一个beacon区域，并在系统中注册，以开启一个监听。当创建一个CLBeaconRegion对象时，我们指定需要监听的Beacon区域的proximityUUID, major和minor属性。我们必须提供一个唯一标识区域的字符串以便我们在代码中能引用它。注意一个区域的标识与Beacon标识信息无关。</p>
+
+<p>为了注册一个beacon区域，调用CLLocationManager对象的startMonitoringForRegion方法。代码清单1是创建并注册的beacon区域的简单方法。</p>
+
+<h6>代码清单1：创建和注册一个beacon区域</h6>
+
+<pre><code>- (void)registerBeaconRegionWithUUID:(NSUUID *)proximityUUID andIdentifier:(NSString *)identifier
+{
+    CLBeaconRegion *beaconRegion = [[CLBeaconRegion alloc] initWithProximityUUID:proximityUUID identifier:identifier];
+
+    [manager startMonitoringForRegion:beaconRegion];
+}
+</code></pre>
+
+<p>App在注册并监听某个Beacon区域后，会立即开始监听此区域。当App监听到注册的Beacon区域时，系统会为App生成一个合适的区域事件。</p>
+
+<h4>处理边界穿越事件</h4>
+
+<p>当用户进入一个注册的Beacon区域时，CLLocationManager对象将调用其代理对象的locationManager:didEnterRegion:方法。类似的，当用户离开这个区域时，将调用代理对象的locationManager:didExitRegion:方法。注意，用户必须穿过区域边界来触发这些调用，如果用户已经在区域中，CLLocationManager对象将不会调用locationManager:didEnterRegion:。我们可以实现这些代理方法来提示用户或展示一个指定位置的UI。</p>
+
+<p>我们可以设置Beacon区域的notifyOnEntry和notifyOnExit属性来指定哪个边界穿越事件应该通知给我们的App。例如，如果在用户离开区域时不需要通知App，则可以设置区域的notifyOnEntry属性为NO。</p>
+
+<p>我们也可以在用户打开设备的屏幕时再通知用户已进入一个Beacon区域。我们只需要在注册Beacon区域时，简单的设置Beacon区域的notifyEntryStateOnDisplay属性为YES，以及设置notifyOnEntry属性为NO。为了防止多余的通知被发送给用户，只在进入一个区域时才发送一个本地通知。</p>
+
+<p>当用户已经在注册的Beacon区域内时，App可以调用CLLocationManager类的startRangingBeaconsInRegion:方法来确定我们的设备与区域中的一个或多个iBeacon设备的相对距离，并在距离改变时被通知。(注意：我们总是在尝试查找区域内的iBeacon设备时调用CLLocationManager的类方法isRangingAvailable)。对于大多数程序来说，知道这个相对距离是很有用的。例如，想像一个在每个展品上安装了iBeacon设备的博物馆。如果我们使用这个博物馆相应的App，当我们走近某个展品时，就可以通过iBeacon来向我们的App发送关于展品的信息。</p>
+
+<p>当指定Beacon区域的iBeacon设备进入范围、离开范围或相对距离改变时，CLLocationManager对象调用代理对象的locationManager:didRangeBeacons:inRegion:方法。这个代理方法提供一个CLBeacon对象的数组来表示当前设备范围内的iBeacon。iBeacon的数组根据离设备的相对距离来排序，最近的在最前面。我们可以使用这些对象中的信息来确定用户离每个iBeacon设备的距离。CLBeacon对象的proximity属性给出了到一个beacon的相对距离。</p>
+
+<p><em>注：iBeacon的排列依赖于检测到的BLE无线信号的强度，以及这些信号受墙壁、门或其它物理实体的影响。当我们使用iBeacon时需要考虑这些影响因素。</em></p>
+
+<p>代码清单2显示了如何使用一个Beacon的proximity属性来确定到用户设备的相对距离。</p>
+
+<h6>代码清单2：确定用户设备与beacon的相对距离</h6>
+
+<pre><code>- (void)locationManager:(CLLocationManager *)manager didRangeBeacons:(NSArray *)beacons inRegion:(CLBeaconRegion *)region
+{
+    if ([beacons count] &gt; 0)
+    {
+        CLBeacon *nearestExhibit = [beacons firstObject];
+
+        if (CLProximityNear == nearestExhibit.proximity)
+        {
+            NSLog(@"%d", nearestExhibit.major.integerValue);
+        }
+        else
+        {
+            NSLog(@"test");
+        }
+    }
+}
+</code></pre>
+
+<p>注意：当多个iBeacon设备广告了相同的proximityUUID, major和minor属性组合时，在locationManager:didRangeBeacons:inRegion:方法中它们可能会有不同的距离与精度。建议每一个beacon设备都是唯一标识的。</p>
+
+<h2>在iOS设备中开启iBeacon功能</h2>
+
+<p>支持使用BLE分享数据的iOS设备可以当作iBeacon设备来使用。由于应用必须运行于前台，因此iOS设备上的iBeacon支持主要用于测试目的和任何情况下都运行于前台的App。对于其它类型的iBeacon实现，我们必须从第三方的制造商那获取专用的iBeacon设备。</p>
+
+<p>因为将iOS设备作为一个iBeacon设备需要使用Core Bluetooth framework，所以我们需要在XCode工程中链接CoreBluetooth.framework。同时在相关的资源文件中导入&lt;CoreBluetooth/CoreBluetooth.h>头文件。</p>
+
+<p>要在一个iOS设备上创建和广告一个Beacon区域，首先我们需要生成一个128位的UUID作为我们的proximity UUID。我们可以在终端使用uuidgen命令来生成一个UUID。然后，我们使用这个UUID来创建一个Beacon区域，同时定义所需的major和minor值。代码清单3显示了如何创建一个新Beacon区域</p>
+
+<h6>代码清单3</h6>
+
+<pre><code>NSUUID *proximityUUID = [[NSUUID alloc] initWithUUIDString:@"D80415EC-AC22-4046-8497-4BDAC297323C"];
+
+CLBeaconRegion *beaconRegion = [[CLBeaconRegion alloc] initWithProximityUUID:proximityUUID identifier:@"com.mycompany.myregion"];        
+</code></pre>
+
+<p>现在我们已经创建了一个Beacon区域，然后我们需要使用Core Bluetooth framework的CBPeripheralManager来广告我们的Beacon的proximity UUID(及major或minor值)。在Core Bluetooth中，一个peripheral是使用BLE来广告和分享数据的设备。广告Beacon的数据是其它设备能检测并排列我们的Beacon设备的唯一方法。</p>
+
+<p>为了在Core Bluetooth中广告peripheral数据，我们调用CBPeripheralManager实例的startAdvertising:方法。这个方法需要广告数据的字典。然后我们创建一个CBPeripheralManager类的实例，并让其广告我们的Beacon来让其它设备监听。代码清单4所示了这一过程。</p>
+
+<h6>代码清单4</h6>
+
+<pre><code>NSDictionary *beaconPeripheralData = [beaconRegion peripheralDataWithMeasuredPower:nil];
+
+manager = [[CBPeripheralManager alloc] initWithDelegate:self queue:nil options:nil];
+[manager startAdvertising:beaconPeripheralData];
+</code></pre>
+
+<p><strong>重要：当我们创建一个peripheral管理对象时，peripheral管理对象会调用它的代理的peripheralManagerDidUpdateState:方法。我们必须实现这个代理方法以确保BLE在本地peripheral设备上可用。</strong></p>
+
+<p>在广告我们的iBeacon后，我们必须在前台继续运行程序来广播所需要的蓝牙信号。</p>
+
+<h2>小结</h2>
+
+<p>iBeacon是苹果提出的近场定位技术，其目标直指NFC。在App中使用iBeacon并不复杂，苹果已经为我们解决了大部分的底层技术问题。我们只需要简单的创建一个Beacon区域并监听它，在代理对象中处理相应的事件即可。它的实质就是一种定位技术，其在室内导航方面前景光明，相信这一技术会在今后大有作为。</p>
+
+<h2>参考</h2>
+
+<ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/UserExperience/Conceptual/LocationAwarenessPG/Introduction/Introduction.html">Location and Maps Programming Guide</a></li>
+<li><a href="http://www.cocoachina.com/applenews/devnews/2014/0115/7705.html">如何使用iOS 7的iBeacons来提高你的应用</a></li>
+<li><a href="http://www.cocoachina.com/applenews/devnews/2014/0512/8377.html">开发使用 iBeacon 的 iOS 7 应用</a></li>
+<li>代码示例：<a href="https://developer.apple.com/library/ios/samplecode/AirLocate/Introduction/Intro.html">AirLocate: Using CoreLocation to monitor, range, and configure your device as an iBeacon</a></li>
+</ol>
+
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -817,273 +987,6 @@ TKCoverflowViewDelegate协议的</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/07/17/ioszhong-liu-stream-de-shi-yong/">iOS中流(Stream)的使用</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-07-17T23:30:26+08:00" pubdate data-updated="true">Jul 17<sup>th</sup>, 2014</time>
-        
-        
-           | <a href="/blog/2014/07/17/ioszhong-liu-stream-de-shi-yong/#comments">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>流提供了一种简单的方式在不同和介质中交换数据，这种交换方式是与设备无关的。流是在通信路径中串行传输的连续的比特位序列。从编码的角度来看，流是单向的，因此流可以是输入流或输出流。除了基于文件的流外，其它形式的流都是不可查找的，这些流的数据一旦消耗完后，就无法从流对象中再次获取。</p>
-
-<p>在Cocoa中包含三个与流相关的类：NSStream、NSInputStream和NSOutputStream。NSStream是一个抽象基类，定义了所有流对象的基础接口和属性。NSInputStream和NSOutputStream继承自NSStream，实现了输入流和输出流的默认行为。下图描述了流的应用场景：</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/Streams/Articles/Art/stream_src_dest.gif" alt="image" /></p>
-
-<p>从图中看，NSInputStream可以从文件、socket和NSData对象中获取数据；NSOutputStream可以将数据写入文件、socket、内存缓存和NSData对象中。这三处类主要处理一些比较底层的任务。</p>
-
-<p>流对象有一些相关的属性。大部分属性是用于处理网络安全和配置的，这些属性统称为SSL和SOCKS代理信息。两个比较重要的属性是：</p>
-
-<ol>
-<li>NSStreamDataWrittenToMemoryStreamKey：允许输出流查询写入到内存的数据</li>
-<li>NSStreamFileCurrentOffsetKey：允许操作基于文件的流的读写位置</li>
-</ol>
-
-
-<p>可以给流对象指定一个代理对象。如果没有指定，则流对象作为自己的代理。流对象调用唯一的代理方法stream:handleEvent:来处理流相关的事件：</p>
-
-<ol>
-<li>对于输入流来说，是有可用的数据可读取事件。我们可以使用read:maxLength:方法从流中获取数据</li>
-<li>对于输出流来说，是准备好写入的数据事件。我们可以使用write:maxLength:方法将数据写入流</li>
-</ol>
-
-
-<p>Cocoa中的流对象与Core Foundation中的流对象是对应的。我们可以通过toll-free桥接方法来进行相互转换。NSStream、NSInputStream和NSOutputStream分别对应CFStream、CFReadStream和CFWriteStream。但这两者间不是完全一样的。Core Foundation一般使用回调函数来处理数据。另外我们可以子类化NSStream、NSInputStream和NSOutputStream，来自定义一些属性和行为，而Core Foundation中的流对象则无法进行扩展。</p>
-
-<p>上面主要介绍了iOS中流的一些基本概念，我们下面将介绍流的具体使用，首先看看如何从流中读取数据。</p>
-
-<h2>从输入流中读取数据</h2>
-
-<p>从一个NSInputStream流中读取数据主要包括以下几个步骤：</p>
-
-<ol>
-<li>从数据源中创建和初始化一个NSInputStream实例</li>
-<li>将流对象放入一个run loop中并打开流</li>
-<li>处理流对象发送到其代理的事件</li>
-<li>当没有更多数据可读取时，关闭并销毁流对象。</li>
-</ol>
-
-
-<h4>准备流对象</h4>
-
-<p>要使用一个NSInputStream，必须要有数据源。数据源可以是文件、NSData对象和网络socket。创建好后，我们设置其代理对象，并将其放入到run loop中，然后打开流。代码清单1展示了这个准备过程.</p>
-
-<h6>代理清单1</h6>
-
-<pre><code>- (void)setUpStreamForFile:(NSString *)path
-{
-    NSInputStream *inputStream = [[NSInputStream alloc] initWithFileAtPath:path];
-    inputStream.delegate = self;
-    [inputStream scheduleInRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
-
-    [inputStream open];
-}
-</code></pre>
-
-<p>在流对象放入run loop且有流事件(有可读数据)发生时，流对象会向代理对象发送stream:handleEvent:消息。在打开流之前，我们需要调用流对象的scheduleInRunLoop:forMode:方法，这样做可以避免在没有数据可读时阻塞代理对象的操作。我们需要确保的是流对象被放入正确的run loop中，即放入流事件发生的那个线程的run loop中。</p>
-
-<h4>处理流事件</h4>
-
-<p>打开流后，我们可以使用streamStatus属性查看流的状态，用hasBytesAvailable属性检测是否有可读的数据，用streamError来查看流处理过程中产生的错误。</p>
-
-<p>流一旦打开后，将会持续发送stream:handleEvent:消息给代理对象，直到流结束为止。这个消息接收一个NSStreamEvent常量作为参数，以标识事件的类型。对于NSInputStream对象，主要的事件类型包括NSStreamEventOpenCompleted、NSStreamEventHasBytesAvailable和NSStreamEventEndEncountered。通常我们会对NSStreamEventHasBytesAvailable更感兴趣。代理清单2演示了从流中获取数据的过程</p>
-
-<h6>代理清单2</h6>
-
-<pre><code>- (void)stream:(NSStream *)aStream handleEvent:(NSStreamEvent)eventCode
-{
-    switch (eventCode) {
-        case NSStreamEventHasBytesAvailable:
-        {
-            if (!data) {
-                data = [NSMutableData data];
-            }
-
-            uint8_t buf[1024];
-            unsigned int len = 0;
-            len = [(NSInputStream *)aStream read:buf maxLength:1024];  // 读取数据
-            if (len) {
-                [data appendBytes:(const void *)buf length:len];
-            }
-        }
-            break;
-    }
-}
-</code></pre>
-
-<p>当NSInputStream在处理流的过程中出现错误时，它将停止流处理并产生一个NSStreamEventErrorOccurred事件给代理。我们同样的上面的代理方法中来处理这个事件。</p>
-
-<h4>清理流对象</h4>
-
-<p>当NSInputStream读取到流的结尾时，会发送一个NSStreamEventEndEncountered事件给代理，代理对象应该销毁流对象，此过程应该与创建时相对应，代码清单3演示了关闭和释放流对象的过程。</p>
-
-<h6>代理清单3</h6>
-
-<pre><code>- (void)stream:(NSStream *)aStream handleEvent:(NSStreamEvent)eventCode
-{
-    switch (eventCode) {
-        case NSStreamEventEndEncountered:
-        {
-            [aStream close];
-            [aStream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
-            aStream = nil;
-        }
-            break;
-    }
-}
-</code></pre>
-
-<h2>写入数据到输出流</h2>
-
-<p>类似于从输入流读取数据，写入数据到输出流时，需要下面几个步骤：</p>
-
-<ol>
-<li>使用要写入的数据创建和初始化一个NSOutputStream实例，并设置代理对象</li>
-<li>将流对象放到run loop中并打开流</li>
-<li>处理流对象发送到代理对象中的事件</li>
-<li>如果流对象写入数据到内存，则通过请求NSStreamDataWrittenToMemoryStreamKey属性来获取数据</li>
-<li>当没有更多数据可供写入时，处理流对象</li>
-</ol>
-
-
-<p>基本流程与输入流的读取差不多，我们主要介绍不同的地方</p>
-
-<ol>
-<li>数据可写入的位置包括文件、C缓存、程序内存和网络socket。</li>
-<li>hasSpaceAvailable属性表示是否有空间来写入数据</li>
-<li>在stream:handleEvent:中主要处理NSStreamEventHasSpaceAvailable事件，并调用流的write:maxLength方法写数据。代码清单4演示了这一过程。</li>
-<li>如果NSOutputStream对象的目标是应用的内存时，在NSStreamEventEndEncountered事件中可能需要从内存中获取流中的数据。我们将调用NSOutputStream对象的propertyForKey:的属性，并指定key为NSStreamDataWrittenToMemoryStreamKey来获取这些数据。</li>
-</ol>
-
-
-<h6>代理清单4</h6>
-
-<pre><code>- (void)stream:(NSStream *)aStream handleEvent:(NSStreamEvent)eventCode
-{
-    switch (eventCode) {
-        case NSStreamEventHasSpaceAvailable:
-        {
-            uint8_t *readBytes = (uint8_t *)[data mutableBytes];
-            readBytes += byteIndex;
-            int data_len = [data length];
-            unsigned int len = (data_len - byteIndex &gt;= 1024) ? 1024 : (data_len - byteIndex);
-            uint8_t buf[len];
-
-            (void)memcpy(buf, readBytes, len);
-
-            len = [aStream write:(const uint_8 *)buf maxLength:len];
-            byteIndex += len;
-            break;
-        }
-    }
-}
-</code></pre>
-
-<p>这里需要注意的是：当代理接收到NSStreamEventHasSpaceAvailable事件而没有写入任何数据到流时，代理将不再从run loop中接收该事件，直到NSOutputStream对象接收到更多数据，这时run loop会重启NSStreamEventHasSpaceAvailable事件。</p>
-
-<h2>流的轮循处理</h2>
-
-<p>在流的处理过程中，除了将流放入run loop来处理流事件外，还可以对流进行轮循处理。我们将流处理数据的过程放到一个循环中，并在循环中不断地去询问流是否有可用的数据供读取(hasBytesAvailable)或可用的空间供写入(hasSpaceAvailable)。当处理到流的结尾时，我们跳出循环结束流的操作。</p>
-
-<p>具体的过程如代码清单5所示</p>
-
-<p>代码清单5</p>
-
-<pre><code>- (void)createNewFile {
-    NSOutputStream *oStream = [[NSOutputStream alloc] initToMemory];
-    [oStream open];
-
-    ￼￼￼uint8_t *readBytes = (uint8_t *)[data mutableBytes];
-    uint8_t buf[1024];
-    int len = 1024;
-
-    while (1) {
-        if (len == 0) break;
-
-        if ([oStream hasSpaceAvailable])
-        {
-            (void)strncpy(buf, readBytes, len);
-            readBytes += len;
-            if ([oStream write:(const uint8_t *)buf maxLength:len] == -1)
-            {
-                [self handleError:[oStream streamError]];
-                break;
-            }
-            [bytesWritten setIntValue:[bytesWritten intValue]+len];
-            len = (([data length] - [bytesWritten intValue] &gt;= 1024) ? 1024 : [data length] - [bytesWritten intValue]);
-        }
-    }
-    NSData *newData = [oStream propertyForKey:NSStreamDataWrittenToMemoryStreamKey];
-
-    if (!newData) {
-        NSLog(@"No data written to memory!");
-    } else {
-        [self processData:newData];
-    }
-
-    [oStream close];
-    [oStream release];
-    oStream = nil;
-}
-</code></pre>
-
-<p>这种处理方法的问题在于它会阻塞当前线程，直到流处理结束为止，才继续进行后面的操作。而这种问题在处理网络socket流时尤为严重，我们必须等待服务端数据回来后才能继续操作。因此，通常情况下，建议使用run loop方式来处理流事件。</p>
-
-<h2>错误处理</h2>
-
-<p>当流出现错误时，会停止对流数据的处理。一个流对象在出现错误时，不能再用于读或写操作，虽然在关闭前可以查询它的状态。</p>
-
-<p>NSStream和NSOutputStream类会以几种方式来告知错误的发生：</p>
-
-<ol>
-<li>如果流被放到run loop中，对象会发送一个NSStreamEventErrorOccurred事件到代理对象的stream:handleEvent:方法中</li>
-<li>任何时候，可以调用streamStatus属性来查看是否发生错误(返回NSStreamStatusError)</li>
-<li>如果在通过调用write:maxLength:写入数据到NSOutputStream对象时返回-1，则发生一个写错误。</li>
-</ol>
-
-
-<p>一旦确定产生错误时，我们可以调用流对象的streamError属性来查看错误的详细信息。在此我们不再举例。</p>
-
-<h2>设置Socket流</h2>
-
-<p>在iOS中，NSStream类不支持连接到远程主机，幸运的是CFStream支持。前面已经说过这两者可以通过toll-free桥接来相互转换。使用CFStream时，我们可以调用CFStreamCreatePairWithSocketToHost函数并传递主机名和端口号，来获取一个CFReadStreamRef和一个CFWriteStreamRef来进行通信，然后我们可以将它们转换为NSInputStream和NSOutputStream对象来处理。</p>
-
-<p>具体的处理流程我们会在后期详细讨论。</p>
-
-<p>参考</p>
-
-<p><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/Streams/Streams.html">Stream Programming Guide</a></p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/3">&larr; Older</a>
@@ -1100,9 +1003,9 @@ TKCoverflowViewDelegate协议的</p>
 <section>
 <h1>分类</h1>
 <ul>
-  <li><a href='/blog/categories/ios'>ios (22)</a></li>
+  <li><a href='/blog/categories/ios'>ios (23)</a></li>
   <li><a href='/blog/categories/network'>network (3)</a></li>
-  <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (1)</a></li>
+  <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (2)</a></li>
   <li><a href='/blog/categories/swift'>swift (7)</a></li>
   <li><a href='/blog/categories/网络'>网络 (8)</a></li>
 </ul>
@@ -1111,6 +1014,10 @@ TKCoverflowViewDelegate协议的</p>
 <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/08/02/reactivecocoazhi-nan-er-:twittersou-suo-shi-li/">ReactiveCocoa指南二：Twitter搜索实例</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2014/08/02/reactivecocoazhi-nan-%5B%3F%5D-:xin-hao/">ReactiveCocoa指南一：信号</a>
@@ -1146,10 +1053,6 @@ TKCoverflowViewDelegate协议的</p>
     
       <li class="post">
         <a href="/blog/2014/07/18/cover-flowte-xiao-shi-xian/">Cover Flow特效实现</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/07/17/ioszhong-liu-stream-de-shi-yong/">iOS中流(Stream)的使用</a>
       </li>
     
   </ul>

@@ -3,6 +3,12 @@
   
   
   <url>
+    <loc>http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-er-:twittersou-suo-shi-li/</loc>
+    <lastmod>2014-08-02T23:20:48+08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
     <loc>http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-%5B%3F%5D-:xin-hao/</loc>
     <lastmod>2014-08-02T23:03:12+08:00</lastmod>
     <priority>0.8</priority>
@@ -149,14 +155,14 @@
   
   <url>
     <loc>http://southpeak.github.io/blog/archives/</loc>
-    <lastmod>2014-08-02T23:15:15+08:00</lastmod>
+    <lastmod>2014-08-02T23:22:08+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
     <loc>http://southpeak.github.io/</loc>
-    <lastmod>2014-08-02T23:15:15+08:00</lastmod>
+    <lastmod>2014-08-02T23:22:08+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
