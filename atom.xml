@@ -4,7 +4,7 @@
   <title><![CDATA[南峰子的技术博客]]></title>
   <link href="http://southpeak.github.io/atom.xml" rel="self"/>
   <link href="http://southpeak.github.io/"/>
-  <updated>2014-08-02T23:22:08+08:00</updated>
+  <updated>2014-08-02T23:26:20+08:00</updated>
   <id>http://southpeak.github.io/</id>
   <author>
     <name><![CDATA[南峰子]]></name>
@@ -20,7 +20,7 @@
     <id>http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-er-:twittersou-suo-shi-li</id>
     <content type="html"><![CDATA[<p>原文由Colin Eberhardt发表于raywenderlich，<a href="http://www.raywenderlich.com/62796/reactivecocoa-tutorial-pt2">ReactiveCocoa Tutorial – The Definitive Introduction: Part 2/2</a></p>
 
-<p>第一部分我们学习了ReactiveCocoa处理信号的基本流程，如何发送流事件，以及分割及组合信号。在这一部分中，我们将继续学习ReactiveCocoa更多的特性，包括：</p>
+<p><a href="http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-%5B%3F%5D-:xin-hao/">第一部分</a>我们学习了ReactiveCocoa处理信号的基本流程，如何发送流事件，以及分割及组合信号。在这一部分中，我们将继续学习ReactiveCocoa更多的特性，包括：</p>
 
 <ol>
 <li>error和completed事件类型</li>
