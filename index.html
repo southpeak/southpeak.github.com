@@ -11,7 +11,7 @@
   <meta name="baidu-site-verification" content="HoscFhWICI" />
 
   
-  <meta name="description" content="原文由Colin Eberhardt发表于raywenderlich，ReactiveCocoa Tutorial – The Definitive Introduction: Part 2/2 第一部分我们学习了ReactiveCocoa处理信号的基本流程，如何发送流事件，以及分割及组合信号。 &hellip;">
+  <meta name="description" content="你可能已经在Twitter上听过这个这个笑话了： “iOS Architecture, where MVC stands for Massive View Controller” 当然这在iOS开发圈内，这是个轻松的笑话，但我敢确定你大实践中遇到过这个问题：即视图控制器太大且难以管理。 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -68,6 +68,776 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/08/08/mvvmzhi-nan-yi-:flickrsou-suo-shi-li/">MVVM指南一：Flickr搜索实例</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-08-08T18:54:42+08:00" pubdate data-updated="true">Aug 8<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/08/08/mvvmzhi-nan-yi-:flickrsou-suo-shi-li/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>你可能已经在Twitter上听过这个这个笑话了：</p>
+
+<p>“iOS Architecture, where MVC stands for Massive View Controller”</p>
+
+<p>当然这在iOS开发圈内，这是个轻松的笑话，但我敢确定你大实践中遇到过这个问题：即视图控制器太大且难以管理。</p>
+
+<p>这篇文章将介绍另一种构建应用程序的模式&mdash;MVVM(Model-View-ViewModel)。通过结合ReactiveCocoa便利性，这个模式提供了一个很好的代替MVC的方案，它保证了让视图控制器的轻量性。</p>
+
+<p>在本文我，我们将通过构建一个简单的Flickr查询程序来一步步了解MVVM，这个程序的效果图如下所示：</p>
+
+<p><img src="http://cdn5.raywenderlich.com/wp-content/uploads/2014/06/FinishedApp.png" alt="image" /></p>
+
+<p>在开始写代码之前，我们先来了解一些基本的原理。</p>
+
+<p>原文简要介绍了一下ReactiveCocoa，在此不在翻译，可以查看以下文章：</p>
+
+<p><a href="http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-%5B%3F%5D-:xin-hao/">ReactiveCocoa指南一：信号</a></p>
+
+<p><a href="http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-er-:twittersou-suo-shi-li/">ReactiveCocoa指南二：Twitter搜索实例</a></p>
+
+<h2>MVVM模式介绍</h2>
+
+<p>正如其名称一下，MVVM是一个UI设计模式。它是MV*模式集合中的一员。MV*模式还包含MVC(Model View Controller)、MVP(Model View Presenter)等。这些模式的目的在于将UI逻辑与业务逻辑分离，以让程序更容易开发和测试。为了更好的理解MVVM模式，我们可以看看其来源。</p>
+
+<p>MVC是最初的UI设计模式，最早出现在Smalltalk语言中。下图展示了MVC模式的主要组成：</p>
+
+<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/06/MVCPattern-2.png" alt="image" /></p>
+
+<p>这个模式将UI分成Model(表示程序状态)、View(由UI控件组成)、Controller(处理用户交互与更新model)。MVC模式的最大问题是其令人相当困惑。它的概念看起来很好，但当我们实现MVC时，就会产生上图这种Model-View-Controller之间的环状关系。这种相互关系将会导致可怕的混乱。</p>
+
+<p>最近Martin Fowler介绍了MVC模式的一个变种，这种模式命名为MVVM，并被微软广泛采用并推广。</p>
+
+<p><img src="http://cdn5.raywenderlich.com/wp-content/uploads/2014/06/MVVMPattern.png" alt="image" /></p>
+
+<p>这个模式的核心是ViewModel，它是一种特殊的model类型，用于表示程序的UI状态。它包含描述每个UI控件的状态的属性。例如，文本输入域的当前文本，或者一个特定按钮是否可用。它同样暴露了视图可以执行哪些行为，如按钮点击或手势。</p>
+
+<p>我们可以将ViewModel看作是视图的模型(model-of-the-view)。MVVM模式中的三部分比MVC更加简洁，下面是一些严格的限制</p>
+
+<ol>
+<li>View引用了ViewModel，但反过来不行。</li>
+<li>ViewModel引用了Model，但反过来不行。</li>
+</ol>
+
+
+<p>如果我们破坏了这些规则，便无法正确地使用MVVM。</p>
+
+<p>这个模式有以下一些立竿见影的优势：</p>
+
+<ol>
+<li>轻量的视图：所有的UI逻辑都在ViewModel中。</li>
+<li>便于测试：我们可以在没有视图的情况下运行整个程序，这样大大地增加了它的可测试性。</li>
+</ol>
+
+
+<p>现在你可能注意到一个问题。如果View引用了ViewModel，但ViewModel没有引用View，那ViewModel如何更新视图呢？哈哈，这就得靠MVVM模式的私密武器了。</p>
+
+<h2>MVVM和数据绑定</h2>
+
+<p>MVVM模式依赖于数据绑定，它是一个框架级别的特性，用于自动连接对象属性和UI控件。例如，在微软的WPF框架中，下面的标签将一个TextField的Text属性绑定到ViewModel的Username属性中。</p>
+
+<pre><code>&lt;TextField Text=”{DataBinding Path=Username, Mode=TwoWay}”/&gt;
+</code></pre>
+
+<p>WPF框架将这两个属性绑定到一起。</p>
+
+<p>不过可惜的是，iOS没有数据绑定框架，幸运的是我们可以通过ReactiveCocoa来实现这一功能。我们从iOS开发的角度来看看MVVM模式，ViewController及其相关的UI(nib, stroyboard或纯代码的View)组成了View:</p>
+
+<p><img src="http://cdn5.raywenderlich.com/wp-content/uploads/2014/06/MVVMReactiveCocoa.png" alt="image" /></p>
+
+<p>&hellip;&hellip;而ReactiveCocoa绑定了View和ViewModel。</p>
+
+<p>理论讲得差不多了，我们可以开始新的历程了。</p>
+
+<h2>启动项目结构</h2>
+
+<p>可以从<a href="http://cdn5.raywenderlich.com/wp-content/uploads/2014/06/FlickrSearchStarterProject1.zip">FlickrSearchStarterProject.zip</a>中下载启动项目。我们使用Cocoapods来管理第三方库，在对应目录下执行pod install命令生成依赖库后，我们就可以打开生成的RWTFlickrSearch.xcworkspace来运行我们的项目了，初始运行效果如下图：</p>
+
+<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/06/first-launch.jpg" alt="image" /></p>
+
+<p>我们行熟悉下工程的结构：</p>
+
+<p><img src="http://cdn2.raywenderlich.com/wp-content/uploads/2014/06/EmptyInterface.png" alt="image" /></p>
+
+<p>Model和ViewModel分组目前是空的，我们会慢慢往里面添加东西。View分组包含以下几个类</p>
+
+<ol>
+<li>RWTFlickSearchViewController：程序的主屏幕，包含一个搜索输入域和一个GO按钮。</li>
+<li>RWTRecentSearchItemTableViewCell：用于在主页中显示搜索结果的table cell</li>
+<li>RWTSearchResultsViewController：搜索结果页，显示来自Flickr的tableview</li>
+<li>RWTSearchResultsTableViewCell：渲染来自Flickr的单个图片的table cell。</li>
+</ol>
+
+
+<p>现在来写我们的第一个ViewModel吧。</p>
+
+<h2>第一个ViewModel</h2>
+
+<p>在ViewModel分组中添加一个继承自NSObject的新类RWTFlickrSearchViewModel。然后在该类的头文件中，添加以下两行代码：</p>
+
+<pre><code>@property (nonatomic, strong) NSString *searchText;
+@property (nonatomic, strong) NSString *title;
+</code></pre>
+
+<p>searchText属性表示文本域中显示文本，title属性表示导航条上的标题。</p>
+
+<p>打开RWTFlickrSearchViewModel.m文件添加以下代码：</p>
+
+<pre><code>@implementation RWTFlickrSearchViewModel
+
+- (instancetype)init
+{
+    self = [super init];
+
+    if (self)
+    {
+        [self initialize];
+    }
+
+    return self;
+}
+
+- (void)initialize
+{
+    self.searchText = @"search text";
+    self.title = @"Flickr Search";
+}
+
+@end
+</code></pre>
+
+<p>这段代码简单地设置了ViewModel的初始状态。</p>
+
+<p>接下来我们将连接ViewModel到View。记住View保存了一个ViewModel的引用。在这种情况下，添加一个给定ViewModel的初始化方法来构造View是很有必要的。打开RWTFlickrSearchViewController.h，并导入ViewModel头文件：</p>
+
+<pre><code>#import "RWTFlickrSearchViewModel.h"
+</code></pre>
+
+<p>并添加以下初始化方法：</p>
+
+<pre><code>@interface RWTFlickrSearchViewController : UIViewController
+
+- (instancetype)initWithViewModel:(RWTFlickrSearchViewModel *)viewModel;
+
+@end
+</code></pre>
+
+<p>在RWTFlickrSearchViewController.m中，在类的扩展中添加以下私有属性：</p>
+
+<pre><code>@property (weak, nonatomic) RWTFlickrSearchViewModel *viewModel;
+</code></pre>
+
+<p>然后添加以下方法：</p>
+
+<pre><code>- (instancetype)initWithViewModel:(RWTFlickrSearchViewModel *)viewModel
+{
+    self = [super init];
+
+    if (self)
+    {
+        _viewModel = viewModel;
+    }
+
+    return self;
+}
+</code></pre>
+
+<p>这就在view中存储了一个到ViewModel的引用。<em>注意这是一个弱引用，这样View引用了ViewModel，但没有拥有它。</em></p>
+
+<p>接下来在viewDidLoad里面添加下面代码：</p>
+
+<pre><code>[self bindViewModel];
+</code></pre>
+
+<p>该方法的实现如下：</p>
+
+<pre><code>- (void)bindViewModel
+{
+    self.title = self.viewModel.title;
+    self.searchTextField.text = self.viewModel.searchText;
+}
+</code></pre>
+
+<p>最后我们需要创建ViewModel，并将其提供给View。在RWTAppDelegate.m中，添加以下头文件：</p>
+
+<pre><code>#import "RWTFlickrSearchViewModel.h"
+</code></pre>
+
+<p>同时添加一个私有属性：</p>
+
+<pre><code>@property (nonatomic, strong) RWTFlickrSearchViewModel *viewModel;
+</code></pre>
+
+<p>我们会发现这个类中已以有一个createInitialViewController方法了，我们用以下代码来更新它：</p>
+
+<pre><code>- (UIViewController *)createInitialViewController {
+    self.viewModel = [RWTFlickrSearchViewModel new];
+    return [[RWTFlickrSearchViewController alloc] initWithViewModel:self.viewModel];
+}
+</code></pre>
+
+<p>这个方法创建了一个ViewModel实例，然后构造并返回了View。这个视图作程序导航控制器的初始视图。</p>
+
+<p>运行后的状态如下：</p>
+
+<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/06/ViewWithState-333x500.png" alt="image" /></p>
+
+<p>这样我们就得到了第一个ViewModel。不过仍然有许多东西要学的。你可能已经发现了我们还没有使用ReactiveCocoa。到目前为止，用户在输入框上的输入操作不会影响到ViewModel。</p>
+
+<h2>检测可用的搜索状态</h2>
+
+<p>现在，我们来看看如何用ReactiveCocoa来绑定ViewModel和View，以将搜索输入框和按钮连接到ViewModel。</p>
+
+<p>在RWTFlickrSearchViewController.m中，我们使用如下代码更新bindViewModel方法。</p>
+
+<pre><code>- (void)bindViewModel
+{
+    self.title = self.viewModel.title;
+    RAC(self.viewModel, searchText) = self.searchTextField.rac_textSignal;
+}
+</code></pre>
+
+<p>在ReactiveCocoa中，使用了分类将rac_textSignal属性添加到UITextField类中。它是一个信号，在文本域每次更新时会发送一个包含当前文本的next事件。</p>
+
+<p>RAC是一个用于做绑定操作的宏，上面的代码会使用rac_textSignal发出的next信号来更新viewModel的searchText属性。</p>
+
+<p>搜索按钮应该只有在用户输入有效时才可点击。为了方便起见，我们以输入字符大于3时输入有效为准。在RWTFlickrSearchViewModel.m中导入以下头文件。</p>
+
+<pre><code>#import &lt;ReactiveCocoa/ReactiveCocoa.h&gt;
+</code></pre>
+
+<p>然后更新初始化方法：</p>
+
+<pre><code>- (void)initialize
+{
+    self.title = @"Flickr Search";
+
+    RACSignal *validSearchSignal =
+    [[RACObserve(self, searchText)
+      map:^id(NSString *text) {
+        return @(text.length &gt; 3);
+    }]
+     distinctUntilChanged];
+
+    [validSearchSignal subscribeNext:^(id x) {
+        NSLog(@"search text is valid %@", x);
+    }];
+}
+</code></pre>
+
+<p>运行程序并在输入框中输入一些字符，在控制台中我们可以看到以下输出：</p>
+
+<pre><code>2014-08-07 21:50:44.078 RWTFlickrSearch[3116:60b] search text is valid 0
+2014-08-07 21:50:59.493 RWTFlickrSearch[3116:60b] search text is valid 1
+2014-08-07 21:51:02.594 RWTFlickrSearch[3116:60b] search text is valid 0
+</code></pre>
+
+<p>上面的代码使用RACObserve宏来从ViewModel的searchText属性创建一个信号。map操作将文本转化为一个true或false值的流。</p>
+
+<p>最后，distinctUntilChanges确保信号只有在状态改变时才发出值。</p>
+
+<p>到目前为止，我们可以看到ReactiveCocoa被用于将绑定View绑定到ViewModel，确保了这两者是同步的。另进一步地，ViewModel内部的ReactiveCocoa代码用于观察自己的状态及执行其它操作。</p>
+
+<p>这就是MVVM模式的基本处理过程。ReactiveCocoa通常用于绑定View和ViewModel，但在程序的其它层也非常有用。</p>
+
+<h2>添加搜索命令</h2>
+
+<p>本节将上面创建的validSearchSignal来创建绑定到View的操作。打开RWTFlickrSearchViewModel.h并添加以下头文件</p>
+
+<pre><code>#import &lt;ReactiveCocoa/ReactiveCocoa.h&gt;
+</code></pre>
+
+<p>同时添加以下属性</p>
+
+<pre><code>@property (strong, nonatomic) RACCommand *executeSearch;
+</code></pre>
+
+<p>RACCommand是ReactiveCocoa中用于表示UI操作的一个类。它包含一个代表了UI操作的结果的信号以及标识操作当前是否被执行的一个状态。</p>
+
+<p>在RWTFlickrSearchViewModel.m的initialize方法的最后添加以下代码：</p>
+
+<pre><code>self.executeSearch = [[RACCommand alloc] initWithEnabled:validSearchSignal
+                                             signalBlock:^RACSignal *(id input) {
+                                                 return [self executeSearchSignal];
+                                             }];
+</code></pre>
+
+<p>这创建了一个在validSearchSignal发送true时可用的命令。另外，需要在下面实现executeSearchSignal方法，它提供了命令所执行的操作。</p>
+
+<pre><code>- (RACSignal *)executeSearchSignal
+{
+    return [[[[RACSignal empty] logAll] delay:2.0] logAll];
+}
+</code></pre>
+
+<p>在这个方法中，我们执行一些业务逻辑操作，以作为命令执行的结果，并通过信号异步返回结果。</p>
+
+<p>到目前为止，上述代码只提供了一个简单的实现：空信号会立即完成。delay操作会将其所接收到的next或complete事件延迟两秒执行。</p>
+
+<p>最后一步是将这个命令连接到View中。打开RWTFlickrSearchViewController.m并在bindViewModel方法的结尾中添加以下代码：</p>
+
+<pre><code>self.searchButton.rac_command = self.viewModel.executeSearch;
+</code></pre>
+
+<p>rac_command属性是UIButton的ReactiveCocoa分类中添加的属性。上面的代码确保点击按钮执行给定的命令，且按钮的可点击状态反应了命令的可用状态。</p>
+
+<p>运行代码，输入一些字符并点击GO，得到如下结果：</p>
+
+<p><img src="http://cdn3.raywenderlich.com/wp-content/uploads/2014/06/GoButtonEnabled-333x500.png" alt="image" /></p>
+
+<p>可以看到，当输入有效点击按钮时，按钮会置灰2秒钟，当执行的信号完成时又可点击。我们可以看下控制台的输出，可以发现空信号会立即完成，而延迟操作会在2秒后发出事件：</p>
+
+<pre><code>2014-08-07 22:21:25.128 RWTFlickrSearch[3161:60b] &lt;RACDynamicSignal: 0x17005ba20&gt; name: +empty completed
+2014-08-07 22:21:27.329 RWTFlickrSearch[3161:60b] &lt;RACDynamicSignal: 0x17005dd30&gt; name: [+empty] -delay: 2.000000 completed
+</code></pre>
+
+<p>是不是很酷？</p>
+
+<h2>绑定、绑定还是绑定</h2>
+
+<p>RACCommand监听了搜索按钮状态的更新，但处理activity indicator的可见性则由我们负责。RACCommand暴露了一个executing属性，它是一个信号，发送true或false来标明命令开始和结束执行的时间。我们可以用这个来影响当前命令的状态。</p>
+
+<p>在RWTFlickrSearchViewController.m中的bindViewModel方法结尾处添加以下代码：</p>
+
+<pre><code>RAC([UIApplication sharedApplication], networkActivityIndicatorVisible) = self.viewModel.executeSearch.executing;
+</code></pre>
+
+<p>这将UIApplication的networkActivityIndicatorVisible属性绑定到命令的executing信号中。这确保了不管命令什么时候执行，状态栏中的网络activity indicator都会显示。</p>
+
+<p>接下来添加以下代码：</p>
+
+<pre><code>RAC(self.loadingIndicator, hidden) = [self.viewModel.executeSearch.executing not];
+</code></pre>
+
+<p>当命令执行时，应该隐藏加载indicator。这可以通过not操作来反转信号。</p>
+
+<p>最后，添加以下代码：</p>
+
+<pre><code>[self.viewModel.executeSearch.executionSignals subscribeNext:^(id x) {
+    [self.searchTextField resignFirstResponder];
+}];
+</code></pre>
+
+<p>这段代码确保命令执行时隐藏键盘。executionSignals属性发送由命令每次执行时生成的信号。这个属性是信号的信号(见<a href="http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-%5B%3F%5D-:xin-hao/">ReactiveCocoa指南一：信号</a>)。当创建和发出一个新的命令执行信号时，隐藏键盘。</p>
+
+<p>运行程序看看效果如何吧。</p>
+
+<h2>Model在哪？</h2>
+
+<p>到目前为止，我们已经有了一个清晰的View(RWTFlickrSearchViewController)和ViewModel(RWTFlickrSearchViewModel)，但是Model在哪呢？</p>
+
+<p>答案很简单：没有！</p>
+
+<p>当前的程序执行一个命令来响应用户点击搜索按钮的操作，但是实现不做任何值的处理。ViewModel真正需要做的是使用当前的searchText来搜索Flickr，并返回一个匹配的列表。</p>
+
+<p>我们应该可以直接在ViewModel添加业务逻辑，但相信我，你不希望这么做。如果这是一个viewcontroller，我打赌你一定会直接这么做。</p>
+
+<p>ViewModel暴露属性来表示UI状态，它同样暴露命令来表示UI操作(通常是方法)。ViewModel负责管理基于用户交互的UI状态的改变。然而它不负责实际执行这些交互产生的的业务逻辑，那是Model的工作。</p>
+
+<p>接下来，我们将在程序中添加Model层。</p>
+
+<p>在Model分组中，添加RWTFlickrSearch协议并提供以下实现</p>
+
+<pre><code>#import &lt;ReactiveCocoa/ReactiveCocoa.h&gt;
+
+@protocol RWTFlickrSearch &lt;NSObject&gt;
+
+- (RACSignal *)flickrSearchSignal:(NSString *)searchString;
+
+@end
+</code></pre>
+
+<p>这个协议定义了Model层的初始接口，并将搜索Flickr的责任移出ViewModel。</p>
+
+<p>接下来在Model分组中添加RWTFlickrSearchImpl类，其继承自NSObject，并实现了RWTFlickrSearch协议，如下代码所示：</p>
+
+<pre><code>#import "RWTFlickrSearch.h"
+
+@interface RWTFlickrSearchImpl : NSObject &lt;RWTFlickrSearch&gt;
+
+@end
+</code></pre>
+
+<p>打开RWTFlickrSearchImpl.m文件，提供以下实现：</p>
+
+<p>@implementation RWTFlickrSearchImpl</p>
+
+<pre><code>- (RACSignal *)flickrSearchSignal:(NSString *)searchString
+{
+    return [[[[RACSignal empty] logAll] delay:2.0] logAll];
+}
+
+@end
+</code></pre>
+
+<p>看着是不是有hkko眼熟？没错，我们在上面的ViewModel中有相同的实现。</p>
+
+<p>接下来我们需要在ViewModel层中使用Model层。在ViewModel分组中添加RWTViewModelServices协议并如下实现：</p>
+
+<pre><code>#import "RWTFlickrSearch.h"
+
+@protocol RWTViewModelServices &lt;NSObject&gt;
+
+- (id&lt;RWTFlickrSearch&gt;)getFlickrSearchService;
+
+@end
+</code></pre>
+
+<p>这个协议定义了唯一的一个方法，以允许ViewModel获取一个引用，以指向RWTFlickrSearch协议的实现对象。</p>
+
+<p>打开RWTFlickrSearchViewModel.h并导入头文件</p>
+
+<pre><code>#import "RWTViewModelServices.h"
+</code></pre>
+
+<p>更新初始化方法并将RWTViewModelServices作为一个参数：</p>
+
+<pre><code>- (instancetype)initWithServices:(id&lt;RWTViewModelServices&gt;)services;
+</code></pre>
+
+<p>在RWTFlickrSearchViewModel.m中，添加类的分类并提供一个私有属性来维护一个到RWTViewModelServices的引用：</p>
+
+<pre><code>@interface RWTFlickrSearchViewModel ()
+
+@property (nonatomic, weak) id&lt;RWTViewModelServices&gt; services;
+
+@end
+</code></pre>
+
+<p>在该文件下面，添加初始化方法的实现：</p>
+
+<pre><code>- (instancetype)initWithServices:(id&lt;RWTViewModelServices&gt;)services
+{
+    self = [super init];
+
+    if (self)
+    {
+        _services = services;
+        [self initialize];
+    }
+
+    return self;
+}
+</code></pre>
+
+<p>这只是简单的存储了services的引用。</p>
+
+<p>最后，更新executeSearchSignal方法：</p>
+
+<pre><code>- (RACSignal *)executeSearchSignal
+{
+    return [[self.services getFlickrSearchService] flickrSearchSignal:self.searchText];
+}
+</code></pre>
+
+<p>最后是连接Model和ViewModel。</p>
+
+<p>在工程的根分组中，添加一个NSObject的子类RWTViewModelServicesImpl。打开RWTViewModelServicesImpl.h并实现RWTViewModelServices协议：</p>
+
+<pre><code>#import "RWTViewModelServices.h"
+
+@interface RWTViewModelServicesImpl : NSObject &lt;RWTViewModelServices&gt;
+
+@end
+</code></pre>
+
+<p>打开RWTViewModelServicesImpl.m，并添加实现：</p>
+
+<pre><code>#import "RWTFlickrSearchImpl.h"
+
+@interface RWTViewModelServicesImpl ()
+
+@property (strong, nonatomic) RWTFlickrSearchImpl *searchService;
+
+@end
+
+@implementation RWTViewModelServicesImpl
+
+- (instancetype)init
+{
+    if (self = [super init])
+    {
+        _searchService = [RWTFlickrSearchImpl new];
+    }
+
+    return self;
+}
+
+- (id&lt;RWTFlickrSearch&gt;)getFlickrSearchService
+{
+    return self.searchService;
+}
+
+@end
+</code></pre>
+
+<p>这个类简单创建了一个RWTFlickrSearchImpl实例，用于Model层搜索Flickr服务，并将其提供给ViewModel的请求。</p>
+
+<p>最后，在RWTAppDelegate.m中添加以下头文件</p>
+
+<pre><code>#import "RWTViewModelServicesImpl.h"
+</code></pre>
+
+<p>并添加一个新的私有属性</p>
+
+<pre><code>@property (nonatomic, strong) RWTViewModelServicesImpl *viewModelServices;
+</code></pre>
+
+<p>再更新createInitialViewController方法：</p>
+
+<pre><code>- (UIViewController *)createInitialViewController {
+    self.viewModelServices = [RWTViewModelServicesImpl new];
+    self.viewModel = [[RWTFlickrSearchViewModel alloc] initWithServices:self.viewModelServices];
+    return [[RWTFlickrSearchViewController alloc] initWithViewModel:self.viewModel];
+}
+</code></pre>
+
+<p>运行程序，验证程序有没有按之前的方式来工作。当然，这不是最有趣的变化，不过，可以看看新代码的形状了。</p>
+
+<p>Model层暴露了一个ViewModel层使用的&#8217;服务&#8217;。一个协议定义了这个服务的接口，提供了松散的组合。</p>
+
+<p>我们可以使用这种方式来为单元测试提供一个类似的服务实现。程序现在有了正确的MVVM结构，让我们小结一下：</p>
+
+<ol>
+<li>Model层暴露服务并负责提供程序的业务逻辑实现。</li>
+<li>ViewModel层表示程序的视图状态(view-state)。同时响应用户交互及来自Model层的事件，两者都受view-state变化的影响。</li>
+<li>View层很薄，只提供ViewModel状态的显示及输出用户交互事件。</li>
+</ol>
+
+
+<h2>搜索Flickr</h2>
+
+<p>我们继续来完成Flickr的搜索实现，事情变得越来越有趣了。</p>
+
+<p>首先我们创建表示搜索结果的模型对象。在Model分组中，添加RWTFlickrPhoto类，并为其添加三个属性。</p>
+
+<pre><code>@interface RWTFlickrPhoto : NSObject
+
+@property (nonatomic, strong) NSString *title;
+@property (nonatomic, strong) NSURL *url;
+@property (nonatomic, strong) NSString *identifier;
+
+@end
+</code></pre>
+
+<p>这个模型对象表示由Flickr搜索API返回一个图片。</p>
+
+<p>打开RWTFlickrPhoto.m，并添加以下描述方法的实现：</p>
+
+<pre><code>- (NSString *)description
+{
+    return self.title;
+}
+</code></pre>
+
+<p>接下来，新建一个新的模型对象类RWTFlickrSearchResults，并添加以下属性：</p>
+
+<pre><code>@interface RWTFlickrSearchResults : NSObject
+
+@property (strong, nonatomic) NSString *searchString;
+@property (strong, nonatomic) NSArray *photos;
+@property (nonatomic) NSInteger totalResults;
+
+@end
+</code></pre>
+
+<p>这个类表示由Flickr搜索返回的照片集合。</p>
+
+<p>是时候实现搜索Flickr了。打开RWTFlickrSearchImpl.m并导入以下头文件：</p>
+
+<pre><code>#import "RWTFlickrSearchResults.h"
+#import "RWTFlickrPhoto.h"
+#import &lt;objectiveflickr/ObjectiveFlickr.h&gt;
+#import &lt;LinqToObjectiveC/NSArray+LinqExtensions.h&gt;
+</code></pre>
+
+<p>然后添加以下类扩展：</p>
+
+<pre><code>@interface RWTFlickrSearchImpl () &lt;OFFlickrAPIRequestDelegate&gt;
+
+@property (strong, nonatomic) NSMutableSet *requests;
+@property (strong, nonatomic) OFFlickrAPIContext *flickrContext;
+
+@end
+</code></pre>
+
+<p>这个类实现了OFFlickrAPIRequestDelegate协议，并添加了两个私有属性。我们会很快看到如何使用这些值。</p>
+
+<p>继续添加代码：</p>
+
+<pre><code>- (instancetype)init
+{
+    self = [super init];
+
+    if (self)
+    {
+        NSString *OFSampleAppAPIKey = @"YOUR_API_KEY_GOES_HERE";
+        NSString *OFSampleAppAPISharedSecret = @"YOUR_SECRET_GOES_HERE";
+
+        _flickrContext = [[OFFlickrAPIContext alloc] initWithAPIKey:OFSampleAppAPIKey sharedSecret:OFSampleAppAPISharedSecret];
+
+        _requests = [NSMutableSet new];
+    }
+
+    return self;
+}
+</code></pre>
+
+<p>这段代码创建了一个Flickr的上下文，用于存储ObjectiveFlickr请求的数据。</p>
+
+<p>当前Model层服务类提供的API有一个单独的方法，用于查找基于文本搜索字符的图片。不过我们一会会添加更多的方法。</p>
+
+<p>在RWTFlickrSearchImpl.m中添加以下方法：</p>
+
+<pre><code>- (RACSignal *)signalFromAPIMethod:(NSString *)method arguments:(NSDictionary *)args transform:(id (^)(NSDictionary *response))block
+{
+    // 1. 创建请求信号
+    return [RACSignal createSignal:^RACDisposable *(id&lt;RACSubscriber&gt; subscriber) {
+
+        // 2. 创建一个Flick请求对象
+        OFFlickrAPIRequest *flickrRequest = [[OFFlickrAPIRequest alloc] initWithAPIContext:self.flickrContext];
+        flickrRequest.delegate = self;
+        [self.requests addObject:flickrRequest];
+
+        // 3. 从代理方法中创建一个信号
+        RACSignal *successSignal = [self rac_signalForSelector:@selector(flickrAPIRequest:didCompleteWithResponse:)
+                                                  fromProtocol:@protocol(OFFlickrAPIRequestDelegate)];
+
+        // 4. 处理响应
+        [[[successSignal
+         map:^id(RACTuple *tuple) {
+             return tuple.second;
+         }]
+         map:block]
+         subscribeNext:^(id x) {
+             [subscriber sendNext:x];
+             [subscriber sendCompleted];
+         }];
+
+        // 5. 开始请求
+        [flickrRequest callAPIMethodWithGET:method arguments:args];
+
+        // 6. 完成后，移除请求的引用
+        return [RACDisposable disposableWithBlock:^{
+            [self.requests removeObject:flickrRequest];
+        }];
+    }];
+}
+</code></pre>
+
+<p>这个方法需要传入请求方法及请求参数，然后使用block参数来转换响应对象。我们重点看一下第4步：</p>
+
+<pre><code>[[[successSignal
+  // 1. 从flickrAPIRequest:didCompleteWithResponse:代理方法中提取第二个参数
+  map:^id(RACTuple *tuple) {
+    return tuple.second;
+  }]
+  // 2. 转换结果
+  map:block]
+  subscribeNext:^(id x) {
+    // 3. 将结果发送给订阅者
+    [subscriber sendNext:x];
+    [subscriber sendCompleted];
+  }];
+</code></pre>
+
+<p>rac_signalForSelector:fromProtocol: 方法创建了successSignal，同样也在代理方法的调用中创建了信号。</p>
+
+<p>代理方法每次调用时，发出的next事件会附带包含方法参数的RACTuple。</p>
+
+<p>实现Flickr搜索的最后一步如下：</p>
+
+<pre><code>- (RACSignal *)flickrSearchSignal:(NSString *)searchString {
+  return [self signalFromAPIMethod:@"flickr.photos.search"
+                         arguments:@{@"text": searchString,
+                                     @"sort": @"interestingness-desc"}
+                         transform:^id(NSDictionary *response) {
+
+    RWTFlickrSearchResults *results = [RWTFlickrSearchResults new];
+    results.searchString = searchString;
+    results.totalResults = [[response valueForKeyPath:@"photos.total"] integerValue];
+
+    NSArray *photos = [response valueForKeyPath:@"photos.photo"];
+    results.photos = [photos linq_select:^id(NSDictionary *jsonPhoto) {
+      RWTFlickrPhoto *photo = [RWTFlickrPhoto new];
+      photo.title = [jsonPhoto objectForKey:@"title"];
+      photo.identifier = [jsonPhoto objectForKey:@"id"];
+      photo.url = [self.flickrContext photoSourceURLFromDictionary:jsonPhoto
+                                                              size:OFFlickrSmallSize];
+      return photo;
+    }];
+
+    return results;
+  }];
+}
+</code></pre>
+
+<p>上面的方法使用signalFromAPIMethod:arguments:transform:方法。flickr.photos.search方法提供的字典来搜索照片。</p>
+
+<p>传递给transform参数的block简单地将NSDictionary响应转化为一个等价的模型对象，让它在ViewModel中更容易使用。</p>
+
+<p>最后一步是打开RWTFlickrSearchViewModel.m方法，然后更新搜索信号来记录日志：</p>
+
+<pre><code>- (RACSignal *)executeSearchSignal {
+  return [[[self.services getFlickrSearchService]
+           flickrSearchSignal:self.searchText]
+           logAll];
+}
+</code></pre>
+
+<p>编译，运行并输入一些字符后可在控制台看到以下日志：</p>
+
+<pre><code>2014-06-03 [...] &lt;RACDynamicSignal: 0x8c368a0&gt; name: +createSignal: next: searchString=wibble, totalresults=1973, photos=(
+    "Wibble, wobble, wibble, wobble",
+    "unoa-army",
+    "Day 277: Cheers to the freakin' weekend!",
+    [...]
+    "Angry sky",
+    Nemesis
+)
+</code></pre>
+
+<p>这样我们MVVM指南的第一部分就差不多结束了，但在结束之前，让我们先看看内存问题吧。</p>
+
+<h2>内存管理</h2>
+
+<p>正如在<a href="http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-er-:twittersou-suo-shi-li/">ReactiveCocoa指南二：Twitter搜索实例</a>中所讲的一样，我们在block中使用了self，这可能会导致循环引用的问题。而为了避免此问题，我们需要使用@weakify和@strongify宏来打破这种循环引用。</p>
+
+<p>不过看看signalFromAPIMethod:arguments:transform:方法，你可能会迷惑为什么没有使用这两个宏来引用self？这是因为block是作为createSignal:方法的一个参数，它不会在self和block之间建立一个强引用关系。迷茫了吧？不相信的话只需要测试一样这段代码有没有内存泄露就行。当然这时候就得用Instruments了，自己去看吧。哈哈。</p>
+
+<h2>何去何从？</h2>
+
+<p>例子工程的完整代码可以在<a href="http://cdn4.raywenderlich.com/wp-content/uploads/2014/06/FlickrSearchPart1Project1.zip">这里</a>下载。在下一部分中，我们将看看如何从ViewModel中初始化一个视图控制器并实现更多的Flickr请求操作。</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1615,479 +2385,6 @@ self.passwordTextField.backgroundColor = self.passwordIsValid ? [UIColor clearCo
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/07/29/core-bluetoothkuang-jia-zhi-%5B%3F%5D-:centralyu-peripheral/">Core Bluetooth框架之一：Central与Peripheral</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-07-29T21:52:48+08:00" pubdate data-updated="true">Jul 29<sup>th</sup>, 2014</time>
-        
-        
-           | <a href="/blog/2014/07/29/core-bluetoothkuang-jia-zhi-%5B%3F%5D-:centralyu-peripheral/#comments">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>iOS和Mac应用使用Core Bluetooth framework来与BLE(低功耗蓝牙)设备通信。我们的程序可以发现、搜索并与低功耗外围(Peripheral)蓝牙设备通信，如心跳监听器、数字温控器、甚至是其它iOS设备。这个框架抽象了支持蓝牙4.0标准低功耗设备的基本操作，隐藏了4.0标准的底层实现细节，让我们可以方便的使用BLE设备。</p>
-
-<h2>蓝牙通信中的角色</h2>
-
-<p>在BLE通信中，主要有两个角色：Central和Peripheral。类似于传统的客户端-服务端架构，一个Peripheral端是提供数据的一方(相当于服务端)；而Central是使用Peripheral端提供的数据完成特定任务的一方(相当于客户端)。下图以心跳监听器为例展示了这样一个架构：</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/NetworkingInternetWeb/Conceptual/CoreBluetooth_concepts/Art/CBDevices1_2x.png" alt="image" /></p>
-
-<p>Peripheral端以广告包的形式来广播一些数据。一个广告包(advertising packet)是一小束相关数据，可能包含Peripheral提供的有用的信息，如Peripheral名或主要功能。在BLE下，广告是Peripheral设备表现的主要形式。</p>
-
-<p>Central端可以扫描并监听其感兴趣的任何广播信息的Peripheral设备。</p>
-
-<p>数据的广播及接收需要以一定的数据结构来表示。而服务就是这样一种数据结构。Peripheral端可能包含一个或多个服务或提供关于连接信号强度的有用信息。一个服务是一个设备的数据的集合及数据相关的操作。</p>
-
-<p>而服务本身又是由特性或所包含的服务组成的。一个特性提供了关于服务的更详细的信息。下图展示了心率监听器中的各种数据结构</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/NetworkingInternetWeb/Conceptual/CoreBluetooth_concepts/Art/CBPeripheralData_Example_2x.png" alt="image" /></p>
-
-<p>在一个Central端与Peripheral端成功建立连接后，Central可以发现Peripheral端提供的完整的服务及特性的集合。一个Central也可以读写Peripheral端的服务特性的值。我们将会在下面详细介绍。</p>
-
-<h2>Central、Peripherals及Peripheral数据的表示</h2>
-
-<p>当我们使用本地Central与Peripheral端交互时，我们会在BLE通信的Central端执行操作。除非我们设置了一个本地Peripheral设备，否则大部分蓝牙交互都是在Central端进行的。(下文也会讲Peripheral端的基本操作)</p>
-
-<p>在Central端，本地Central设备由CBCentralManager对象表示。这个对象用于管理发现与连接Peripheral设备(CBPeripheral对象)的操作，包括扫描、查找和连接。下图本地Central端与peripheral对象</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/NetworkingInternetWeb/Conceptual/CoreBluetooth_concepts/Art/CBObjects_CentralSide_2x.png" alt="image" /></p>
-
-<p>当与peripheral设备交互时，我们主要是在处理它的服务及特性。在Core Bluetooth框架中，服务是一个CBService对象，特性是一个CBCharacteristic对象，下图演示了Central端的服务与特性的基本结构：</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/NetworkingInternetWeb/Conceptual/CoreBluetooth_concepts/Art/TreeOfServicesAndCharacteristics_Remote_2x.png" alt="image" /></p>
-
-<p>苹果在OS X 10.9和iOS 6版本后，提供了BLE外设(Peripheral)功能，可以将设备作为Peripheral来处理。在Peripheral端，本地Peripheral设备表示为一个CBPeripheralManager对象。这些对象用于管理将服务及特性发布到本地Peripheral设备数据库，并广告这些服务给Central设备。Peripheral管理器也用于响应来自Central端的读写请求。如下图展示了一个Peripheral端角色：</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/NetworkingInternetWeb/Conceptual/CoreBluetooth_concepts/Art/CBObjects_PeripheralSide_2x.png" alt="image" /></p>
-
-<p>当在本地Peripheral设备上设置数据时，我们实际上处理的是服务与特性的可变版本。在Core Bluetooth框架中，本地Peripheral服务由CBMutableService对象表示，而特性由CBMutableCharacteristic对象表示，下图展示了本地Peripheral端服务与特性的基本结构：</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/NetworkingInternetWeb/Conceptual/CoreBluetooth_concepts/Art/TreeOfServicesAndCharacteristics_Local_2x.png" alt="image" /></p>
-
-<h2>Peripheral(Server)端操作</h2>
-
-<p>一个Peripheral端操作主要有以下步骤：</p>
-
-<ol>
-<li>启动一个Peripheral管理对象</li>
-<li>在本地Peripheral中设置服务及特性</li>
-<li>将服务及特性发布给设备的本地数据库</li>
-<li>广告我们的服务</li>
-<li>针对连接的Central端的读写请求作出响应</li>
-<li>发送更新的特性值到订阅Central端</li>
-</ol>
-
-
-<p>我们将在下面结合代码对每一步分别进行讲解</p>
-
-<h4>启动一个Peripheral管理器</h4>
-
-<p>要在本地设备上实现一个Peripheral端，我们需要分配并初始化一个Peripheral管理器实例，如下代码所示</p>
-
-<pre><code>// 创建一个Peripheral管理器
-// 我们将当前类作为peripheralManager，因此必须实现CBPeripheralManagerDelegate
-// 第二个参数如果指定为nil，则默认使用主队列
-peripheralManager = [[CBPeripheralManager alloc] initWithDelegate:self queue:nil];
-</code></pre>
-
-<p>创建Peripheral管理器后，Peripheral管理器会调用代理对象的peripheralManagerDidUpdateState:方法。我们需要实现这个方法来确保本地设备支持BLE。</p>
-
-<pre><code>- (void)peripheralManagerDidUpdateState:(CBPeripheralManager *)peripheral
-{
-    NSLog(@"Peripheral Manager Did Update State");
-    switch (peripheral.state) {
-        case CBPeripheralManagerStatePoweredOn:
-            NSLog(@"CBPeripheralManagerStatePoweredOn");
-            break;
-
-        case CBPeripheralManagerStatePoweredOff:
-            NSLog(@"CBPeripheralManagerStatePoweredOff");
-            break;
-
-        case CBPeripheralManagerStateUnsupported:
-            NSLog(@"CBPeripheralManagerStateUnsupported");
-            break;
-
-        default:
-            break;
-    }
-}
-</code></pre>
-
-<h4>设置服务及特性</h4>
-
-<p>一个本地Peripheral数据库以类似树的结构来组织服务及特性。所以，在设置服务及特性时，我们将其组织成树结构。</p>
-
-<p>一个Peripheral的服务和特性通过128位的蓝牙指定的UUID来标识，该标识是一个CBUUID对象。虽然SIG组织没的预先定义所有的服务与特性的UUID，但是SIG已经定义并发布了一些通过的UUID，这些UUID被简化成16位以方便使用。例如，SIG定义了一个16位的UUID作为心跳服务的标识(180D)。</p>
-
-<p>CBUUID类提供了方法，以从字符串中生成一个CBUUID对象。当字条串使用的是预定义的16位UUID时，Core Bluetooth使用它时会预先自动补全成128位的标识。</p>
-
-<pre><code>CBUUID *heartRateServiceUUID = [CBUUID UUIDWithString:@"180D"];
-</code></pre>
-
-<p>当然我们也可以自己生成一个128位的UUID来标识我们的服务与特性。在命令行中使用uuidgen命令会生成一个128位的UUID字符串，然后我们可以使用它来生成一个CBUUID对象。</p>
-
-<p>生成UUID对象后，我们就可以用这个对象来创建我们的服务及特性，然后再将它们组织成树状结构。</p>
-
-<p>创建特性的代码如下所示</p>
-
-<pre><code>CBUUID *characteristicUUID1 = [CBUUID UUIDWithString:@"C22D1ECA-0F78-463B-8C21-688A517D7D2B"];
-CBUUID *characteristicUUID2 = [CBUUID UUIDWithString:@"632FB3C9-2078-419B-83AA-DBC64B5B685A"];
-
-CBMutableCharacteristic *character1 = [[CBMutableCharacteristic alloc] initWithType:characteristicUUID1 properties:CBCharacteristicPropertyRead value:nil permissions:CBAttributePermissionsReadable];
-
-CBMutableCharacteristic *character2 = [[CBMutableCharacteristic alloc] initWithType:characteristicUUID2 properties:CBCharacteristicPropertyNotify value:nil permissions:CBAttributePermissionsWriteable];
-</code></pre>
-
-<p>我们需要设置特性的属性、值及权限。属性及权限值确定了属性值是可读的还是可写的，及连接的Central端是否可以订阅特性的值。另外，如果我们指定了特性的值，则这个值会被缓存且其属性及权限被设置成可读的。如果我们要让特性的值是可写的，或者期望属性所属的服务的生命周期里这个值可以被修改，则必须指定值为nil。</p>
-
-<p>创建的特性之后，我们便可以创建一个与特性相关的服务，然后将特性关联到服务上，如下代码所示:</p>
-
-<pre><code>CBUUID *serviceUUID = [CBUUID UUIDWithString:@"3655296F-96CE-44D4-912D-CD83F06E7E7E"];
-CBMutableService *service = [[CBMutableService alloc] initWithType:serviceUUID primary:YES];
-service.characteristics = @[character1, character2];    // 组织成树状结构
-</code></pre>
-
-<p>上例中primary参数传递的是YES，表示这是一个主服务，即描述了一个设备的主要功能且能被其它服务引用。与之相对的是次要服务(secondary service)，其只在引用它的另一个服务的上下文中描述一个服务。</p>
-
-<h4>发布服务及特性</h4>
-
-<p>创建服务及特性后交将其组织成树状结构后，我们需要将这些服务发布到设备的本地数据库上。我们可以使用CBPeripheralManager的addService:方法来完成此工作。如下代码所示：</p>
-
-<pre><code>[peripheralManager addService:service];
-</code></pre>
-
-<p>在调用些方法发布服务时，CBPeripheralManager对象会调用它的代理的peripheralManager:didAddService:error:方法。如果发布过程中出现错误导致无法以布，则可以实现该代理方法来处理错误，如下代码所示：</p>
-
-<pre><code>- (void)peripheralManager:(CBPeripheralManager *)peripheral didAddService:(CBService *)service error:(NSError *)error
-{
-    NSLog(@"Add Service");
-
-    if (error)
-    {
-        NSLog(@"Error publishing service: %@", [error localizedDescription]);
-    }
-}
-</code></pre>
-
-<p>在将服务与特性发布到设备数据库后，服务将会被缓存，且我们不能再修改这个服务。</p>
-
-<h4>广告服务</h4>
-
-<p>处理完以上步骤，我们便可以将这些服务广告给对服务感兴趣的Central端。我们可以通过调用CBPeripheralManager实例的startAdvertising:方法来完成这一操作，如下代码所示：</p>
-
-<pre><code>[peripheralManager startAdvertising:@{CBAdvertisementDataServiceUUIDsKey: @[service.UUID]}];
-</code></pre>
-
-<p>startAdvertising:的参数是一个字典，Peripheral管理器支持且仅支持两个key值：CBAdvertisementDataLocalNameKey与CBAdvertisementDataServiceUUIDsKey。这两个值描述了数据的详情。key值所对应的value期望是一个表示多个服务的数组。</p>
-
-<p>当广告服务时，CBPeripheralManager对象会调用代码对象的peripheralManagerDidStartAdvertising:error:方法，我们可以在此做相应的处理，如下代码所示：</p>
-
-<pre><code>- (void)peripheralManagerDidStartAdvertising:(CBPeripheralManager *)peripheral error:(NSError *)error
-{
-    NSLog(@"Start Advertising");
-
-    if (error)
-    {
-        NSLog(@"Error advertising: %@", [error localizedDescription]);
-    }
-}
-</code></pre>
-
-<p>广告服务之后，Central端便可以发现设备并初始化一个连接。</p>
-
-<h4>对Central端的读写请求作出响应</h4>
-
-<p>在与Central端进行连接后，可能需要从其接收读写请求，我们需要以适当的方式作出响应。</p>
-
-<p>当连接的Central端请求读取特性的值时，CBPeripheralManager对象会调用代理对象的peripheralManager:didReceiveReadRequest:方法，代理方法提供一个CBATTRequest对象以表示Central端的请求，我们可以使用它的属性来填充请求。下面代码简单展示了这样一个过程：</p>
-
-<pre><code>- (void)peripheralManager:(CBPeripheralManager *)peripheral didReceiveReadRequest:(CBATTRequest *)request
-{
-    // 查看请求的特性是否是指定的特性
-    if ([request.characteristic.UUID isEqual:cha1.UUID])
-    {
-        NSLog(@"Request character 1");
-
-        // 确保读请求所请求的偏移量没有超出我们的特性的值的长度范围
-        // offset属性指定的请求所要读取值的偏移位置
-        if (request.offset &gt; cha1.value.length)
-        {
-            [peripheralManager respondToRequest:request withResult:CBATTErrorInvalidOffset];
-            return;
-        }
-
-        // 如果读取位置未越界，则将特性中的值的指定范围赋给请求的value属性。
-        request.value = [cha1.value subdataWithRange:(NSRange){request.offset, cha1.value.length - request.offset}];
-
-        // 对请求作出成功响应
-        [peripheralManager respondToRequest:request withResult:CBATTErrorSuccess];
-    }
-}
-</code></pre>
-
-<p>在每次调用代理对象的peripheralManager:didReceiveReadRequest:时调用respondToRequest:withResult:方法以对请求做出响应。</p>
-
-<p>处理写请求类似于上述过程，此时会调用代理对象的peripheralManager:didReceiveWriteRequests:方法。不同的是代理方法会给我们一个包含一个或多个CBATTRequest对象的数组，每一个都表示一个写请求。我们可以使用请求对象的value属性来给我们的特性属性赋值，如下代码所示：</p>
-
-<pre><code>- (void)peripheralManager:(CBPeripheralManager *)peripheral didReceiveWriteRequests:(NSArray *)requests
-{
-    CBATTRequest *request = requests[0];
-
-    cha1.value = request.value;
-
-    [peripheralManager respondToRequest:request withResult:CBATTErrorSuccess];
-}
-</code></pre>
-
-<p>响应处理与请求类似。</p>
-
-<h4>发送更新的特性值给订阅的Central端</h4>
-
-<p>如果有一个或多个Central端订阅了我们的服务的特性时，当特性发生变化时，我们需要通知这些Central端。为此，代理对象需要实现peripheralManager:central:didSubscribeToCharacteristic:方法。如下所示：</p>
-
-<pre><code>- (void)peripheralManager:(CBPeripheralManager *)peripheral central:(CBCentral *)central didUnsubscribeFromCharacteristic:(CBCharacteristic *)characteristic
-{
-    NSLog(@"Central subscribed to characteristic %@", characteristic);
-
-    NSData *updatedData = characteristic.value;
-
-    // 获取属性更新的值并调用以下方法将其发送到Central端
-    // 最后一个参数指定我们想将修改发送给哪个Central端，如果传nil，则会发送给所有连接的Central
-    // 将方法返回一个BOOL值，表示修改是否被成功发送，如果用于传送更新值的队列被填充满，则方法返回NO
-    BOOL didSendValue = [peripheralManager updateValue:updatedData forCharacteristic:(CBMutableCharacteristic *)characteristic onSubscribedCentrals:nil];
-
-    NSLog(@"Send Success ? %@", (didSendValue ? @"YES" : @"NO"));
-}
-</code></pre>
-
-<p>在上述代码中，当传输队列有可用的空间时，CBPeripheralManager对象会调用代码对象的peripheralManagerIsReadyToUpdateSubscribers:方法。我们可以在这个方法中调用updateValue:forCharacteristic:onSubscribedCentrals:来重新发送值。</p>
-
-<p>我们使用通知来将单个数据包发送给订阅的Central。当我们更新订阅的Central时，我们应该通过调用一次updateValue:forCharacteristic:onSubscribedCentrals:方法将整个更新的值放在一个通知中。</p>
-
-<p>由于特性的值大小不一，所以不是所有值都会被通知传输。如果发生这种情况，需要在Central端调用CBPeripheral实例的readValueForCharacteristic:方法来处理，该方法可以获取整个值。</p>
-
-<h2>Central(Client)端操作</h2>
-
-<p>一个Central端主要包含以下操作：</p>
-
-<ol>
-<li>启动一个Central端管理器对象</li>
-<li>搜索并连接正在广告的Peripheral设备</li>
-<li>在连接到Peripheral端后查询数据</li>
-<li>发送一个对特性值的读写请求到Peripheral端</li>
-<li>当Peripheral端特性值改变时接收通知</li>
-</ol>
-
-
-<p>我们将在下面结合代码对每一步分别进行讲解</p>
-
-<h4>启动一个Central管理器</h4>
-
-<p>CBCentralManager对象在Core Bluetooth中表示一个本地Central设备，我们在执行任何BLE交互时必须分配并初始化一个Central管理器对象。创建代码如下所示：</p>
-
-<pre><code>// 指定当前类为代理对象，所以其需要实现CBCentralManagerDelegate协议
-// 如果queue为nil，则Central管理器使用主队列来发送事件
-centralManager = [[CBCentralManager alloc] initWithDelegate:self queue:nil options:nil];
-</code></pre>
-
-<p>创建Central管理器时，管理器对象会调用代理对象的centralManagerDidUpdateState:方法。我们需要实现这个方法来确保本地设备支持BLE。</p>
-
-<pre><code>- (void)centralManagerDidUpdateState:(CBCentralManager *)central
-{
-    NSLog(@"Central Update State");
-
-    switch (central.state) {
-        case CBCentralManagerStatePoweredOn:
-            NSLog(@"CBCentralManagerStatePoweredOn");
-            break;
-
-        case CBCentralManagerStatePoweredOff:
-            NSLog(@"CBCentralManagerStatePoweredOff");
-            break;
-
-        case CBCentralManagerStateUnsupported:
-            NSLog(@"CBCentralManagerStateUnsupported");
-            break;
-
-        default:
-            break;
-    }
-}
-</code></pre>
-
-<h4>发现正在广告的Peripheral设备</h4>
-
-<p>Central端的首要任务是发现正在广告的Peripheral设备，以备后续连接。我们可以调用CBCentralManager实例的scanForPeripheralsWithServices:options:方法来发现正在广告的Peripheral设备。如下代码所示：</p>
-
-<pre><code>// 查找Peripheral设备
-// 如果第一个参数传递nil，则管理器会返回所有发现的Peripheral设备。
-// 通常我们会指定一个UUID对象的数组，来查找特定的设备
-[centralManager scanForPeripheralsWithServices:nil options:nil];
-</code></pre>
-
-<p>在调用上述方法后，CBCentralManager对象在每次发现设备时会调用代理对象的centralManager:didDiscoverPeripheral:advertisementData:RSSI:方法。</p>
-
-<pre><code>- (void)centralManager:(CBCentralManager *)central didDiscoverPeripheral:(CBPeripheral *)peripheral advertisementData:(NSDictionary *)advertisementData RSSI:(NSNumber *)RSSI
-{
-    NSLog(@"Discover name : %@", peripheral.name);
-
-    // 当我们查找到Peripheral端时，我们可以停止查找其它设备，以节省电量
-    [centralManager stopScan];
-
-    NSLog(@"Scanning stop");
-}
-</code></pre>
-
-<h4>连接Peripheral设备</h4>
-
-<p>在查找到Peripheral设备后，我们可以调用CBCentralManager实例的connectPeripheral:options:方法来连接Peripheral设备。如下代码所示</p>
-
-<pre><code>[centralManager connectPeripheral:peripheral options:nil];
-</code></pre>
-
-<p>如果连接成功，则会调用代码对象的centralManager:didConnectPeripheral:方法，我们可以实现该方法以做相应处理。另外，在开始与Peripheral设备交互之前，我们需要设置peripheral对象的代理，以确保接收到合适的回调。</p>
-
-<pre><code>- (void)centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)peripheral
-{
-    NSLog(@"Peripheral Connected");
-
-    peripheral.delegate = self;
-}
-</code></pre>
-
-<h4>查找所连接Peripheral设备的服务</h4>
-
-<p>建立到Peripheral设备的连接后，我们就可以开始查询数据了。首先我们需要查找Peripheral设备中可用的服务。由于Peripheral设备可以广告的数据有限，所以Peripheral设备实际的服务可能比它广告的服务要多。我们可以调用peripheral对象的discoverServices:方法来查找所有的服务。如下代码所示：</p>
-
-<pre><code>[peripheral discoverServices:nil];
-</code></pre>
-
-<p>参数传递nil可以查找所有的服务，但一般情况下我们会指定感兴趣的服务。</p>
-
-<p>当调用上述方法时，peripheral会调用代理对象的peripheral:didDiscoverServices:方法。Core Bluetooth创建一个CBService对象的数组，数组中的元素是peripheral中找到的服务。</p>
-
-<pre><code>- (void)peripheral:(CBPeripheral *)peripheral didDiscoverServices:(NSError *)error
-{
-    NSLog(@"Discover Service");
-
-    for (CBService *service in peripheral.services)
-    {
-        NSLog(@"Discovered service %@", service);
-    }
-}
-</code></pre>
-
-<h4>查找服务中的特性</h4>
-
-<p>假设我们已经找到感兴趣的服务，接下来就是查询服务中的特性了。为了查找服务中的特性，我们只需要调用CBPeripheral类的discoverCharacteristics:forService:方法，如下所示：</p>
-
-<pre><code>NSLog(@"Discovering characteristics for service %@", service);
-[peripheral discoverCharacteristics:nil forService:service];
-</code></pre>
-
-<p>当发现特定服务的特性时，peripheral对象会调用代理对象的peripheral:didDiscoverCharacteristicsForService:error:方法。在这个方法中，Core Bluetooth会创建一个CBCharacteristic对象的数组，每个元素表示一个查找到的特性对象。如下代码所示：</p>
-
-<pre><code>- (void)peripheral:(CBPeripheral *)peripheral didDiscoverCharacteristicsForService:(CBService *)service error:(NSError *)error
-{
-    NSLog(@"Discover Characteristics");
-    for (CBCharacteristic *characteristic in service.characteristics)
-    {
-        NSLog(@"Discovered characteristic %@", characteristic);
-    }
-}
-</code></pre>
-
-<h4>获取特性的值</h4>
-
-<p>一个特性包含一个单一的值，这个值包含了Peripheral服务的信息。在获取到特性之后，我们就可以从特性中获取这个值。只需要调用CBPeripheral实例的readValueForCharacteristic:方法即可。如下所示：</p>
-
-<pre><code>NSLog(@"Reading value for characteristic %@", characteristic);
-[peripheral readValueForCharacteristic:characteristic];
-</code></pre>
-
-<p>当我们读取特性中的值时，peripheral对象会调用代理对象的peripheral:didUpdateValueForCharacteristic:error:方法来获取该值。如果获取成功，我们可以通过特性的value属性来访问它，如下所示：</p>
-
-<pre><code>- (void)peripheral:(CBPeripheral *)peripheral didUpdateValueForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error
-{
-    NSData *data = characteristic.value;
-
-    NSLog(@"Data = %@", data);
-}
-</code></pre>
-
-<h4>订阅特性的值</h4>
-
-<p>虽然使用readValueForCharacteristic:方法读取特性值对于一些使用场景非常有效，但对于获取改变的值不太有效。对于大多数变动的值来讲，我们需要通过订阅来获取它们。当我们订阅特性的值时，在值改变时，我们会从peripheral对象收到通知。</p>
-
-<p>我们可以调用CBPeripheral类的setNotifyValue:forCharacteristic:方法来订阅感兴趣的特性的值。如下所示：</p>
-
-<pre><code>[peripheral setNotifyValue:YES forCharacteristic:characteristic];
-</code></pre>
-
-<p>当我们尝试订阅特性的值时，会调用peripheral对象的代理对象的peripheral:didUpdateNotificationStateForCharacteristic:error: 方法。如果订阅失败，我们可以实现该代理方法来访问错误，如下所示：</p>
-
-<pre><code>- (void)peripheral:(CBPeripheral *)peripheral didUpdateValueForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error
-{
-    ...
-
-    if (error)
-    {
-        NSLog(@"Error changing notification state: %@", [error localizedDescription]);
-    }
-}
-</code></pre>
-
-<p>在成功订阅特性的值后，当特性值改变时，peripheral设备会通知我们的应用。</p>
-
-<h4>写入特性的值</h4>
-
-<p>一些场景下，我们需要写入特性的值。例如我们需要与BLE数字恒温器交互时，可能需要给恒温器提供一个值来设定房间的温度。如果特性的值是可写的，我们可以通过调用CBPeripheral实例的writeValue:forCharacteristic:type:方法来写入值。</p>
-
-<pre><code>NSData *data = [NSData dataWithBytes:[@"test" UTF8String] length:@"test".length];
-[peripheral writeValue:data forCharacteristic:characteristic type:CBCharacteristicWriteWithResponse];
-</code></pre>
-
-<p>当尝试写入特性值时，我们需要指定想要执行的写入类型。上例指定了写入类型是CBCharacteristicWriteWithResponse，表示peripheral让我们的应用知道是否写入成功。</p>
-
-<p>指定写入类型为CBCharacteristicWriteWithResponse的peripheral对象，在响应请求时会调用代理对象的peripheral:didWriteValueForCharacteristic:error:方法。如果写入失败，我们可以在这个方法中处理错误信息。</p>
-
-<h2>小结</h2>
-
-<p>Core Bluetooth框架已经为我们封装了蓝牙通信的底层实现，我们只需要做简单的处理就可以在程序中实现基于蓝牙的通信。不过在游戏中，一般使用Game Kit中自带的蓝牙处理功能，以实现大数据量的通信。Core Bluetooth框架还是比较适合小数据量的通信。</p>
-
-<h2>参考</h2>
-
-<p><a href="https://developer.apple.com/library/ios/documentation/NetworkingInternetWeb/Conceptual/CoreBluetooth_concepts/AboutCoreBluetooth/Introduction.html">Core Bluetooth Programming Guide</a></p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/2">&larr; Older</a>
@@ -2102,7 +2399,7 @@ centralManager = [[CBCentralManager alloc] initWithDelegate:self queue:nil optio
 <section>
 <h1>分类</h1>
 <ul>
-  <li><a href='/blog/categories/ios'>ios (23)</a></li>
+  <li><a href='/blog/categories/ios'>ios (24)</a></li>
   <li><a href='/blog/categories/network'>network (3)</a></li>
   <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (2)</a></li>
   <li><a href='/blog/categories/swift'>swift (7)</a></li>
@@ -2113,6 +2410,10 @@ centralManager = [[CBCentralManager alloc] initWithDelegate:self queue:nil optio
 <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/08/08/mvvmzhi-nan-yi-:flickrsou-suo-shi-li/">MVVM指南一：Flickr搜索实例</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2014/08/02/reactivecocoazhi-nan-er-:twittersou-suo-shi-li/">ReactiveCocoa指南二：Twitter搜索实例</a>
@@ -2148,10 +2449,6 @@ centralManager = [[CBCentralManager alloc] initWithDelegate:self queue:nil optio
     
       <li class="post">
         <a href="/blog/2014/07/19/bonjourji-ben-li-lun/">Bonjour理论1：基本概念</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/07/18/cover-flowte-xiao-shi-xian/">Cover Flow特效实现</a>
       </li>
     
   </ul>
