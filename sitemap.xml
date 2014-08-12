@@ -3,6 +3,12 @@
   
   
   <url>
+    <loc>http://southpeak.github.io/blog/2014/08/12/mvvmzhi-nan-er-:flickrsou-suo-shen-ru/</loc>
+    <lastmod>2014-08-12T21:12:20+08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
     <loc>http://southpeak.github.io/blog/2014/08/08/mvvmzhi-nan-yi-:flickrsou-suo-shi-li/</loc>
     <lastmod>2014-08-08T18:54:42+08:00</lastmod>
     <priority>0.8</priority>
@@ -161,14 +167,14 @@
   
   <url>
     <loc>http://southpeak.github.io/blog/archives/</loc>
-    <lastmod>2014-08-08T19:17:39+08:00</lastmod>
+    <lastmod>2014-08-12T21:22:45+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
     <loc>http://southpeak.github.io/</loc>
-    <lastmod>2014-08-08T19:17:39+08:00</lastmod>
+    <lastmod>2014-08-12T21:22:45+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>

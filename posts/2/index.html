@@ -11,7 +11,7 @@
   <meta name="baidu-site-verification" content="HoscFhWICI" />
 
   
-  <meta name="description" content="iOS和Mac应用使用Core Bluetooth framework来与BLE(低功耗蓝牙)设备通信。我们的程序可以发现、搜索并与低功耗外围(Peripheral)蓝牙设备通信，如心跳监听器、数字温控器、甚至是其它iOS设备。这个框架抽象了支持蓝牙4.0标准低功耗设备的基本操作，隐藏了4. &hellip;">
+  <meta name="description" content="在开发BLE相关应用时，由于应用在后台时会有诸多资源限制，需要考虑应用的后台处理问题。默认情况下，当程序位于后台或挂起时，大多数普通的Core Bluetooth任务都无法使用，不管是Central端还是Peripheral端。但我们可以声明我们的应用支持Core Bluetooth后台执行模式， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -68,6 +68,222 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/07/31/core-bluetoothkuang-jia-zhi-er-:hou-tai-chu-li/">Core Bluetooth框架之二：后台处理</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-07-31T23:28:24+08:00" pubdate data-updated="true">Jul 31<sup>st</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/07/31/core-bluetoothkuang-jia-zhi-er-:hou-tai-chu-li/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>在开发BLE相关应用时，由于应用在后台时会有诸多资源限制，需要考虑应用的后台处理问题。默认情况下，当程序位于后台或挂起时，大多数普通的Core Bluetooth任务都无法使用，不管是Central端还是Peripheral端。但我们可以声明我们的应用支持Core Bluetooth后台执行模式，以允许程序从挂起状态中被唤醒以处理蓝牙相关的事件。</p>
+
+<p>然而，即使我们的应用支持两端的Core Bluetooth后台执行模式，它也不能一直运行。在某些情况下，系统可能会关闭我们的应用来释放内存，以为当前前台的应用提供更多的内存空间。在iOS7及后续版本中，Core Bluetooth支持保存Central及Peripheral管理器对象的状态信息，并在程序启动时恢复这些信息。我们可以使用这个特性来支持与蓝牙设备相关的长时间任务。</p>
+
+<p>下面我们将详细讨论下这些问题。</p>
+
+<h2>只支持前台操作(Foreground-Only)的应用</h2>
+
+<p>大多数应用在进入到后台后都会在短时间内进入挂起状态，除非我们请求执行一些特定的后台任务。当处理挂起状态时，我们的应用无法继续执行蓝牙相关的任务。</p>
+
+<p>在Central端，Foreground-Only应用在进入后台或挂起时，无法继续扫描并发现下在广告的Peripheral设备。而在Peripheral端，无法广告自身，同时Central端对其的任何访问操作都会返回一个错误。</p>
+
+<p>Foreground-Only应用挂起时，所有蓝牙相关的事件都会被系统放入一个队列，当应用进入前台后，系统会将这些事件发送给我们的应用。也就是说，当某些事件发生时，Core Bluetooth提供了一种方法来提示用户。用户可以使用这些提示来决定是否将应用放到前台。在《Core Bluetooth框架之一：Central与Peripheral》中我们介绍了connectPeripheral:options:方法，在调用这个方法时，我们可以设备options参数来设置这些提示：</p>
+
+<ol>
+<li>CBConnectPeripheralOptionNotifyOnConnectionKey：当应用挂起时，如果有一个连接成功时，如果我们想要系统为指定的peripheral显示一个提示时，就使用这个key值。</li>
+<li>CBConnectPeripheralOptionNotifyOnDisconnectionKey：当应用挂起时，如果连接断开时，如果我们想要系统为指定的peripheral显示一个断开连接的提示时，就使用这个key值。</li>
+<li>CBConnectPeripheralOptionNotifyOnNotificationKey：当应用挂起时，使用该key值表示只要接收到给定peripheral端的通知就显示一个提示。</li>
+</ol>
+
+
+<h2>Core Bluetooth后台执行模式</h2>
+
+<p>我们可以在Info.plist文件中设置Core Bluetooth后台执行模式，以让应用支持在后台执行一些蓝牙相关的任务。当应用声明了这一功能时，系统会将应用唤醒以允许它处理蓝牙相关的任务。这个特性对于与那种定时发送数据的BLE交互的应用非常有用。</p>
+
+<p>有两种Core Bluetooth后台执行模式，一种用于实现Central端操作，一种用于实现Peripheral端操作。如果我们的应用同时实现了这两端的功能，则需要声明同时支持两种模式。我们需要在Info.plist文件添加UIBackgroundModes键，同时添加以下两个值或其中之一：</p>
+
+<ol>
+<li>bluetooth-central(App communicates using CoreBluetooth)</li>
+<li>bluetooth-peripheral(App shares data using CoreBluetooth)</li>
+</ol>
+
+
+<h4>bluetooth-central模式</h4>
+
+<p>如果设置了bluetooth-central值，则我们的应用在后台时，仍然可以查找并连接到Peripheral设备，以及查找相应数据。另外，系统会在CBCentralManagerDelegate或CBPeripheralDelegate代理方法被调用时唤醒我们的应用，允许应用处理事件，如建立连接或断开连接等等。</p>
+
+<p>虽然应用在后台时，我们可以执行很多蓝牙相关任务，但需要记住应用在前后台扫描Peripheral设备时还是不一样的。当我们的应用在后台扫描Peripheral设备时，</p>
+
+<ol>
+<li>CBCentralManagerScanOptionAllowDuplicatesKey扫描选项会被忽略，同一个Peripheral端的多个发现事件会被聚合成一个发现事件。</li>
+<li>如果扫描Peripheral设备的多个应用都在后台，则Central设备扫描广告数据的时间间隔会增加。结果是发现一个广告的Peripheral设备可能需要很长时间。</li>
+</ol>
+
+
+<p>这些处理在iOS设备中最小化无线电的使用及改善电池的使用寿命非常有用。</p>
+
+<h4>bluetooth-peripheral模式</h4>
+
+<p>如果设置了bluetooth-peripheral值，则我们的应用在后台时，应用会被唤醒以处理来自于连接的Central端的读、写及订阅请求，Core Bluetooth还允许我们在后台进行广告。与Central端类似，也需要注意前后台的操作区别。特别是在广告时，有以下几点区别：</p>
+
+<ol>
+<li>CBAdvertisementDataLocalNameKey广告key值会被忽略，Peripheral端的本地名不会被广告</li>
+<li>CBAdvertisementDataServiceUUIDsKey键的所有服务的UUID都被放在一个&#8221;overflow&#8221;区域中，它们只能被那些显示要扫描它们的网络设备发现。</li>
+<li>如果多个应用在后台广告，则Peripheral设备发送广告包的时间间隔会变长。</li>
+</ol>
+
+
+<h2>在后台执行长(Long-Term)任务</h2>
+
+<p>虽然建议尽快完成后台任务，但有些应该仍然需要使用Core Bluetooth来执行一个长任务。这时就涉及到状态的保存与恢复操作。</p>
+
+<h4>状态保存与恢复</h4>
+
+<p>因为状态保存与恢复是内置于Core Bluetooth的，我们的程序可以选择这个特性，让系统保存Central和Peripheral管理器的状态并继续执行一些蓝牙相关的任务，即使此时程序不再运行。当这些任务中的一个完成时，系统会在后台重启程序，程序可以恢复先前的状态以处理事件。Core Bluetooth支持Central端、Peripheral端的状态保存与恢复，也可以同时支持两者。</p>
+
+<p>在Central端，系统会在关闭程序释放内存时保存Central管理器对象的状态(如果有多个Central管理器，我们可以选择系统跟踪哪个管理器)。对于给定的CBCentralManager对象，系统会跟踪如下信息：</p>
+
+<ol>
+<li>Central管理器扫描的服务</li>
+<li>Central管理器尝试或已经连接的Peripheral</li>
+<li>Central管理器订阅的特性</li>
+</ol>
+
+
+<p>在Peripheral端，对于给定的CBPeripheralManager对象，系统会跟踪以下信息：</p>
+
+<ol>
+<li>Peripheral管理器广告的数据</li>
+<li>Peripheral管理器发布到设备数据库的服务和特性</li>
+<li>订阅Peripheral管理器的特性值的Central端</li>
+</ol>
+
+
+<p>当系统将程序重启到后台后，我们可以重新重新初始化我们程序的Central和Peripheral管理器并恢复状态。我们接下来将详细介绍一下如何使用状态保存与恢复。</p>
+
+<h4>添加状态保存和恢复支持</h4>
+
+<p>Core Bluetooth中的状态保存与恢复是可选的特性，需要程序的支持才能工作。我们可以按照以下步骤来添加这一特性的支持：</p>
+
+<ol>
+<li>(必要步骤)当分配及初始化Central或Peripheral管理器对象时，选择性加入状态保存与恢复。</li>
+<li>(必要步骤)在系统重启程序时，重新初始化Central或Peripheral管理器对象</li>
+<li>(必要步骤)实现适当的恢复代理方法</li>
+<li>(可选步骤)更新Central或Peripheral管理器初始化过程</li>
+</ol>
+
+
+<h5>选择性加入状态保存与恢复</h5>
+
+<p>为了选择性加入状态保存与恢复特性，在分配及初始化Central或Peripheral管理器时提供一个一个唯一恢复标识。<strong>恢复标识</strong>是一个字条串，用来让Core Bluetooth和程序标识Central或Peripheral管理器。字符串的值只在自己的代码中有意义，但这个字符串告诉Core Bluetooth我们需要保存对象的状态。Core Bluetooth只保存那些有恢复标识的对象。</p>
+
+<p>例如，在实现Central端时，为了选择性加入状态保存与恢复特性，在初始化CBCentralManager对象时，可以指定初始化选项CBCentralManagerOptionRestoreIdentifierKey，并提供一个恢复标识，如下代码所示：</p>
+
+<pre><code>centralManager = [[CBCentralManager alloc] initWithDelegate:self queue:nil options:@{CBCentralManagerOptionRestoreIdentifierKey: @"restoreIdentifier"}];
+</code></pre>
+
+<p>实现Peripheral端时的操作也类似，只不过我们使用选项CBPeripheralManagerOptionRestoreIdentifierKey键。</p>
+
+<p>因为程序可以有多个Central或Peripheral管理器，所以需要确保恢复标识是唯一的，这样系统可以区分这些管理器对象。</p>
+
+<h5>重新初始化Central或Peripheral管理器对象</h5>
+
+<p>当系统重启程序到后台后，我们所需要做的第一件事就是使用恢复标识来重新初始化这些对象。如果我们的应用只有一个Central管理器或Peripheral管理器，且管理器在程序的整个生命周期都存在，则后续我们便不需要再做更多的处理。但如果我们有多个管理器，或者管理器不是存在于程序的整个生命周期，则系统重启应用时，我们需要知道重新初始化哪一个管理器。我们可以通过在程序代理对象的application:didFinishLaunchingWithOptions:方法中，使用合适的启动选项键来访问管理器对象的列表(这个列表是程序关闭是系统为程序保存的)。</p>
+
+<p>下面代码展示了程序重新启动时，我们获取所有Central管理器对象的恢复标识:</p>
+
+<pre><code>- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
+{
+    // Override point for customization after application launch.
+
+    NSArray *centralManagerIdentifiers = launchOptions[UIApplicationLaunchOptionsBluetoothCentralsKey];
+
+    // TODO: ...
+
+    return YES;
+}
+</code></pre>
+
+<p>有了这个恢复标识的列表后，我们就可以重新初始化我们所需要的管理器对象了。</p>
+
+<h5>实现适当的恢复代理方法</h5>
+
+<p>重新初始化Central或Peripheral管理器对象后，我们通过使用蓝牙系统的状态同步这些对象的状态来恢复它们。此时，我们需要实现一些恢复代理方法。对于Central管理器，我们实现centralManager:willRestoreState:代理方法；对于Peripheral管理器管理器，我们实现peripheralManager:willRestoreState:代理方法。</p>
+
+<p><em>对于选择性加入保存与恢复特性的应用来说，这些方法是程序启动到后台以完成一些蓝牙相关任务所调用的第一个方法。而对于非选择性加入特性的应用来说，会首先调用centralManagerDidUpdateState:和peripheralManagerDidUpdateState:代理方法。</em></p>
+
+<p>在上述两个代理方法中，最后一个参数是一个字典，包含程序关闭时保存的关于管理器的信息。如下代码所示，我们可以使用CBCentralManagerRestoredStatePeripheralsKey键来获取Central管理器已连接的或尝试连接的所有Peripheral设备的列表:</p>
+
+<pre><code>- (void)centralManager:(CBCentralManager *)central willRestoreState:(NSDictionary *)state
+{
+    NSArray *peripherals = state[CBCentralManagerRestoredStatePeripheralsKey];
+
+    // TODO: ...
+}
+</code></pre>
+
+<p>获取到这个列表后，我们便可以根据需要来做处理。</p>
+
+<h5>更新初始化过程</h5>
+
+<p>在实现了前面的三个步骤后，我们可能想更新我们的管理器的初始化过程。虽然这一步是可选的，但如果要确认任务是否运行正常时，非常有用。例如，我们的程序可能在解析所连接的Peripheral设备的数据的过程中被关闭。当程序使用这个Peripheral设备作恢复操作时，无法知道数据处理到哪了。我们需要确保程序从数据操作停止的位置继续开始操作。</p>
+
+<p>又如下面的代码展示了在centralManagerDidUpdateState:代理方法中初始化程序操作时，我们可以找出是否成功发现了被恢复的Peripheral设备的指定服务：</p>
+
+<pre><code>NSUInteger serviceUUIDIndex = [peripheral.services indexOfObjectPassingTest:^BOOL(CBService *obj, NSUInteger index, BOOL *stop) {        return [obj.UUID isEqual:myServiceUUIDString];    }];
+    if (serviceUUIDIndex == NSNotFound) {       [peripheral discoverServices:@[myServiceUUIDString]];       ...
+}    
+</code></pre>
+
+<p>如上例所述，如果系统在程序完成搜索服务时关闭了应用，则通过调用discoverServices:方法在关闭的那个点开始解析恢复的Peripheral数据。如果程序成功搜索到服务，我们可以确认是否搜索到正确的特性。通过更新初始化过程，我们可以确保在正确的时间调用正确的方法。</p>
+
+<h2>小结</h2>
+
+<p>虽然我们可能需要声明应用支持Core Bluetooth后台执行模式，以完成特定的任务，但总是应该慎重考虑执行后台操作。因为执行太多的蓝牙相关任务需要使用iOS设备的内置无线电，而无线电的使用会影响到电池的寿命，所以尽量减少在后台执行的任务。任何会被蓝牙相关任务唤醒的应用应该尽快处理任务并在完成时重新挂起。</p>
+
+<p>下面是一些基础的准则：</p>
+
+<ol>
+<li>应用应该是基于会话的，并提供接口以允许用户决定什么时候开始及结束蓝牙相关事件的分发。</li>
+<li>一旦被唤醒，一个应用大概有10s的时间来完成任务。理想情况下，应用应该尽快完成任务并重新挂起。系统可以对执行时间太长的后台任务进行限流甚至杀死。</li>
+<li>应用被唤醒时，不应该执行一些无关紧要的操作。</li>
+</ol>
+
+
+<h2>参考</h2>
+
+<p><a href="https://developer.apple.com/library/ios/documentation/NetworkingInternetWeb/Conceptual/CoreBluetooth_concepts/AboutCoreBluetooth/Introduction.html">Core Bluetooth Programming Guide</a></p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1046,139 +1262,6 @@ manager = [[CBPeripheralManager alloc] initWithDelegate:self queue:nil options:n
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/07/19/bonjourji-ben-li-lun/">Bonjour理论1：基本概念</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-07-19T11:38:39+08:00" pubdate data-updated="true">Jul 19<sup>th</sup>, 2014</time>
-        
-        
-           | <a href="/blog/2014/07/19/bonjourji-ben-li-lun/#comments">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>在过去的二十年里，IP协议已经成为计算机等硬件设备之间通信的基本协议。大部分计算机和其它网络设备都是基于TCP/IP进行通信的。在这种网络中，每个设备都需要一个唯一的IP地址，不管是手动设定的还是由DHCP服务器动态分配的。动态指定的地址是可以改变的，但是像打印机等设备是必须手动设定一个静态地址的，这样网络中的计算机才能连接到它们。然后网络管理员需要配置一个DNS服务器，这样计算机用户就不需要通过IP地址来连接打印机了。这样，一个看起来很小的工作需要比较复杂的配置。但是如果我们需要在自己家中搭建一个局域网，而我们对此一无所知的话，这就是个大问题了。即使对于专业的网络管理员，也需要去手动配置打印机。但我们很多时候并不希望去做这些配置，就可以直接连入局域网内去获取打印机、或在文件服务器、甚至游戏服务器去获取我们想要的东西。</p>
-
-<p>我们希望找到可用的设备并从一个列表中选择它们，而不是必须知道每个服务名或IP地址。这便是Bonjour所需要解决的问题。它是基于IP的一组零配置网络的协议。零配置网络有很大的潜力。</p>
-
-<p>假设我们带着笔记本电脑去客户的公司，这时我们需要打印一些东西。如果这家公司有一台支持Bonjour协议的打印机，那么只要两台设备在同一个局域网内，就可以直接打印。此时，我们的每户本会搜索到任何可用的设备。我们只需要打开文档，选择设备列表中的打印机，点击打印就可完成打印操作。图1演示了这样一个过程：</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/NetServices/Art/about_01example_2x.png" alt="image" /></p>
-
-<p>这种零配置网络能够满足手机游戏、家庭网络、分布式计算和其它很多网络应用的需求。</p>
-
-<p>那么Bonjour到底是什么呢？</p>
-
-<h2>Bonjour三要素</h2>
-
-<p>Bonjour是由苹果提出的基于IP的无配置网络建议。它产生于ZEROCONF工作组的工作，是IETF的一部分。ZEROCONF工作组对于基于IP的零配置网络的需要主要有三个要求</p>
-
-<ol>
-<li>寻址(分配IP地址给主机)</li>
-<li>命名(使用名字而非IP地址来表示主机)</li>
-<li>服务搜索(自动搜索网络服务)</li>
-</ol>
-
-
-<p>Bonjour即是这些需求的一个解决方案。它允许服务提供商、硬件制造商和程序开发者在使用新的技术时只使用单一的网络协议&mdash;IP。网络用户不再需要指定IP地址和主机名，甚至不需要指定网络中访问设备的类型。用户只需要简单的查看有哪些网络服务可用，然后从列表中选择。程序能自动检测到所需要的服务或它们需要进行交互的其它程序，允许自动连接、通信和进行数据传输，而不需要用户的介入。</p>
-
-<p>下面我们来分别看看Bonjour如何解决零配置网络的三个要素</p>
-
-<h4>寻址</h4>
-
-<p>寻址问题通过自分配链路本地寻址方法来解决。链路本地寻址(Link-local addressing)使用为本地网络保留的地址范围，特别是一个小的LAN或单独的LAN片断。IPv6标准将自分配链路本地寻址作为协议的一部分。而IPv4本身不包含链路本地寻址，因此零配置网络寻址的主要挑战是如何在IPv4中改进此功能。</p>
-
-<p>在IPv4中，自分配寻址通过在链路本地范围内挑选一个随机的IP地址并对其进行测试。如果地址没有使用，则作为本地地址。如果已经使用了，计算机或其它设备将选择另一个随机地址并测试。</p>
-
-<p>目前大多数主流操作系统都支持IPv4和IPv6的链路本地寻址。</p>
-
-<h4>命名</h4>
-
-<p>在本地网络中进行name-to-address转换操作建议的方案是使用多播DNS，其中DNS格式查询使用IP多播传送到本地网络中。因为这些DNS查询被发送到多播地址中，因此没有一个全局的DNS服务器来回答这个查询。每个服务或设备都可以提供自己的DNS功能，当前发现一个针对自己名称的查询时，它使用自己的地址来响应这个DNS查询。</p>
-
-<p>Bonjour更进了一步。它在主机或iOS设备上包含一个响应来处理任何网络服务的多播DNS查询。这降低了中断应用来响应多播消息的压力。通过注册服务，Bonjour的mDNSResponder守护进程自动广告我们的服务是否可用，以便把我们名字的查询自动被引导到正确的IP地址和端口号上。</p>
-
-<p>为了让name-to-address转换能正确的工作，需要一个本地网络的唯一的名字。与转换DNS主机名不同的是，这个本地名称只在本地网络或LAN段上有效。我们可以像自分配一个本地地址一样自分配一个本地名称，选中其中一个；如果这个名称没有使用，则：</p>
-
-<ol>
-<li>硬件制造商通过设备发送一个多播DNS查询并查看响应来确定其选中的名字是否已使用。如果有响应，则设备应该选择另外一个名字。没有用户界面的设备可以在默认名字后面添加一下大数直到这个名字是唯一的。例如，如果在网络中的默认名字是XYZ-LaserPrinter.local，则可以使用XYZ-LaserPrinter.local，XYZ-LaserPrinter-2.local，XYZ-LaserPrinter-3.local进行测试，直到名字唯一。</li>
-<li>软件服务在注册Bonjour时提供一个名字，如果提供的名字已使用，则Bonjour会自动重命名我们的服务。</li>
-</ol>
-
-
-<p>在OS X中，用户可以在系统偏好设置的共享面板中设置本地主机名来为计算机设置一个主机名，在iOS中，主机名是自动产生的且不能配置。这个主机名可用于任何DNS主机名常规使用的地方，如Web浏览器、命令行工具等等。为了向系统表明名字是一个本地主机名，可在主机名后添加.local.，如Setve.local.即为一个本地主机名。</p>
-
-<p>如果用户在浏览器中输入steve.local.，这将告诉系统多播一个请求以在本地网络中查询steve，而不是将其发送到常规DNS服务器。如果在本地网络中有一台支持Bonjour的计算机名字为steve，则用户的浏览器将发送正确的IP地址给它。这允许用户访问本地主机和服务崦不需要常规DNS服务。</p>
-
-<h4>服务搜索</h4>
-
-<p>Bonjour最后一个要素是服务搜索。服务搜索允许程序查找所有可用的特定类型的服务并维护一个命名服务及端口的列表。应用可以将服务主机名解析为IPv4和IPv6地址列表。</p>
-
-<p>命名服务的列表在服务与其当前DNS名和端口中提供了一个indirection层。indirection允许程序保存一个可用服务的持久化列表并在使用服务前解析一个实际的网络地址。该列表允许服务被动态迁移，而不会产生大量的网络流量来宣告这个改变。</p>
-
-<p>在Bonjour中服务搜索是通过&#8221;browsing&#8221;来实现的。一个多播DNS查询发送一个指定的服务类型和域，任何匹配的服务都会回复他们的名字。其结果就是一个可用服务的列表。这与传统的网络服务以设备为中心的思考很不一样。对于处理服务、网络设备和网络编程的的个人来讲，很容易习惯性认为服务基于物理硬件(services in terms of physical hardware)。
-从设备为中心的角度来看，网络由许多设备或主机组成，每个包含一组服务。例如，网络可能由服务器和客户机组成。在一个设备为中心的浏览架构中，一个客户端向服务器查询哪些服务正在运行，获取一个列表(FTP, HTTP等)，并决定使用哪个服务。这个接口反映了物理系统组织的方式。但这不一定是用户在逻辑上希望的或想要的。</p>
-
-<p>用户通常想要完成特定的任务，而不是查找设备列表来找出什么服务正在运行。让客户端只询问一次“什么打印服务可用？”比查询每个可用的设备来问“你正在运行什么服务”然后筛选结果查找打印服务来得更有意义。以设备为中心的方法不但耗时，而且需要大量的网络流量，且其中大部分是无用的。而以服务为中心的方法发送单个查询，只生成相关的回复。</p>
-
-<p>此外，服务不与指定的IP或主机名绑定。例如，一个站点可能被多个有不同地址的服务器托管。在一个组织中，网络管理员可能需要将一个服务从一个服务器移到另一个服务器来做负载均衡。如果客户端存储了主机名，如果服务移到另一个不同的主机，则无法再连接。</p>
-
-<p>Bonjour从面向服务的角度来看问题。它通过所需要的服务类型来查找，而不是主机名。应用存储的是服务实例名，而不是地址，所以如果IP地址、端口号，甚至主机名改变了，应用仍然可以连接。通过专注于服务而不是设备，用户的浏览体验将更有用且无故障。</p>
-
-<h2>降低消耗</h2>
-
-<p>服务器的寻址、命名和服务搜索可能会产生大量的网络流量，但Bonjour采取了一些措施来将流量降低到最少。这允许Bonjour达到AppleTalk的易用性，同时又避免了不必要的“繁琐”。Bonjour采用了多种机制来降低零配置的开销，包括缓存、禁止重复响应，指数回退和服务公告。下面我们将简单介绍下这几种机制。</p>
-
-<h4>缓存</h4>
-
-<p>Bonjour采用了多播DNS记录缓存来防止主机请求那些已请求过的信息。例如，当一个主机请求一个LPR打印后台的处理程序列表时，列表通过多播传回来，所有本地主机都将看到这个列表。下次本地网络中的一个主机需要一个打印后台处理程序的列表时，因为它已经缓存了这个列表，所以不需要再次发起请求。多播DNS响应者负责维护这个缓存；程序开发者不需要做任何事情来维护它</p>
-
-<h4>禁止重复响应</h4>
-
-<p>为了阻止重复响应相同的请求，Bonjour服务查询包含一个已知答案的列表。例如，如果主机正在浏览打印机，第一个查询不包含打印服务，但从可用打印服务器得到12个回复。下一次该主机查询打印服务时，查询包含已知服务器的列表。已经在列表中的打倒服务器将不做响应。</p>
-
-<p>Bonjour以另一种方式来抑制重复响应。如果一个主机将要响应，但发现另一个主机已经响应了相同的信息，则主机会抑制它的响应。</p>
-
-<p>程序开发者不需要采取任何措施来抑制重复发送，Bonjour会处理。</p>
-
-<h4>指数回退和服务公告</h4>
-
-<p>当主机浏览服务时，它不会不间断地发送查询来查看是否有新的服务。相反，主机会初始一个查询，后续会不断增加查询时间的间隔，如1s, 3s, 9s, 27s这样一个时长间隔，最后可能会长达1小时的间隔。</p>
-
-<p>但这不意味着花费一个小时的时间间隔再来查看新的服务。当在网络中启动一个服务时，它会使用几次回退算法来通知它的存在。这样就将服务公告和搜索的网络流量保持在最小，而新的服务也会很快就知晓。</p>
-
-<p>在一个Bonjour配置主机上运行的服务在注册到mDNSResponder守护程序时会自动发出公告。在其它硬件上的服务，如打印机，将使用指数回退算法来公告其存在，这样充分利用了Bonjour的优势。</p>
-
-<p>参考</p>
-
-<p><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/NetServices/Introduction.html">Bonjour Overview</a></p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/3">&larr; Older</a>
@@ -1195,7 +1278,7 @@ manager = [[CBPeripheralManager alloc] initWithDelegate:self queue:nil options:n
 <section>
 <h1>分类</h1>
 <ul>
-  <li><a href='/blog/categories/ios'>ios (24)</a></li>
+  <li><a href='/blog/categories/ios'>ios (25)</a></li>
   <li><a href='/blog/categories/network'>network (3)</a></li>
   <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (2)</a></li>
   <li><a href='/blog/categories/swift'>swift (7)</a></li>
@@ -1206,6 +1289,10 @@ manager = [[CBPeripheralManager alloc] initWithDelegate:self queue:nil options:n
 <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/08/12/mvvmzhi-nan-er-:flickrsou-suo-shen-ru/">MVVM指南二：Flickr搜索深入</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2014/08/08/mvvmzhi-nan-yi-:flickrsou-suo-shi-li/">MVVM指南一：Flickr搜索实例</a>
@@ -1241,10 +1328,6 @@ manager = [[CBPeripheralManager alloc] initWithDelegate:self queue:nil options:n
     
       <li class="post">
         <a href="/blog/2014/07/20/bonjourde-yu-ming-ming-yue-ding-,-apiji-qi-cao-zuo/">Bonjour理论2：域命名约定、API及其操作</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/07/19/bonjourji-ben-li-lun/">Bonjour理论1：基本概念</a>
       </li>
     
   </ul>
