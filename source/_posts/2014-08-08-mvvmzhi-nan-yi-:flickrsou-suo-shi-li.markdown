@@ -12,7 +12,7 @@ categories: iOS
 
 ---
 
-
+本文由Colin Eberhardt发表于raywenderlich，原文可查看[MVVM Tutorial with ReactiveCocoa: Part 1/2](http://www.raywenderlich.com/74106/mvvm-tutorial-with-reactivecocoa-part-1)
 
 你可能已经在Twitter上听过这个这个笑话了：
 
