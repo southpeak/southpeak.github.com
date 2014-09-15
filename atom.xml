@@ -4,7 +4,7 @@
   <title><![CDATA[南峰子的技术博客]]></title>
   <link href="http://southpeak.github.io/atom.xml" rel="self"/>
   <link href="http://southpeak.github.io/"/>
-  <updated>2014-08-12T21:22:45+08:00</updated>
+  <updated>2014-09-15T17:28:32+08:00</updated>
   <id>http://southpeak.github.io/</id>
   <author>
     <name><![CDATA[南峰子]]></name>
@@ -12,6 +12,134 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[对于iOS 8的Size Classes的思考]]></title>
+    <link href="http://southpeak.github.io/blog/2014/09/15/dui-yu-ios-8de-size-classesde-si-kao/"/>
+    <updated>2014-09-15T17:25:53+08:00</updated>
+    <id>http://southpeak.github.io/blog/2014/09/15/dui-yu-ios-8de-size-classesde-si-kao</id>
+    <content type="html"><![CDATA[<p>原文链接：<a href="http://carpeaqua.com/2014/06/14/thinking-in-terms-of-ios-8-size-classes/">Thinking In Terms Of iOS 8 Size Classes</a></p>
+
+<p>对于最新的iOS8 SDK来说，最性感也最重要的的特性也许莫过于Size Classes了。</p>
+
+<p>在聊Size Classes之前，我们先来回顾下历史。</p>
+
+<h2>一堂历史课</h2>
+
+<p>最初，iOS推出时，我们只有一种设备：iPhone。它的屏幕大小是320*480。不过即使如此，它也是同时支付横屏和竖屏。设计同时支持两个方向的App不是像Mobile Safari或Messages那样，简单地拉伸和重新设置视图的大小。在大多数情况下，我们需要移动按钮和其它控件来让其适应横屏(480*320)。</p>
+
+<p>几年后的现在，我们有了高清屏，iPads和大屏的iPhone。当然，所有这些设备都是支持横屏和竖屏的。解决这个适配问题的传统的方法是在视图控制器和自定义视图中监听设备方向的变化，同时使用多个xib或storyboard。</p>
+
+<p>假设我已经构建了一个同时支持iPhone和iPad的的Glassboard工程。在iOS7和老的版本之前，我们需要针对iPad单独创建一个storyboard，这个storyboard包含重建的视图控制器，outlet属性和target/action。这相当于是重复工作了。任何程序员都知道这不是个好主意。需要在两个不同的地方做相同的改变真是件糟糕的事。</p>
+
+<p>如果是使用代码，则我们需要在代码中检测屏幕方向及设备大小，以便我们能手动调整我们的约束或基于frame的布局。我们的代码会像下面这段代码一样：</p>
+
+<pre><code>UIDevice *device = [UIDevice currentDevice];
+UIDeviceOrientation currentOrientation = device.orientation;
+BOOL isPhone = (device.userInterfaceIdiom == UIUserInterfaceIdiomPhone);
+BOOL isTallPhone = ([[UIScreen mainScreen] bounds].size.height == 568.0);
+if (UIDeviceOrientationIsPortrait(currentOrientation) == YES)
+{
+    // Do Portrait Things
+    if (isPhone == YES)
+    {
+        // Do Portrait Phone Things
+        // Don't deny you've done this at least once.
+        if (isTallPhone)
+        {
+            // iPhone 5+
+        }
+        else
+        {
+            // Old phones
+        }
+    }
+    else
+    {
+        // Do Portrait iPad things.
+    }
+}
+else
+{
+    // Do Landscape Things.
+    if (isPhone == YES)
+    {
+        // Do Landscape Phone Things
+    }
+    else
+    {
+        // Do Landscape iPad things.
+    }
+}
+</code></pre>
+
+<h2>Size Classes</h2>
+
+<p>显然，上面的这些方案都不理想，而且随着苹果新设备的推出，这种情况会变得越来越糟。在今年的WWDC上，苹果除了介绍自动布局的新特性外，我们同样也看到了许多可变iOS模拟器的事例，以及一种处理所有这些问题和屏幕问题的新技术：Size Classes。</p>
+
+<p>Size Classes是iOS使用的一种新的技术，允许我们为给定的设备自定义我们的程序，而且是基于设备的方向和屏幕大小的。</p>
+
+<p>Size Classes有两个目的：</p>
+
+<ol>
+<li>让开发人员和设计人员跳出指定设备的范畴，而是以更广义的范畴来思考问题</li>
+<li>为未来做准备</li>
+</ol>
+
+
+<p>第一个目的也引出了第二个目的。我们看到各种传说，说iPhone 6, 7将会是更大的设备。你也看到了苹果已经开发出了可穿戴设备(Apple Watch)。那么有什么方法可以让为这些设备开发变得更容易呢？那就是Size Classes。</p>
+
+<p>目前从XCode 6上可以看到有四种类型的Size Classes：</p>
+
+<p><img src="http://cdn.carpeaqua.com.s3.amazonaws.com/images/size-classes/size_class_chart.jpg" alt="image" /></p>
+
+<ol>
+<li>宽紧凑(Compact)</li>
+<li>长紧凑</li>
+<li>宽正常(Regular)</li>
+<li>长正常</li>
+</ol>
+
+
+<p>任意时刻，我们的设备都有一个水平方向的Size Class和一个竖直方向的Size Class。这两者都是用来定义布局属性与物征(trait)的集合，以在屏幕上显示内容给用户。</p>
+
+<h2>特征(Traits)</h2>
+
+<p>水平和竖直的Size Class被认为是Traits。结合当前界面术语和显示比例，一起组成了一个特征集合。这不只是包含了指定的控制应该放在屏幕的什么地方。</p>
+
+<p>特征(Trait)也可以用于诸如image assets的东西上(假设你正在使用Asset Catalogs)。在asset中，我们不仅可以包含1x和2x版本，我们还可以为不同的size class指定不同的image asset。在代码中，它看着仍然是相同的UIImage调用。Asset Catalogs负责基于当前的特征集合来渲染合适的图片。</p>
+
+<h2>为Size Classes设计</h2>
+
+<p>Size Classes对于开发人员来讲是一个很好的扩展，因为当我们需要支持多种设备和方向时，它能简化我们的开发。通过简化我们的工作，苹果可以更容易地开发新的设备，并可以让开发者开发能用的应用，而不仅仅是只为iPhone开发程序。</p>
+
+<p>对于开发者来说，最大的改变是我们需要再一次修改我们的关于不同方向的代码。大家已经习惯了吧，谁让我们是开发者呢。</p>
+
+<p>对于设计者来说，特征集合意味着可以少考虑是为哪种设备来做设计，而可以更多的考虑设备的属性。现在，设计者最需要考虑的因素是物理屏幕大小。</p>
+
+<p>由于不能确保每台设备的屏幕尺寸都与Photoshop或测试样机保持一致，所以单独为特定的场景做设计已经站不住脚了。相反，我们的目标是应该为一类设备做通用的设计，主要包括：</p>
+
+<ol>
+<li>手机上的肖像模式</li>
+<li>平板上的肖像模式</li>
+<li>手机上的景观模式</li>
+<li>平板上的景观模式</li>
+</ol>
+
+
+<p>现在iPhone 6来了，它的屏幕也变大了，它拥有与iPhone 4s和5一样的特征集合。当然，iPhone 6的尺寸比原来的手机更大了，但是UI应该基于为指定特征集合定义的界面，来做自适应的处理。</p>
+
+<p>这可能意味着设计者需要推翻自己以前的一些设计，但这就是事实。就像软件开发一样，软件设计需要符合这些约束。新的约束就是我们不能再活在只为特定屏幕尺寸做设计的世界里面了。我们不是要像Android一样，但这是苹果希望我们前进的方向。</p>
+
+<h2>采用Size Classes</h2>
+
+<p>好消息是，Interface Builder可以让我们更好的使用Size Classes。更好的消息是，这些Interface Builder变化是向后兼容的，所以我们可以在合适的地方简化和合并Storyboards和Xibs，而不会落下任何用户。</p>
+
+<p>不太好的消息是，如果需要在代码中使用特征集合，则只支持iOS 8。这是因为苹果很少为老的系统提供新的API接口。这就意味着我们需要在代码中添加一些新的分支来支持不同的系统。例如，为自定义的UIView调整intrinsicContentSize属性。如果系统是iOS8，我们可以使用竖直和水平的size class来确定这个值，但如果设备仍然是iOS 7或老版本，则已存在的代码仍然需要保留。</p>
+
+<p>因为我使用并推荐Interface Builder，所以比起那些仍然活在“将一切写在代码”口号中的人们来说，我的工作明显地减少了。如果你仍然在那个阵营里面，我强烈建议你使用iOS 8, XCode 6和特征集合，并以此为契机加入到Interface Builder阵营中来。这样不仅能减少我们的代码量，同样可以通过提取大量的特征处理到一个视觉UI库来简化代码。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[MVVM指南二：Flickr搜索深入]]></title>
@@ -5293,171 +5421,6 @@ struct CConstVoidPointer : Equatable {
 <li><a href="http://andelf.github.io/blog/2014/06/18/swift-and-c-interop-cont/">Swift and C Interop Cont. (简析 Swift 和 C 的交互，Part 二)</a></li>
 </ol>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Cover flow基本原理及Tapku实现方法]]></title>
-    <link href="http://southpeak.github.io/blog/2014/07/05/cover-flow/"/>
-    <updated>2014-07-05T17:51:43+08:00</updated>
-    <id>http://southpeak.github.io/blog/2014/07/05/cover-flow</id>
-    <content type="html"><![CDATA[<p>这篇是两年前在CocoaChina上写的(德鲁伊)，现在把它归集到这边来。大家也可以查看<a href="http://www.cocoachina.com/bbs/read.php?tid=75699">原文</a>。</p>
-
-<p>Cover flow是苹果首创的将多首歌曲的封面以3D界面的形式显示出来的方式。如下图所示：</p>
-
-<p><img src="http://cc.cocimg.com/bbs/attachment/Fid_6/6_38018_be3432a30663e7e.png" alt="image" /></p>
-
-<p>从图中可以看到，显示在中间的图片为目标图片，两侧的图片在y轴都旋转了一定的角度，并且每两张图片之间都保持了一定的距离。在交互（如点击两侧的图片）的时候，滑动到中间的图片会逐渐放大，旋转的角度由原来的旋转角度a变为0，且位置上移动中间，变成新的目标图片；同时原处于中间位置的图片则缩小、旋转一定的角度、位置偏移到一侧。所以在整个过程中，主要有两个属性发生了变化：角度与位置(缩放只是视觉上的，并没有进行缩放操作)。</p>
-
-<p>在每次点击一张图片时，如果这张图片在目标图片的左边，则所有的图片都会向右移动，同时做相应的旋转；相反，点击目标图片右侧的图片时，所有图片都会向左移动并做相应的旋转。</p>
-
-<p>从如上描述的效果，可以看出在Cover Flow中最主要的的操作有两个：3D仿射变换与动画。仿射变换实质上是一种线性变换，通常主要用到的仿射变换有平移(Translation)、旋转(Rotation)、缩放(Scale)。
-对于这两种操作，iOS都提供了非常简便的接口来实现。接下来我们便以tapku的实现方法为例，来说明实现Cover Flow的基本过程。</p>
-
-<h2>一、图片的布局</h2>
-
-<p>从效果图可以看出，图片是按一条直接排列，图片与图片之间有一定的间距，目标图片是正向显示，两侧的图片则按一定的角度进行了旋转，与目标图片形成一定的角度。同时我们还能看到每个图片都有一个倒影，并且这个倒影是渐变的，由上而下逐渐透明度逐渐减小。</p>
-
-<h4>1、 Cover Flow单元的定义</h4>
-
-<p>在tapku中，每一个图片附属于一个视图(TKCoverflowCoverView)，这个视图相当于UITableViewCell，它包含了三个要素：图片(imageView)，倒影图片(reflected)，渐变层(gradientLayer)。渐变层覆盖于倒影图片上，且大小位置一致。</p>
-
-<p>TKCoverflowCoverView的声明及布局代码如下所示：</p>
-
-<pre><code>@interface TKCoverflowCoverView : UIView {
-    float baseline;
-    UIImageView *imageView;
-    UIImageView *reflected;
-    CAGradientLayer *gradientLayer;
-}
-@end
-
-- (id)initWithFrame:(CGRect)frame {
-    self = [super initWithFrame:frame];
-    if (self) {
-        self.opaque = NO;
-        self.backgroundColor = [UIColor clearColor];
-        self.layer.anchorPoint = CGPointMake(0.5, 0.5);
-
-        imageView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, self.frame.size.width, self.frame.size.width)];
-        [self addSubview:imageView];
-        reflected = [[UIImageView alloc] initWithFrame:CGRectMake(0, self.frame.size.width, self.frame.size.width, self.frame.size.width)];
-        reflected.transform = CGAffineTransformScale(reflected.transform, 1, -1);
-        [self addSubview:reflected];
-
-        gradientLayer = [CAGradientLayer layer];
-        gradientLayer.colors = [NSArray arrayWithObjects:(id)[UIColor colorWithWhite:0 alpha:0.5].CGColor,(id)[UIColor colorWithWhite:0 alpha:1].CGColor,nil];
-        gradientLayer.startPoint = CGPointMake(0, 0);
-        gradientLayer.endPoint = CGPointMake(0, 0.4);
-        gradientLayer.frame = CGRectMake(0, self.frame.size.width, self.frame.size.width, self.frame.size.width);
-        [self.layer addSublayer:gradientLayer];
-    }
-
-    return self;
-}
-</code></pre>
-
-<p>注意：此次将视图的锚点(anchorPoint属性)设置为(0.5, 0.5)，即视图的中心点，目的是让视图以中心点为基点进行旋转。</p>
-
-<p>在进行仿射变换时，视图作为一个整体进行变换。</p>
-
-<h4>2、图片的布局</h4>
-
-<p>tapku中，图片的布局与交互是在TKCoverflowView类中完成的。类TKCoverflowView继承自UIScrollView，相当于是TableView。</p>
-
-<p>该类中定义是两个仿射变量：</p>
-
-<pre><code>CATransform3D leftTransform, rightTransform
-</code></pre>
-
-<p>这两个变量分别设置了两侧图片的仿射变换，具体的设置方法为</p>
-
-<pre><code>- (void) setupTransforms{
-    leftTransform = CATransform3DMakeRotation(coverAngle, 0, 1, 0);
-    leftTransform = CATransform3DConcat(leftTransform,CATransform3DMakeTranslation(-spaceFromCurrent, 0, -300));
-    rightTransform = CATransform3DMakeRotation(-coverAngle, 0, 1, 0);
-    rightTransform = CATransform3DConcat(rightTransform,CATransform3DMakeTranslation(spaceFromCurrent, 0, -300));
-}
-</code></pre>
-
-<p>其中coverAngle为旋转的角度。对每个仿射变量同时设置了旋转也平移变换。</p>
-
-<p>Cover Flow单元是存储在一个数组中：
-复制代码
-NSMutableArray *coverViews;</p>
-
-<p>初始化时设置数组的大小，并存入空对象。在后期获取某个索引位置的单元时，如果该单元为空，则生成一个新的TKCoverflowCoverView并放入相应位置。</p>
-
-<pre><code>if([coverViews objectAtIndex:cnt] == [NSNull null]){
-    TKCoverflowCoverView *cover = [dataSource coverflowView:self coverAtIndex:cnt];
-    [coverViews replaceObjectAtIndex:cnt withObject:cover];
-    ......
-}
-</code></pre>
-
-<p>每个Cover Flow单元的位置计算如下</p>
-
-<pre><code>CGRect r = cover.frame;
-r.origin.y = currentSize.height / 2 - (coverSize.height/2) - (coverSize.height/16);
-r.origin.x = (currentSize.width/2 - (coverSize.width/ 2)) + (coverSpacing) * cnt;
-cover.frame = r;
-</code></pre>
-
-<p>其中currentSize,coverSize,coverSpacing都是固定值。从中可以看出所有单元的y值都是一样的，而x值则与其在数组中的索引值相关，索引越大，x值也越大。而这就涉及我们之后的一个问题。一会再讲。
-假定目标图片的索引为currentIndex，则目标图片两侧的仿射属性设置如下：</p>
-
-<pre><code>if(cnt &gt; currentIndex){
-    cover.layer.transform = rightTransform;
-}
-else
-    cover.layer.transform = leftTransform;
-</code></pre>
-
-<p>如上即为Cover Flow的基本布局，可以与UITableView比较一下。</p>
-
-<h2>二、交互</h2>
-
-<p>Cover Flow的基本交互是点击两侧的图片，则被点击的图片成为新的目标图片并移动中屏幕中间，而其它图片一起移动，在这个过程中所需要做的就两件事：旋转与平移。</p>
-
-<p>方法很简单：在动画块中重新设置Cover Flow单元的transform属性，这样就可以缓动实现这个动画的过程。实际上只有新旧目标图片及中间的图片需要做这种变换，其余图片的transform属性都是不变的。</p>
-
-<pre><code>float speed = 0.3;
-[UIView beginAnimations:string context:nil];
-[UIView setAnimationDuration:speed];
-[UIView setAnimationCurve:UIViewAnimationCurveEaseOut];
-[UIView setAnimationBeginsFromCurrentState:YES];
-[UIView setAnimationDelegate:self];
-[UIView setAnimationDidStopSelector:@selector(animationDidStop:finished:context:)]; 
-for(UIView *v in views){
-int i = [coverViews indexOfObject:v];
-    if(i &lt; index) v.layer.transform = leftTransform;
-    else if(i &gt; index) v.layer.transform = rightTransform;
-    else v.layer.transform = CATransform3DIdentity;
-}
-[UIView commitAnimations];
-</code></pre>
-
-<p>但这在做的只是旋转了Cover Flow的内容，并没有对Cover Flow进行水平平移，Cover Flow水平位置已由其origin.x值固定。那么水平上的平移是如何实现的呢，我们看下面的代码：</p>
-
-<pre><code>- (void) snapToAlbum:(BOOL)animated{
-    UIView *v = [coverViews objectAtIndex:currentIndex];
-    if((NSObject*)v!=[NSNull null]){
-        [self setContentOffset:CGPointMake(v.center.x - (currentSize.width/2), 0) animated:animated];
-    }
-    else
-    {  
-        [self setContentOffset:CGPointMake(coverSpacing*currentIndex, 0) animated:animated];
-    }
-}
-</code></pre>
-
-<p>其所做的就是以目标图片为中心，整体平移TKCoverflowView视图。</p>
-
-<h2>三、总结</h2>
-
-<p>由上可以看出，Cover Flow特效的原理很简单：对新旧目标图片及中间的图片以动画的形式做仿射变换。至于仿射变换如何处理，有不同的方法。tapku所实现的方法可以说相对简单灵活。</p>
-
-<p>Android, Flash都有类似的Cover Flow特效实现方法，有兴趣的童鞋可以参考一下。</p>
 ]]></content>
   </entry>
   

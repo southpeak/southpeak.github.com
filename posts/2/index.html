@@ -11,7 +11,7 @@
   <meta name="baidu-site-verification" content="HoscFhWICI" />
 
   
-  <meta name="description" content="在开发BLE相关应用时，由于应用在后台时会有诸多资源限制，需要考虑应用的后台处理问题。默认情况下，当程序位于后台或挂起时，大多数普通的Core Bluetooth任务都无法使用，不管是Central端还是Peripheral端。但我们可以声明我们的应用支持Core Bluetooth后台执行模式， &hellip;">
+  <meta name="description" content="在iOS设备中使用BLE时，无论是将其作为central端还是peripheral端，其在通信时都会使用设备自身的无线电来发送信号。考虑到其它形式的无线通信也需要使用无线电，因此开发程序时应该尽量少使用无线电。另外，这对于设备电池的寿命及程序的性能也有所帮助。以此为出发点， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -68,6 +68,196 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/08/01/core-bluetoothkuang-jia-zhi-san-:zui-jia-shi-jian/">Core Bluetooth框架之三：最佳实践</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-08-01T23:03:22+08:00" pubdate data-updated="true">Aug 1<sup>st</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/08/01/core-bluetoothkuang-jia-zhi-san-:zui-jia-shi-jian/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>在iOS设备中使用BLE时，无论是将其作为central端还是peripheral端，其在通信时都会使用设备自身的无线电来发送信号。考虑到其它形式的无线通信也需要使用无线电，因此开发程序时应该尽量少使用无线电。另外，这对于设备电池的寿命及程序的性能也有所帮助。以此为出发点，我们将介绍一些使用BLE时的最佳实践，希望有所帮助。</p>
+
+<h2>与Peripheral设备交互的最佳实践</h2>
+
+<p>Core Bluetooth框架让程序的大部分Central端交互变得透明。即程序能够控制且有责任实现大部分Central端的操作，如设备搜索及连接，解析并与远程peripheral数据交互。下面我们将介绍一些Central端的最佳实践。</p>
+
+<h4>留意无线电的使用及电量消耗</h4>
+
+<h5>只有当需要时才扫描设备</h5>
+
+<p>当调用CBCentralManager类的scanForPeripheralsWithServices:options:方法来搜索正在广告服务的peripheral设备时，central设备使用无线电来监听广告的设备，直到我们显示停止它。除非需要搜索更多的设备，否则当发现想要连接的设备时就停止扫描操作。此时可以调用CBCentralManager实例的stopScan方法来处理。</p>
+
+<h5>只有当需要时才指定CBCentralManagerScanOptionAllowDuplicatesKey选项</h5>
+
+<p>远程peripheral设备可能每秒发送多个广告包来声明它们的存在。当我们使用scanForPeripheralsWithServices:options:方法扫描设备时，该方法的默认行为是将多个搜索到的广告peripheral事件归集为一个事件&mdash;即central管理器在只有在每次发现新的peripheral时都调用其代理对象的centralManager:didDiscoverPeripheral:advertisementData:RSSI:，而不管它收到多少个广告包。central管理器在已发现的peripheral改变广告的数据时也会调用这个代理方法。</p>
+
+<p>如果想要改变默认行为，可以指定CBCentralManagerScanOptionAllowDuplicatesKey作为扫描选项。此时，central管理器会在每次收到peripheral端的广告包时都触发一个事件。在某些情况下关闭默认行为很有用处，但记住指定CBCentralManagerScanOptionAllowDuplicatesKey扫描选项不利于电池的寿命及程序性能。因此，只在需要的时候使用这个选项以完成特定的任务。</p>
+
+<h5>解析peripheral数据</h5>
+
+<p>一个peripheral设备可能有多个服务和特性，但在我们的应用中，可能只对其中一些感兴趣。搜索peripheral设备的所有服务和特性可能不利于电池的寿命及程序性能。因此，我们只去搜索那些与我们的的应用相关的服务和特性。</p>
+
+<p>例如，假设我们正在连接一个有很多可用服务的peripheral设备，但是我们的程序只需要访问其中两个。我们可以只查找这两个服务，即在调用CBPeripheral对象的discoverServices:方法时传入感兴趣服务的UUID的数组即可。如下代码所示：</p>
+
+<pre><code>[peripheral discoverServices:@[firstServiceUUID, secondServiceUUID]];
+</code></pre>
+
+<p>在搜索到这两个感兴趣的服务后，我们可以用类似的方法去搜索我们感兴趣的服务中的特性。此时调用CBPeripheral实例的discoverCharacteristics:forService:方法并传入特性UUID的数组。</p>
+
+<h5>订阅经常改变的特性值</h5>
+
+<p>我们可以通过两种方式获取特性的值：</p>
+
+<ol>
+<li>在我们每次需要值时调用readValueForCharacteristic:方法来显示的轮循特性的值</li>
+<li>调用setNotifyValue:forCharacteristic:方法来订阅特性的值，这样当值改变时我们可以收到来自于peripheral的通知。</li>
+</ol>
+
+
+<p>通常最好是去订阅特性的值，特别是特性值经常改变时。</p>
+
+<h5>当获取到所有需要的数据时断开到设备的连接</h5>
+
+<p>当连接不再需要时，我们可以断开连接，以减少无线电的使用。在下面两种情况下，我们应该断开连接：</p>
+
+<ol>
+<li>所有订阅的特性值已经停止发送通知(我们可以访问特性的isNotifying属性来查看属性值是否正在被通知)</li>
+<li>我们已以获取来来自peripheral设备的全部值。</li>
+</ol>
+
+
+<p>两种情况下，取自我们有的所有订阅并断开连接。我们通过调用setNotifyValue:forCharacteristic:方法并设置第一个参数为NO来取消订阅。同时调用CBCentralManager实例的cancelPeripheralConnection:方法来断开连接。注意这个cancelPeripheralConnection:方法是非阻塞的，如果我们尝试断开连接的peripheral设备仍然挂起，则CBPeripheral实例的命令可能完成执行，也可能没有。因为其它程序可能也连接着那个peripheral设备。取消一个本地连接不能保证底层物理链接会立即断开。</p>
+
+<h4>重新链接Peripheral</h4>
+
+<p>使用Core Bluetooth框架，有三种方式来重新连接peripheral设备：</p>
+
+<ol>
+<li>使用retrievePeripheralsWithIdentifiers:方法获取已知peripheral设备的列表，这些设备是我们已经搜索并连接过的设备。如果我们查找的peripheral在列表中，则尝试重新连接。</li>
+<li>使用retrieveConnectedPeripheralsWithServices:方法获取当前连接到系统的peripheral设备的列表。如果我们查找的peripheral设备在列表中，则连接它。</li>
+<li>使用scanForPeripheralsWithServices:options:方法扫描并搜索peripheral设备。如果找到，则连接它。</li>
+</ol>
+
+
+<p>根据使用的场景，我们可能不希望每次重新连接设备时，都去扫描并搜索设备。相反，我们可能想首先使用其它方式来重新连接。如下图所示，一个可能的重新连接操作流是按照上面列出来的方式去重新连接：</p>
+
+<h5>获取已知peripheral设备的列表</h5>
+
+<p>我们第一次发现一个peripheral设备时，系统生成一个标识符(NSUUID对象)来标识peripheral设备。我们可以存储这些设备，后续我们可以使用CBCentralManager实例的retrievePeripheralsWithIdentifiers:方法来重新连接这个peripheral设备。</p>
+
+<p>当我们启动程序时，调用retrievePeripheralsWithIdentifiers:方法，传递一个我们先前搜索并连接过的peripheral设备的标识符的数组，如下代码所示：</p>
+
+<pre><code>knownPeripherals = [myCentralManager retrievePeripheralsWithIdentifiers:savedIdentifiers];
+</code></pre>
+
+<p>central管理器尝试在这个列表中匹配我们提供的标识符，并返回一个CBPeripheral对象的数组。如果没找到，则返回的数组为空，那么我们需要尝试另外两种方法。如果返回的数组不为空，则让用户选择连接哪一个peripheral设备。当用户选择后，调用CBCentralManager实例的connectPeripheral:options:方法来尝试连接。如果peripheral设备仍然可以连接，则central管理器调用代理对象的centralManager:didConnectPeripheral:方法，且成功连接上peripheral设备。</p>
+
+<h5>获取已连接peripheral设备的列表</h5>
+
+<p>另一种重新连接peripheral设备的方法是查看我们正在查找的设备是否正由系统连接着(如被其它程序连接着)。我们可以调用CBCentralManager实例的retrieveConnectedPeripheralsWithServices:方法，它返回一个表示当前系统正在连接着的peripheral设备的CBPeripheral对象的数组。</p>
+
+<p>因为可以有多于一个peripheral设备正在连接着系统，我们可以传递一个CBUUID对象的数组来获取只包含指定UUID所标识服务的设备。如果当前系统没有连接任何peripheral设备，则返回数组为空，我们应该尝试其它两种方法。如果返回数组不为空，则让用户选择连接哪个设备。</p>
+
+<p>假设用户找到并选择了需要的peripheral设备，则调用CBCentralManager实例的connectPeripheral:options:方法来连接它(即使系统已经连接了它，我们的程序仍然需要连接它以开始解析并交互数据)。当连接建立后，central管理器调用代理对象的centralManager:didConnectPeripheral:方法，然后成功连接peripheral设备。</p>
+
+<h2>将本地设备设置为peripheral设备的最佳实践</h2>
+
+<h4>广告注意事项</h4>
+
+<p>在设置本地设备作为peripheral端时，广告peripheral数据是非常重要的一部分。我们下面将介绍一下如何以适当的方式来实现这一功能。</p>
+
+<p>我们广告peripheral数据时，是将其放在一个字典中传递给CBPeripheralManager对象的startAdvertising:方法中。当创建一个广告字典时，需要知道我们可以广告什么及能广告多少数据。</p>
+
+<p>虽然广告数据包通常可以放置关于peripheral设备的多种信息，但建议只放置设备的本地名及我们需要广告的服务的UUID。即，当创建广告字典时，可能只指定下面两个键：CBAdvertisementDataLocalNameKey和CBAdvertisementDataServiceUUIDsKey。如果指定其它键，则会收到一个错误。</p>
+
+<p>同样，广告数据时也限定了可以使用多少空间。当程序在前台时，可广告的数据对于上述两个key值的任意组合来说，初始值不能超过28个字节。如果这个空间用完了，在扫描响应时可以有额外的10个字节的空间，但这只能用于本地名。任何超出的数据都会被放到一个指定的“溢出”区域；它们只能被显示扫描它们的iOS设备发现。当程序在后台时，本地名不能被广告，且所有的服务UUID都被放在溢出区域。</p>
+
+<p>为了符合这此限制条件，我们需要将广告的服务UUID限制在主要服务的标识上。</p>
+
+<p>另外，因为广告peripheral数据使用本地设备的无线电，所以只在需要其它设备连接的时候广告数据。一旦连接后，这些设备可以直接解析并交互数据，而不需要任何广告包。因此，为了减少无线电的使用、提高程序的性能及节省电量，当不再需要任何试图进行BLE交易时可以停止广告。为了停止本地peripheral，可以调用CBPeripheralManager对象的stopAdvertising方法，如下所示：</p>
+
+<pre><code>[myPeripheralManager stopAdvertising];
+</code></pre>
+
+<p>通常，只有用户才知道什么时候广告数据。例如，当我们知道没有任何BLE设备在附近时，在我们的设备上广告服务没有任何意义。因为我们的程序通常不知道是否有其它设备在附近，所以提供一个界面让用户来决定什么时候广告数据。</p>
+
+<h4>配置特性</h4>
+
+<p>当创建一个可变的特性时，我们设置它的属性、值和权限。这些设置决定了如何连接central访问及交互特性值。虽然我们可能基于程序的需求来配置特性的属性和权限，但当执行下面两种任务时，我们还是有章可循的</p>
+
+<ol>
+<li>允许连接的central订阅属性</li>
+<li>保护敏感特性值，不让其被未配对的central访问</li>
+</ol>
+
+
+<p>对于这两种情况，首先我们配置特性以支持通知。通常建议central去订阅那些经常改变的特性值。当我们创建一个可变特性时，可以通过使用CBCharacteristicPropertyNotify常量来设置特性属性以支持订阅，如下所示：</p>
+
+<pre><code>myCharacteristic = [[CBMutableCharacteristic alloc] initWithType:myCharacteristicUUID properties:CBCharacteristicPropertyRead | CBCharacteristicPropertyNotify value:nil permissions:CBAttributePermissionsReadable];
+</code></pre>
+
+<p>在这个例子中，特性值是可读的，且可以被连接的central端订阅。</p>
+
+<p>其它，要求配对的连接才能访问敏感数据。根据场景的不同，我们可能想要提供一个服务，这个服务有一个或多个需要加密值的特性。例如，假设我们想要提供一个社交媒体配置文件服务。这个服务有一些特性，它们的值表示成员的配置信息，如姓名、电子邮件地址。更可能的是，我们只允许受信任的设备来获取成员的电子邮件地址。</p>
+
+<p>我们可以设置合适的特性属性及权限来确保只有受信任的设备可以访问敏感的特性值。继续上面的例子，为了只允许受信任的设备来获取成员的邮箱地址，可以如下设置合适的特性属性与权限：</p>
+
+<pre><code>emailCharacteristic = [[CBMutableCharacteristic alloc] initWithType:emailCharacteristicUUID properties:CBCharacteristicPropertyRead | CBCharacteristicPropertyNotifyEncryptionRequired value:nil permissions:CBAttributePermissionsReadEncryptionRequired];
+</code></pre>
+
+<p>在这个例子中，特性配置为只有受信任的设备才可以读取或订阅它的值。当一个连接的central尝试读取或订阅特性值时，Core Bluetooth尝试配对本地peripheral和central端来创建安全连接。</p>
+
+<p>例如，如果central和peripheral都是iOS设备，两端都接收一个提示显示对方想要配对。central设备上的提示包含包含一个确认码，这个确认码必须在peripheral设备提示框的输入域中输入，来完成配对操作。</p>
+
+<p>在配对成功后，peripheral认为配对的central是一个受信任的设备且允许central访问它的加密特性值。</p>
+
+<h2>小结</h2>
+
+<p>在使用BLE时，基于以下几点，程序开发过程中我们合理地使用蓝牙</p>
+
+<ol>
+<li>程序性能</li>
+<li>电池电量消耗</li>
+<li>与其它通信方法争抢无线电资源</li>
+</ol>
+
+
+<p>通常我们只在需要时才使用BLE，尽量减少设备扫描搜索操作。</p>
+
+<h2>参考</h2>
+
+<p><a href="https://developer.apple.com/library/ios/documentation/NetworkingInternetWeb/Conceptual/CoreBluetooth_concepts/AboutCoreBluetooth/Introduction.html">Core Bluetooth Programming Guide</a></p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1029,239 +1219,6 @@ manager = [[CBPeripheralManager alloc] initWithDelegate:self queue:nil options:n
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/07/20/bonjourde-yu-ming-ming-yue-ding-,-apiji-qi-cao-zuo/">Bonjour理论2：域命名约定、API及其操作</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-07-20T15:52:22+08:00" pubdate data-updated="true">Jul 20<sup>th</sup>, 2014</time>
-        
-        
-           | <a href="/blog/2014/07/20/bonjourde-yu-ming-ming-yue-ding-,-apiji-qi-cao-zuo/#comments">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h2>域命名约定</h2>
-
-<p>服务实例与服务类型的Bonjour名称与DNS域名相关。这里我们将介绍DNS域名，Bonjour本地“域”，和Bonjour服务实例与服务类型的命名规则。</p>
-
-<h4>域名与DNS</h4>
-
-<p>DNS使用specific-to-general命名方案来为域名命名。最能用的域是&#8221;.&ldquo;,称为根域名，这是类似于UNIX文件系统中的根目录&rdquo;/&ldquo;。所有其它域都在根域名的层次结构中。例如，域名www.apple.com.可以解析为根域&rdquo;.&ldquo;，其下包含顶级域名&#8221;com.&rdquo;,再下面是二级域&#8221;apple.com.&ldquo;, 其下就是&#8221;www.apple.com.&#8221;。下图显示了这种层次结构：</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/NetServices/Art/names_01dns_2x.png" alt="image" /></p>
-
-<p>在这棵倒树的顶部是根域。在其下面是一些顶级域：com., edu., org.等。在顶级域下面是一些二级域，如apple, darwin, zeroconf。这棵树可以无限延伸下去。</p>
-
-<h4>Bonjour和本地链路</h4>
-
-<p>Bonjour协议很大程度上都是在处理本地链路(网络的一部分)。一个主机的本地链路或才链路本地网络(link-lock network)包括主机本身及其它可以不修改IP分组数据就是交换包的主机。在实践中，这包含所有没被路由器分开的主机。</p>
-
-<p>在Bonjour系统中，&#8221;local.&ldquo;用于标识在本地IP网络中应该使用IP多播查询来进行查找的名称。</p>
-
-<p>注意：&#8221;local.&ldquo;不是一个真实的域。我们可以将&#8221;local.&#8221;当成一个伪域。它与传统的DNS域有一个根本的区别：其它域的名称是全局唯一的，而链路本地域名不是。www.apple.com在全球只有唯一的一个DNS入口。而以local.结尾的主机名是本地网络中由多播DNS响应者的集合管理的，所以命名范围就是&#8221;local.&rdquo;(本地)。所以只要不在同一个本地网络中，就可以有两台命名相同的主机，即使是在同一栋楼中。而在同一个本地网络中，也需要确保名称的唯一性。如果在本地网络中发生名称冲突，一个Bonjour主机会自动查找一个新的名称或让用户输入一个新的。</p>
-
-<h4>现有服务类型的Bonjour名称</h4>
-
-<p>Bonjour服务根据IP服务的现有网络标准(RFC 2782)来命名。Bonjour服务名结合服务类型和传输协议绑定以形成一个注册类型。注册类型用于注册一个服务并创建DNS资源记录。如果要在DNS资源记录中区分注册类型和域名，可以要注册类型每个组件前使用下划线。其格式如下</p>
-
-<p><strong>_ServiceType._TransportProtocolName</strong></p>
-
-<p>服务类型是该服务的官方IANA注册名称，如ftp,http或打印机。传输协议的名称是tcp或udp，取决于服务使用的传输协议。一个运行在TCP上的FTP服务注册类型应该是<em>ftp.</em>tcp，并将注册一个名称为<em>ftp.</em>tcp.local.的DNS PTR记录，以作为服务所在主机的多播DNS响应者。</p>
-
-<h4>新服务的Bonjour名称</h4>
-
-<p>如果我们正在设计一个新的协议以作为Bonjour网络服务来推广，则应该在IANA中注册它。</p>
-
-<p>IANA目前要求每个每个注册的服务都与一个&#8221;众所周知的端口&#8221;或众所周知的端口范围相关联。例如，http的端口是80，所以我们在浏览器中访问一个站点时，程序都假设HTTP服务运行在80端口上，除非我们另行指定。</p>
-
-<p>但在Bonjour中，我们不需要知道端口号。因为客户端程序通过对服务类型进行简单查询，就能发现我们的服务，因此不需要端口。</p>
-
-<h4>服务实例的Bonjour名称</h4>
-
-<p>服务实例名称是一种可读的字符串，因此，它们的名称具有描述性，并可以让用户重写我们提供的默认名称。由于它们是可浏览的，而不是类型化的，服务实例名可以是编码为UTF8的任何Unicode字符串，最多63个字节长度。</p>
-
-<p>例如，一个在网络中分享音乐的程序可能使用本地用户名来分享服务(如Emille的曲库)。用户可以重写默认服务名，并将服务命名为Zealous Lizard&rsquo;s Tune Studio._music._tcp.local.</p>
-
-<p>下图说明了一个Bonjour服务实例的名称结构。在树的顶部是域，如本地网络的local.。下一级是注册类型，它由前面加下划线的服务类型(_music)和传输协议(同样前面有开线)组成。在树的底部是可读的服务实例名，如Zealous Lizard&rsquo;s Tune Studio。完整的名称由底至顶，每个组件由&#8221;.&ldquo;分割。</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/NetServices/Art/names_02services_2x.png" alt="image" /></p>
-
-<h2>Bonjour的API架构</h2>
-
-<p>Bonjour网络服务的API结构如下图所示：</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/NetServices/Art/rendarch_04apilayers_2x.png" alt="image" /></p>
-
-<p>其主要有这么几部分：
-1. NSNetService和NSNetServiceBrowser类：在Foundation框架中
-2. CFNetServices：Core Services中CFNetwork框架的一部分；
-3. DNS Service Discovery for Java(OS X)
-4. 底层DNS Service Discovery API：构建在BSD socket</p>
-
-<p>所有这些API集合提供了发布、搜索和网络服务解析的基础方法。下面我们简单介绍一下这几个部分</p>
-
-<h4>NSNetService和NSNetServiceBrowser</h4>
-
-<p>NSNetService和NSNetServiceBrowser提供了服务搜索和发布的面向对象接口。NSNetService对象表示Bonjour服务的实例，用于客户端发布和服务搜索；NSNetServiceBrowser表示特定类型服务的浏览器。大多数Cocoa程序员应该使用这些类来处理需求。如果需要更多详细的控制，可以使用DNS Service Discovery API。</p>
-
-<p>NSNetService和NSNetServiceBrowser被安排到默认的NSRunLoop对象中来异步执行发布、搜索和解析操作。所以NSNetService和NSNetServiceBrowser返回的结果都由代理对象来处理。这些对象必须与一个run loop相关联，但不必是默认的run loop。</p>
-
-<h4>CFNetServices</h4>
-
-<p>CFNetServices API位于Core Services框架中，提供Core Foundation样式的类型和函数来管理服务和服务搜索。CFNetServices定义了三个Core Foundation对象类型:</p>
-
-<ol>
-<li>CFNetService：服务实例的抽象表示，用于发布或其它用途。相关的函数提供了发布和解析服务的支持</li>
-<li>CFNetServiceBrowser：表示特定域中特定类型服务的浏览者。通常只在基于Core Foundation编码时使用这个类型</li>
-<li>CFNetServiceMonitor</li>
-</ol>
-
-
-<p>CFNetService和CFNetServiceBrowser对象通常在CFRunLoop中使用。为了获取结果，程序需要实现处理事件的回调函数，如新的服务产生和消失等。与NSNetService和NSNetServiceBrowser不同的是，CFNetServices类型可以不需要一个run loop，可以在需要的时候同步运行。但通常不建议同步使用。</p>
-
-<h4>DNS Service Discovery</h4>
-
-<p>DNS Service Discovery API声明在/usr/include/dns_sd.h中，它为Bonjour服务提供了低级别BSD socket通信。DNS Service Discovery作为软件与多播DNS响应者或DNS服务器之间的中介层。它为我们管理DNS响应者，让我们编写程序时专注于服务和服务浏览者而不是DNS资源记录。</p>
-
-<p>由于DNS Service Discovery API是Darwin开源工程的一部分，我们应该在写跨平台代码使用它，或者在诸如在NSNetService这样的高级别API无法获取低级特性时使用它。</p>
-
-<h2>Bonjour操作</h2>
-
-<p>Bonjour的网络服务结构包含一个简单易用的机制来发布、搜索和使用基于IP的服务。Bonjour支持三种基础操作，每一种都是零配置网络服务所必须的：</p>
-
-<ol>
-<li>发布(Publication): 广告一个服务</li>
-<li>搜索(Discovery): 浏览可用的服务</li>
-<li>解析(Resolution): 将服务实例名转化为地址和端口</li>
-</ol>
-
-
-<p>下面将分别介绍这三个部分。</p>
-
-<h4>Publication</h4>
-
-<p>为了发布一个服务，程序或设备必须使用一个多播DNS响应者来注册服务，或者通过高级API，或者直接与响应者(mDNSResponser)通信。Bonjour同样支持在传统的DNS服务中存储记录。当注册服务后，会创建三个相关的DNS记录：服务记录(SRV), 指针记录(PTR)和文本记录(TXT)。其中TXT记录会包含额外的数据用于解析或使用服务，虽然这些数据通常是空的。</p>
-
-<h5>服务记录</h5>
-
-<p>服务记录将服务实例名称映射到实际使用服务所需要的信息。客户端通过持久化方式存储服务实例名以访问这些服务，并在连接的时候执行针对主机名和端口号的DNS查询。这个额外的indirection级提供了两个重要的特性</p>
-
-<ol>
-<li>服务由一个可读的名称标识，而不是域名和端口号</li>
-<li>客户端可以在服务的端口号和IP地址变化时访问服务，只要服务名不变即可。</li>
-</ol>
-
-
-<p>SRV记录包含两部分信息来标识一个服务</p>
-
-<ol>
-<li>主机名</li>
-<li>端口号</li>
-</ol>
-
-
-<p>主机名是服务可被发现的域名。用主机名代替IP地址的原因是一个主机可能对应多个IP地址，或者可以同时有IPv4地址和IPv6地址。使用主机名可以让所有这些情况被正确的处理。</p>
-
-<p>端口号标识的服务的TCP或UDP端口号。</p>
-
-<p>SRV记录以下面的规则来命名：</p>
-
-<p><strong>&lt;Instance Name>.&lt;Service Type>.&lt;Domain></strong></p>
-
-<p>&lt;Instance Name>是服务实例名称，可以是任何UTF-8编码的字符串，通常是可读的有意义的字符串</p>
-
-<p>&lt;Service Type>是标准的IP协议名称，前面带有下划线，后面跟着传输协议(TCP/UDP，前缀也是下划线)。</p>
-
-<p>&lt;Domain>是标准的DNS域名。这可能是一个特定的域名，如apple.com.，也可以是通用的以local.为后缀的域名(用于本地链路的服务)</p>
-
-<p>下面是SRV记录的例子，它是一个运行在TCP上端口号为515上，名称为PrintsAlot的打印后台处理程序：</p>
-
-<p><strong>PrintsAlot._printer._tcp.local. 120 IN src 0 0 515 blackhawk.local.</strong></p>
-
-<p>这条记录将在本地链路的叫做blackhawk.local.的打印机的多播DNS响应者设备上被创建。初始的120是用于缓存的TTL值。两个0是分别表示权重和优先级，在传统DNS上选择多个与给定名匹配的记录时需要使用这两个值，而对于多播DNS，将忽略这两个值。</p>
-
-<h5>指针记录</h5>
-
-<p>PTR记录可以通过将实例的类型映射到服务的特定类型的实例的名字来开启服务搜索。这个记录添加了另一个indirection层，以便服务可以只通过查询使用服务类型标定的PTR记录就被找到。</p>
-
-<p>这个记录只包含信息的一小块&mdash;服务实例的名称。PTR记录的命名与SRV记录类似，不过没有实例名，如下所示：</p>
-
-<p><strong>&lt;Service Type>.&lt;Domain></strong></p>
-
-<h5>文本记录</h5>
-
-<p>TXT记录与相应的SRV记录有相同的名称，并且可以包含少量的关于服务实例的额外的信息，一般不超过100-200个字节。记录也可以是空的。例如，一个网络游戏可以在多人游戏中广告所使用的地图名称。如果需要传输大量的数据，主机需要与客户端建立一个连接并直接发送数据。</p>
-
-<p>通常，这个记录用于运行在同一地址同一端口的多个服务上，例如在同一个打印服务器上运行的多个打印队列，在这种情况下，TXT记录中额外的信息可用于标识预期的打印队列。如下表所示：</p>
-
-<p><img src="http://b140.photo.store.qq.com/psb?/V130i6W71atwfr/AFtWnv5ko6gDjydKCfEChHIKr1la*sMWMqfKcG8VTXg!/b/dCtmdVP4JAAA&amp;bo=TATAAAAAAAADAK0!&amp;rf=viewer_4" alt="image" /></p>
-
-<p>这么做是必要的，因为服务类型曾经与众所周知的端口相关联。建议新的Bonjour协议的设计者在不同的动态分配的端口上来运行每一个服务的实例，而不是在相同的众所周知的端口号上运行它们(这种情况下还需要额外的信息来指定客户端试图通信的服务实例)。</p>
-
-<p>TXT记录中的数据的特性和格式特定于每种服务的类型，所有每个新的服务类型需要为自己相关的TXT记录定义数据的格式，并将其作为协议规范的一部分发布。</p>
-
-<h4>搜索</h4>
-
-<p>服务搜索使用服务发布期间注册的DNS记录来查找特定类型的服务的所有实例。为了做到这一点，所有的应用执行一个匹配服务类型的PTR记录的查询。如_http._tcp，通常使用高级接口。运行于每个设备上的多播DNS响应者将使用服务实例名来返回PTR记录。以音乐共享服务为例，下图显示了搜索的过程</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/NetServices/Art/rendarch_02discover_2x.png" alt="image" /></p>
-
-<p>在搜索音乐共享服务的过程，主要有两步：</p>
-
-<ol>
-<li>客户端程序向标准多播地址224.0.0.251发出一个在local.域中服务类型为_music._tcp的查询。</li>
-<li>网络中的每一个多播DNS响应者都将接收到这个请求，但只有音乐共享设备会使用一个PTR记录来作出响应。在这种情况下，PTR记录保存一个服务实例名Ed&rsquo;s Party Mix.<em>music.</em>tcp.local.，客户端程序可以从PTR记录中提取服务实例名然后将其添加到一个音乐服务器的离线列表中。</li>
-</ol>
-
-
-<h4>解析</h4>
-
-<p>服务搜索通常只会发生一次，例如，当用户第一次选择打印机时。这个操作保存了服务实例名，和一个服务的任何给定实例的稳定的标识符。端口号，IP地址，主机名可能经常改变，但用户在每次连接服务时不需要再次选择一个打印机。因此，将一个服务名解析为socket信息只有在服务真正使用时才发生。</p>
-
-<p>为了解析一个服务，程序使用服务名来执行SRV记录的DNS查询。多播DNS响应者使用包含当前信息的SRV记录来作出响应。下图演示了音乐共享实例中服务解析的这样一个过程：</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/NetServices/Art/rendarch_03resolve_2x.png" alt="image" /></p>
-
-<p>这个过程主要分为几步：</p>
-
-<ol>
-<li>解析进程发送一个DNS查询到多播地址224.0.0.251，查询Ed’s Party Mix._music._tcp.local.的SRV记录。</li>
-<li>查询返回服务的主机名和端口号(eds-musicbox.local., 1010)</li>
-<li>客户端发送一个IP地址的多播请求</li>
-<li>请求解析为IP地址169.254.150.84.然后客户端使用这个IP地址和端口号来连接服务器。这个过程发生在服务被使用时，从而总是查找服务的最新地址和端口号。</li>
-</ol>
-
-
-<p>参考</p>
-
-<p><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/NetServices/Introduction.html">Bonjour Overview</a></p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/3">&larr; Older</a>
@@ -1278,7 +1235,7 @@ manager = [[CBPeripheralManager alloc] initWithDelegate:self queue:nil options:n
 <section>
 <h1>分类</h1>
 <ul>
-  <li><a href='/blog/categories/ios'>ios (25)</a></li>
+  <li><a href='/blog/categories/ios'>ios (26)</a></li>
   <li><a href='/blog/categories/network'>network (3)</a></li>
   <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (2)</a></li>
   <li><a href='/blog/categories/swift'>swift (7)</a></li>
@@ -1289,6 +1246,10 @@ manager = [[CBPeripheralManager alloc] initWithDelegate:self queue:nil options:n
 <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/09/15/dui-yu-ios-8de-size-classesde-si-kao/">对于iOS 8的Size Classes的思考</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2014/08/12/mvvmzhi-nan-er-:flickrsou-suo-shen-ru/">MVVM指南二：Flickr搜索深入</a>
@@ -1324,10 +1285,6 @@ manager = [[CBPeripheralManager alloc] initWithDelegate:self queue:nil options:n
     
       <li class="post">
         <a href="/blog/2014/07/20/urljia-zai-xi-tong-zhi-wu-:huan-cun-,-cookiesyu-xie-yi/">URL加载系统之五：缓存、Cookies与协议</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/07/20/bonjourde-yu-ming-ming-yue-ding-,-apiji-qi-cao-zuo/">Bonjour理论2：域命名约定、API及其操作</a>
       </li>
     
   </ul>
