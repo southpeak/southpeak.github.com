@@ -12,7 +12,7 @@ categories: iOS ReactiveCocoa
 
 ---
 
-原文由Colin Eberhardt发表于http://www.scottlogic.com：[BINDING TO A UITABLEVIEW FROM A REACTIVECOCOA VIEWMODEL](http://www.scottlogic.com/blog/2014/05/11/reactivecocoa-tableview-binding.html)
+英文原文由作者Colin Eberhardt，原文可查看[BINDING TO A UITABLEVIEW FROM A REACTIVECOCOA VIEWMODEL](http://www.scottlogic.com/blog/2014/05/11/reactivecocoa-tableview-binding.html)
 
 这篇博客介绍了一个工具类，这个类将ReactiveCocoa中的ViewModels绑定到UITableView，而不需要通常的datasource和delegate。下面是这个辅助类的使用方法：
 
