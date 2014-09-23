@@ -5,13 +5,13 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>混合使用Swift和Objective-C - 南峰子的技术博客</title>
+  <title>Category: system - 南峰子的技术博客</title>
   <meta name="author" content="南峰子">
       
   <meta name="baidu-site-verification" content="HoscFhWICI" />
 
   
-  <meta name="description" content="Swift和Objective-C可以在同一个工程中共存。不管创建工程时选择的是Swift还是Objective-C作为初始语言，我们都可以在工程中添加另一种语言的文件。 混合编程的处理过程在App工程和库工程中稍微有点不同。具体的工作模型如下图所示 下面我们讨论下具体的操作 &hellip;">
+  <meta name="description" content="Category: system">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -20,7 +20,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://southpeak.github.io/blog/2014/07/08/mix-swift-and-objective-c">
+  <link rel="canonical" href="http://southpeak.github.io/blog/categories/system">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="南峰子的技术博客" type="application/atom+xml">
@@ -67,140 +67,37 @@
   <div id="main">
     <div id="content">
       <div>
-<article class="hentry" role="article">
+<article role="article">
   
   <header>
-    
-      <h1 class="entry-title">混合使用Swift和Objective-C</h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-07-08T16:58:06+08:00" pubdate data-updated="true">Jul 8<sup>th</sup>, 2014</time>
-        
-        
-           | <a href="#comments">Comments</a>
-        
-      </p>
+    <h1 class="entry-title">Category: system</h1>
     
   </header>
-
-
-<div class="entry-content"><p>Swift和Objective-C可以在同一个工程中共存。不管创建工程时选择的是Swift还是Objective-C作为初始语言，我们都可以在工程中添加另一种语言的文件。</p>
-
-<p>混合编程的处理过程在App工程和库工程中稍微有点不同。具体的工作模型如下图所示</p>
-
-<p><img src="https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/BuildingCocoaApps/Art/DAG_2x.png" alt="image" /></p>
-
-<p>下面我们讨论下具体的操作</p>
-
-<h2>同一App工程中导入代码</h2>
-
-<h4>在Swift工程中导入Objective-C</h4>
-
-<p>如果我们需要在一个Swift工程中导入Objective-C代码，需要依托于Objective-C Bridging header(桥接头文件)。在Swift工程中，当我们添加一个Objective-C文件时，如果工程中没有现存的Bridging header文件，则XCode会提示我们是否创建该文件。如果我们点击Yes，则XCode会自动创建头文件，并命名为&#8221;工程名-Bridging-Header.h&#8221;。</p>
-
-<p>我们需要编辑这个文件，以导入我们的Objective-C代码。</p>
-
-<p>如果是从同一个target中导入Objective-C代码，则我们需要做如下操作</p>
-
-<ol>
-<li><p>在Bridging header文件中，import所有需要在Swift中使用的头文件</p>
-
-<p> #import &ldquo;XYZCustomCell.h&rdquo;</p>
-
-<p> #import &ldquo;XYZCustomView.h&rdquo;</p>
-
-<p> #import &ldquo;XYZCustomViewController.h&rdquo;</p></li>
-<li><p>在Build Settings中，确保Swift Compiler Code Generation->Objective-C Bridging Header下的头文件的路径是对的。路径必须直接指向文件本身，而不是文件所在的文件夹。</p></li>
-</ol>
-
-
-<p>所有在Bridging header中的公有Objective-C头文件在Swift都是可见的，并且其中的所有功能在所有Swift中都是可用的，而不需要任何导入处理。可以像使用Swift代码一样使用Objective-C代码。如下所示</p>
-
-<pre><code>let myCell = XYZCustomCell()
-myCell.subtitle = "A custom cell"
-</code></pre>
-
-<h4>在Objective-C中导入Swift</h4>
-
-<p>如果我们要在一个Objective-C工程中导入Swift，则需要依托于XCode-generated header文件。这个自动生成的文件是一个Objective-C头文件，其声明了在我们的target中使用的所有Swift接口。</p>
-</div>
-
-
-  <footer>
-    <p class="meta">
-      
   
-
-<span class="byline author vcard">Posted by <span class="fn">南峰子</span></span>
-
-      
-
-
-
-
-
+  <div id="blog-archives" class="category">
 
 
 
   
+  <h2>2014</h2>
 
-
-<time datetime="2014-07-08T16:58:06+08:00" pubdate data-updated="true">Jul 8<sup>th</sup>, 2014</time>
-      
-
-
-    </p>
-    
-      <div class="sharing">
+<article>
   
-  
-  
-</div>
+<h1><a href="/blog/2014/09/23/xing-neng-yu-shi-jian/">性能与时间</a></h1>
+<time datetime="2014-09-23T23:55:35+08:00" pubdate><span class='month'>Sep</span> <span class='day'>23</span> <span class='year'>2014</span></time>
 
-    
-    <p class="meta">
-      
-        <a class="basic-alignment left" href="/blog/2014/07/06/ios-swift-cpointer-2/" title="Previous Post: Swift对C指针实现浅析">&laquo; Swift对C指针实现浅析</a>
-      
-      
-        <a class="basic-alignment right" href="/blog/2014/07/11/urljia-zai-xi-tong-zhi-%5B%3F%5D-:ji-ben-jie-gou/" title="Next Post: URL加载系统之一：基本结构">URL加载系统之一：基本结构 &raquo;</a>
-      
-    </p>
-  </footer>
+<footer>
+  <span class="categories">posted in <a class='category' href='/blog/categories/system/'>system</a></span>
+</footer>
+
+
 </article>
 
+</div>
 
+  
+</article>
 
-<section>
-    <h1>Comments</h1>
-    <div id="comments" aria-live="polite"><!-- Duoshuo Comment BEGIN -->
-<div class="ds-thread" data-title="混合使用Swift和Objective-C"></div>
-<script type="text/javascript">
-    var duoshuoQuery = {short_name:"southpeak"};
-    (function() {
-     var ds = document.createElement('script');
-     ds.type = 'text/javascript';ds.async = true;
-     ds.src = 'http://static.duoshuo.com/embed.js';
-     ds.charset = 'UTF-8';
-     (document.getElementsByTagName('head')[0]
-      || document.getElementsByTagName('body')[0]).appendChild(ds);
-     })();
-</script>
-<!-- Duoshuo Comment END --></div>
-</section>
 
 </div>
 
