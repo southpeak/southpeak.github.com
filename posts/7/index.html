@@ -11,7 +11,7 @@
   <meta name="baidu-site-verification" content="HoscFhWICI" />
 
   
-  <meta name="description" content="熟悉Objective-C的朋友一定知道Objective-C中的block，iOS在6.0后开始大量使用block。而在swift中，也提供了类似的功能：Closures(在Java等语言中翻译为“闭包”)。 Closures是自包含的功能块。它可以捕获和存储其所在上下文的常量和变量的引用。 &hellip;">
+  <meta name="description" content="我们在闭包的基础概念中讲到闭包是引用类型的，因此，与Objective-C的block一样，可能导致循环引用的问题。 问题的产生 当我们给一个类指定一个闭包属性时，这个类的实例便包含了闭包的一个引用。如果在这个闭包中，又引用了类实例本身，这是闭包便创建了一个指向类实例的强引用，这种情况下， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -68,6 +68,118 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/06/27/ios-swift-closures-2/">Swift闭包二：循环引用</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-06-27T19:10:38+08:00" pubdate data-updated="true">Jun 27<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/06/27/ios-swift-closures-2/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>我们在<a href="http://southpeak.github.io/blog/2014/06/27/ios-swift-closures/">闭包的基础概念</a>中讲到闭包是引用类型的，因此，与Objective-C的block一样，可能导致循环引用的问题。</p>
+
+<h2>问题的产生</h2>
+
+<p>当我们给一个类指定一个闭包属性时，这个类的实例便包含了闭包的一个引用。如果在这个闭包中，又引用了类实例本身，这是闭包便创建了一个指向类实例的强引用，这种情况下，又产生了循环引用。</p>
+
+<p>如代码清单1所示：HTMLElement类定义了一个闭包属性asHTML。在这个闭包中引用了self，即闭包捕获了self，这就意味着闭包维护了一个指向HTMLElement实例的强引用。这样就在两者间创建了一个强引用循环。</p>
+
+<h6>代码清单1：闭包循环引用</h6>
+
+<pre><code>class HTMLElement {
+
+    let name:String
+    let text:String?
+
+    @lazy var asHTML:() -&gt; String = {
+        if let text = self.text {
+            return "&lt;\(self.name)]]&gt;\(self.text)&lt;/\(self.name)&gt;"
+        } else {
+            return "&lt;\(self.name) /&gt;"
+        }
+    }
+
+    init(name:String, text:String? = nil) {
+        self.name = name
+        self.text = text
+    }
+
+    deinit {
+        println("\(name) is being deinitialized")
+    }
+}
+</code></pre>
+
+<h2>解决方案</h2>
+
+<p>我们可以通过“捕获列表”来解决这种循环引用问题。“捕获列表”定义了在闭包内部捕获的引用类型的使用规则。与两个类之间的强引用循环一样，我们声明每一个捕获引用为weak或者unowned引用。选择weak或者unowned依赖于两者之间的关系。</p>
+
+<p>一个“捕获列表项”是一个weak(unowned)—类实例引用对。它们放在[]中，项与项之间使用“,”号隔开。</p>
+
+<p>当闭包和捕获实例总是相互引用，且两者同时释放时，我们将“捕获引用”设置为unowned。如果“捕获引用”可能在某个点被设置成nil，则将其设置为weak。weak引用通常都是optional类型，当引用的实例被释放时，被设置成nil。</p>
+
+<p>在代码清单1中，我们可以用unowned来处理这种循环引用问题。如代码清单2所示：</p>
+
+<h6>代码清单2：unowned引用</h6>
+
+<pre><code>class HTMLElement {
+
+    let name:String
+    let text:String?
+
+    @lazy var asHTML:() -&gt; String = {
+        [unowned self] in
+        if let text = self.text {
+            return "&lt;\(self.name)]]&gt;\(self.text)&lt;/\(self.name)&gt;"
+        } else {
+            return "&lt;\(self.name) /&gt;"
+        }
+    }
+
+    init(name:String, text:String? = nil) {
+        self.name = name
+        self.text = text
+    }
+
+    deinit {
+        println("\(name) is being deinitialized")
+    }
+}
+</code></pre>
+
+<p>在这种情况下，闭包维护了HTMLElement实例的一个unowned引用，而不再是一个强引用。</p>
+
+<p>注：虽然在闭包中多次引用了self，但闭包只会维护HTMLElement实例的一个引用</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -344,7 +456,7 @@ alsoIncrementByTen()  // returns a value of 40
 <section>
 <h1>分类</h1>
 <ul>
-  <li><a href='/blog/categories/ios'>ios (29)</a></li>
+  <li><a href='/blog/categories/ios'>ios (30)</a></li>
   <li><a href='/blog/categories/network'>network (3)</a></li>
   <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
   <li><a href='/blog/categories/swift'>swift (7)</a></li>
@@ -356,6 +468,10 @@ alsoIncrementByTen()  // returns a value of 40
 <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/10/19/instancetype/">instancetype</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2014/10/17/osatomicyuan-zi-cao-zuo/">OSAtomic原子操作</a>
@@ -391,10 +507,6 @@ alsoIncrementByTen()  // returns a value of 40
     
       <li class="post">
         <a href="/blog/2014/08/02/reactivecocoazhi-nan-%5B%3F%5D-:xin-hao/">ReactiveCocoa指南一：信号</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/08/01/core-bluetoothkuang-jia-zhi-san-:zui-jia-shi-jian/">Core Bluetooth框架之三：最佳实践</a>
       </li>
     
   </ul>

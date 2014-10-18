@@ -11,7 +11,7 @@
   <meta name="baidu-site-verification" content="HoscFhWICI" />
 
   
-  <meta name="description" content="本文由Colin Eberhardt发表于raywenderlich，原文可查看MVVM Tutorial with ReactiveCocoa: Part 2/2 在第一部分中，我们介绍了MVVM，可以看到ReactiveCocoa如何将ViewModel绑定到各自对应的View上。 &hellip;">
+  <meta name="description" content="原文链接：Thinking In Terms Of iOS 8 Size Classes 对于最新的iOS8 SDK来说，最性感也最重要的的特性也许莫过于Size Classes了。 在聊Size Classes之前，我们先来回顾下历史。 一堂历史课 最初，iOS推出时，我们只有一种设备： &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -68,6 +68,164 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/09/15/dui-yu-ios-8de-size-classesde-si-kao/">对于iOS 8的Size Classes的思考</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-09-15T17:25:53+08:00" pubdate data-updated="true">Sep 15<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/09/15/dui-yu-ios-8de-size-classesde-si-kao/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>原文链接：<a href="http://carpeaqua.com/2014/06/14/thinking-in-terms-of-ios-8-size-classes/">Thinking In Terms Of iOS 8 Size Classes</a></p>
+
+<p>对于最新的iOS8 SDK来说，最性感也最重要的的特性也许莫过于Size Classes了。</p>
+
+<p>在聊Size Classes之前，我们先来回顾下历史。</p>
+
+<h2>一堂历史课</h2>
+
+<p>最初，iOS推出时，我们只有一种设备：iPhone。它的屏幕大小是320*480。不过即使如此，它也是同时支付横屏和竖屏。设计同时支持两个方向的App不是像Mobile Safari或Messages那样，简单地拉伸和重新设置视图的大小。在大多数情况下，我们需要移动按钮和其它控件来让其适应横屏(480*320)。</p>
+
+<p>几年后的现在，我们有了高清屏，iPads和大屏的iPhone。当然，所有这些设备都是支持横屏和竖屏的。解决这个适配问题的传统的方法是在视图控制器和自定义视图中监听设备方向的变化，同时使用多个xib或storyboard。</p>
+
+<p>假设我已经构建了一个同时支持iPhone和iPad的的Glassboard工程。在iOS7和老的版本之前，我们需要针对iPad单独创建一个storyboard，这个storyboard包含重建的视图控制器，outlet属性和target/action。这相当于是重复工作了。任何程序员都知道这不是个好主意。需要在两个不同的地方做相同的改变真是件糟糕的事。</p>
+
+<p>如果是使用代码，则我们需要在代码中检测屏幕方向及设备大小，以便我们能手动调整我们的约束或基于frame的布局。我们的代码会像下面这段代码一样：</p>
+
+<pre><code>UIDevice *device = [UIDevice currentDevice];
+UIDeviceOrientation currentOrientation = device.orientation;
+BOOL isPhone = (device.userInterfaceIdiom == UIUserInterfaceIdiomPhone);
+BOOL isTallPhone = ([[UIScreen mainScreen] bounds].size.height == 568.0);
+if (UIDeviceOrientationIsPortrait(currentOrientation) == YES)
+{
+    // Do Portrait Things
+    if (isPhone == YES)
+    {
+        // Do Portrait Phone Things
+        // Don't deny you've done this at least once.
+        if (isTallPhone)
+        {
+            // iPhone 5+
+        }
+        else
+        {
+            // Old phones
+        }
+    }
+    else
+    {
+        // Do Portrait iPad things.
+    }
+}
+else
+{
+    // Do Landscape Things.
+    if (isPhone == YES)
+    {
+        // Do Landscape Phone Things
+    }
+    else
+    {
+        // Do Landscape iPad things.
+    }
+}
+</code></pre>
+
+<h2>Size Classes</h2>
+
+<p>显然，上面的这些方案都不理想，而且随着苹果新设备的推出，这种情况会变得越来越糟。在今年的WWDC上，苹果除了介绍自动布局的新特性外，我们同样也看到了许多可变iOS模拟器的事例，以及一种处理所有这些问题和屏幕问题的新技术：Size Classes。</p>
+
+<p>Size Classes是iOS使用的一种新的技术，允许我们为给定的设备自定义我们的程序，而且是基于设备的方向和屏幕大小的。</p>
+
+<p>Size Classes有两个目的：</p>
+
+<ol>
+<li>让开发人员和设计人员跳出指定设备的范畴，而是以更广义的范畴来思考问题</li>
+<li>为未来做准备</li>
+</ol>
+
+
+<p>第一个目的也引出了第二个目的。我们看到各种传说，说iPhone 6, 7将会是更大的设备。你也看到了苹果已经开发出了可穿戴设备(Apple Watch)。那么有什么方法可以让为这些设备开发变得更容易呢？那就是Size Classes。</p>
+
+<p>目前从XCode 6上可以看到有四种类型的Size Classes：</p>
+
+<p><img src="http://cdn.carpeaqua.com.s3.amazonaws.com/images/size-classes/size_class_chart.jpg" alt="image" /></p>
+
+<ol>
+<li>宽紧凑(Compact)</li>
+<li>长紧凑</li>
+<li>宽正常(Regular)</li>
+<li>长正常</li>
+</ol>
+
+
+<p>任意时刻，我们的设备都有一个水平方向的Size Class和一个竖直方向的Size Class。这两者都是用来定义布局属性与物征(trait)的集合，以在屏幕上显示内容给用户。</p>
+
+<h2>特征(Traits)</h2>
+
+<p>水平和竖直的Size Class被认为是Traits。结合当前界面术语和显示比例，一起组成了一个特征集合。这不只是包含了指定的控制应该放在屏幕的什么地方。</p>
+
+<p>特征(Trait)也可以用于诸如image assets的东西上(假设你正在使用Asset Catalogs)。在asset中，我们不仅可以包含1x和2x版本，我们还可以为不同的size class指定不同的image asset。在代码中，它看着仍然是相同的UIImage调用。Asset Catalogs负责基于当前的特征集合来渲染合适的图片。</p>
+
+<h2>为Size Classes设计</h2>
+
+<p>Size Classes对于开发人员来讲是一个很好的扩展，因为当我们需要支持多种设备和方向时，它能简化我们的开发。通过简化我们的工作，苹果可以更容易地开发新的设备，并可以让开发者开发能用的应用，而不仅仅是只为iPhone开发程序。</p>
+
+<p>对于开发者来说，最大的改变是我们需要再一次修改我们的关于不同方向的代码。大家已经习惯了吧，谁让我们是开发者呢。</p>
+
+<p>对于设计者来说，特征集合意味着可以少考虑是为哪种设备来做设计，而可以更多的考虑设备的属性。现在，设计者最需要考虑的因素是物理屏幕大小。</p>
+
+<p>由于不能确保每台设备的屏幕尺寸都与Photoshop或测试样机保持一致，所以单独为特定的场景做设计已经站不住脚了。相反，我们的目标是应该为一类设备做通用的设计，主要包括：</p>
+
+<ol>
+<li>手机上的肖像模式</li>
+<li>平板上的肖像模式</li>
+<li>手机上的景观模式</li>
+<li>平板上的景观模式</li>
+</ol>
+
+
+<p>现在iPhone 6来了，它的屏幕也变大了，它拥有与iPhone 4s和5一样的特征集合。当然，iPhone 6的尺寸比原来的手机更大了，但是UI应该基于为指定特征集合定义的界面，来做自适应的处理。</p>
+
+<p>这可能意味着设计者需要推翻自己以前的一些设计，但这就是事实。就像软件开发一样，软件设计需要符合这些约束。新的约束就是我们不能再活在只为特定屏幕尺寸做设计的世界里面了。我们不是要像Android一样，但这是苹果希望我们前进的方向。</p>
+
+<h2>采用Size Classes</h2>
+
+<p>好消息是，Interface Builder可以让我们更好的使用Size Classes。更好的消息是，这些Interface Builder变化是向后兼容的，所以我们可以在合适的地方简化和合并Storyboards和Xibs，而不会落下任何用户。</p>
+
+<p>不太好的消息是，如果需要在代码中使用特征集合，则只支持iOS 8。这是因为苹果很少为老的系统提供新的API接口。这就意味着我们需要在代码中添加一些新的分支来支持不同的系统。例如，为自定义的UIView调整intrinsicContentSize属性。如果系统是iOS8，我们可以使用竖直和水平的size class来确定这个值，但如果设备仍然是iOS 7或老版本，则已存在的代码仍然需要保留。</p>
+
+<p>因为我使用并推荐Interface Builder，所以比起那些仍然活在“将一切写在代码”口号中的人们来说，我的工作明显地减少了。如果你仍然在那个阵营里面，我强烈建议你使用iOS 8, XCode 6和特征集合，并以此为契机加入到Interface Builder阵营中来。这样不仅能减少我们的代码量，同样可以通过提取大量的特征处理到一个视觉UI库来简化代码。</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -2763,196 +2921,6 @@ self.passwordTextField.backgroundColor = self.passwordIsValid ? [UIColor clearCo
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/08/01/core-bluetoothkuang-jia-zhi-san-:zui-jia-shi-jian/">Core Bluetooth框架之三：最佳实践</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-08-01T23:03:22+08:00" pubdate data-updated="true">Aug 1<sup>st</sup>, 2014</time>
-        
-        
-           | <a href="/blog/2014/08/01/core-bluetoothkuang-jia-zhi-san-:zui-jia-shi-jian/#comments">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>在iOS设备中使用BLE时，无论是将其作为central端还是peripheral端，其在通信时都会使用设备自身的无线电来发送信号。考虑到其它形式的无线通信也需要使用无线电，因此开发程序时应该尽量少使用无线电。另外，这对于设备电池的寿命及程序的性能也有所帮助。以此为出发点，我们将介绍一些使用BLE时的最佳实践，希望有所帮助。</p>
-
-<h2>与Peripheral设备交互的最佳实践</h2>
-
-<p>Core Bluetooth框架让程序的大部分Central端交互变得透明。即程序能够控制且有责任实现大部分Central端的操作，如设备搜索及连接，解析并与远程peripheral数据交互。下面我们将介绍一些Central端的最佳实践。</p>
-
-<h4>留意无线电的使用及电量消耗</h4>
-
-<h5>只有当需要时才扫描设备</h5>
-
-<p>当调用CBCentralManager类的scanForPeripheralsWithServices:options:方法来搜索正在广告服务的peripheral设备时，central设备使用无线电来监听广告的设备，直到我们显示停止它。除非需要搜索更多的设备，否则当发现想要连接的设备时就停止扫描操作。此时可以调用CBCentralManager实例的stopScan方法来处理。</p>
-
-<h5>只有当需要时才指定CBCentralManagerScanOptionAllowDuplicatesKey选项</h5>
-
-<p>远程peripheral设备可能每秒发送多个广告包来声明它们的存在。当我们使用scanForPeripheralsWithServices:options:方法扫描设备时，该方法的默认行为是将多个搜索到的广告peripheral事件归集为一个事件&mdash;即central管理器在只有在每次发现新的peripheral时都调用其代理对象的centralManager:didDiscoverPeripheral:advertisementData:RSSI:，而不管它收到多少个广告包。central管理器在已发现的peripheral改变广告的数据时也会调用这个代理方法。</p>
-
-<p>如果想要改变默认行为，可以指定CBCentralManagerScanOptionAllowDuplicatesKey作为扫描选项。此时，central管理器会在每次收到peripheral端的广告包时都触发一个事件。在某些情况下关闭默认行为很有用处，但记住指定CBCentralManagerScanOptionAllowDuplicatesKey扫描选项不利于电池的寿命及程序性能。因此，只在需要的时候使用这个选项以完成特定的任务。</p>
-
-<h5>解析peripheral数据</h5>
-
-<p>一个peripheral设备可能有多个服务和特性，但在我们的应用中，可能只对其中一些感兴趣。搜索peripheral设备的所有服务和特性可能不利于电池的寿命及程序性能。因此，我们只去搜索那些与我们的的应用相关的服务和特性。</p>
-
-<p>例如，假设我们正在连接一个有很多可用服务的peripheral设备，但是我们的程序只需要访问其中两个。我们可以只查找这两个服务，即在调用CBPeripheral对象的discoverServices:方法时传入感兴趣服务的UUID的数组即可。如下代码所示：</p>
-
-<pre><code>[peripheral discoverServices:@[firstServiceUUID, secondServiceUUID]];
-</code></pre>
-
-<p>在搜索到这两个感兴趣的服务后，我们可以用类似的方法去搜索我们感兴趣的服务中的特性。此时调用CBPeripheral实例的discoverCharacteristics:forService:方法并传入特性UUID的数组。</p>
-
-<h5>订阅经常改变的特性值</h5>
-
-<p>我们可以通过两种方式获取特性的值：</p>
-
-<ol>
-<li>在我们每次需要值时调用readValueForCharacteristic:方法来显示的轮循特性的值</li>
-<li>调用setNotifyValue:forCharacteristic:方法来订阅特性的值，这样当值改变时我们可以收到来自于peripheral的通知。</li>
-</ol>
-
-
-<p>通常最好是去订阅特性的值，特别是特性值经常改变时。</p>
-
-<h5>当获取到所有需要的数据时断开到设备的连接</h5>
-
-<p>当连接不再需要时，我们可以断开连接，以减少无线电的使用。在下面两种情况下，我们应该断开连接：</p>
-
-<ol>
-<li>所有订阅的特性值已经停止发送通知(我们可以访问特性的isNotifying属性来查看属性值是否正在被通知)</li>
-<li>我们已以获取来来自peripheral设备的全部值。</li>
-</ol>
-
-
-<p>两种情况下，取自我们有的所有订阅并断开连接。我们通过调用setNotifyValue:forCharacteristic:方法并设置第一个参数为NO来取消订阅。同时调用CBCentralManager实例的cancelPeripheralConnection:方法来断开连接。注意这个cancelPeripheralConnection:方法是非阻塞的，如果我们尝试断开连接的peripheral设备仍然挂起，则CBPeripheral实例的命令可能完成执行，也可能没有。因为其它程序可能也连接着那个peripheral设备。取消一个本地连接不能保证底层物理链接会立即断开。</p>
-
-<h4>重新链接Peripheral</h4>
-
-<p>使用Core Bluetooth框架，有三种方式来重新连接peripheral设备：</p>
-
-<ol>
-<li>使用retrievePeripheralsWithIdentifiers:方法获取已知peripheral设备的列表，这些设备是我们已经搜索并连接过的设备。如果我们查找的peripheral在列表中，则尝试重新连接。</li>
-<li>使用retrieveConnectedPeripheralsWithServices:方法获取当前连接到系统的peripheral设备的列表。如果我们查找的peripheral设备在列表中，则连接它。</li>
-<li>使用scanForPeripheralsWithServices:options:方法扫描并搜索peripheral设备。如果找到，则连接它。</li>
-</ol>
-
-
-<p>根据使用的场景，我们可能不希望每次重新连接设备时，都去扫描并搜索设备。相反，我们可能想首先使用其它方式来重新连接。如下图所示，一个可能的重新连接操作流是按照上面列出来的方式去重新连接：</p>
-
-<h5>获取已知peripheral设备的列表</h5>
-
-<p>我们第一次发现一个peripheral设备时，系统生成一个标识符(NSUUID对象)来标识peripheral设备。我们可以存储这些设备，后续我们可以使用CBCentralManager实例的retrievePeripheralsWithIdentifiers:方法来重新连接这个peripheral设备。</p>
-
-<p>当我们启动程序时，调用retrievePeripheralsWithIdentifiers:方法，传递一个我们先前搜索并连接过的peripheral设备的标识符的数组，如下代码所示：</p>
-
-<pre><code>knownPeripherals = [myCentralManager retrievePeripheralsWithIdentifiers:savedIdentifiers];
-</code></pre>
-
-<p>central管理器尝试在这个列表中匹配我们提供的标识符，并返回一个CBPeripheral对象的数组。如果没找到，则返回的数组为空，那么我们需要尝试另外两种方法。如果返回的数组不为空，则让用户选择连接哪一个peripheral设备。当用户选择后，调用CBCentralManager实例的connectPeripheral:options:方法来尝试连接。如果peripheral设备仍然可以连接，则central管理器调用代理对象的centralManager:didConnectPeripheral:方法，且成功连接上peripheral设备。</p>
-
-<h5>获取已连接peripheral设备的列表</h5>
-
-<p>另一种重新连接peripheral设备的方法是查看我们正在查找的设备是否正由系统连接着(如被其它程序连接着)。我们可以调用CBCentralManager实例的retrieveConnectedPeripheralsWithServices:方法，它返回一个表示当前系统正在连接着的peripheral设备的CBPeripheral对象的数组。</p>
-
-<p>因为可以有多于一个peripheral设备正在连接着系统，我们可以传递一个CBUUID对象的数组来获取只包含指定UUID所标识服务的设备。如果当前系统没有连接任何peripheral设备，则返回数组为空，我们应该尝试其它两种方法。如果返回数组不为空，则让用户选择连接哪个设备。</p>
-
-<p>假设用户找到并选择了需要的peripheral设备，则调用CBCentralManager实例的connectPeripheral:options:方法来连接它(即使系统已经连接了它，我们的程序仍然需要连接它以开始解析并交互数据)。当连接建立后，central管理器调用代理对象的centralManager:didConnectPeripheral:方法，然后成功连接peripheral设备。</p>
-
-<h2>将本地设备设置为peripheral设备的最佳实践</h2>
-
-<h4>广告注意事项</h4>
-
-<p>在设置本地设备作为peripheral端时，广告peripheral数据是非常重要的一部分。我们下面将介绍一下如何以适当的方式来实现这一功能。</p>
-
-<p>我们广告peripheral数据时，是将其放在一个字典中传递给CBPeripheralManager对象的startAdvertising:方法中。当创建一个广告字典时，需要知道我们可以广告什么及能广告多少数据。</p>
-
-<p>虽然广告数据包通常可以放置关于peripheral设备的多种信息，但建议只放置设备的本地名及我们需要广告的服务的UUID。即，当创建广告字典时，可能只指定下面两个键：CBAdvertisementDataLocalNameKey和CBAdvertisementDataServiceUUIDsKey。如果指定其它键，则会收到一个错误。</p>
-
-<p>同样，广告数据时也限定了可以使用多少空间。当程序在前台时，可广告的数据对于上述两个key值的任意组合来说，初始值不能超过28个字节。如果这个空间用完了，在扫描响应时可以有额外的10个字节的空间，但这只能用于本地名。任何超出的数据都会被放到一个指定的“溢出”区域；它们只能被显示扫描它们的iOS设备发现。当程序在后台时，本地名不能被广告，且所有的服务UUID都被放在溢出区域。</p>
-
-<p>为了符合这此限制条件，我们需要将广告的服务UUID限制在主要服务的标识上。</p>
-
-<p>另外，因为广告peripheral数据使用本地设备的无线电，所以只在需要其它设备连接的时候广告数据。一旦连接后，这些设备可以直接解析并交互数据，而不需要任何广告包。因此，为了减少无线电的使用、提高程序的性能及节省电量，当不再需要任何试图进行BLE交易时可以停止广告。为了停止本地peripheral，可以调用CBPeripheralManager对象的stopAdvertising方法，如下所示：</p>
-
-<pre><code>[myPeripheralManager stopAdvertising];
-</code></pre>
-
-<p>通常，只有用户才知道什么时候广告数据。例如，当我们知道没有任何BLE设备在附近时，在我们的设备上广告服务没有任何意义。因为我们的程序通常不知道是否有其它设备在附近，所以提供一个界面让用户来决定什么时候广告数据。</p>
-
-<h4>配置特性</h4>
-
-<p>当创建一个可变的特性时，我们设置它的属性、值和权限。这些设置决定了如何连接central访问及交互特性值。虽然我们可能基于程序的需求来配置特性的属性和权限，但当执行下面两种任务时，我们还是有章可循的</p>
-
-<ol>
-<li>允许连接的central订阅属性</li>
-<li>保护敏感特性值，不让其被未配对的central访问</li>
-</ol>
-
-
-<p>对于这两种情况，首先我们配置特性以支持通知。通常建议central去订阅那些经常改变的特性值。当我们创建一个可变特性时，可以通过使用CBCharacteristicPropertyNotify常量来设置特性属性以支持订阅，如下所示：</p>
-
-<pre><code>myCharacteristic = [[CBMutableCharacteristic alloc] initWithType:myCharacteristicUUID properties:CBCharacteristicPropertyRead | CBCharacteristicPropertyNotify value:nil permissions:CBAttributePermissionsReadable];
-</code></pre>
-
-<p>在这个例子中，特性值是可读的，且可以被连接的central端订阅。</p>
-
-<p>其它，要求配对的连接才能访问敏感数据。根据场景的不同，我们可能想要提供一个服务，这个服务有一个或多个需要加密值的特性。例如，假设我们想要提供一个社交媒体配置文件服务。这个服务有一些特性，它们的值表示成员的配置信息，如姓名、电子邮件地址。更可能的是，我们只允许受信任的设备来获取成员的电子邮件地址。</p>
-
-<p>我们可以设置合适的特性属性及权限来确保只有受信任的设备可以访问敏感的特性值。继续上面的例子，为了只允许受信任的设备来获取成员的邮箱地址，可以如下设置合适的特性属性与权限：</p>
-
-<pre><code>emailCharacteristic = [[CBMutableCharacteristic alloc] initWithType:emailCharacteristicUUID properties:CBCharacteristicPropertyRead | CBCharacteristicPropertyNotifyEncryptionRequired value:nil permissions:CBAttributePermissionsReadEncryptionRequired];
-</code></pre>
-
-<p>在这个例子中，特性配置为只有受信任的设备才可以读取或订阅它的值。当一个连接的central尝试读取或订阅特性值时，Core Bluetooth尝试配对本地peripheral和central端来创建安全连接。</p>
-
-<p>例如，如果central和peripheral都是iOS设备，两端都接收一个提示显示对方想要配对。central设备上的提示包含包含一个确认码，这个确认码必须在peripheral设备提示框的输入域中输入，来完成配对操作。</p>
-
-<p>在配对成功后，peripheral认为配对的central是一个受信任的设备且允许central访问它的加密特性值。</p>
-
-<h2>小结</h2>
-
-<p>在使用BLE时，基于以下几点，程序开发过程中我们合理地使用蓝牙</p>
-
-<ol>
-<li>程序性能</li>
-<li>电池电量消耗</li>
-<li>与其它通信方法争抢无线电资源</li>
-</ol>
-
-
-<p>通常我们只在需要时才使用BLE，尽量减少设备扫描搜索操作。</p>
-
-<h2>参考</h2>
-
-<p><a href="https://developer.apple.com/library/ios/documentation/NetworkingInternetWeb/Conceptual/CoreBluetooth_concepts/AboutCoreBluetooth/Introduction.html">Core Bluetooth Programming Guide</a></p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/3">&larr; Older</a>
@@ -2969,7 +2937,7 @@ self.passwordTextField.backgroundColor = self.passwordIsValid ? [UIColor clearCo
 <section>
 <h1>分类</h1>
 <ul>
-  <li><a href='/blog/categories/ios'>ios (29)</a></li>
+  <li><a href='/blog/categories/ios'>ios (30)</a></li>
   <li><a href='/blog/categories/network'>network (3)</a></li>
   <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
   <li><a href='/blog/categories/swift'>swift (7)</a></li>
@@ -2981,6 +2949,10 @@ self.passwordTextField.backgroundColor = self.passwordIsValid ? [UIColor clearCo
 <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/10/19/instancetype/">instancetype</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2014/10/17/osatomicyuan-zi-cao-zuo/">OSAtomic原子操作</a>
@@ -3016,10 +2988,6 @@ self.passwordTextField.backgroundColor = self.passwordIsValid ? [UIColor clearCo
     
       <li class="post">
         <a href="/blog/2014/08/02/reactivecocoazhi-nan-%5B%3F%5D-:xin-hao/">ReactiveCocoa指南一：信号</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/08/01/core-bluetoothkuang-jia-zhi-san-:zui-jia-shi-jian/">Core Bluetooth框架之三：最佳实践</a>
       </li>
     
   </ul>

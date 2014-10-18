@@ -5,13 +5,13 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>混合使用Swift和Objective-C - 南峰子的技术博客</title>
+  <title>instancetype - 南峰子的技术博客</title>
   <meta name="author" content="南峰子">
       
   <meta name="baidu-site-verification" content="HoscFhWICI" />
 
   
-  <meta name="description" content="Swift和Objective-C可以在同一个工程中共存。不管创建工程时选择的是Swift还是Objective-C作为初始语言，我们都可以在工程中添加另一种语言的文件。 混合编程的处理过程在App工程和库工程中稍微有点不同。具体的工作模型如下图所示 下面我们讨论下具体的操作 &hellip;">
+  <meta name="description" content="注：原文由Mattt Thompson发表于nshipster：instancetype。文章是2012年写的，所以有些内容现在已不适用。 在Objective-C中，约定(conventions)不仅仅是编码最佳实践的问题，同时对编译器来说，也是一种隐式说明。 例如， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -20,7 +20,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://southpeak.github.io/blog/2014/07/08/mix-swift-and-objective-c">
+  <link rel="canonical" href="http://southpeak.github.io/blog/2014/10/19/instancetype">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="南峰子的技术博客" type="application/atom+xml">
@@ -71,7 +71,7 @@
   
   <header>
     
-      <h1 class="entry-title">混合使用Swift和Objective-C</h1>
+      <h1 class="entry-title">instancetype</h1>
     
     
       <p class="meta">
@@ -87,7 +87,7 @@
   
 
 
-<time datetime="2014-07-08T16:58:06+08:00" pubdate data-updated="true">Jul 8<sup>th</sup>, 2014</time>
+<time datetime="2014-10-19T00:26:03+08:00" pubdate data-updated="true">Oct 19<sup>th</sup>, 2014</time>
         
         
            | <a href="#comments">Comments</a>
@@ -97,45 +97,64 @@
   </header>
 
 
-<div class="entry-content"><p>Swift和Objective-C可以在同一个工程中共存。不管创建工程时选择的是Swift还是Objective-C作为初始语言，我们都可以在工程中添加另一种语言的文件。</p>
+<div class="entry-content"><p>注：原文由Mattt Thompson发表于nshipster：<a href="http://nshipster.com/instancetype/">instancetype</a>。<strong>文章是2012年写的，所以有些内容现在已不适用。</strong></p>
 
-<p>混合编程的处理过程在App工程和库工程中稍微有点不同。具体的工作模型如下图所示</p>
+<p>在Objective-C中，约定(conventions)不仅仅是编码最佳实践的问题，同时对编译器来说，也是一种隐式说明。</p>
 
-<p><img src="https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/BuildingCocoaApps/Art/DAG_2x.png" alt="image" /></p>
+<p>例如，alloc和init两个方法都返回id类型，而在Xcode中，编译器会对它们进行类型检查。这是怎么做到的呢？</p>
 
-<p>下面我们讨论下具体的操作</p>
+<p>在Cocoa中，有一个这样的约定，命名为alloc/init的方法总是返回接收者类的实例。这些方法有一个相关的返回类型。</p>
 
-<h2>同一App工程中导入代码</h2>
+<p>而类的构造方法(类方法)，虽然他们都是返回id类型，但没有从类型检查中获得好处，因为他们不遵循命名约定。</p>
 
-<h4>在Swift工程中导入Objective-C</h4>
+<p>我们可以试试以下代码：</p>
 
-<p>如果我们需要在一个Swift工程中导入Objective-C代码，需要依托于Objective-C Bridging header(桥接头文件)。在Swift工程中，当我们添加一个Objective-C文件时，如果工程中没有现存的Bridging header文件，则XCode会提示我们是否创建该文件。如果我们点击Yes，则XCode会自动创建头文件，并命名为&#8221;工程名-Bridging-Header.h&#8221;。</p>
+<pre><code>[[[NSArray alloc] init] mediaPlaybackAllowsAirPlay]; // 报错： "No visible @interface for `NSArray` declares the selector `mediaPlaybackAllowsAirPlay`"
 
-<p>我们需要编辑这个文件，以导入我们的Objective-C代码。</p>
-
-<p>如果是从同一个target中导入Objective-C代码，则我们需要做如下操作</p>
-
-<ol>
-<li><p>在Bridging header文件中，import所有需要在Swift中使用的头文件</p>
-
-<p> #import &ldquo;XYZCustomCell.h&rdquo;</p>
-
-<p> #import &ldquo;XYZCustomView.h&rdquo;</p>
-
-<p> #import &ldquo;XYZCustomViewController.h&rdquo;</p></li>
-<li><p>在Build Settings中，确保Swift Compiler Code Generation->Objective-C Bridging Header下的头文件的路径是对的。路径必须直接指向文件本身，而不是文件所在的文件夹。</p></li>
-</ol>
-
-
-<p>所有在Bridging header中的公有Objective-C头文件在Swift都是可见的，并且其中的所有功能在所有Swift中都是可用的，而不需要任何导入处理。可以像使用Swift代码一样使用Objective-C代码。如下所示</p>
-
-<pre><code>let myCell = XYZCustomCell()
-myCell.subtitle = "A custom cell"
+[[NSArray array] mediaPlaybackAllowsAirPlay]; // (No error) 注：这个方法调用只在老的编译器上成立，新的编译器会报相同的错误。
 </code></pre>
 
-<h4>在Objective-C中导入Swift</h4>
+<p>由于alloc和init遵循返回相关结果类型的约定，所以会对NSArray执行类型检查。然而等价的类构造方法array则不遵循这一约定，只解释为id类型。</p>
 
-<p>如果我们要在一个Objective-C工程中导入Swift，则需要依托于XCode-generated header文件。这个自动生成的文件是一个Objective-C头文件，其声明了在我们的target中使用的所有Swift接口。</p>
+<p>id类型在不需要确保类型安全时非常有用，但一旦需要时，就无法处理了。</p>
+
+<p>而另一种方法，即显示声明返回类型(如前面例子中的(NSArray *))稍微改善了一些，但写起来有点麻烦，而且在继承体系中表现得不是很好。</p>
+
+<p>这时编译器就需要去解决这种针对Objective-C类型系统的边界情况了:</p>
+
+<p>instancetype是一个上下文关键字，可用在返回类型中以表示方法返回一个相关的结果类型，如：</p>
+
+<pre><code>@interface Person
++ (instancetype)personWithName:(NSString *)name;
+@end
+</code></pre>
+
+<p>使用instancetype，编译器可以正确地知道personWithName:的返回结果是一个Person实例。</p>
+
+<p>我们现在看Foundation中的类构造器，可以发现大部分已经开始使用了instancetype了。新的API，如UICollectionViewLayoutAttributes，都是使用instancetype了。</p>
+
+<p><em>注：instancetype与id不同的是，它只能用在方法声明的返回值中。</em></p>
+
+<h4>更进一步的启示</h4>
+
+<p>语言特性是特别有趣的，因为它不清楚在软件设计的更高层次方面会带来什么样的影响。</p>
+
+<p>虽然instancetype看上去非常一般，只是对编译器有用，但也可能被用于一些更聪明的目的。</p>
+
+<p>Jonathan Sterling的文章<a href="http://www.jonmsterling.com/posts/2012-02-05-typed-collections-with-self-types-in-objective-c.html">this quite interesting article</a>，详细描述了instancetype如何被用于编码静态类型集合，而不需要使用泛型：</p>
+
+<pre><code>NSURL &lt;MapCollection&gt; *sites = (id)[NSURL mapCollection];
+[sites put:[NSURL URLWithString:@"http://www.jonmsterling.com/"]
+        at:@"jon"];
+[sites put:[NSURL URLWithString:@"http://www.nshipster.com/"]
+        at:@"nshipster"];
+
+NSURL *jonsSite = [sites at:@"jon"]; // =&gt; http://www.jonmsterling.com/
+</code></pre>
+
+<p>静态类型集合使得API更有表现力，这样开发者将不再需要去确定集合中的参数可以使用使用类型的对象了。</p>
+
+<p>不管这会不会成为Objective-C公认的约定，诸如instancetype这样一个低层特性可用于改变语言的形态已是非常棒的一件事了。</p>
 </div>
 
 
@@ -158,8 +177,14 @@ myCell.subtitle = "A custom cell"
   
 
 
-<time datetime="2014-07-08T16:58:06+08:00" pubdate data-updated="true">Jul 8<sup>th</sup>, 2014</time>
+<time datetime="2014-10-19T00:26:03+08:00" pubdate data-updated="true">Oct 19<sup>th</sup>, 2014</time>
       
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/ios/'>ios</a>
+  
+</span>
 
 
     </p>
@@ -173,10 +198,8 @@ myCell.subtitle = "A custom cell"
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2014/07/06/ios-swift-cpointer-2/" title="Previous Post: Swift对C指针实现浅析">&laquo; Swift对C指针实现浅析</a>
+        <a class="basic-alignment left" href="/blog/2014/10/17/osatomicyuan-zi-cao-zuo/" title="Previous Post: OSAtomic原子操作">&laquo; OSAtomic原子操作</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2014/07/11/urljia-zai-xi-tong-zhi-%5B%3F%5D-:ji-ben-jie-gou/" title="Next Post: URL加载系统之一：基本结构">URL加载系统之一：基本结构 &raquo;</a>
       
     </p>
   </footer>
@@ -187,7 +210,7 @@ myCell.subtitle = "A custom cell"
 <section>
     <h1>Comments</h1>
     <div id="comments" aria-live="polite"><!-- Duoshuo Comment BEGIN -->
-<div class="ds-thread" data-title="混合使用Swift和Objective-C"></div>
+<div class="ds-thread" data-title="instancetype"></div>
 <script type="text/javascript">
     var duoshuoQuery = {short_name:"southpeak"};
     (function() {
