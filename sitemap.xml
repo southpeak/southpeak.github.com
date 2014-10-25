@@ -3,6 +3,12 @@
   
   
   <url>
+    <loc>http://southpeak.github.io/blog/2014/10/25/objective-c-runtime-yun-xing-shi-zhi-lei-yu-dui-xiang/</loc>
+    <lastmod>2014-10-25T21:00:05+08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
     <loc>http://southpeak.github.io/blog/2014/10/19/iosji-zhu-zhou-bao-:di-%5B%3F%5D-qi-2014-dot-10-dot-13-~-2014-dot-10-dot-19/</loc>
     <lastmod>2014-10-19T21:12:35+08:00</lastmod>
     <priority>0.8</priority>
@@ -209,14 +215,14 @@
   
   <url>
     <loc>http://southpeak.github.io/blog/archives/</loc>
-    <lastmod>2014-10-19T21:41:27+08:00</lastmod>
+    <lastmod>2014-10-25T22:00:58+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
     <loc>http://southpeak.github.io/</loc>
-    <lastmod>2014-10-19T21:41:27+08:00</lastmod>
+    <lastmod>2014-10-25T22:00:58+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>

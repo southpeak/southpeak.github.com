@@ -5,7 +5,7 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>南峰子的技术博客</title>
+  <title>Objective-C Runtime 运行时之一：类与对象 - 南峰子的技术博客</title>
   <meta name="author" content="南峰子">
       
   <meta name="baidu-site-verification" content="HoscFhWICI" />
@@ -20,7 +20,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://southpeak.github.io">
+  <link rel="canonical" href="http://southpeak.github.io/blog/2014/10/25/objective-c-runtime-yun-xing-shi-zhi-lei-yu-dui-xiang">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="南峰子的技术博客" type="application/atom+xml">
@@ -66,15 +66,12 @@
 </nav>
   <div id="main">
     <div id="content">
-      <div class="blog-index">
+      <div>
+<article class="hentry" role="article">
   
-  
-  
-    <article>
-      
   <header>
     
-      <h1 class="entry-title"><a href="/blog/2014/10/25/objective-c-runtime-yun-xing-shi-zhi-lei-yu-dui-xiang/">Objective-C Runtime 运行时之一：类与对象</a></h1>
+      <h1 class="entry-title">Objective-C Runtime 运行时之一：类与对象</h1>
     
     
       <p class="meta">
@@ -93,14 +90,14 @@
 <time datetime="2014-10-25T21:00:05+08:00" pubdate data-updated="true">Oct 25<sup>th</sup>, 2014</time>
         
         
-           | <a href="/blog/2014/10/25/objective-c-runtime-yun-xing-shi-zhi-lei-yu-dui-xiang/#comments">Comments</a>
+           | <a href="#comments">Comments</a>
         
       </p>
     
   </header>
 
 
-  <div class="entry-content"><p>Objective-C语言是一门动态语言，它将很多静态语言在编译和链接时期做的事放到了运行时来处理。这种动态语言的优势在于：我们写代码时更具灵活性，如我们可以把消息转发给我们想要的对象，或者随意交换一个方法的实现等。</p>
+<div class="entry-content"><p>Objective-C语言是一门动态语言，它将很多静态语言在编译和链接时期做的事放到了运行时来处理。这种动态语言的优势在于：我们写代码时更具灵活性，如我们可以把消息转发给我们想要的对象，或者随意交换一个方法的实现等。</p>
 
 <p>这种特性意味着Objective-C不仅需要一个编译器，还需要一个运行时系统来执行编译的代码。对于Objective-C来说，这个运行时系统就像一个操作系统一样：它让所有的工作可以正常的运行。这个运行时系统即Objc Runtime。Objc Runtime其实是一个Runtime库，它基本上是用C和汇编写的，这个库使得C语言有了面向对象的能力。</p>
 
@@ -904,405 +901,16 @@ if (numClasses &gt; 0) {
 </ol>
 
 </div>
-  
-  
 
 
-    </article>
-  
-  
-    <article>
+  <footer>
+    <p class="meta">
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/10/19/iosji-zhu-zhou-bao-:di-%5B%3F%5D-qi-2014-dot-10-dot-13-~-2014-dot-10-dot-19/">iOS技术周报：第一期(2014.10.13 ~ 2014.10.19)</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
   
 
+<span class="byline author vcard">Posted by <span class="fn">南峰子</span></span>
 
-<time datetime="2014-10-19T21:12:35+08:00" pubdate data-updated="true">Oct 19<sup>th</sup>, 2014</time>
-        
-        
-           | <a href="/blog/2014/10/19/iosji-zhu-zhou-bao-:di-%5B%3F%5D-qi-2014-dot-10-dot-13-~-2014-dot-10-dot-19/#comments">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h2>1. 自定义下标操作</h2>
-
-<p>对于数组与字典，我们可以使用下标来获取指定下标对应的值，如：</p>
-
-<pre><code>NSArray *array = @[@1, @2, @3];
-id value1 = array[0];        // 1
-
-NSDictionary *dic = @{@"1": @1, @"2": @2, @"3": @3};
-id value2 = dic[@"2"];      // 2
-</code></pre>
-
-<p>另外，Objective-C还支持自定义下标操作。我们先来看看如下代码：</p>
-
-<pre><code>@interface MyCollection : NSObject
-
-@property (nonatomic, retain) NSMutableArray *array;
-@property (nonatomic, retain) NSMutableDictionary *dictionary;
-
-@end
-</code></pre>
-
-<p>我们定义MyCollection类的一个实例，然后可以按如下方式访问array的元素</p>
-
-<pre><code>MyCollection *collection = [[MyCollection alloc] init];
-id arrElement = collection.array[0];
-collection.array[1] = @"1";
-id arrDic = collection.dictionary[@"test"];
-collection.dictionary[@"id"] = @"abc";
-</code></pre>
-
-<p>但这样写代码略显麻烦，毕竟中间多用了一次&#8221;.&ldquo;操作。这种情况下，我们就可以为我们的类自定义相应的下标操作，来简单这种集合元素的访问。自定义下标使用到了如下几个方法：</p>
-
-<ol>
-<li>NSArray : &ndash; (id)objectAtIndexedSubscript:(NSUInteger)index;</li>
-<li>NSMutableArray : &ndash; (void)setObject: (id)obj atIndexedSubscript: (NSUInteger)index;</li>
-<li>NSDictionary : &ndash; (id)objectForKeyedSubscript: (id <NSCopying>)key;</li>
-<li>NSMutableDictionary : &ndash; (void)setObject: (id)anObject forKeyedSubscript: (id <NSCopying>)aKey;</li>
-</ol>
-
-
-<p>我们为MyCollection类定义下标操作，代码如下所示：</p>
-
-<pre><code>@implementation MyCollection
-
-- (id)objectAtIndexedSubscript:(NSUInteger)index {
-    return _array[index];
-}
-
-- (void)setObject:(id)obj atIndexedSubscript:(NSUInteger)index {
-    _array[index] = obj;
-}
-
-- (id)objectForKeyedSubscript:(id&lt;NSCopying&gt;)key {
-    return _dictionary[key];
-}
-
-- (void)setObject:(id)anObject forKeyedSubscript:(id&lt;NSCopying&gt;)aKey {
-    _dictionary[aKey] = anObject;
-}
-
-@end
-</code></pre>
-
-<p>这样，我们就可以直接用下标操作来访问类中array属性和dictionary属性的元素了，如下所示：</p>
-
-<pre><code>MyCollection *collection = [[MyCollection alloc] init];
-id arrElement = collection[0];
-collection[1] = @"1";
-id arrDic = collection[@"test"];
-collection[@"id"] = @"abc";
-</code></pre>
-
-<p><em>注：数组与字典本身也是实现了这些方法来支持下标操作</em></p>
-
-<h2>2. NSInvocation的使用</h2>
-
-<p>一个NSInvocation实例是一个静态呈现的Objective-C消息，换句话说，它是一个被转换成对象的一个动作。NSInvocation对象用于在对象间和应用间存储和转发消息，主要通过NSTimer对象和分布式对象系统来实现转发。</p>
-
-<p>一个NSInvocation对象包含一个Objective-C消息所具有的元素：目标、selector、参数和返回值。所有这些元素可以直接设置，而返回值会在NSInvocation对象分发时被自动设置。</p>
-
-<p>一个NSInvocation对象可以被多次分发到不同的目标(target)；它的参数可以在不同的分发中使用不同的值，以获取到不同的结果；甚至于它的selector也可以修改，只需要方法签名一样即可。这种灵活性使得NSInvocation在多次调用带有较多参数的消息的场景下非常有用；我们不需要为每个消息都键入不同的表达式，我们只需要每次在将消息发到新的目标时根据需要修改NSInvocation对象就可以。</p>
-
-<p>NSInvocation对象不支持带有可变参数或联合参数的方法调用。我们应该使用invocationWithMethodSignature:方法来创建NSInvocation对象；而不应该使用alloc和init来创建。</p>
-
-<p>这个类默认情况下不会为调用retain参数。如果这些参数(对象)可能会在创建NSInvocation对象和使用它这个时间段中间被释放，那么我们需要显示地retain这些对象，或者调用retainArguments方法来让调用对象自己retain它们。</p>
-
-<p>NSInvocation的使用如下所示：</p>
-
-<pre><code>// 代码来自ReactiveCocoa源码的RACBlockTrampoline类
-
-- (id)invokeWithArguments:(RACTuple *)arguments {
-    SEL selector = [self selectorForArgumentCount:arguments.count];
-    NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[self methodSignatureForSelector:selector]];
-    invocation.selector = selector;
-    invocation.target = self;
-
-    for (NSUInteger i = 0; i &lt; arguments.count; i++) {
-        id arg = arguments[i];
-        NSInteger argIndex = (NSInteger)(i + 2);
-        [invocation setArgument:&amp;arg atIndex:argIndex];
-    }
-
-    [invocation invoke];
-
-    __unsafe_unretained id returnVal;
-    [invocation getReturnValue:&amp;returnVal];
-    return returnVal;
-}
-</code></pre>
-
-<p>这里需要注意的是在调用setArgument:atIndex:时，参数的索引位置是从2开始的。因为索引0和1分别指向的是隐藏参数<strong>self</strong>和<strong>_cmd</strong>。这两个值是直接通过target和selector属性来设置的。</p>
-
-<h4>参考</h4>
-
-<ol>
-<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/Foundation/Classes/NSInvocation_Class">NSInvocation Class Reference</a></li>
-</ol>
-
-
-<h2>3. 方法签名</h2>
-
-<p>在Objective-C中，方法签名由NSMethodSignature类来表示。</p>
-
-<p>一个NSMethodSignature对象记录了方法的参数及返回值的类型信息。它主要用于转发那些接收对象无法响应的消息&mdash;最值得注意的是分发对象。通常我们会使用NSObject对象的methodSignatureForSelector:方法来创建一个NSMethodSignature对象。然后这个对象用于创建一个NSInvocation对象，这个对作为参数被传递到forwardInvocation:方法中，以将这个方法调用发送到任何其它对象以处理这个消息。默认情况下，NSObject调用doesNotRecognizeSelector:方法并引发一个异常。对于分发对象，NSInvocation对象通过NSMethodSignature对象的信息来编码，并被发送到一个表示消息接收者的真实对象中。</p>
-
-<p>一个NSMethodSignature对象通过getArgumentTypeAtIndex:方法来获取指定索引位置的参数类型(该方法返回值是const char *, 用C字符串来表示Objective-C类型编码)。对于每个方法来说，有两个隐藏的参数，即self和_cmd，索引分别为0和1。除了参数类型，NSMethodSignature还有几个属性：numberOfArguments属性用来获取参数的个数；frameLength属性用来获取所有参数所占用的栈空间长度，以及methodReturnLength和methodReturnType获取返回值的长度和类型。最后，使用分发对象的程序可以通过isOneway方法来确定方法是否是异步的。</p>
-
-<p>NSMethodSignature示例代码如下：</p>
-
-<pre><code>// 代码摘自ReactiveCocoa:NSObject+RACLifting
-
-- (RACSignal *)rac_liftSelector:(SEL)selector withSignalOfArguments:(RACSignal *)arguments {
-    NSCParameterAssert(selector != NULL);
-    NSCParameterAssert(arguments != nil);
-
-    @unsafeify(self);
-
-    NSMethodSignature *methodSignature = [self methodSignatureForSelector:selector];
-    NSCAssert(methodSignature != nil, @"%@ does not respond to %@", self, NSStringFromSelector(selector));
-
-    return [[[[arguments
-            takeUntil:self.rac_willDeallocSignal]
-            map:^(RACTuple *arguments) {
-                @strongify(self);
-
-                NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:methodSignature];
-                invocation.selector = selector;
-                invocation.rac_argumentsTuple = arguments;
-                [invocation invokeWithTarget:self];
-
-                return invocation.rac_returnValue;
-            }]
-            replayLast]
-            setNameWithFormat:@"%@ -rac_liftSelector: %s withSignalsOfArguments: %@", [self rac_description], sel_getName(selector), arguments];
-}
-</code></pre>
-
-<h4>参考</h4>
-
-<ol>
-<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/Foundation/Classes/NSMethodSignature_Class/index.html#//apple_ref/doc/c_ref/NSMethodSignature">NSMethodSignature Class Reference</a></li>
-</ol>
-
-
-<h2>4. CFBridgingRelease/CFBridgingRetain</h2>
-
-<p>这两个函数的作用类似于__bridge，用于在ARC环境下，在Cocoa Fundation和Core Funcation之间转换可桥接对象。</p>
-
-<p>CFBridgingRetain函数是将Objective-C指针转换为Core Foundation指针，同时会转移对象所有权。如下代码所示：</p>
-
-<pre><code>NSString *string = &lt;#Get a string#&gt;;
-CFStringRef cfString = (CFStringRef)CFBridgingRetain(string);
-
-// Use the CF string.
-CFRelease(cfString);
-</code></pre>
-
-<p>通过这种转换，我们可以管理对象的生命周期。转换后，对象的释放就由我们来负责了。</p>
-
-<p>相反，CFBridgingRelease函数是将一个非Objective-C指针转换为Objective-C指针，同时转移对象的权(ARC)。如下代码所示：</p>
-
-<pre><code>CFStringRef cfName = ABRecordCopyValue(person, kABPersonFirstNameProperty);
-NSString *name = (NSString *)CFBridgingRelease(cfName);
-</code></pre>
-
-<p>转换后，我们不需要手动去释放对象，因为这是在ARC环境所做的转换。</p>
-
-<h4>参考</h4>
-
-<ol>
-<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/Foundation/Miscellaneous/Foundation_Functions">Foundation Functions Reference</a></li>
-</ol>
-
-
-<h2>5. NSProcessInfo</h2>
-
-<p>这个类用来访问当前进程的信息。每一个进程都有一个单独的共享的NSProcessInfo对象，即为进程信息代理(Process information agent)，它可以返回诸如参数，环境变量，主机名或进程名等信息。方法processInfo类方法会返回当前进程共享的代理&mdash;即发送消息的对象所在的进程。我们可以如下获取当前进程的名字：</p>
-
-<pre><code>NSString *processName = [[NSProcessInfo processInfo] processName];
-</code></pre>
-
-<p>NSProcessInfo对象在还能解析环境变量和命令行参数，如果无法使用Unicode编码将其表示为一个UTF-8字符串，则会将其编码成用户默认的C字符串编码格式。如果两种转换都无效，则NSProcessInfo对象会忽略这些值。</p>
-
-<h4>管理Activity</h4>
-
-<p>系统会以启发式(heuristics)的方法来改善电池寿命，性能和应用的响应。我们可以使用下面的方法来管理一些Activity，以告诉系统程序有特殊的需求：</p>
-
-<pre><code>beginActivityWithOptions:reason:
-
-endActivity:
-
-performActivityWithOptions:reason:usingBlock:
-</code></pre>
-
-<p>为了响应创建Activity，系统会禁用部分或全部的heuristics，以便我们的程序尽快完成，而如果用户需要的话，同样还能提供响应操作。我们会在程序需要执行一个长时间运行的操作时使用Activity。如果Activity可能会消耗不同的时间，则应该使用这些API。这会在数据量或用户的计算机性能改变时，确保操作的正确。</p>
-
-<p>Activity主要分为两类：</p>
-
-<ol>
-<li>用户启动(User initiated)的Activity：这些是用户显示开启的有限时长的Activity。比如导入或下载一个用户文件。</li>
-<li>后台Activity：这些Activity是程序普通操作的一部分且是有限时长的，但不是由用户显示启动的。如自动保存、索引及自动下载文件。</li>
-</ol>
-
-
-<p>此外，如果程序需要高优先级的I/O操作，则可以包含NSActivityLatencyCritical标识(使用OR操作)。我们只应该在诸如录制视频音频这样确实需要高优先级的Activity中使用这个标识。</p>
-
-<p>如果我们的Activity在主线程的事件回调中同步发生，则不需要使用这些API。</p>
-
-<p>需要注意的是，如果在一个延长的时间周期内没有结束这些Activity，则会对设备的运行性能产生明显的负面影响，所以确保只使用最少的时间。用户偏好设置可能会重写应用的请求。</p>
-
-<p>我们也可以用这些API来控制自动终止或突然终止。如</p>
-
-<pre><code>id activity = [[NSProcessInfo processInfo] beginActivityWithOptions:NSActivityAutomaticTerminationDisabled reason:@"Good Reason"];
-// Perform some work.
-[[NSProcessInfo processInfo] endActivity:activity];
-</code></pre>
-
-<p>当然也可以使用</p>
-
-<pre><code>[[NSProcessInfo processInfo] disableAutomaticTermination:@"Good Reason"];
-// Perform some work.
-[[NSProcessInfo processInfo] enableAutomaticTermination:@"Good Reason"];
-</code></pre>
-
-<p>不过由于上面这个接口返回一个对象，它可以方便地匹配开始和结束操作。如果这个对象在endActivity:方法调用之前被释放，则Activity会自动结束。</p>
-
-<p>这个API也提供了禁用/执行系统范围内的闲置睡眠的机制。这可能对用户体验产生重大影响，所以确保不要忘记结束那些禁用睡眠的Activity。</p>
-
-<h4>突然终止(Sudden Termination)</h4>
-
-<p>在OS X v10.6及后续版本中有一个机制，它允许系统通过杀死应用程序来更快地输出日志或关机，而不是要求程序自行终止。应用程序可以在全局范围内开启这一功能，然后在可能导致数据损坏或较差用户体验的操作中重写这一功能的可用性。或者，我们的应用程序可以手动开启和禁用这一功能。</p>
-
-<p>enableSuddenTermination和disableSuddenTermination方法分别会减少和增加一个计数器，其值在进程首次创建时为1。当计数器值为0时，程序会被认为是可安全杀死的，且可能在没有任何通知或事件被发送到进程时被系统杀死。</p>
-
-<p>应用程序可以在程序的Info.plist文件中添加NSSupportsSuddenTermination键值来决定是否支持突然终止。如果该值存在且值为YES，则相当于在启动时调用了enableSuddenTermination。这使得程序可以立即被杀死。我们可以通过调用disableSuddenTermination方法来修改这种行为。</p>
-
-<p>通常情况下，当我们的程序延迟那些必须在程序终止前才执行的操作时，我们会禁用突然终止行为。例如，如果程序延迟写磁盘操作，而突然终止行为可用，则我们应该将这些操作放在disableSuddenTermination方法与enableSuddenTermination方法之间执(注意，应该是先禁用、然后执行操作、最后再开启)。</p>
-
-<p>一些AppKit功能会临时自动禁用突然终止行为，以确保数据完整性。如</p>
-
-<ol>
-<li>NSUserDefaults临时自动禁用突然终止行为以防止进程在设置值和将值写入磁盘这之间被杀死。</li>
-</ol>
-
-
-<h4>参考</h4>
-
-<ol>
-<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/Foundation/Classes/NSProcessInfo_Class/">NSProcessInfo Class Reference</a></li>
-</ol>
-
-
-<h2>6. 快速枚举</h2>
-
-<p>快速枚举即我们常写的for&hellip;in语句，可以让我们用简洁的语法来安全、有效地枚举集合中的内容。其基本用法如下</p>
-
-<pre><code>for (type 变量 in 表达式) {
-    // to do something
-}
-</code></pre>
-
-<p>其中迭代变量会被赋值为表达式值对象中的每一个元素，并针对每一个元素执行处理语句。当循环结束后，迭代变量会被赋值为nil。如果循环提前结束，则迭代变量的值将指向最后一次遍历的那个对象。</p>
-
-<p>要使用这种控制语句，则表达式的值必须遵循NSFastEnumeration协议。该协议中定义了一个用作上下文信息的结构体：</p>
-
-<pre><code>typedef struct {
-      unsigned long state;
-      id *itemsPtr;
-      unsigned long *mutationsPtr;
-      unsigned long extra[5];
-} NSFastEnumerationState;
-</code></pre>
-
-<p>及一个必须实现的方法</p>
-
-<pre><code>- (NSUInteger)countByEnumeratingWithState:(NSFastEnumerationState *)state
-                                  objects:(id [])stackbuf
-                                    count:(NSUInteger)len
-</code></pre>
-
-<p>该方法通过C数组返回发送者需要迭代的对象列表，并返回数组中对象的个数。</p>
-
-<p>Cocoa中的集合类NSArray, NSDictionary和NSSet都遵循该协议，NSEnumerator类也是。</p>
-
-<p>示例代码如下：</p>
-
-<pre><code>// 代码摘自ReactiveCocoa: RACIndexSetSequence
-
-- (NSUInteger)countByEnumeratingWithState:(NSFastEnumerationState *)state objects:(__unsafe_unretained id[])stackbuf count:(NSUInteger)len {
-    NSCParameterAssert(len &gt; 0);
-
-    if (state-&gt;state &gt;= self.count) {
-        // Enumeration has completed.
-        return 0;
-    }
-
-    if (state-&gt;state == 0) {
-        // Enumeration begun, mark the mutation flag.
-        state-&gt;mutationsPtr = state-&gt;extra;
-    }
-
-    state-&gt;itemsPtr = stackbuf;
-
-    unsigned long index = 0;
-    while (index &lt; MIN(self.count - state-&gt;state, len)) {
-        stackbuf[index] = @(self.indexes[index + state-&gt;state]);
-        ++index;
-    }
-
-    state-&gt;state += index;
-    return index;
-}
-</code></pre>
-
-<p>从上面的代码可以看到，快速枚举使用了指针运算，所以它比使用NSEnumerator的标准方法效率更高。</p>
-
-<h4>参考</h4>
-
-<ol>
-<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/Foundation/Classes/NSEnumerator_Class/index.html">NSEnumerator Class Reference</a></li>
-<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/NSFastEnumeration_protocol/index.html#//apple_ref/occ/intf/NSFastEnumeration">NSFastEnumeration Protocol Reference</a></li>
-<li><a href="http://www.ituring.com.cn/article/details/1348">Objective-C——在Cocoa Touch框架中使用迭代器模式</a></li>
-<li><a href="http://blog.csdn.net/amdbenq/article/details/7862718">快速枚举</a></li>
-</ol>
-
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/10/19/instancetype/">instancetype</a></h1>
-    
-    
-      <p class="meta">
-        
 
 
 
@@ -1314,544 +922,56 @@ performActivityWithOptions:reason:usingBlock:
   
 
 
-<time datetime="2014-10-19T00:26:03+08:00" pubdate data-updated="true">Oct 19<sup>th</sup>, 2014</time>
-        
-        
-           | <a href="/blog/2014/10/19/instancetype/#comments">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>注：原文由Mattt Thompson发表于nshipster：<a href="http://nshipster.com/instancetype/">instancetype</a>。<strong>文章是2012年写的，所以有些内容现在已不适用。</strong></p>
-
-<p>在Objective-C中，约定(conventions)不仅仅是编码最佳实践的问题，同时对编译器来说，也是一种隐式说明。</p>
-
-<p>例如，alloc和init两个方法都返回id类型，而在Xcode中，编译器会对它们进行类型检查。这是怎么做到的呢？</p>
-
-<p>在Cocoa中，有一个这样的约定，命名为alloc/init的方法总是返回接收者类的实例。这些方法有一个相关的返回类型。</p>
-
-<p>而类的构造方法(类方法)，虽然他们都是返回id类型，但没有从类型检查中获得好处，因为他们不遵循命名约定。</p>
-
-<p>我们可以试试以下代码：</p>
-
-<pre><code>[[[NSArray alloc] init] mediaPlaybackAllowsAirPlay]; // 报错： "No visible @interface for `NSArray` declares the selector `mediaPlaybackAllowsAirPlay`"
-
-[[NSArray array] mediaPlaybackAllowsAirPlay]; // (No error) 注：这个方法调用只在老的编译器上成立，新的编译器会报相同的错误。
-</code></pre>
-
-<p>由于alloc和init遵循返回相关结果类型的约定，所以会对NSArray执行类型检查。然而等价的类构造方法array则不遵循这一约定，只解释为id类型。</p>
-
-<p>id类型在不需要确保类型安全时非常有用，但一旦需要时，就无法处理了。</p>
-
-<p>而另一种方法，即显示声明返回类型(如前面例子中的(NSArray *))稍微改善了一些，但写起来有点麻烦，而且在继承体系中表现得不是很好。</p>
-
-<p>这时编译器就需要去解决这种针对Objective-C类型系统的边界情况了:</p>
-
-<p>instancetype是一个上下文关键字，可用在返回类型中以表示方法返回一个相关的结果类型，如：</p>
-
-<pre><code>@interface Person
-+ (instancetype)personWithName:(NSString *)name;
-@end
-</code></pre>
-
-<p>使用instancetype，编译器可以正确地知道personWithName:的返回结果是一个Person实例。</p>
-
-<p>我们现在看Foundation中的类构造器，可以发现大部分已经开始使用了instancetype了。新的API，如UICollectionViewLayoutAttributes，都是使用instancetype了。</p>
-
-<p><em>注：instancetype与id不同的是，它只能用在方法声明的返回值中。</em></p>
-
-<h4>更进一步的启示</h4>
-
-<p>语言特性是特别有趣的，因为它不清楚在软件设计的更高层次方面会带来什么样的影响。</p>
-
-<p>虽然instancetype看上去非常一般，只是对编译器有用，但也可能被用于一些更聪明的目的。</p>
-
-<p>Jonathan Sterling的文章<a href="http://www.jonmsterling.com/posts/2012-02-05-typed-collections-with-self-types-in-objective-c.html">this quite interesting article</a>，详细描述了instancetype如何被用于编码静态类型集合，而不需要使用泛型：</p>
-
-<pre><code>NSURL &lt;MapCollection&gt; *sites = (id)[NSURL mapCollection];
-[sites put:[NSURL URLWithString:@"http://www.jonmsterling.com/"]
-        at:@"jon"];
-[sites put:[NSURL URLWithString:@"http://www.nshipster.com/"]
-        at:@"nshipster"];
-
-NSURL *jonsSite = [sites at:@"jon"]; // =&gt; http://www.jonmsterling.com/
-</code></pre>
-
-<p>静态类型集合使得API更有表现力，这样开发者将不再需要去确定集合中的参数可以使用使用类型的对象了。</p>
-
-<p>不管这会不会成为Objective-C公认的约定，诸如instancetype这样一个低层特性可用于改变语言的形态已是非常棒的一件事了。</p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
+<time datetime="2014-10-25T21:00:05+08:00" pubdate data-updated="true">Oct 25<sup>th</sup>, 2014</time>
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/10/17/osatomicyuan-zi-cao-zuo/">OSAtomic原子操作</a></h1>
-    
-    
-      <p class="meta">
-        
 
-
-
-
-
-
-
-
+<span class="categories">
   
+    <a class='category' href='/blog/categories/ios/'>ios</a>
+  
+</span>
 
 
-<time datetime="2014-10-17T10:56:00+08:00" pubdate data-updated="true">Oct 17<sup>th</sup>, 2014</time>
-        
-        
-           | <a href="/blog/2014/10/17/osatomicyuan-zi-cao-zuo/#comments">Comments</a>
-        
-      </p>
+    </p>
     
-  </header>
-
-
-  <div class="entry-content"><p>并发编程一个主要问题就是如何同步数据。同步数据的方式有很多种，这里我们介绍一下libkern/OSAtomic.h。这个头文件包含是大量关于原子操作和同步操作的函数，如果要对数据进行同步操作，这里面的函数可以作为我们的首选项。不同平台这些函数的实现是自定义的。另外，它们是线程安全的。</p>
-
-<p>需要注意的是，传递给这些函数的所有地址都必须是“自然对齐”的，例如int32_t * 指针必须是32位对齐的(地址的低位2个bit为0)，int64_t * 指针必须是64位对齐的(低3位为0)。</p>
-
-<p>这些原子函数的一些版本整合了内存屏障(memory barriers)，而另一些则没有。在诸如PPC这样的弱有序(weakly-ordered)架构中，Barriers严格限制了内存访问顺序。所有出现在barriers之前的加载和存储操作完成后，才会运行barriers之后的加载和存储操作。</p>
-
-<p>在单处理器系统中，barriers操作通常是一个空操作。在多处理器系统中，barriers在某些平台上可能是相当昂贵的操作，如PPC。</p>
-
-<p>大多数代码都应该使用barrier函数来确保在线程间共享的内存是正确同步的。例如，如果我们想要初始化一个共享的数据结构，然后自动增加某个变量值来标识初始化操作完成，则我们必须使用OSAtomicIncrement32Barrier来确保数据结构的存储操作在变量自动增加前完成。</p>
-
-<p>同样的，该数据结构的消费者也必须使用OSAtomicIncrement32Barrier，以确保在自动递增变量值之后再去加载这些数据。另一方面，如果我们只是简单地递增一个全局计数器，那么使用OSAtomicIncrement32会更安全且可能更快。</p>
-
-<p>如果不能确保我们使用的是哪个版本，则使用barrier变量以保证是安全的。</p>
-
-<p>另外，自旋锁和队列操作总是包含一个barrier。</p>
-
-<p>这个头文件中的函数主要可以分为以下几类</p>
-
-<h2>内存屏障(Memory barriers)</h2>
-
-<p>内存屏障的概念如上所述，它是一种屏障和指令类，可以让CPU或编译器强制将barrier之前和之后的内存操作分开。CPU采用了一些可能导致乱序执行的性能优化。在单个线程的执行中，内存操作的顺序一般是悄无声息的，但是在并发编程和设备驱动程序中就可能出现一些不可预知的行为，除非我们小心地去控制。排序约束的特性是依赖于硬件的，并由架构的内存顺序模型来定义。一些架构定义了多种barrier来执行不同的顺序约束。</p>
-
-<p>OSMemoryBarrier()函数就是用来设置内存屏障，它即可以用于读操作，也可以用于写操作。</p>
-
-<p>示例代码：</p>
-
-<pre><code>// 代码来自ReactiveCocoa:RACDisposable类
-
-- (id)initWithBlock:(void (^)(void))block {
-    NSCParameterAssert(block != nil);
-
-    self = [super init];
-    if (self == nil) return nil;
-
-    _disposeBlock = (void *)CFBridgingRetain([block copy]);
-    OSMemoryBarrier();
-
-    return self;
-}
-</code></pre>
-
-<h2>自旋锁(Spinlocks)</h2>
-
-<p>自旋锁是在多处理器系统(SMP)上为保护一段关键代码的执行或者关键数据的一种保护机制，是实现synchronization的一种手段。</p>
-
-<p>libkern/OSAtomic.h中包含了三个关于自旋锁的函数：OSSpinLockLock, OSSpinLockTry, OSSpinLockUnlock</p>
-
-<p>示例代码：</p>
-
-<pre><code>// 代码来自ReactiveCocoa:RACCompoundDisposable类
-
-- (void)dispose {
-#if RACCompoundDisposableInlineCount
-    RACDisposable *inlineCopy[RACCompoundDisposableInlineCount];
-#endif
-
-    CFArrayRef remainingDisposables = NULL;
-
-    OSSpinLockLock(&amp;_spinLock);
-    {
-        _disposed = YES;
-
-#if RACCompoundDisposableInlineCount
-        for (unsigned i = 0; i &lt; RACCompoundDisposableInlineCount; i++) {
-            inlineCopy[i] = _inlineDisposables[i];
-            _inlineDisposables[i] = nil;
-        }
-#endif
-
-        remainingDisposables = _disposables;
-        _disposables = NULL;
-    }
-    OSSpinLockUnlock(&amp;_spinLock);
-
-#if RACCompoundDisposableInlineCount
-    // Dispose outside of the lock in case the compound disposable is used
-    // recursively.
-    for (unsigned i = 0; i &lt; RACCompoundDisposableInlineCount; i++) {
-        [inlineCopy[i] dispose];
-    }
-#endif
-
-    if (remainingDisposables == NULL) return;
-
-    CFIndex count = CFArrayGetCount(remainingDisposables);
-    CFArrayApplyFunction(remainingDisposables, CFRangeMake(0, count), &amp;disposeEach, NULL);
-    CFRelease(remainingDisposables);
-}
-</code></pre>
-
-<h2>原子队列操作</h2>
-
-<p>队列操作主要包含两类：</p>
-
-<ol>
-<li>不加锁的FIFO入队和出队原子操作，包含OSAtomicFifoDequeue和OSAtomicFifoEnqueue两个函数</li>
-<li>不加锁的LIFO入队和出队原子操作，包含OSAtomicDequeue和OSAtomicEnqueue两个函数。这两个函数是线程安全的，对有潜在精确要求的代码来说，这会是强大的构建方式。</li>
-</ol>
-
-
-<h2>比较和交换</h2>
-
-<p>这组函数可以细分为三组函数：</p>
-
-<ol>
-<li>OSAtomicCompareAndSwap**[Barrier](type __oldValue, type __newValue, volatile type *__theValue)：这组函数用于比较__oldValue是否与__theValue指针指向的内存位置的值匹配，如果匹配，则将__newValue的值存储到__theValue指向的内存位置。可以根据需要使用barrier版本。</li>
-<li>OSAtomicTestAndClear/OSAtomicTestAndClearBarrier( uint32_t __n, volatile void *__theAddress )：这组函数用于测试__theAddress指向的值中由__n指定的bit位，如果该位未被清除，则清除它。需要注意的是最低bit位应该是1，而不是0。对于一个64-bit的值来说，如果要清除最高位的值，则__n应该是64。</li>
-<li>OSAtomicTestAndSet/OSAtomicTestAndSetBarrier(uint32_t __n, volatile void *__theAddress)：与OSAtomicTestAndClear相反，这组函数测试值后，如果指定位没有设置，则设置它。</li>
-</ol>
-
-
-<p>示例代码：</p>
-
-<pre><code>void * sharedBuffer(void)
-{
-    static void * buffer;
-    if (buffer == NULL) {
-        void * newBuffer = calloc(1, 1024);
-        if (!OSAtomicCompareAndSwapPtrBarrier(NULL, newBuffer, &amp;buffer)) {
-            free(newBuffer);
-        }
-    }
-    return buffer;
-}
-</code></pre>
-
-<p>上述代码的作用是如果没有缓冲区，我们将创建一个newBuffer，然后将其写到buffer中。</p>
-
-<h2>布尔操作(AND, OR, XOR)</h2>
-
-<p>这组函数可根据以下两个规则来分类：</p>
-
-<ol>
-<li>是否使用Barrier</li>
-<li>返回值是原始值还是操作完成后的值</li>
-</ol>
-
-
-<p>以And为例，有4个函数：OSAtomicAnd32, OSAtomicAnd32Barrier, OSAtomicAnd32Orig, OSAtomicAnd32OrigBarrier。每个函数均带有两个参数：__theMask(uint32_t)和__theValue(volatile uint32_t *)。函数将__theMask与__theValue指向的值做AND操作。</p>
-
-<p>类似，还有OR操作和XOR操作。</p>
-
-<h2>数学操作</h2>
-
-<p>这组函数主要包括：</p>
-
-<ol>
-<li>加操作：OSAtomicAdd**, OSAtomicAdd**Barrier</li>
-<li>递减操作：OSAtomicDecrement**, OSAtomicDecrement**Barrier</li>
-<li>递增操作：OSAtomicIncrement**, OSAtomicIncrement**Barrier</li>
-</ol>
-
-
-<p>示例代码：</p>
-
-<pre><code>// 代码摘自ReactiveCocoa:RACDynamicSequence
-
-- (void)dealloc {
-    static volatile int32_t directDeallocCount = 0;
-
-    if (OSAtomicIncrement32(&amp;directDeallocCount) &gt;= DEALLOC_OVERFLOW_GUARD) {
-        OSAtomicAdd32(-DEALLOC_OVERFLOW_GUARD, &amp;directDeallocCount);
-
-        // Put this sequence's tail onto the autorelease pool so we stop
-        // recursing.
-        __autoreleasing RACSequence *tail __attribute__((unused)) = _tail;
-    }
-
-    _tail = nil;
-}
-</code></pre>
-
-<h2>小结</h2>
-
-<p>相较于@synchronized，OSAtomic原子操作更趋于数据的底层，从更深层次来对单例进行保护。同时，它没有阻断其它线程对函数的访问。</p>
-
-<h2>参考</h2>
-
-<ol>
-<li><a href="https://developer.apple.com/library/mac/documentation/System/Reference/OSAtomic_header_reference/Reference/reference.html">OSAtomic.h User-Space Reference</a></li>
-<li><a href="http://blog.csdn.net/wzb56_earl/article/details/6634622">Memory barrier</a></li>
-<li><a href="http://www.cocoachina.com/industry/20130821/6842.html">Objc的底层并发API</a></li>
-<li><a href="http://blog.csdn.net/tuxiangqi/article/details/8076972">OSATOMIC与synchronized加锁的对比</a></li>
-</ol>
-
+      <div class="sharing">
+  
+  
+  
 </div>
-  
-  
 
-
-    </article>
-  
-  
-    <article>
+    
+    <p class="meta">
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/09/23/xing-neng-yu-shi-jian/">性能与时间</a></h1>
-    
-    
-      <p class="meta">
-        
+        <a class="basic-alignment left" href="/blog/2014/10/19/iosji-zhu-zhou-bao-:di-%5B%3F%5D-qi-2014-dot-10-dot-13-~-2014-dot-10-dot-19/" title="Previous Post: iOS技术周报：第一期(2014.10.13 ~ 2014.10.19)">&laquo; iOS技术周报：第一期(2014.10.13 ~ 2014.10.19)</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+
+
+<section>
+    <h1>Comments</h1>
+    <div id="comments" aria-live="polite"><!-- Duoshuo Comment BEGIN -->
+<div class="ds-thread" data-title="Objective-C Runtime 运行时之一：类与对象"></div>
+<script type="text/javascript">
+    var duoshuoQuery = {short_name:"southpeak"};
+    (function() {
+     var ds = document.createElement('script');
+     ds.type = 'text/javascript';ds.async = true;
+     ds.src = 'http://static.duoshuo.com/embed.js';
+     ds.charset = 'UTF-8';
+     (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+     })();
+</script>
+<!-- Duoshuo Comment END --></div>
+</section>
 
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-09-23T23:55:35+08:00" pubdate data-updated="true">Sep 23<sup>rd</sup>, 2014</time>
-        
-        
-           | <a href="/blog/2014/09/23/xing-neng-yu-shi-jian/#comments">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>原文链接：<a href="http://www.macresearch.org/tutorial_performance_and_time">http://www.macresearch.org/tutorial_performance_and_time</a></p>
-
-<p>在讨论性能之前，先讨论一个重要的话题：时间。为了理解代码中的变化如何影响性能，我们需要一个排序的指标。有许多方法用于时间例程，一些比另一些合适。在本教程中我们将讨论Mach Absolute Time。</p>
-
-<h2>为什么是Mach?</h2>
-
-<p>时间例程依赖于所需要测量的时间域。某些情况下使用诸如clock()或getrusage()函数来做些简单的数学运算就足够了。如果时间例程将用于实际的开发框架之外，可移植性就很重要了。我不使用这些。为什么？</p>
-
-<p>对于我来说，调试代码的典型问题是：</p>
-
-<ol>
-<li>我只需要在即时测试时使用时间例程</li>
-<li>我不喜欢依赖于多种函数来包含不同的时间域。它们的行为可能不一致</li>
-<li>有时我需要一个高精度定时器</li>
-</ol>
-
-
-<h2>欢迎了解mach_absolute_time</h2>
-
-<p>mach_absolute_time是一个CPU/总线依赖函数，返回一个基于系统启动后的时钟”嘀嗒”数。它没有很好的文档定义，但这不应该成为使用它的障碍，因为在MAC OS X上可以确保它的行为，并且，它包含系统时钟包含的所有时间区域。那是否应该在产品代码中使用它呢？可能不应该。但是对于测试，它却恰到好处。</p>
-
-<p>使用mach_absolute_time时需要考虑两个因素：</p>
-
-<ol>
-<li>如何获取当前的Mach绝对时间</li>
-<li>如何将其转换为有意义的数字</li>
-</ol>
-
-
-<h2>获取mach_absolute_time</h2>
-
-<p>这非常简单</p>
-
-<pre><code>#include &lt;stdint.h&gt; 
-uint64_t start = mach_absolute_time();
-uint64_t stop = mach_absolute_time(); 
-</code></pre>
-
-<p>这样就可以了。我们通常获取两个值，以得到这两个时间的时间差。</p>
-
-<h2>将mach_absolute_time时间差转换为秒数</h2>
-
-<p>这稍微有点复杂，因为我们需要获取mach_absolute_time所基于的系统时间基准。如下代码：</p>
-
-<pre><code>#include &lt;stdint.h&gt;
-#include&lt;mach/mach_time.h&gt; 
-//Raw mach_absolute_times going in,difference in seconds out
-double subtractTimes( uint64_tendTime, uint64_t startTime )
-{
-    uint64_t difference = endTime - startTime;
-    static double conversion = 0.0;
-
-    if( conversion == 0.0 )
-    {
-        mach_timebase_info_data_t info;
-        kern_return_t err =mach_timebase_info( &amp;info );
-
-        //Convert the timebase into seconds
-        if( err == 0  )
-            conversion= 1e-9 * (double) info.numer / (double) info.denom;
-    }
-
-    return conversion * (double)difference;
-} 
-</code></pre>
-
-<p>这里最重要的是调用mach_timebase_info。我们传递一个结构体以返回时间基准值。最后，一旦我们获取到系统的心跳，我们便能生成一个转换因子。通常，转换是通过分子(info.numer)除以分母(info.denom)。这里我乘了一个1e-9来获取秒数。最后，我们获取两个时间的差值，并乘以转换因子，便得到真实的时间差。</p>
-
-<p>现在我们可能会想，为什么这比用clock好？看起来做了更多的事情。确实是有点，这便是为什么它在一个函数中。我们只需要传递我们的值到函数中并取得答案。</p>
-
-<h2>例子</h2>
-
-<p>让我们写个例子。下面是完整的代码清单(包括mach函数)。可以使用gcc mach.c –o mach来编译它：</p>
-
-<pre><code>#include &lt;stdio.h&gt;
-#include &lt;stdlib.h&gt;
-#include &lt;stdint.h&gt;
-#include &lt;math.h&gt;
-#include&lt;mach/mach_time.h&gt; 
-
-//Raw mach_absolute_times going in,difference in seconds out
-double subtractTimes( uint64_tendTime, uint64_t startTime )
-{
-    uint64_t difference = endTime -startTime;
-    static double conversion = 0.0;
-
-    if( conversion == 0.0 )
-    {        
-        mach_timebase_info_data_tinfo;        
-        kern_return_terr = mach_timebase_info( &amp;info );                       //Convert the timebaseinto seconds        
-
-        if(err == 0  )                       
-            conversion= 1e-9 * (double) info.numer / (double) info.denom;    
-    }
-
-    return conversion * (double)difference;
-} 
-
-int main()
-{
-    inti, j, count;
-    uint64_t start,stop;
-    doublecurrent = 0.0;
-    doubleanswer = 0.0;
-    doubleelapsed = 0.0;
-    intdim1 = 256;
-    intdim2 = 256;
-    intsize = 4*dim1*dim2;
-
-    //Allocatesome memory and warm it up
-    double *array =(double*)malloc(size*sizeof(double));       
-    for(i=0;i&lt;size;i++)array = (double)i;
-
-    count= 5;     
-    for(i=0;i&lt;count;i++)
-    {              
-        start = mach_absolute_time();                                 
-        //dosome work
-        for(j=0;j&lt;size;j++)
-        {
-            answer+= sqrt(array[j]);
-        }
-        stop = mach_absolute_time();
-        current= subtractTimes(stop,start);
-        printf("Timefor iteration: %1.12lf for answer: %1.12lf\n",current, answer);
-        elapsed+= current;
-    } 
-
-    printf("\nTotaltime in seconds = %1.12lf for answer: %1.12lf\n",elapsed/count,answer);
-    free(array);
-    return 0;
-} 
-</code></pre>
-
-<p>我们在这里做了什么？在这个例子中，我们有一个适当大小的double数组，当中存放了一些数字，然后获取这些数值的和的开方。为了测试，我们迭代了5次这个计算。每次迭代后我们打印花费的时间，并总结了计算所需的运行时间。在我的PowerMac G5(2.5)机器上，我获得如下结果：</p>
-
-<pre><code>[bigmac:~/misc] macresearch% gcc mach.c -omach
-[bigmac:~/misc] macresearch%./mach 
-Time for iteration: 0.006717496412for answer: 89478229.125529855490
-Time for iteration: 0.007274204955for answer: 178956458.251062750816
-Time for iteration: 0.006669191332for answer: 268434687.376589745283
-Time for iteration: 0.006953711252for answer: 357912916.502135872841
-Time for iteration: 0.007582157340for answer: 447391145.627681851387 
-Average time in seconds =0.007039352258 for answer: 447391145.627681851387
-</code></pre>
-
-<p>注意，在这里我没有进行优化，因为编译器有方法避开这样的无脑循环。另外，这只是一个例子。如果是真正的代码，我们会进行优化。</p>
-
-<p>好了，这就是这个例子的两个目的。</p>
-
-<p>首先，我使用的数组大小比我的缓存大。我这样做的目的是因为我们需要注意到数据溢出缓存的情况(正如这个例子一样，至少在我的系统中是这样。如果是在MacPro中，不会出现这种情况)。我们将在以后讨论缓存的事宜。当然，这是一个做作的例子，但有一些东西可供思考。其次，你注意到在内存分配之前我写了一句注释，这是什么意思呢？</p>
-
-<p>这在实际情况下是不需要关心的事情，因为内存总是在需要时已准备好使用。但当做一些小测试时来测试函数的性能时，它却可能是会影响到测试结果的实际问题。</p>
-
-<p>当动态分配内存时，第一次访问内存管理时会将其清0(在OS X中不管使用哪种动态分配函数:malloc, calloc…所有内存在用户使用前都会清0)。内存清零是一种安全预防措施(我们不需要递交一些包含安全信息的内容，如解密密钥)</p>
-
-<p>清零过程产生一个副作用(被系统标记为零填充页面故障)。所以为了让我们的计时更精确些，我们在使用内存之前一次性填充数据，以确保我们不会获取到零填充页面故障的处理时间。</p>
-
-<p>让我们来测试一下，注释下面这行代码</p>
-
-<pre><code>for(i=0;i&lt;size;i++) array =(double)i;
-</code></pre>
-
-<p>为:</p>
-
-<pre><code>//for(i=0;i&lt;size;i++) array =(double)i;
-</code></pre>
-
-<p>再次运行测试</p>
-
-<pre><code>[bigmac:~/misc] macresearch% ./mach
-Time for iteration: 0.009478866798for answer: 0.000000000000
-Time for iteration: 0.004756880234for answer: 0.000000000000
-Time for iteration: 0.004927868215for answer: 0.000000000000
-Time for iteration: 0.005227029674for answer: 0.000000000000
-Time for iteration: 0.004891864428for answer: 0.000000000000 
-Average time in seconds =0.005856501870 for answer: 0.000000000000
-</code></pre>
-
-<p>注意第一次迭代的时间比后序的时间多了将近一倍。同时还需要注意所有的answer都是0。再次说明内存被清零了。如果我们从堆上获取了内存，我们获取到的是无意义的数值。</p>
-
-<p>最后，但很重要的一点。不要依赖于内存的清零操作。很有可能获取到的内存是从一个静态分配区而来，那么可能会导致如下这样的问题</p>
-
-<pre><code>double array[3][3];
-</code></pre>
-
-<p>在我的系统上的打印结果是：</p>
-
-<pre><code>-1.99844 -1.29321e-231 -1.99844
--3.30953e-232 -5.31401e+303 0
-1.79209e-313 3.3146e-314 0
-</code></pre>
-
-<p>所以需要特别注意</p>
 </div>
-  
-  
 
-
-    </article>
-  
-  <div class="pagination">
-    
-      <a class="prev" href="/posts/2">&larr; Older</a>
-    
-    <a href="/blog/archives">Blog Archives</a>
-    
-  </div>
-</div>
 <aside class="sidebar">
   
     
@@ -1920,6 +1040,7 @@ Average time in seconds =0.005856501870 for answer: 0.000000000000
 
   
 </aside>
+
 
     </div>
   </div>
