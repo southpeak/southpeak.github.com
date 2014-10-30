@@ -11,7 +11,7 @@
   <meta name="baidu-site-verification" content="HoscFhWICI" />
 
   
-  <meta name="description" content="Swift和Objective-C可以在同一个工程中共存。不管创建工程时选择的是Swift还是Objective-C作为初始语言，我们都可以在工程中添加另一种语言的文件。 混合编程的处理过程在App工程和库工程中稍微有点不同。具体的工作模型如下图所示 下面我们讨论下具体的操作 &hellip;">
+  <meta name="description" content="URL加载系统是一组类和协议的集合，它允许我们的App访问URL指定的内容的。 URL加载系统的核心类是NSURL，该类提供了大量方法让我们操作URLs和它指向的资源。另外它还提供了一系列的类来加载URL的内容，上传数据到服务器，管理Cookie存储，控制响应缓存，处理认证存储和授权信息， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -68,6 +68,161 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/07/11/urljia-zai-xi-tong-zhi-%5B%3F%5D-:ji-ben-jie-gou/">URL加载系统之一：基本结构</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-07-11T19:10:29+08:00" pubdate data-updated="true">Jul 11<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/07/11/urljia-zai-xi-tong-zhi-%5B%3F%5D-:ji-ben-jie-gou/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>URL加载系统是一组类和协议的集合，它允许我们的App访问URL指定的内容的。</p>
+
+<p>URL加载系统的核心类是NSURL，该类提供了大量方法让我们操作URLs和它指向的资源。另外它还提供了一系列的类来加载URL的内容，上传数据到服务器，管理Cookie存储，控制响应缓存，处理认证存储和授权信息，及自定义协议扩展。</p>
+
+<p>URL Loading System可支持以下协议</p>
+
+<ol>
+<li><a href="ftp://">ftp://</a></li>
+<li><a href="http://">http://</a></li>
+<li><a href="https://">https://</a></li>
+<li>file://</li>
+<li>data://</li>
+</ol>
+
+
+<p>另外它还支持代理服务和网关处理。</p>
+
+<p>URL加载系统定义了用于加载URL的类，另外还定义了一些辅助类来修改加载类的行为。这些辅助类可以分为五大类：</p>
+
+<ol>
+<li>协议支持</li>
+<li>授权与认证</li>
+<li>Cookie存储</li>
+<li>配置管理</li>
+<li>缓存管理</li>
+</ol>
+
+
+<p>整个URL加载系统的结构如下图所示：</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/URLLoadingSystem/Art/nsobject_hierarchy_2x.png" alt="image" /></p>
+
+<p>下面对这张图做个简单的介绍</p>
+
+<h2>URL Loading</h2>
+
+<p>在这张图中，我们用得最多的就是URL Loading中的这几个类。这些类允许我们从URL指定的源获取内容。根据不同的需求，我们可以使用不同的类，这主要依赖于我们应用所支持的系统版本，以及我们希望内容是以文件的形式获取还是以数据块的方式获取。对于系统的版本，主要有以下几点作为参考：</p>
+
+<ol>
+<li>在iOS7及后续版本中，推荐使用NSURLSession。</li>
+<li>对于iOS7以前的版本，可以使用NSURLConnection来获取数据并加载到本地内存中。如果要保存数据，可以再将数据写入磁盘。</li>
+</ol>
+
+
+<p>而对于获取数据，主要看我们是获取数据到内存中还是下载文件并保存。如果只是获取数据到内存中，则有两种方法：</p>
+
+<ol>
+<li>对于简单的请求，可以使用NSURLSession</li>
+<li>对于复杂的请求（如上传数据请求），提供了NSURLRequest对象来与NSURLSession和NSURLConnection一起使用。</li>
+</ol>
+
+
+<p>不管使用哪种方法，我们都可以获取到响应数据，为此，我们可以如下处理响应</p>
+
+<ol>
+<li>提供一个响应处理block。当URL Loading类完成从服务端接收数据时调用该block.</li>
+<li>提供自定义有delegate。URL Loading类间断性地调用我们的代理方法来获取数据。在需要的情况下，我们的程序负责收集这些数据。</li>
+</ol>
+
+
+<p>另外，URL Loading提供了一个返回对象来封装与请求相关的元数据，如MIME类型等。</p>
+
+<p>而如果我们需要下载文件，则有两个基本方法来处理：</p>
+
+<ol>
+<li>对于简单请求，可以使用NSURLSession</li>
+<li>对于复杂请求，提供了NSURLRequest对象来与NSURLSession和NSURLDownload一起使用。</li>
+</ol>
+
+
+<p>相较于NSURLDownload，NSURLSession有两个明显的优势：NSURLSession可用于iOS系统，而NSURLDownload在iOS中不被支持；当应用挂起、终止或异常退出时，下载可以在后台继续进行。</p>
+
+<p>URL Loading中还提供了两个类用于处理元数据，一个用于表示客户端请求(NSURLRequest)，一个用于表示服务端响应(NSURLResponse)。我们分别介绍一下这两个类。</p>
+
+<h4>NSURLRequest</h4>
+
+<p>NSURLRequest对象封装了URL和协议指定的属性，及依赖于协议的行为。同时也指定了本地缓存策略及连接超时时间。一些协议支持协议指定的属性，如HTTP协议可以添加返回HTTP请求体，请求报头和传输方法到NSURLRequest中。</p>
+
+<p>这里需要注意的是，当我们使用NSURLRequest的子类NSMutableURLRequest初始化一个连接或下载时，将会对NSMutableURLRequest实例进行深拷贝。因此在初始的请求上做修改时不会影响到连接和下载对象。</p>
+
+<h4>NSURLResponse</h4>
+
+<p>一个响应可以分为两个部分：描述内容的元数据和内容数据本身。而NSURLResponse类封装了大部分协议的响应元数据，这些元数据包括MIME类型，期望的Content-Length，编码格式，及提供响应的URL。NSURLResponse的一些子类提供了与协议相关的额外元数据。如NSHTTPURLResponse存储了web服务器返回的响应头和状态码。</p>
+
+<p>需要注意的是NSURLResponse对象只存储响应的元数据，而不存储响应数据本身。响应数据由URL Loading通过响应处理block和对象的代理来接收并处理。</p>
+
+<h2>认证和证书</h2>
+
+<p>针对认证和证书，URL加载系统提供了以下几个类：</p>
+
+<ol>
+<li>NSURLCredential：封装了由认证信息和持久化行为组成的证书。</li>
+<li>NSURLProtectionSpace：表示需要特定证书的区域。一个保护区域可以限制到单独的URL，拥有web服务器的区域，或引用一个代理。</li>
+<li>NSURLCredientialStorage：一般是一个共享实例，用于管理证书存储和提供NSURLCredential对象到NSURLProductionSpace对象的映射。</li>
+<li>NSURLAuthenticationChallenge：封装了认证一个请求的的NSURLProtocol实现所需要的信息：一个建议的证书、保护空间、错误信息或者协议用于确定所需要认证的响应、以及认证尝试次数等。初始对象（即请求发送者）必须实现NSURLAuthenticationChallengeSender协议。NSURLAuthenticationChallenge实例被用于NSURLProtocol的子类来告诉URL加载系统需要认证。他们同样为NSURLConnection和NSURLDownload的代理方法提供了便利的自定义认证处理。</li>
+</ol>
+
+
+<h2>缓存管理</h2>
+
+<p>URL加载系统提供基于磁盘和内存的缓存，允许程序减少对网络连接的依赖，并提供对缓存响应的快速访问。缓存存储在每个app的缓存文件夹下。NSURLConnection会根据缓存策略（初始化NSURLRequest对象中指定的）来查询缓存。</p>
+
+<p>NSURLCache提供了配置缓存大小和磁盘存储位置的方法。同时提供了包含缓存响应的NSCacheURLResponse对象集合的方法。NSCacheURLResponse对象封装了NSURLResponse对象和URL数据，同时提供用户信息字典，这些信息可以用于缓存任何用户数据。</p>
+
+<p>不是所有的协议实现都支持响应缓存。当前只有http和https请求可被缓存。</p>
+
+<p>一个NSURLConnection对象可以通过connection:willCacheResponse:代理访求来控制是否缓存响应，响应是否只应该存储在内存中。</p>
+
+<h2>Cookie存储</h2>
+
+<p>由于HTTP协议是无状态的，所以客户端通常使用cookie来保存URL请求的数据。URL加载系统提供了接口来创建和管理cookie，将cookie作为HTTP请求的一部分来发送，及解析web服务端响应数据时接收cookie.</p>
+
+<p>iOS提供了NSHTTPCookieStorage类来管理一个NSHTTPCookie对象的集合。</p>
+
+<h2>协议支持</h2>
+
+<p>URL加载系统默认支持http, https, file, ftp, data协议。另外，URL加载系统也允许我们注册自己的类来支持额外的系统层级的网络协议。我们也可以添加指定协议的属性到URL请求和URL响应对象</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -857,320 +1012,6 @@ takesAnAutoreleasingUnsafePointer(&amp;x)
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/07/02/ios-swift-protocol/">Swift协议基础</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-07-02T14:09:11+08:00" pubdate data-updated="true">Jul 2<sup>nd</sup>, 2014</time>
-        
-        
-           | <a href="/blog/2014/07/02/ios-swift-protocol/#comments">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Swift的Protocol(协议)与Objective-C的协议一样，用于定义一系列的特定任务和功能的集合。Protocol自身并不提供这些任务的实现，只是描述实现看起来应该是什么样的。类、结构体或枚举可以实现一个Protocol，并提供Protocol中任务和功能的具体实现。Protocol可以要求这些实现类型有指定的实例属性、实例方法、类型方法、操作符和下标等。</p>
-
-<p>Protocol的语法如下所示:</p>
-
-<pre><code>protocol SomeProtocol {
-    // 协议定义
-}
-</code></pre>
-
-<p>类、结构体、枚举可以同时实现多个Protocol，如下所示:</p>
-
-<pre><code>struct SomeStructure: SomeProtocol, AnotherProcotol {
-    // 协议定义
-}
-</code></pre>
-
-<p>需要注意的是，子类在实现Protocol时，需要把父类写在前面，后面再跟上Protocol列表。</p>
-
-<p>我们下面介绍Protocol可以定义的一些功能需求</p>
-
-<h2>属性</h2>
-
-<p>Protocol可以要求实现类型提供指定名称和类型的实例属性或类型属性。Protocol不指定属性是存储属性还是计算属性，它只定义属性名和类型。Protocol也可以指定每个属性是只读的还是可读写的。</p>
-
-<p>如果Protocol要求属性是可读写的，那么这个属性不能是常量存储属性或者只读的计算属性；如果Protocol只是要求属性是可读的，则这个属性可以是任何类型的属性，这种情况下我们的实现代码同样可以指定属性为可写的。通常情况下，在Protocol中属性一般定义为变量，具体语法如下所示：</p>
-
-<pre><code>protocol SomeProtocol {
-    var mustBeSettable: Int { get set }
-    var doesNotNeedToBeSettable: Int { get }
-    class var someTypeProperty: Int { get set }
-}
-</code></pre>
-
-<p>如果是类型属性，我们需要在前面加上class，即便是结构体可枚举来实现这个Protocol，也是一样。如上面代码所示。</p>
-
-<p>代码清单1是一个详细的例子，定义了一个协议FullyNamed，其中声明了fullName属性，而在其两个个体的实现类型中，将fullName实现为不同的属性类型</p>
-
-<h6>代码清单1</h6>
-
-<pre><code>protocol FullyNamed {
-    var fullName: String { get }
-}
-
-struct Person: FullyNamed {
-    var fullName: String        // 可读写存储属性
-}
-
-class Sharship: FullyNamed {
-
-    var prefix: String?
-    var name: String?
-
-    var fullName: String {      // 只读的计算属性
-    return (prefix ? prefix! + " " : "") + name
-    }
-}
-</code></pre>
-
-<h2>方法</h2>
-
-<p>在Protocol中声明方法与在类中定义类似，只是没有实现体。另外声明方法是使用可变参数也是可以的，唯一的不同是在Protocol的方法声明中不能指定默认值。</p>
-
-<p>与属性声明一样，如果是类型方法，需要加上class前缀。方法的声明及实现类型的实现如代码清单2所示：</p>
-
-<pre><code>protocol RandomNumberGenerator {
-    func random() -&gt; Double
-}
-
-
-class LinearCongruentialGenerator: RandomNumberGenerator {
-    var lastRandom = 42.0
-    let m = 139968.0
-    let a = 3877.0
-    let c = 29573.0
-    func random() -&gt; Double {
-        lastRandom = ((lastRandom * a + c) % m)
-        return lastRandom / m
-    }
-}
-let generator = LinearCongruentialGenerator()
-
-generator.random()      // 0.37464991998171
-</code></pre>
-
-<p>另外，如果我们需要在方法中修改实例，则在方法前添加mutating关键字，与结构体中方法的定义是一样的。需要注意的是，只有在结构体和枚举的实现中才需要加mutating，类的实现是不需要的。</p>
-
-<h2>该Protocol做为类型</h2>
-
-<p>Protocol可以作为一种类型在代码中使用。因为它是一种类型，所以在很多情况下都可以使用，包括</p>
-
-<ol>
-<li>作为函数、方法、初始化方法的参数或返回值</li>
-<li>作为常量、变量或属性的类型</li>
-<li>作为数组、字典或其它容器的元素</li>
-</ol>
-
-
-<p>基于此，Protocol也可以放入集合中，如数组、字典等。</p>
-
-<p>下面是将Protocol作为类型的例子</p>
-
-<pre><code>class Dice {
-    let sides: Int
-    let generator: RandomNumberGenerator
-    init (sides: Int, generator: RandomNumberGenerator) {
-        self.sides = sides
-        self.generator = generator
-    }
-
-    func roll() -&gt; Int {
-        return Int(generator.random() * Double(sides)) + 1
-    }
-}
-
-// 具体使用
-var dice = Dice(sides: 6, generator: LinearCongruentialGenerator())
-</code></pre>
-
-<h2>代理(Delegation)</h2>
-
-<p>Swift与Objective-C的代理一样，允许将一个类或结构体的一些处理放到另外一个类型中(代理类)。Swift中代理模式的实现就是通过定义一个Protocol来封装代理方法，然后具体的实现类来实现这些代理方法。代理可以用于响应特定的行为，或者从外部资源获取数据，而不需要知道这些资源的类型。</p>
-
-<p>如下是一个实现UITableView代理的简单例子</p>
-
-<pre><code>class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
-
-    var tableView: UITableView?
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
-
-        tableView = UITableView(frame: self.view.bounds, style: UITableViewStyle.Plain)
-        tableView!.delegate = self
-        tableView!.dataSource = self
-    }
-
-    // 实现UITableViewDataSource
-
-    func tableView(tableView: UITableView!, numberOfRowsInSection section: Int) -&gt; Int {
-        return 20
-    }
-
-    func tableView(tableView: UITableView!, cellForRowAtIndexPath indexPath: NSIndexPath!) -&gt; UITableViewCell! {
-        return nil
-    }
-}
-</code></pre>
-
-<h2>在扩展中实现Protocol</h2>
-
-<p>如果我们想让某个已存在的类型(我们没有源码的情况下)实现某个Protocol，则可以借助扩展。当类型的扩展实现了Protocol时，该类会自动实现Protocol(听着有点绕口)。但如果类型已经实现了Protocol的所有必须的方法(类型未采用Protocol)，这种情况下，若想让类型采用Protocol，则可以使用一个空的扩展来声明类型采用Protocol。如下代码所示：</p>
-
-<pre><code>protocol TextRepresentable {
-    func asText() -&gt; String
-}
-
-struct Hamster {
-    var name: String
-    func asText() -&gt; String {
-        return "A Hamster"
-    }
-}
-
-extension Hamster : TextRepresentable {}
-</code></pre>
-
-<h2>Protocol继承</h2>
-
-<p>一个Protocol可以继承自一个或多个Protocol，并在自己的实现中添加更多的功能需求。Protocol继承的语法与类型继承是一样的，其语法如下所示：</p>
-
-<pre><code>protocol InheritingProtocol : SomeProtocol, AnotherProtocol {
-
-}
-</code></pre>
-
-<p>在上面的例子中，所有实现子InheritingProtocol的类型都必须实现InheritingProtocol、SomeProtocol、AnotherProtocol三者中所有的必要功能。</p>
-
-<h2>Protocol组合</h2>
-
-<p>让一个类型同时实现多个Protocol是很有用的。这种情况下，我们可以使用Protocol组合来将多个Protocol组合成一个整体。其语法如下所示：</p>
-
-<pre><code>protocol&lt;SomeProtocol, AnotherProtocol&gt;
-</code></pre>
-
-<p>我们可以将多个Protocol放在&lt;>中，在使用时，我们将其当成一个整体来处理，这种组合的实际含义是：任何同时实现&lt;>所有Protocol的类型。让我们看看下面的例子：</p>
-
-<pre><code>protocol P1 {
-    var variable1 : String { get }
-}
-
-protocol P2 {
-    var variable2 : Int { get }
-}
-
-struct MyStruct : P1, P2 {
-    var variable1: String
-    var variable2: Int
-}
-
-func funcWithProtocols(protocols: protocol&lt;P1, P2&gt;) {
-
-}
-
-let st = MyStruct(variable1: "v", variable2: 2)
-
-funcWithProtocols(st)
-</code></pre>
-
-<p>需要注意的是，Protocol组合并没有定义一个新的永久的Protocol类型，它仅仅是定义了一个临时的本地Protocol，该Protocol包含了组合中所有的功能。</p>
-
-<h2>检查Protocol的一致性</h2>
-
-<p>我们可以使用is操作符来检查Protocol的一致性，用as操作符来作Protocol转换。</p>
-
-<ol>
-<li>如果is操作符返回true，则一个实例实现了protocol，否则没有</li>
-<li>as?操作符返回protocol类型的可选值，如果实例没有实现protocol，则返回nil</li>
-<li>as操作符强制作类型转换，如果实例没有实现protocol，则引发一个错误</li>
-</ol>
-
-
-<p>需要注意的是，只有当protocol使用@objc属性标记时，才可以检查其一致性。@objc属性表明protocol应该暴露给Objective-C代码。但即使我们的代码不与Objective-C交互，如果需要对protocol进行一致性检测，也需要使用这个属性。另外@objc标明的protocol只能被类实现，而不能被结构体或枚举实现。</p>
-
-<p>我们举个具体的例子：</p>
-
-<pre><code>@objc protocol HasArea {
-    var area: Double { get }
-}
-
-class Circle: HasArea {
-    let pi = 3.1415927
-    var radius: Double
-    var area: Double { return pi * radius * radius }
-    init(radius: Double) { self.radius = radius }
-}
-
-class Country: HasArea {
-    var area: Double
-    init(area: Double) { self.area = area }
-}
-
-class Animal {
-    var legs: Int
-    init(legs: Int) { self.legs = legs }
-}
-
-let objects: AnyObject[] = [
-    Circle(radius: 2.0),
-    Country(area: 243_610),
-    Animal(legs: 4)
-]
-
-for object : AnyObject in objects {
-    if let objectWithArea = object as? HasArea {
-        println("Area is \(objectWithArea.area)")
-    } else {
-        println("Something that doesn't have an area")
-    }
-}
-
-// Area is 12.5663708
-// Area is 243610.0
-// Something that doesn't have an area
-</code></pre>
-
-<h2>可选需求</h2>
-
-<p>与Objective-C类似，Swift的Protocol可以定义一些可选的需求，这些需求在实现类型中可以选择性的实现。我们使用@optional修饰符来定义这些需求。</p>
-
-<p>一个可选的需求可以通过可选链来实现，这个可选链可以满足当某个类型没有实现所采用的Protocol的可选需求。这种调用的基本语法如下：</p>
-
-<pre><code>someOptionalMethod?(someArgument)
-</code></pre>
-
-<p>另外，可选的方法如果有返回值，总是返回一个可选值，以满足可能未被实现的需求。</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/7">&larr; Older</a>
@@ -1187,7 +1028,7 @@ for object : AnyObject in objects {
 <section>
 <h1>分类</h1>
 <ul>
-  <li><a href='/blog/categories/ios'>ios (32)</a></li>
+  <li><a href='/blog/categories/ios'>ios (33)</a></li>
   <li><a href='/blog/categories/network'>network (3)</a></li>
   <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
   <li><a href='/blog/categories/swift'>swift (7)</a></li>
@@ -1199,6 +1040,10 @@ for object : AnyObject in objects {
 <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/10/30/objective-c-runtime-yun-xing-shi-zhi-er-:cheng-yuan-bian-liang-yu-shu-xing/">Objective-C Runtime 运行时之二：成员变量与属性</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2014/10/25/objective-c-runtime-yun-xing-shi-zhi-lei-yu-dui-xiang/">Objective-C Runtime 运行时之一：类与对象</a>
@@ -1234,10 +1079,6 @@ for object : AnyObject in objects {
     
       <li class="post">
         <a href="/blog/2014/08/12/mvvmzhi-nan-er-:flickrsou-suo-shen-ru/">MVVM指南二：Flickr搜索深入</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/08/08/mvvmzhi-nan-yi-:flickrsou-suo-shi-li/">MVVM指南一：Flickr搜索实例</a>
       </li>
     
   </ul>

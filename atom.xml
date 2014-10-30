@@ -4,7 +4,7 @@
   <title><![CDATA[南峰子的技术博客]]></title>
   <link href="http://southpeak.github.io/atom.xml" rel="self"/>
   <link href="http://southpeak.github.io/"/>
-  <updated>2014-10-25T22:00:58+08:00</updated>
+  <updated>2014-10-30T16:05:08+08:00</updated>
   <id>http://southpeak.github.io/</id>
   <author>
     <name><![CDATA[南峰子]]></name>
@@ -12,6 +12,286 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Objective-C Runtime 运行时之二：成员变量与属性]]></title>
+    <link href="http://southpeak.github.io/blog/2014/10/30/objective-c-runtime-yun-xing-shi-zhi-er-:cheng-yuan-bian-liang-yu-shu-xing/"/>
+    <updated>2014-10-30T16:03:21+08:00</updated>
+    <id>http://southpeak.github.io/blog/2014/10/30/objective-c-runtime-yun-xing-shi-zhi-er-:cheng-yuan-bian-liang-yu-shu-xing</id>
+    <content type="html"><![CDATA[<p>在前面一篇文章中，我们介绍了Runtime中与类和对象相关的内容，从这章开始，我们将讨论类实现细节相关的内容，主要包括类中成员变量，属性，方法，协议与分类的实现。</p>
+
+<p>本章的主要内容将聚集在Runtime对成员变量与属性的处理。在讨论之前，我们先介绍一个重要的概念：类型编码。</p>
+
+<h2>类型编码(Type Encoding)</h2>
+
+<p>作为对Runtime的补充，编译器将每个方法的返回值和参数类型编码为一个字符串，并将其与方法的selector关联在一起。这种编码方案在其它情况下也是非常有用的，因此我们可以使用@encode编译器指令来获取它。当给定一个类型时，@encode返回这个类型的字符串编码。这些类型可以是诸如int、指针这样的基本类型，也可以是结构体、类等类型。事实上，任何可以作为sizeof()操作参数的类型都可以用于@encode()。</p>
+
+<p>在Objective-C Runtime Programming Guide中的<a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html#//apple_ref/doc/uid/TP40008048-CH100-SW1">Type Encoding</a>一节中，列出了Objective-C中所有的类型编码。需要注意的是这些类型很多是与我们用于存档和分发的编码类型是相同的。但有一些不能在存档时使用。</p>
+
+<p><em>注：Objective-C不支持long double类型。@encode(long double)返回d，与double是一样的。</em></p>
+
+<p>一个数组的类型编码位于方括号中；其中包含数组元素的个数及元素类型。如以下示例：</p>
+
+<pre><code>float a[] = {1.0, 2.0, 3.0};
+NSLog(@"array encoding type: %s", @encode(typeof(a)));
+</code></pre>
+
+<p>输出是：</p>
+
+<pre><code>2014-10-28 11:44:54.731 RuntimeTest[942:50791] array encoding type: [3f]
+</code></pre>
+
+<p>其它类型可参考<a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html#//apple_ref/doc/uid/TP40008048-CH100-SW1">Type Encoding</a>，在此不细说。</p>
+
+<p>另外，还有些编码类型，@encode虽然不会直接返回它们，但它们可以作为协议中声明的方法的类型限定符。可以参考<a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html#//apple_ref/doc/uid/TP40008048-CH100-SW1">Type Encoding</a>。</p>
+
+<p>对于属性而言，还会有一些特殊的类型编码，以表明属性是只读、拷贝、retain等等，详情可以参考<a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtPropertyIntrospection.html#//apple_ref/doc/uid/TP40008048-CH101-SW6">Property Type String</a>。</p>
+
+<h2>成员变量、属性</h2>
+
+<p>Runtime中关于成员变量和属性的相关数据结构并不多，只有三个，并且都很简单。不过还有个非常实用但可能经常被忽视的特性，即关联对象，我们将在这小节中详细讨论。</p>
+
+<h3>基础数据类型</h3>
+
+<h4>Ivar</h4>
+
+<p>Ivar是表示实例变量的类型，其实际是一个指向objc_ivar结构体的指针，其定义如下：</p>
+
+<pre><code>typedef struct objc_ivar *Ivar;
+
+struct objc_ivar {
+    char *ivar_name                 OBJC2_UNAVAILABLE;  // 变量名
+    char *ivar_type                 OBJC2_UNAVAILABLE;  // 变量类型
+    int ivar_offset                 OBJC2_UNAVAILABLE;  // 基地址偏移字节
+#ifdef __LP64__
+    int space                       OBJC2_UNAVAILABLE;
+#endif
+} 
+</code></pre>
+
+<h4>objc_property_t</h4>
+
+<p>objc_property_t是表示Objective-C声明的属性的类型，其实际是指向objc_property结构体的指针，其定义如下：</p>
+
+<pre><code>typedef struct objc_property *objc_property_t;
+</code></pre>
+
+<h4>objc_property_attribute_t</h4>
+
+<p>objc_property_attribute_t定义了属性的特性(attribute)，它是一个结构体，定义如下：</p>
+
+<pre><code>typedef struct {
+    const char *name;           // 特性名
+    const char *value;          // 特性值
+} objc_property_attribute_t;
+</code></pre>
+
+<h3>关联对象(Associated Object)</h3>
+
+<p>关联对象是Runtime中一个非常实用的特性，不过可能很容易被忽视。</p>
+
+<p>关联对象类似于成员变量，不过是在运行时添加的。我们通常会把成员变量(Ivar)放在类声明的头文件中，或者放在类实现的@implementation后面。但这有一个缺点，我们不能在分类中添加成员变量。如果我们尝试在分类中添加新的成员变量，编译器会报错。</p>
+
+<p>我们可能希望通过使用(甚至是滥用)全局变量来解决这个问题。但这些都不是Ivar，因为他们不会连接到一个单独的实例。因此，这种方法很少使用。</p>
+
+<p>Objective-C针对这一问题，提供了一个解决方案：即关联对象(Associated Object)。</p>
+
+<p>我们可以把关联对象想象成一个Objective-C对象(如字典)，这个对象通过给定的key连接到类的一个实例上。不过由于使用的是C接口，所以key是一个void指针(const void *)。我们还需要指定一个内存管理策略，以告诉Runtime如何管理这个对象的内存。这个内存管理的策略可以由以下值指定：</p>
+
+<pre><code>OBJC_ASSOCIATION_ASSIGN
+OBJC_ASSOCIATION_RETAIN_NONATOMIC
+OBJC_ASSOCIATION_COPY_NONATOMIC
+OBJC_ASSOCIATION_RETAIN
+OBJC_ASSOCIATION_COPY
+</code></pre>
+
+<p>当宿主对象被释放时，会根据指定的内存管理策略来处理关联对象。如果指定的策略是assign，则宿主释放时，关联对象不会被释放；而如果指定的是retain或者是copy，则宿主释放时，关联对象会被释放。我们甚至可以选择是否是自动retain/copy。当我们需要在多个线程中处理访问关联对象的多线程代码时，这就非常有用了。</p>
+
+<p>我们将一个对象连接到其它对象所需要做的就是下面两行代码：</p>
+
+<pre><code>static char myKey;
+
+objc_setAssociatedObject(self, &amp;myKey, anObject, OBJC_ASSOCIATION_RETAIN);
+</code></pre>
+
+<p>在这种情况下，self对象将获取一个新的关联的对象anObject，且内存管理策略是自动retain关联对象，当self对象释放时，会自动release关联对象。另外，如果我们使用同一个key来关联另外一个对象时，也会自动释放之前关联的对象，这种情况下，先前的关联对象会被妥善地处理掉，并且新的对象会使用它的内存。</p>
+
+<pre><code>id anObject = objc_getAssociatedObject(self, &amp;myKey);
+</code></pre>
+
+<p>我们可以使用objc_removeAssociatedObjects函数来移除一个关联对象，或者使用objc_setAssociatedObject函数将key指定的关联对象设置为nil。</p>
+
+<p>我们下面来用实例演示一下关联对象的使用方法。</p>
+
+<p>假定我们想要动态地将一个Tap手势操作连接到任何UIView中，并且根据需要指定点击后的实际操作。这时候我们就可以将一个手势对象及操作的block对象关联到我们的UIView对象中。这项任务分两部分。首先，如果需要，我们要创建一个手势识别对象并将它及block做为关联对象。如下代码所示：</p>
+
+<pre><code>- (void)setTapActionWithBlock:(void (^)(void))block
+{
+    UITapGestureRecognizer *gesture = objc_getAssociatedObject(self, &amp;kDTActionHandlerTapGestureKey);
+
+    if (!gesture)
+    {
+        gesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(__handleActionForTapGesture:)];
+        [self addGestureRecognizer:gesture];
+        objc_setAssociatedObject(self, &amp;kDTActionHandlerTapGestureKey, gesture, OBJC_ASSOCIATION_RETAIN);
+    }
+
+    objc_setAssociatedObject(self, &amp;kDTActionHandlerTapBlockKey, block, OBJC_ASSOCIATION_COPY);
+}
+</code></pre>
+
+<p>这段代码检测了手势识别的关联对象。如果没有，则创建并建立关联关系。同时，将传入的块对象连接到指定的key上。注意block对象的关联内存管理策略。</p>
+
+<p>手势识别对象需要一个target和action，所以接下来我们定义处理方法：</p>
+
+<pre><code>- (void)__handleActionForTapGesture:(UITapGestureRecognizer *)gesture
+{
+    if (gesture.state == UIGestureRecognizerStateRecognized)
+    {
+        void(^action)(void) = objc_getAssociatedObject(self, &amp;kDTActionHandlerTapBlockKey);
+
+        if (action)
+        {
+            action();
+        }
+    }
+}
+</code></pre>
+
+<p>我们需要检测手势识别对象的状态，因为我们只需要在点击手势被识别出来时才执行操作。</p>
+
+<p>从上面的例子我们可以看到，关联对象使用起来并不复杂。它让我们可以动态地增强类现有的功能。我们可以在实际编码中灵活地运用这一特性。</p>
+
+<h3>成员变量、属性的操作方法</h3>
+
+<h4>成员变量</h4>
+
+<p>成员变量操作包含以下函数：</p>
+
+<pre><code>// 获取成员变量名
+const char * ivar_getName ( Ivar v );
+
+// 获取成员变量类型编码
+const char * ivar_getTypeEncoding ( Ivar v );
+
+// 获取成员变量的偏移量
+ptrdiff_t ivar_getOffset ( Ivar v );
+</code></pre>
+
+<p>● ivar_getOffset函数，对于类型id或其它对象类型的实例变量，可以调用object_getIvar和object_setIvar来直接访问成员变量，而不使用偏移量。</p>
+
+<h4>关联对象</h4>
+
+<p>关联对象操作函数包括以下：</p>
+
+<pre><code>// 设置关联对象
+void objc_setAssociatedObject ( id object, const void *key, id value, objc_AssociationPolicy policy );
+
+// 获取关联对象
+id objc_getAssociatedObject ( id object, const void *key );
+
+// 移除关联对象
+void objc_removeAssociatedObjects ( id object );
+</code></pre>
+
+<p>关联对象及相关实例已经在前面讨论过了，在此不再重复。</p>
+
+<h4>属性</h4>
+
+<p>属性操作相关函数包括以下：</p>
+
+<pre><code>// 获取属性名
+const char * property_getName ( objc_property_t property );
+
+// 获取属性特性描述字符串
+const char * property_getAttributes ( objc_property_t property );
+
+// 获取属性中指定的特性
+char * property_copyAttributeValue ( objc_property_t property, const char *attributeName );
+
+// 获取属性的特性列表
+objc_property_attribute_t * property_copyAttributeList ( objc_property_t property, unsigned int *outCount );
+</code></pre>
+
+<p>● property_copyAttributeValue函数，返回的char *在使用完后需要调用free()释放。
+● property_copyAttributeList函数，返回值在使用完后需要调用free()释放。</p>
+
+<h2>实例</h2>
+
+<p>假定这样一个场景，我们从服务端两个不同的接口获取相同的字典数据，但这两个接口是由两个人写的，相同的信息使用了不同的字段表示。我们在接收到数据时，可将这些数据保存在相同的对象中。对象类如下定义：</p>
+
+<pre><code>@interface MyObject: NSObject
+
+@property (nonatomic, copy) NSString    *   name;                  
+@property (nonatomic, copy) NSString    *   status;                 
+
+@end
+</code></pre>
+
+<p>接口A、B返回的字典数据如下所示：</p>
+
+<pre><code>@{@"name1": "张三", @"status1": @"start"}
+
+@{@"name2": "张三", @"status2": @"end"}
+</code></pre>
+
+<p>通常的方法是写两个方法分别做转换，不过如果能灵活地运用Runtime的话，可以只实现一个转换方法，为此，我们需要先定义一个映射字典(全局变量)</p>
+
+<pre><code>static NSMutableDictionary *map = nil;
+
+@implementation MyObject
+
++ (void)load
+{
+    map = [NSMutableDictionary dictionary];
+
+    map[@"name1"]                = @"name";
+    map[@"status1"]              = @"status";
+    map[@"name2"]                = @"name";
+    map[@"status2"]              = @"status";
+}
+
+@end
+</code></pre>
+
+<p>上面的代码将两个字典中不同的字段映射到MyObject中相同的属性上，这样，转换方法可如下处理：</p>
+
+<pre><code>- (void)setDataWithDic:(NSDictionary *)dic
+{
+    [dic enumerateKeysAndObjectsUsingBlock:^(NSString *key, id obj, BOOL *stop) {
+
+        NSString *propertyKey = [self propertyForKey:key];
+
+        if (propertyKey)
+        {
+            objc_property_t property = class_getProperty([self class], [propertyKey UTF8String]);
+
+            // TODO: 针对特殊数据类型做处理
+            NSString *attributeString = [NSString stringWithCString:property_getAttributes(property) encoding:NSUTF8StringEncoding];
+
+            ...
+
+            [self setValue:obj forKey:propertyKey];
+        }
+    }];
+}
+</code></pre>
+
+<p>当然，一个属性能否通过上面这种方式来处理的前提是其支持KVC。</p>
+
+<h2>小结</h2>
+
+<p>本章中我们讨论了Runtime中与成员变量和属性相关的内容。成员变量与属性是类的数据基础，合理地使用Runtime中的相关操作能让我们更加灵活地来处理与类数据相关的工作。</p>
+
+<h2>参考</h2>
+
+<ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Introduction/Introduction.html">Objective-C Runtime Programming Guide</a></li>
+<li><a href="http://www.cocoanetics.com/2012/06/associated-objects/">Associated Objects</a></li>
+</ol>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Objective-C Runtime 运行时之一：类与对象]]></title>
@@ -6003,257 +6283,6 @@ manager = [[CBPeripheralManager alloc] initWithDelegate:self queue:nil options:n
 <p>参考</p>
 
 <p><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/NetServices/Introduction.html">Bonjour Overview</a></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Cover Flow特效实现]]></title>
-    <link href="http://southpeak.github.io/blog/2014/07/18/cover-flowte-xiao-shi-xian/"/>
-    <updated>2014-07-18T22:12:57+08:00</updated>
-    <id>http://southpeak.github.io/blog/2014/07/18/cover-flowte-xiao-shi-xian</id>
-    <content type="html"><![CDATA[<p><a href="http://www.cocoachina.com/bbs/read.php?tid=74500">原文</a>发表在cocoachina上，现在把它整理过来。</p>
-
-<h2>Cover Flow介绍</h2>
-
-<p>Cover flow是苹果首创的将多首歌曲的封面以3D界面的形式显示出来的方式。</p>
-
-<p><img src="http://www.cocoachina.com/bbs/attachment/Fid_6/6_38018_be3432a30663e7e.png" alt="image" /></p>
-
-<h4>随处可见的Cover Flow特效</h4>
-
-<p>iTunes:在iTunes音乐中点击搜索框左边“查看”项第三个，即以cover flow形式显示专辑封面（前提是你得添加插图或音乐自带插图），也可以在全屏模式使用</p>
-
-<p>iPhone/iPod Touch:在竖屏模式播放音乐，iPhone只会显示一张专辑的封面；但当用户将机身旋转为横屏模式后，则能看到多首歌曲的封面以3D界面的形式显示出来，用手指左右的滑动能够进行歌曲的选择，点击相应的专辑封面则会显示该张唱片的曲目，点击相应歌曲即可开始播放。</p>
-
-<p>苹果官网:官网上有以Flash展示的cover flow界面iPod NANO3/4/5:基本类似于在iphone中的操作，利用触摸轮滑动使封面转换Safari</p>
-
-<p>使用 Cover Flow，您可以像在 iTunes 中翻看专辑插图一样轻松地翻看网站。Cover Flow 可以将您的书签和历史记录显示为大图预览，这样您就能立即找到网站。要查看 Cover Flow 如何工作，请单击 Safari“书签”栏左端的打开书本图标来打开书签列表。在“精选”列表中选择“历史记录”或您要查看其标签的精选。使用水平滚动条来翻看网页预览。您还可以使用鼠标上的滚动按钮来翻看预览。如果您的触控板已配置为支持触控板手势，则您可以左右扫动。</p>
-
-<h2>特效制作</h2>
-
-<h4>方法一：UICoverFlowLayer</h4>
-
-<p>正式的SDK并未包含UICoverFlowLayer，但是它仍然是标准的uikit。通过steve nygard的类转储(class-dump), 能从uikit框架中提取 UICoverFlowLayer头文件。</p>
-
-<p>由于UICoverFlowLayer是私有的，无法应用于应用程序(无法通过苹果的审查)，所以在此简单介绍使用方法：</p>
-
-<ol>
-<li>将UICoverFlowLayer.h文件拷贝到工程中创建cover flow视图，并将UICoverFlowLayer图层分配到视图图层中</li>
-<li>视图发送dragFlow:atPoint消息，以处理与Cover Flow图层的触摸和拖动的交互过程构建cover flow视图控制器，分配和初始化视图，并提供委托和数据源方法</li>
-</ol>
-
-
-<p>使用UICoverFlowLayer的方法如下代码所示</p>
-
-<pre><code>UICoverFlowLayer *cfLayer = [[UICoverFlowLayer alloc] initWithFrame:frame numberOfCovers:count];
-
-[[self layer] addSublayer:cfLayer];
-</code></pre>
-
-<h4>方法二：OpenFlow</h4>
-
-<p>OpenFlow是一个用于实现Cover Flow特效的开源库，它是基于Quartz实现的，能很好的实现Cover Flow特效，同时又易于使用。</p>
-
-<p>下载地址：<a href="https://github.com/thefaj/OpenFlow">https://github.com/thefaj/OpenFlow</a></p>
-
-<p>使用OpenFlow的基本步骤如下：</p>
-
-<ol>
-<li>创建工程</li>
-<li>添加OpenFlow源代码到工程中</li>
-<li>添加QuartzCore和CoreGraphics框架到工程中</li>
-<li>定义CoverFlowViewController(自定义)类</li>
-<li>在CoverFlowViewController.h中导入”AFOpenFlowView.h”</li>
-<li>实现AFOpenFlowViewDelegate类和AFOpenFlowDataSource协议</li>
-</ol>
-
-
-<p>定义CoverFlowViewController类的代码如下所示</p>
-
-<pre><code>//  CoverFlowViewController.h
-//  CoverFlow
-//
-//  Created by Avinash on 4/7/10.
-//  Copyright Apple Inc 2010. All rights reserved.
-//
-
-#import "AFOpenFlowView.h"
-@interface CoverFlowViewController : UIViewController  {
-    // Queue to hold the cover flow p_w_picpath
-    NSOperationQueue *loadImagesOperationQueue;
-}
-@end
-</code></pre>
-
-<p>实现CoverFlowViewController类</p>
-
-<p>加载图片</p>
-
-<pre><code>- (void)viewDidLoad {
-    [super viewDidLoad];
-     // loading p_w_picpath into the queue
-    loadImagesOperationQueue = [[NSOperationQueue alloc] init];
-    NSString *imageName;
-    for (int i=0; i &lt; 10; i++) {
-        imageName = [[NSString alloc] initWithFormat:@"cover_%d.jpg", i];
-        [(AFOpenFlowView *)self.view setImage:[UIImage imageNamed:imageName] forIndex:i];
-        [imageName release];
-        NSLog(@"%d is the index",i); 
-   }
-    [(AFOpenFlowView *)self.view setNumberOfImages:10];
-}
-</code></pre>
-
-<p>实现委托方法，以设置Cover Flow默认图片及通知哪幅图片被选中</p>
-
-<pre><code>//delegate protocols
-// delegate protocol to tell which image is selected
-- (void)openFlowView:(AFOpenFlowView *)openFlowView selectionDidChange:(int)index{
-    NSLog(@"%d is selected",index);
-}
-// setting the image 1 as the default pic
-- (UIImage *)defaultImage{
-    return [UIImage imageNamed:@"cover_1.jpg"];
-}
-</code></pre>
-
-<p>修改xib文件中视图的类UIView为AFOpenFlowView(重要)</p>
-
-<p>完成上述步骤之后，就可以运行一下程序看一下效果了。虽然与苹果的Cover Flow效果还是有点差距，但还是不错哦。</p>
-
-<h4>方法三：FlowCover</h4>
-
-<p>FlowCover也是一个开源库，它是基于OpenGL ES。FlowCover的源代码非常简单，只有FlowCoverView和DataCache两个类。这两个类的功能如下：</p>
-
-<ol>
-<li>FlowCoverView：定义主视图。这是一个OpenGL ES视点，可以被嵌套在其它视图中。</li>
-<li>DataCache：提供一个简单的数据缓存方案，保存一定量的对象，当对象超过最大值时，旧的对象会被舍弃。</li>
-</ol>
-
-
-<p>使用FlowCover的基本步骤如下：</p>
-
-<ol>
-<li>创建工程</li>
-<li>添加FlowCover源代码到工程中</li>
-<li>然后就可以像用其它UIView一样使用FlowCoverView了</li>
-</ol>
-
-
-<p>FlowCover中需要实现FlowCoverViewDelegate协议，该协议中主要有三个方法：</p>
-
-<pre><code>-(int)flowCoverNumberImages:(FlowCoverView *)view;
-</code></pre>
-
-<p>返回FlowCoverView视图中显示的图片数量</p>
-
-<pre><code>-(UIImage *)flowCover:(FlowCoverView *)view cover:(int)cover;
-</code></pre>
-
-<p>返回FlowCoverView视图中用cover指定的图片</p>
-
-<pre><code>-(void)flowCover:(FlowCoverView *)view didSelect:(int)cover;
-</code></pre>
-
-<p>当用户触击FlowCoverView中的cover时调用。</p>
-
-<h4>方法四：Tapku框架</h4>
-
-<p>Tapku库是一个开源的iOS框架，它包含CoverFlow, Calendar Grid, Char View等等API，总之还是一个比较强大的库。把Tapku加下工程中还是比较复杂的，有兴趣的童鞋可以去网上搜一下。</p>
-
-<p>Tapku下载地址：<a href="https://github.com/devinross/tapkulibrary">https://github.com/devinross/tapkulibrary</a></p>
-
-<p>Tapku中与Cover Flow相关的类主要有如下两个：</p>
-
-<ol>
-<li>TKCoverflowCoverView: 该类表示的是单个cover。相当于UITableViewCell</li>
-<li>TKCoverflowView:该类相当于UITableView类，用来管理和显示cover flow中图片及实现cover flow效果。</li>
-</ol>
-
-
-<p>同时还有两个相关的协议：TKCoverflowViewDelegate， TKCoverflowViewDataSource，分别是 TKCoverflowView的代理及数据源。这两个协议分别有一个必须实现的方法，分别是
-TKCoverflowViewDelegate协议的</p>
-
-<pre><code>- (void) coverflowView:(TKCoverflowView*)coverflowView coverAtIndexWasBroughtToFront:(int)index;
-</code></pre>
-
-<p>TKCoverflowViewDataSource协议的</p>
-
-<pre><code>- (void) coverflowView:(TKCoverflowView*)coverflowView coverAtIndexWasDoubleTapped:(int)index
-</code></pre>
-
-<p>在工程中使用Tapku的CoverFlow步骤如下</p>
-
-<ol>
-<li>创建工程</li>
-<li>添加Tapku库到工程中(该步骤有点麻烦，而且Tapku库比较大，个人认为可以只把CoverFlow相关的类抽取出来直接用)。</li>
-<li>新建一个视图控制器CoverflowViewController，在该控制器中添加如下代码</li>
-</ol>
-
-
-<p>在头文件CoverflowViewController.h中</p>
-
-<pre><code>@interface CoverflowViewController : UIViewController &lt;TKCoverflowViewDelegate,TKCoverflowViewDataSource,UIScrollViewDelegate&gt; {
-    TKCoverflowView *coverflow; 
-    NSMutableArray *covers; // album covers p_w_picpath
-    ......
-}
-</code></pre>
-
-<p>在CoverflowViewController.m文件中主要有如下处理</p>
-
-<pre><code>//创建视图
-- (void) loadView{
-   [super loadView];
-    ......
-    coverflow = [[TKCoverflowView alloc] initWithFrame:self.view.bounds];
-    coverflow.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    coverflow.coverflowDelegate = self;
-    coverflow.dataSource = self;
-    if([UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPad){
-       coverflow.coverSpacing = 100;
-      coverflow.coverSize = CGSizeMake(300, 300);
-    }
-    [self.view addSubview:coverflow];
-   ......
-}
-</code></pre>
-
-<p>实现代理方法</p>
-
-<pre><code>- (void) coverflowView:(TKCoverflowView*)coverflowView coverAtIndexWasBroughtToFront:(int)index{
-}
-//生成单个cover flow
-- (TKCoverflowCoverView*) coverflowView:(TKCoverflowView*)coverflowView coverAtIndex:(int)index{
-    TKCoverflowCoverView *cover = [coverflowView dequeueReusableCoverView];
-    if(cover == nil){
-       BOOL phone = [UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPhone;
-       CGRect rect = phone ? CGRectMake(0, 0, 224, 300) : CGRectMake(0, 0, 300, 600);
-
-      cover = [[[TKCoverflowCoverView alloc] initWithFrame:rect] autorelease]; // 224
-       cover.baseline = 224;  
-    }
-    cover.image = [covers objectAtIndex:index%[covers count]];
-   return cover;
-}
-- (void) coverflowView:(TKCoverflowView*)coverflowView coverAtIndexWasDoubleTapped:(int)index{
-   TKCoverflowCoverView *cover = [coverflowView coverAtIndex:index];
-    if(cover == nil) return;
-    [UIView beginAnimations:nil context:nil];
-    [UIView setAnimationDuration:1];
-    [UIView setAnimationTransition:UIViewAnimationTransitionFlipFromLeft forView:cover cache:YES];
-    [UIView commitAnimations];
-   NSLog(@"Index: %d",index);
-}
-</code></pre>
-
-<h2>效果比较</h2>
-
-<p>在效果上个人感觉Tapku会好些，渲染流畅，美中不足的是在快速拖动时，停止下来的时候会有抖动的感觉（当然快速拖动这一功能是否需要可视情况而定，如果将此功能禁掉，跟苹果自身的效果还是差不多的）。</p>
-
-<p>OpenFlow的问题在于当改变图像时，新选中的图像会先放大并置于表层，然后才缓动到中间。这是其一个瑕疵。</p>
-
-<p>总体感觉上来讲，苹果自身的CoverFlow的缓动效果还是最好的，有那种渐进渐出的效果，而如上几个开源的库其动画显得有点生硬，有兴趣的童鞋可以试着改进一下。</p>
 ]]></content>
   </entry>
   

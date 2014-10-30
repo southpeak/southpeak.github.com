@@ -4,7 +4,7 @@
   <title><![CDATA[Category: ios | 南峰子的技术博客]]></title>
   <link href="http://southpeak.github.io/blog/categories/ios/atom.xml" rel="self"/>
   <link href="http://southpeak.github.io/"/>
-  <updated>2014-10-25T22:00:58+08:00</updated>
+  <updated>2014-10-30T16:05:08+08:00</updated>
   <id>http://southpeak.github.io/</id>
   <author>
     <name><![CDATA[南峰子]]></name>
@@ -12,6 +12,286 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Objective-C Runtime 运行时之二：成员变量与属性]]></title>
+    <link href="http://southpeak.github.io/blog/2014/10/30/objective-c-runtime-yun-xing-shi-zhi-er-:cheng-yuan-bian-liang-yu-shu-xing/"/>
+    <updated>2014-10-30T16:03:21+08:00</updated>
+    <id>http://southpeak.github.io/blog/2014/10/30/objective-c-runtime-yun-xing-shi-zhi-er-:cheng-yuan-bian-liang-yu-shu-xing</id>
+    <content type="html"><![CDATA[<p>在前面一篇文章中，我们介绍了Runtime中与类和对象相关的内容，从这章开始，我们将讨论类实现细节相关的内容，主要包括类中成员变量，属性，方法，协议与分类的实现。</p>
+
+<p>本章的主要内容将聚集在Runtime对成员变量与属性的处理。在讨论之前，我们先介绍一个重要的概念：类型编码。</p>
+
+<h2>类型编码(Type Encoding)</h2>
+
+<p>作为对Runtime的补充，编译器将每个方法的返回值和参数类型编码为一个字符串，并将其与方法的selector关联在一起。这种编码方案在其它情况下也是非常有用的，因此我们可以使用@encode编译器指令来获取它。当给定一个类型时，@encode返回这个类型的字符串编码。这些类型可以是诸如int、指针这样的基本类型，也可以是结构体、类等类型。事实上，任何可以作为sizeof()操作参数的类型都可以用于@encode()。</p>
+
+<p>在Objective-C Runtime Programming Guide中的<a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html#//apple_ref/doc/uid/TP40008048-CH100-SW1">Type Encoding</a>一节中，列出了Objective-C中所有的类型编码。需要注意的是这些类型很多是与我们用于存档和分发的编码类型是相同的。但有一些不能在存档时使用。</p>
+
+<p><em>注：Objective-C不支持long double类型。@encode(long double)返回d，与double是一样的。</em></p>
+
+<p>一个数组的类型编码位于方括号中；其中包含数组元素的个数及元素类型。如以下示例：</p>
+
+<pre><code>float a[] = {1.0, 2.0, 3.0};
+NSLog(@"array encoding type: %s", @encode(typeof(a)));
+</code></pre>
+
+<p>输出是：</p>
+
+<pre><code>2014-10-28 11:44:54.731 RuntimeTest[942:50791] array encoding type: [3f]
+</code></pre>
+
+<p>其它类型可参考<a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html#//apple_ref/doc/uid/TP40008048-CH100-SW1">Type Encoding</a>，在此不细说。</p>
+
+<p>另外，还有些编码类型，@encode虽然不会直接返回它们，但它们可以作为协议中声明的方法的类型限定符。可以参考<a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html#//apple_ref/doc/uid/TP40008048-CH100-SW1">Type Encoding</a>。</p>
+
+<p>对于属性而言，还会有一些特殊的类型编码，以表明属性是只读、拷贝、retain等等，详情可以参考<a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtPropertyIntrospection.html#//apple_ref/doc/uid/TP40008048-CH101-SW6">Property Type String</a>。</p>
+
+<h2>成员变量、属性</h2>
+
+<p>Runtime中关于成员变量和属性的相关数据结构并不多，只有三个，并且都很简单。不过还有个非常实用但可能经常被忽视的特性，即关联对象，我们将在这小节中详细讨论。</p>
+
+<h3>基础数据类型</h3>
+
+<h4>Ivar</h4>
+
+<p>Ivar是表示实例变量的类型，其实际是一个指向objc_ivar结构体的指针，其定义如下：</p>
+
+<pre><code>typedef struct objc_ivar *Ivar;
+
+struct objc_ivar {
+    char *ivar_name                 OBJC2_UNAVAILABLE;  // 变量名
+    char *ivar_type                 OBJC2_UNAVAILABLE;  // 变量类型
+    int ivar_offset                 OBJC2_UNAVAILABLE;  // 基地址偏移字节
+#ifdef __LP64__
+    int space                       OBJC2_UNAVAILABLE;
+#endif
+} 
+</code></pre>
+
+<h4>objc_property_t</h4>
+
+<p>objc_property_t是表示Objective-C声明的属性的类型，其实际是指向objc_property结构体的指针，其定义如下：</p>
+
+<pre><code>typedef struct objc_property *objc_property_t;
+</code></pre>
+
+<h4>objc_property_attribute_t</h4>
+
+<p>objc_property_attribute_t定义了属性的特性(attribute)，它是一个结构体，定义如下：</p>
+
+<pre><code>typedef struct {
+    const char *name;           // 特性名
+    const char *value;          // 特性值
+} objc_property_attribute_t;
+</code></pre>
+
+<h3>关联对象(Associated Object)</h3>
+
+<p>关联对象是Runtime中一个非常实用的特性，不过可能很容易被忽视。</p>
+
+<p>关联对象类似于成员变量，不过是在运行时添加的。我们通常会把成员变量(Ivar)放在类声明的头文件中，或者放在类实现的@implementation后面。但这有一个缺点，我们不能在分类中添加成员变量。如果我们尝试在分类中添加新的成员变量，编译器会报错。</p>
+
+<p>我们可能希望通过使用(甚至是滥用)全局变量来解决这个问题。但这些都不是Ivar，因为他们不会连接到一个单独的实例。因此，这种方法很少使用。</p>
+
+<p>Objective-C针对这一问题，提供了一个解决方案：即关联对象(Associated Object)。</p>
+
+<p>我们可以把关联对象想象成一个Objective-C对象(如字典)，这个对象通过给定的key连接到类的一个实例上。不过由于使用的是C接口，所以key是一个void指针(const void *)。我们还需要指定一个内存管理策略，以告诉Runtime如何管理这个对象的内存。这个内存管理的策略可以由以下值指定：</p>
+
+<pre><code>OBJC_ASSOCIATION_ASSIGN
+OBJC_ASSOCIATION_RETAIN_NONATOMIC
+OBJC_ASSOCIATION_COPY_NONATOMIC
+OBJC_ASSOCIATION_RETAIN
+OBJC_ASSOCIATION_COPY
+</code></pre>
+
+<p>当宿主对象被释放时，会根据指定的内存管理策略来处理关联对象。如果指定的策略是assign，则宿主释放时，关联对象不会被释放；而如果指定的是retain或者是copy，则宿主释放时，关联对象会被释放。我们甚至可以选择是否是自动retain/copy。当我们需要在多个线程中处理访问关联对象的多线程代码时，这就非常有用了。</p>
+
+<p>我们将一个对象连接到其它对象所需要做的就是下面两行代码：</p>
+
+<pre><code>static char myKey;
+
+objc_setAssociatedObject(self, &amp;myKey, anObject, OBJC_ASSOCIATION_RETAIN);
+</code></pre>
+
+<p>在这种情况下，self对象将获取一个新的关联的对象anObject，且内存管理策略是自动retain关联对象，当self对象释放时，会自动release关联对象。另外，如果我们使用同一个key来关联另外一个对象时，也会自动释放之前关联的对象，这种情况下，先前的关联对象会被妥善地处理掉，并且新的对象会使用它的内存。</p>
+
+<pre><code>id anObject = objc_getAssociatedObject(self, &amp;myKey);
+</code></pre>
+
+<p>我们可以使用objc_removeAssociatedObjects函数来移除一个关联对象，或者使用objc_setAssociatedObject函数将key指定的关联对象设置为nil。</p>
+
+<p>我们下面来用实例演示一下关联对象的使用方法。</p>
+
+<p>假定我们想要动态地将一个Tap手势操作连接到任何UIView中，并且根据需要指定点击后的实际操作。这时候我们就可以将一个手势对象及操作的block对象关联到我们的UIView对象中。这项任务分两部分。首先，如果需要，我们要创建一个手势识别对象并将它及block做为关联对象。如下代码所示：</p>
+
+<pre><code>- (void)setTapActionWithBlock:(void (^)(void))block
+{
+    UITapGestureRecognizer *gesture = objc_getAssociatedObject(self, &amp;kDTActionHandlerTapGestureKey);
+
+    if (!gesture)
+    {
+        gesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(__handleActionForTapGesture:)];
+        [self addGestureRecognizer:gesture];
+        objc_setAssociatedObject(self, &amp;kDTActionHandlerTapGestureKey, gesture, OBJC_ASSOCIATION_RETAIN);
+    }
+
+    objc_setAssociatedObject(self, &amp;kDTActionHandlerTapBlockKey, block, OBJC_ASSOCIATION_COPY);
+}
+</code></pre>
+
+<p>这段代码检测了手势识别的关联对象。如果没有，则创建并建立关联关系。同时，将传入的块对象连接到指定的key上。注意block对象的关联内存管理策略。</p>
+
+<p>手势识别对象需要一个target和action，所以接下来我们定义处理方法：</p>
+
+<pre><code>- (void)__handleActionForTapGesture:(UITapGestureRecognizer *)gesture
+{
+    if (gesture.state == UIGestureRecognizerStateRecognized)
+    {
+        void(^action)(void) = objc_getAssociatedObject(self, &amp;kDTActionHandlerTapBlockKey);
+
+        if (action)
+        {
+            action();
+        }
+    }
+}
+</code></pre>
+
+<p>我们需要检测手势识别对象的状态，因为我们只需要在点击手势被识别出来时才执行操作。</p>
+
+<p>从上面的例子我们可以看到，关联对象使用起来并不复杂。它让我们可以动态地增强类现有的功能。我们可以在实际编码中灵活地运用这一特性。</p>
+
+<h3>成员变量、属性的操作方法</h3>
+
+<h4>成员变量</h4>
+
+<p>成员变量操作包含以下函数：</p>
+
+<pre><code>// 获取成员变量名
+const char * ivar_getName ( Ivar v );
+
+// 获取成员变量类型编码
+const char * ivar_getTypeEncoding ( Ivar v );
+
+// 获取成员变量的偏移量
+ptrdiff_t ivar_getOffset ( Ivar v );
+</code></pre>
+
+<p>● ivar_getOffset函数，对于类型id或其它对象类型的实例变量，可以调用object_getIvar和object_setIvar来直接访问成员变量，而不使用偏移量。</p>
+
+<h4>关联对象</h4>
+
+<p>关联对象操作函数包括以下：</p>
+
+<pre><code>// 设置关联对象
+void objc_setAssociatedObject ( id object, const void *key, id value, objc_AssociationPolicy policy );
+
+// 获取关联对象
+id objc_getAssociatedObject ( id object, const void *key );
+
+// 移除关联对象
+void objc_removeAssociatedObjects ( id object );
+</code></pre>
+
+<p>关联对象及相关实例已经在前面讨论过了，在此不再重复。</p>
+
+<h4>属性</h4>
+
+<p>属性操作相关函数包括以下：</p>
+
+<pre><code>// 获取属性名
+const char * property_getName ( objc_property_t property );
+
+// 获取属性特性描述字符串
+const char * property_getAttributes ( objc_property_t property );
+
+// 获取属性中指定的特性
+char * property_copyAttributeValue ( objc_property_t property, const char *attributeName );
+
+// 获取属性的特性列表
+objc_property_attribute_t * property_copyAttributeList ( objc_property_t property, unsigned int *outCount );
+</code></pre>
+
+<p>● property_copyAttributeValue函数，返回的char *在使用完后需要调用free()释放。
+● property_copyAttributeList函数，返回值在使用完后需要调用free()释放。</p>
+
+<h2>实例</h2>
+
+<p>假定这样一个场景，我们从服务端两个不同的接口获取相同的字典数据，但这两个接口是由两个人写的，相同的信息使用了不同的字段表示。我们在接收到数据时，可将这些数据保存在相同的对象中。对象类如下定义：</p>
+
+<pre><code>@interface MyObject: NSObject
+
+@property (nonatomic, copy) NSString    *   name;                  
+@property (nonatomic, copy) NSString    *   status;                 
+
+@end
+</code></pre>
+
+<p>接口A、B返回的字典数据如下所示：</p>
+
+<pre><code>@{@"name1": "张三", @"status1": @"start"}
+
+@{@"name2": "张三", @"status2": @"end"}
+</code></pre>
+
+<p>通常的方法是写两个方法分别做转换，不过如果能灵活地运用Runtime的话，可以只实现一个转换方法，为此，我们需要先定义一个映射字典(全局变量)</p>
+
+<pre><code>static NSMutableDictionary *map = nil;
+
+@implementation MyObject
+
++ (void)load
+{
+    map = [NSMutableDictionary dictionary];
+
+    map[@"name1"]                = @"name";
+    map[@"status1"]              = @"status";
+    map[@"name2"]                = @"name";
+    map[@"status2"]              = @"status";
+}
+
+@end
+</code></pre>
+
+<p>上面的代码将两个字典中不同的字段映射到MyObject中相同的属性上，这样，转换方法可如下处理：</p>
+
+<pre><code>- (void)setDataWithDic:(NSDictionary *)dic
+{
+    [dic enumerateKeysAndObjectsUsingBlock:^(NSString *key, id obj, BOOL *stop) {
+
+        NSString *propertyKey = [self propertyForKey:key];
+
+        if (propertyKey)
+        {
+            objc_property_t property = class_getProperty([self class], [propertyKey UTF8String]);
+
+            // TODO: 针对特殊数据类型做处理
+            NSString *attributeString = [NSString stringWithCString:property_getAttributes(property) encoding:NSUTF8StringEncoding];
+
+            ...
+
+            [self setValue:obj forKey:propertyKey];
+        }
+    }];
+}
+</code></pre>
+
+<p>当然，一个属性能否通过上面这种方式来处理的前提是其支持KVC。</p>
+
+<h2>小结</h2>
+
+<p>本章中我们讨论了Runtime中与成员变量和属性相关的内容。成员变量与属性是类的数据基础，合理地使用Runtime中的相关操作能让我们更加灵活地来处理与类数据相关的工作。</p>
+
+<h2>参考</h2>
+
+<ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Introduction/Introduction.html">Objective-C Runtime Programming Guide</a></li>
+<li><a href="http://www.cocoanetics.com/2012/06/associated-objects/">Associated Objects</a></li>
+</ol>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Objective-C Runtime 运行时之一：类与对象]]></title>
@@ -1433,306 +1713,6 @@ NSURL *jonsSite = [sites at:@"jon"]; // =&gt; http://www.jonmsterling.com/
 <li><a href="http://blog.csdn.net/tuxiangqi/article/details/8076972">OSATOMIC与synchronized加锁的对比</a></li>
 </ol>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[在ReactiveCocoa中将一个ViewModel绑定到UITableView上]]></title>
-    <link href="http://southpeak.github.io/blog/2014/09/21/zai-reactivecocoazhong-jiang-%5B%3F%5D-ge-viewmodelbang-ding-dao-uitableviewshang/"/>
-    <updated>2014-09-21T14:14:19+08:00</updated>
-    <id>http://southpeak.github.io/blog/2014/09/21/zai-reactivecocoazhong-jiang-[?]-ge-viewmodelbang-ding-dao-uitableviewshang</id>
-    <content type="html"><![CDATA[<p>英文作者Colin Eberhardt，原文可查看<a href="http://www.scottlogic.com/blog/2014/05/11/reactivecocoa-tableview-binding.html">BINDING TO A UITABLEVIEW FROM A REACTIVECOCOA VIEWMODEL</a></p>
-
-<p>这篇博客介绍了一个工具类，这个类将ReactiveCocoa中的ViewModels绑定到UITableView，而不需要通常的datasource和delegate。下面是这个辅助类的使用方法：</p>
-
-<pre><code>// 创建一个cell
-UINib *nib = [UINib nibWithNibName:@"CETweetTableViewCell" bundle:nil];
-
-// 将ViewModels的searchResults属性绑定到table view
-[CETableViewBindingHelper bindingHelperForTableView:self.searchResultsTable
-                        sourceSignal:RACObserve(self.viewModel, searchResults)
-                        templateCell:nib];
-</code></pre>
-
-<h2>介绍</h2>
-
-<p>我总是在不断的编写代码：在工作中，在家里，在火车上&hellip;如果我不写代码，我就会觉得不快乐！(注：这才是真正的程序员啊)</p>
-
-<p>在过去的几个月中，我开始在我的工程中越来越多地使用ReactiveCocoa了。这个框架可以用来创建一些非常优雅的解决方案，但同时它非常具有挑战性，因为对于任何一个问题，都有许多可用的解决方案。对于像我这样的编码狂人来说，这再好不过了。</p>
-
-<p>几个月之前，我在Ray Wenderlich的网站上发表了两篇关于ReactiveCocoa的文章(<a href="http://www.raywenderlich.com/62699/reactivecocoa-tutorial-pt1">第一部分</a>、<a href="http://www.raywenderlich.com/62796/reactivecocoa-tutorial-pt2">第二部分</a>)，以及一个<a href="http://www.raywenderlich.com/70598/reactivecocoa-tech-talk-video">Tech Talk</a>视频。这些覆盖了ReactiveCocoa的基本用法，希望能让广大读者熟悉ReactiveCocoa。不过，我收到不少请求，希望能讨论一些使用ReactiveCocoa实现MVVM模式的高级话题。</p>
-
-<p>正因此，我开始写这篇文章。不过，在我发布之前，我想先分享一个已纠缠我很久的问题&hellip;</p>
-
-<p>如果将一个UITableView绑定到一个ReactiveCocoa的ViewModel中？</p>
-
-<h2>视图模式</h2>
-
-<p>我以一个简单的例子开头&mdash;一个允许我们搜索Twitter的ViewModel：</p>
-
-<pre><code>/// A view model which provides a mechanism for searching twitter
-@interface CETwitterSearchViewModel : NSObject
-
-/// The current search text
-@property NSString *searchText;
-
-/// An array of CETweetViewModel instances which indicate
-/// the current search results
-@property NSArray *searchResults;
-
-/// A command which when executed searches twitter using the current searchText
-@property RACCommand *searchCommand;
-
-@end
-</code></pre>
-
-<p>这个ViewModel的实现重用了我在ReactiveCocoa指南第二部分所创建的信号，所以我不在此重复。如果想要看详细的代码，可以在github上查找。</p>
-
-<p>将ViewModel绑定到一个带有UITextField和UIButton的UI是使用ReactiveCocoa最普通不过工作了</p>
-
-<pre><code>// bind the UITextField text updates to the view model
-RAC(self.viewModel, searchText) = self.searchTextField.rac_textSignal;
-
-// bind a button to the search command
-self.searchButton.rac_command = self.viewModel.searchCommand;
-
-// when the search executes hide the keyboard
-[self.viewModel.searchCommand.executing subscribeNext:^(id x) {
-  [self.searchTextField resignFirstResponder];
-}];
-
-// show a network activity indicator when the search is being executed
-RAC([UIApplication sharedApplication], networkActivityIndicatorVisible) =
-  self.viewModel.searchCommand.executing;
-</code></pre>
-
-<p>在上面的代码中，当点击go按钮时，我们处理了诸如隐藏键盘这样的操作，并将网络连接的activity indicator绑定到了searchCommand.executing信号。</p>
-
-<p><img src="http://www.scottlogic.com/blog/ceberhardt/assets/mvvm/UIBinding.png" alt="image" /></p>
-
-<p>这样就将ViewModel三个属性中的两个绑定到了UI，到目前为止，一切都还不错！</p>
-
-<p>最后一个属性是searchResults；这个属性是一个数组，包含了搜索结果。我们可以通过RACObserve来观察这个属性的修改，RACObserve创建了一个信号，该信号会在每次更新时发出一个next事件。但不幸的是，我们不能只给UITableView一个对象的数组，并告诉它去渲染自己。</p>
-
-<p>如果我们在StackOverflow上搜索相关帖子，或者查看别人的ReactiveCocoa实例，可以看到传统的方式似乎是我们需要自己去实现table view的代理和数据源。换句话说，我们之前优雅的只需要几行绑定代码的视图类代码会由于需要实现table view的各种逻辑而显示异常丑陋。</p>
-
-<p>不过，我们有更好的方法。</p>
-
-<h2>一个Table View绑定辅助类</h2>
-
-<p>在MVVM模式中，每一个View都由一个ViewModel支撑着。一个视图可能占据整个屏幕(此时我们将一个视图控制器绑定到一个ViewModel)，或者只占据屏幕的一部分。</p>
-
-<p>我们的顶层ViewModel的searchResults属性包含了一个对象数组，其中每一个元素都是一个ViewModel。为了解决这个问题，我们需要的是一个通用的机制来为每个视图创建一个ViewModel，并将这两者绑定在一起。</p>
-
-<p>Nib提供了一种便捷的机制来定义可重用的视图。可以方便地使用nib来定义一个table view的单元格。</p>
-
-<p>一个合理的table view绑定辅助类的接口如下：</p>
-
-<pre><code>/// A helper class for binding view models with NSArray properties
-/// to a UITableView.
-@interface CETableViewBindingHelper : NSObject
-
-- (instancetype) initWithTableView:(UITableView *)tableView
-                      sourceSignal:(RACSignal *)source
-                      templateCell:(UINib *)templateCellNib;
-
-@end
-</code></pre>
-
-<p>这个绑定类使用提供的table view来渲染由源信号所提供的view model，另外templeteCell定义了视图。让我们来看看这个辅助类的实现：</p>
-
-<pre><code>＠interface CETableViewBindingHelper () &lt;UITableViewDataSource&gt;
-
-＠end
-
-＠implementation CETableViewBindingHelper {
-  UITableView *_tableView;
-  NSArray *_data;
-  UITableViewCell *_templateCell;
-}
-
-- (instancetype)initWithTableView:(UITableView *)tableView
-                     sourceSignal:(RACSignal *)source
-                     templateCell:(UINib *)templateCellNib {
-
-  if (self = [super init]) {
-    _tableView = tableView;
-    _data = [NSArray array];
-
-    // each time the view model updates the array property, store the latest
-    // value and reload the table view
-    [source subscribeNext:^(id x) {
-      _data = x;
-      [_tableView reloadData];
-    }];
-
-    // create an instance of the template cell and register
-    // with the table view
-    _templateCell = [[templateCellNib instantiateWithOwner:nil
-                                          options:nil] firstObject];
-    [_tableView registerNib:templateCellNib
-              forCellReuseIdentifier:_templateCell.reuseIdentifier];
-
-    // use the template cell to set the row height
-    _tableView.rowHeight = _templateCell.bounds.size.height;
-
-    _tableView.dataSource = self;
-  }
-  return self;
-}
-
-#pragma mark - UITableViewDataSource implementation
-
-- (NSInteger)tableView:(UITableView *)tableView
-                       numberOfRowsInSection:(NSInteger)section {
-  return _data.count;
-}
-
-- (UITableViewCell *)tableView:(UITableView *)tableView
-                        cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-  id&lt;CEReactiveView&gt; cell = [tableView
-      dequeueReusableCellWithIdentifier:_templateCell.reuseIdentifier];
-  [cell bindViewModel:_data[indexPath.row]];
-  return (UITableViewCell *)cell;
-}
-
-＠end
-</code></pre>
-
-<p>注意，初始化方法是内在逻辑所在。在这里，sourceSignal添加了一个subscriber，这样每次ViewModel的数组属性变化时，当前属性值的引用都会被保存，而table view也会重新加载。同样，也会创建templeteCell实例，来确定单元格的高度。</p>
-
-<p>最后，这个类实现了table view的数据源方法，并通过信号来获取数据。</p>
-
-<p>其中，单元格Cell必须实现以下协议，该协议提供了一个信号方法来将Cell绑定到相应的ViewModel上。</p>
-
-<pre><code>/// A protocol which is adopted by views which are backed by view models.
-@protocol CEReactiveView &lt;NSObject&gt;
-
-/// Binds the given view model to the view
-- (void)bindViewModel:(id)viewModel;
-
-@end 
-</code></pre>
-
-<p>将这个用于实际当中，现在只需要几行代码就可以将一个数组属性绑定到一个table view上了。</p>
-
-<pre><code>// create a cell template
-UINib *nib = [UINib nibWithNibName:@"CETweetTableViewCell" bundle:nil];
-
-// bind the view models 'searchResults' property to a table view
-[[CETableViewBindingHelper alloc]
-      initWithTableView:self.searchResultsTable
-           sourceSignal:RACObserve(self.viewModel, searchResults)
-           templateCell:nib];
-</code></pre>
-
-<p>注意，源信号是通过RACObserver宏来创建的。这个信号在每次属性通过setter来改变都会发出一个next事件。</p>
-
-<p>cell的实现类似于视图控制器；它们的UI控件定义在一个nib文件中并连接到相应的outlet属性。下图是该示例程序中定义cell的nib：</p>
-
-<p><img src="http://www.scottlogic.com/blog/ceberhardt/assets/mvvm/CellNib.png" alt="image" /></p>
-
-<p>定义在CEReactiveView协议中的ViewModel绑定方法实现如下：</p>
-
-<pre><code>- (void)bindViewModel:(id)viewModel {
-
-  CETweetViewModel *tweet = (CETweetViewModel *)viewModel;
-
-  // set the tweet 'status' label, sizing it to fit the text
-  self.titleTextField.frame =
-                 CGRectInset(self.titleBackgroundView.frame, 5.0f, 5.0f) ;
-  self.titleTextField.text = tweet.status;
-  [self.titleTextField sizeToFit];
-
-  // set the username
-  self.usernameTextField.text = tweet.username;
-
-  // use signals to fetch the images for each image view
-  self.profileImage.image = nil;
-  [[self signalForImage:[NSURL URLWithString:tweet.profileBannerUrl]]
-    subscribeNext:^(id x) {
-      self.ghostImageView.image = x;
-    }];
-
-  self.ghostImageView.image = nil;
-  [[self signalForImage:[NSURL URLWithString:tweet.profileImageUrl]]
-    subscribeNext:^(id x) {
-      self.profileImage.image = x;
-    }];
-} 
-</code></pre>
-
-<p>注意，由于CETweetViewModel的属性不会发生变化，因此它们的值直接被拷贝到相应的UI控件上。当然，如果它们的值会改变，我们也可以使用ReactiveCocoa来将两者绑定到一起。</p>
-
-<p>cell的实现同样使用了ReactiveCocoa在后台加载图片：</p>
-
-<pre><code>// creates a signal that fetches an image in the background, delivering
-// it on the UI thread. This signal 'cancels' itself if the cell is re-used before the
-// image is downloaded.
--(RACSignal *)signalForImage:(NSURL *)imageUrl {
-
-  RACScheduler *scheduler = [RACScheduler 
-                 schedulerWithPriority:RACSchedulerPriorityBackground];
-
-  RACSignal *imageDownloadSignal = [[RACSignal
-    createSignal:^RACDisposable *(id&lt;RACSubscriber&gt; subscriber) {
-      NSData *data = [NSData dataWithContentsOfURL:imageUrl];
-      UIImage *image = [UIImage imageWithData:data];
-      [subscriber sendNext:image];
-      [subscriber sendCompleted];
-      return nil;
-    }] subscribeOn:scheduler];
-
-  return [[imageDownloadSignal
-          takeUntil:self.rac_prepareForReuseSignal]
-          deliverOn:[RACScheduler mainThreadScheduler]];
-
-}
-</code></pre>
-
-<p>通过这种方式，我们就可以让我们的视图控制器保持少量的代码。看，是不是很整洁。</p>
-
-<p>下面是完整的程序的实现效果：</p>
-
-<p><img src="http://www.scottlogic.com/blog/ceberhardt/assets/mvvm/CellBinding.png" alt="image" /></p>
-
-<h2>处理选中事件</h2>
-
-<p>当前的绑定辅助类允许我们在一个table view中渲染ViewModel的数组，但如果我们需要处理选中事件呢？传统的方法是在视图控制器的手动处理，实现table view的代理方法，并执行相关的ViewModel的命令。</p>
-
-<p>不过，这部分逻辑代码也可以放入到绑定辅助类中。</p>
-
-<p>首先，我们在初始化方法中添加一个选择命令：</p>
-
-<pre><code>- (instancetype) initWithTableView:(UITableView *)tableView
-                      sourceSignal:(RACSignal *)source
-                  selectionCommand:(RACCommand *)selection                  
-                      templateCell:(UINib *)templateCellNib;
-</code></pre>
-
-<p>这个初始化方法的实现现在存储了这个命令的引用。辅助类同样也实现了table view的代理，即tableView:didSelectRowAtIndexPath:方法的实现如下：</p>
-
-<pre><code>- (void)tableView:(UITableView *)tableView
-               didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
-  [_selection execute:_data[indexPath.row]];
-}
-</code></pre>
-
-<p>即当命令被调用时，会将选择的ViewModel作为执行参数传入。</p>
-
-<p>在顶层ViewModel中，我已经添加了一个命令，这个操作只是简单地记录一下日志：</p>
-
-<pre><code> // create the tweet selected command, that simply logs
- self.tweetSelectedCommand = [[RACCommand alloc]
-             initWithSignalBlock:^RACSignal *(CETweetViewModel *selected) {
-   NSLog(selected.status);
-   return [RACSignal empty];
- }];
-</code></pre>
-
-<h2>结论</h2>
-
-<p>希望这个table view绑定辅助类能够帮助那些使用MVVM和ReactiveCocoa来开发iOS应用的开发者们。所有的代码都在github上。如果您有任何意见、想法或建议，请让我知道。</p>
 ]]></content>
   </entry>
   
