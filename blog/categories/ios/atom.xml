@@ -4,7 +4,7 @@
   <title><![CDATA[Category: ios | 南峰子的技术博客]]></title>
   <link href="http://southpeak.github.io/blog/categories/ios/atom.xml" rel="self"/>
   <link href="http://southpeak.github.io/"/>
-  <updated>2014-11-06T21:47:05+08:00</updated>
+  <updated>2014-11-06T23:17:05+08:00</updated>
   <id>http://southpeak.github.io/</id>
   <author>
     <name><![CDATA[南峰子]]></name>
@@ -27,15 +27,24 @@
 <p>这种情况下，我们就可以使用Method Swizzling，如在代码所示：</p>
 
 <pre><code>#import &lt;objc/runtime.h&gt;
+
 @implementation UIViewController (Tracking)
-+ (void)load {      static dispatch_once_t onceToken;       dispatch_once(&amp;onceToken, ^{            Class class = [self class];
+
++ (void)load {      static dispatch_once_t onceToken;       dispatch_once(&amp;onceToken, ^{
+        Class class = [self class];         
         // When swizzling a class method, use the following:            // Class class = object_getClass((id)self);
         SEL originalSelector = @selector(viewWillAppear:);          SEL swizzledSelector = @selector(xxx_viewWillAppear:);
+
         Method originalMethod = class_getInstanceMethod(class, originalSelector);           Method swizzledMethod = class_getInstanceMethod(class, swizzledSelector);
+
         BOOL didAddMethod =             class_addMethod(class,                  originalSelector,                   method_getImplementation(swizzledMethod),                   method_getTypeEncoding(swizzledMethod));
+
         if (didAddMethod) {             class_replaceMethod(class,                  swizzledSelector,                   method_getImplementation(originalMethod),                   method_getTypeEncoding(originalMethod));            } else {                method_exchangeImplementations(originalMethod, swizzledMethod);         }       }); }
+
 #pragma mark - Method Swizzling
+
 - (void)xxx_viewWillAppear:(BOOL)animated {     [self xxx_viewWillAppear:animated];     NSLog(@"viewWillAppear: %@", self); }
+
 @end
 </code></pre>
 
