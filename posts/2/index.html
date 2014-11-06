@@ -11,7 +11,7 @@
   <meta name="baidu-site-verification" content="HoscFhWICI" />
 
   
-  <meta name="description" content="并发编程一个主要问题就是如何同步数据。同步数据的方式有很多种，这里我们介绍一下libkern/OSAtomic.h。这个头文件包含是大量关于原子操作和同步操作的函数，如果要对数据进行同步操作，这里面的函数可以作为我们的首选项。不同平台这些函数的实现是自定义的。另外，它们是线程安全的。 需要注意的是 &hellip;">
+  <meta name="description" content="注：原文由Mattt Thompson发表于nshipster：instancetype。文章是2012年写的，所以有些内容现在已不适用。 在Objective-C中，约定(conventions)不仅仅是编码最佳实践的问题，同时对编译器来说，也是一种隐式说明。 例如， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -68,6 +68,102 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/10/19/instancetype/">instancetype</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-10-19T00:26:03+08:00" pubdate data-updated="true">Oct 19<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/10/19/instancetype/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>注：原文由Mattt Thompson发表于nshipster：<a href="http://nshipster.com/instancetype/">instancetype</a>。<strong>文章是2012年写的，所以有些内容现在已不适用。</strong></p>
+
+<p>在Objective-C中，约定(conventions)不仅仅是编码最佳实践的问题，同时对编译器来说，也是一种隐式说明。</p>
+
+<p>例如，alloc和init两个方法都返回id类型，而在Xcode中，编译器会对它们进行类型检查。这是怎么做到的呢？</p>
+
+<p>在Cocoa中，有一个这样的约定，命名为alloc/init的方法总是返回接收者类的实例。这些方法有一个相关的返回类型。</p>
+
+<p>而类的构造方法(类方法)，虽然他们都是返回id类型，但没有从类型检查中获得好处，因为他们不遵循命名约定。</p>
+
+<p>我们可以试试以下代码：</p>
+
+<pre><code>[[[NSArray alloc] init] mediaPlaybackAllowsAirPlay]; // 报错： "No visible @interface for `NSArray` declares the selector `mediaPlaybackAllowsAirPlay`"
+
+[[NSArray array] mediaPlaybackAllowsAirPlay]; // (No error) 注：这个方法调用只在老的编译器上成立，新的编译器会报相同的错误。
+</code></pre>
+
+<p>由于alloc和init遵循返回相关结果类型的约定，所以会对NSArray执行类型检查。然而等价的类构造方法array则不遵循这一约定，只解释为id类型。</p>
+
+<p>id类型在不需要确保类型安全时非常有用，但一旦需要时，就无法处理了。</p>
+
+<p>而另一种方法，即显示声明返回类型(如前面例子中的(NSArray *))稍微改善了一些，但写起来有点麻烦，而且在继承体系中表现得不是很好。</p>
+
+<p>这时编译器就需要去解决这种针对Objective-C类型系统的边界情况了:</p>
+
+<p>instancetype是一个上下文关键字，可用在返回类型中以表示方法返回一个相关的结果类型，如：</p>
+
+<pre><code>@interface Person
++ (instancetype)personWithName:(NSString *)name;
+@end
+</code></pre>
+
+<p>使用instancetype，编译器可以正确地知道personWithName:的返回结果是一个Person实例。</p>
+
+<p>我们现在看Foundation中的类构造器，可以发现大部分已经开始使用了instancetype了。新的API，如UICollectionViewLayoutAttributes，都是使用instancetype了。</p>
+
+<p><em>注：instancetype与id不同的是，它只能用在方法声明的返回值中。</em></p>
+
+<h4>更进一步的启示</h4>
+
+<p>语言特性是特别有趣的，因为它不清楚在软件设计的更高层次方面会带来什么样的影响。</p>
+
+<p>虽然instancetype看上去非常一般，只是对编译器有用，但也可能被用于一些更聪明的目的。</p>
+
+<p>Jonathan Sterling的文章<a href="http://www.jonmsterling.com/posts/2012-02-05-typed-collections-with-self-types-in-objective-c.html">this quite interesting article</a>，详细描述了instancetype如何被用于编码静态类型集合，而不需要使用泛型：</p>
+
+<pre><code>NSURL &lt;MapCollection&gt; *sites = (id)[NSURL mapCollection];
+[sites put:[NSURL URLWithString:@"http://www.jonmsterling.com/"]
+        at:@"jon"];
+[sites put:[NSURL URLWithString:@"http://www.nshipster.com/"]
+        at:@"nshipster"];
+
+NSURL *jonsSite = [sites at:@"jon"]; // =&gt; http://www.jonmsterling.com/
+</code></pre>
+
+<p>静态类型集合使得API更有表现力，这样开发者将不再需要去确定集合中的参数可以使用使用类型的对象了。</p>
+
+<p>不管这会不会成为Objective-C公认的约定，诸如instancetype这样一个低层特性可用于改变语言的形态已是非常棒的一件事了。</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -944,164 +1040,6 @@ UINib *nib = [UINib nibWithNibName:@"CETweetTableViewCell" bundle:nil];
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/09/15/dui-yu-ios-8de-size-classesde-si-kao/">对于iOS 8的Size Classes的思考</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-09-15T17:25:53+08:00" pubdate data-updated="true">Sep 15<sup>th</sup>, 2014</time>
-        
-        
-           | <a href="/blog/2014/09/15/dui-yu-ios-8de-size-classesde-si-kao/#comments">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>原文链接：<a href="http://carpeaqua.com/2014/06/14/thinking-in-terms-of-ios-8-size-classes/">Thinking In Terms Of iOS 8 Size Classes</a></p>
-
-<p>对于最新的iOS8 SDK来说，最性感也最重要的的特性也许莫过于Size Classes了。</p>
-
-<p>在聊Size Classes之前，我们先来回顾下历史。</p>
-
-<h2>一堂历史课</h2>
-
-<p>最初，iOS推出时，我们只有一种设备：iPhone。它的屏幕大小是320*480。不过即使如此，它也是同时支付横屏和竖屏。设计同时支持两个方向的App不是像Mobile Safari或Messages那样，简单地拉伸和重新设置视图的大小。在大多数情况下，我们需要移动按钮和其它控件来让其适应横屏(480*320)。</p>
-
-<p>几年后的现在，我们有了高清屏，iPads和大屏的iPhone。当然，所有这些设备都是支持横屏和竖屏的。解决这个适配问题的传统的方法是在视图控制器和自定义视图中监听设备方向的变化，同时使用多个xib或storyboard。</p>
-
-<p>假设我已经构建了一个同时支持iPhone和iPad的的Glassboard工程。在iOS7和老的版本之前，我们需要针对iPad单独创建一个storyboard，这个storyboard包含重建的视图控制器，outlet属性和target/action。这相当于是重复工作了。任何程序员都知道这不是个好主意。需要在两个不同的地方做相同的改变真是件糟糕的事。</p>
-
-<p>如果是使用代码，则我们需要在代码中检测屏幕方向及设备大小，以便我们能手动调整我们的约束或基于frame的布局。我们的代码会像下面这段代码一样：</p>
-
-<pre><code>UIDevice *device = [UIDevice currentDevice];
-UIDeviceOrientation currentOrientation = device.orientation;
-BOOL isPhone = (device.userInterfaceIdiom == UIUserInterfaceIdiomPhone);
-BOOL isTallPhone = ([[UIScreen mainScreen] bounds].size.height == 568.0);
-if (UIDeviceOrientationIsPortrait(currentOrientation) == YES)
-{
-    // Do Portrait Things
-    if (isPhone == YES)
-    {
-        // Do Portrait Phone Things
-        // Don't deny you've done this at least once.
-        if (isTallPhone)
-        {
-            // iPhone 5+
-        }
-        else
-        {
-            // Old phones
-        }
-    }
-    else
-    {
-        // Do Portrait iPad things.
-    }
-}
-else
-{
-    // Do Landscape Things.
-    if (isPhone == YES)
-    {
-        // Do Landscape Phone Things
-    }
-    else
-    {
-        // Do Landscape iPad things.
-    }
-}
-</code></pre>
-
-<h2>Size Classes</h2>
-
-<p>显然，上面的这些方案都不理想，而且随着苹果新设备的推出，这种情况会变得越来越糟。在今年的WWDC上，苹果除了介绍自动布局的新特性外，我们同样也看到了许多可变iOS模拟器的事例，以及一种处理所有这些问题和屏幕问题的新技术：Size Classes。</p>
-
-<p>Size Classes是iOS使用的一种新的技术，允许我们为给定的设备自定义我们的程序，而且是基于设备的方向和屏幕大小的。</p>
-
-<p>Size Classes有两个目的：</p>
-
-<ol>
-<li>让开发人员和设计人员跳出指定设备的范畴，而是以更广义的范畴来思考问题</li>
-<li>为未来做准备</li>
-</ol>
-
-
-<p>第一个目的也引出了第二个目的。我们看到各种传说，说iPhone 6, 7将会是更大的设备。你也看到了苹果已经开发出了可穿戴设备(Apple Watch)。那么有什么方法可以让为这些设备开发变得更容易呢？那就是Size Classes。</p>
-
-<p>目前从XCode 6上可以看到有四种类型的Size Classes：</p>
-
-<p><img src="http://cdn.carpeaqua.com.s3.amazonaws.com/images/size-classes/size_class_chart.jpg" alt="image" /></p>
-
-<ol>
-<li>宽紧凑(Compact)</li>
-<li>长紧凑</li>
-<li>宽正常(Regular)</li>
-<li>长正常</li>
-</ol>
-
-
-<p>任意时刻，我们的设备都有一个水平方向的Size Class和一个竖直方向的Size Class。这两者都是用来定义布局属性与物征(trait)的集合，以在屏幕上显示内容给用户。</p>
-
-<h2>特征(Traits)</h2>
-
-<p>水平和竖直的Size Class被认为是Traits。结合当前界面术语和显示比例，一起组成了一个特征集合。这不只是包含了指定的控制应该放在屏幕的什么地方。</p>
-
-<p>特征(Trait)也可以用于诸如image assets的东西上(假设你正在使用Asset Catalogs)。在asset中，我们不仅可以包含1x和2x版本，我们还可以为不同的size class指定不同的image asset。在代码中，它看着仍然是相同的UIImage调用。Asset Catalogs负责基于当前的特征集合来渲染合适的图片。</p>
-
-<h2>为Size Classes设计</h2>
-
-<p>Size Classes对于开发人员来讲是一个很好的扩展，因为当我们需要支持多种设备和方向时，它能简化我们的开发。通过简化我们的工作，苹果可以更容易地开发新的设备，并可以让开发者开发能用的应用，而不仅仅是只为iPhone开发程序。</p>
-
-<p>对于开发者来说，最大的改变是我们需要再一次修改我们的关于不同方向的代码。大家已经习惯了吧，谁让我们是开发者呢。</p>
-
-<p>对于设计者来说，特征集合意味着可以少考虑是为哪种设备来做设计，而可以更多的考虑设备的属性。现在，设计者最需要考虑的因素是物理屏幕大小。</p>
-
-<p>由于不能确保每台设备的屏幕尺寸都与Photoshop或测试样机保持一致，所以单独为特定的场景做设计已经站不住脚了。相反，我们的目标是应该为一类设备做通用的设计，主要包括：</p>
-
-<ol>
-<li>手机上的肖像模式</li>
-<li>平板上的肖像模式</li>
-<li>手机上的景观模式</li>
-<li>平板上的景观模式</li>
-</ol>
-
-
-<p>现在iPhone 6来了，它的屏幕也变大了，它拥有与iPhone 4s和5一样的特征集合。当然，iPhone 6的尺寸比原来的手机更大了，但是UI应该基于为指定特征集合定义的界面，来做自适应的处理。</p>
-
-<p>这可能意味着设计者需要推翻自己以前的一些设计，但这就是事实。就像软件开发一样，软件设计需要符合这些约束。新的约束就是我们不能再活在只为特定屏幕尺寸做设计的世界里面了。我们不是要像Android一样，但这是苹果希望我们前进的方向。</p>
-
-<h2>采用Size Classes</h2>
-
-<p>好消息是，Interface Builder可以让我们更好的使用Size Classes。更好的消息是，这些Interface Builder变化是向后兼容的，所以我们可以在合适的地方简化和合并Storyboards和Xibs，而不会落下任何用户。</p>
-
-<p>不太好的消息是，如果需要在代码中使用特征集合，则只支持iOS 8。这是因为苹果很少为老的系统提供新的API接口。这就意味着我们需要在代码中添加一些新的分支来支持不同的系统。例如，为自定义的UIView调整intrinsicContentSize属性。如果系统是iOS8，我们可以使用竖直和水平的size class来确定这个值，但如果设备仍然是iOS 7或老版本，则已存在的代码仍然需要保留。</p>
-
-<p>因为我使用并推荐Interface Builder，所以比起那些仍然活在“将一切写在代码”口号中的人们来说，我的工作明显地减少了。如果你仍然在那个阵营里面，我强烈建议你使用iOS 8, XCode 6和特征集合，并以此为契机加入到Interface Builder阵营中来。这样不仅能减少我们的代码量，同样可以通过提取大量的特征处理到一个视觉UI库来简化代码。</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/3">&larr; Older</a>
@@ -1118,7 +1056,7 @@ else
 <section>
 <h1>分类</h1>
 <ul>
-  <li><a href='/blog/categories/ios'>ios (34)</a></li>
+  <li><a href='/blog/categories/ios'>ios (35)</a></li>
   <li><a href='/blog/categories/network'>network (3)</a></li>
   <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
   <li><a href='/blog/categories/swift'>swift (7)</a></li>
@@ -1130,6 +1068,10 @@ else
 <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/11/06/objective-c-runtime-yun-xing-shi-zhi-si-:method-swizzling/">Objective-C Runtime 运行时之四：Method Swizzling</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2014/11/03/objective-c-runtime-yun-xing-shi-zhi-san-:fang-fa-yu-xiao-xi-zhuan-fa/">Objective-C Runtime 运行时之三：方法与消息</a>
@@ -1165,10 +1107,6 @@ else
     
       <li class="post">
         <a href="/blog/2014/09/18/ios8zhong-sao-miao-wi-fishi-macdi-zhi-de-sui-ji-hua/">iOS8中扫描Wi-Fi时MAC地址的随机化</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/09/15/dui-yu-ios-8de-size-classesde-si-kao/">对于iOS 8的Size Classes的思考</a>
       </li>
     
   </ul>
