@@ -109,7 +109,8 @@
 
 @implementation UIViewController (Tracking)
 
-+ (void)load {      static dispatch_once_t onceToken;       dispatch_once(&amp;onceToken, ^{
++ (void)load {
+        static dispatch_once_t onceToken;       dispatch_once(&amp;onceToken, ^{
         Class class = [self class];         
         // When swizzling a class method, use the following:            // Class class = object_getClass((id)self);
         SEL originalSelector = @selector(viewWillAppear:);          SEL swizzledSelector = @selector(xxx_viewWillAppear:);
