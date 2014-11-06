@@ -410,6 +410,8 @@ NSObject的forwardInvocation:方法实现只是简单调用了doesNotRecognizeSe
 
 在此，我们已经了解了Runtime中消息发送和转发的基本机制。这也是Runtime的强大之处，通过它，我们可以为程序增加很多动态的行为，虽然我们在实际开发中很少直接使用这些机制(如直接调用objc_msgSend)，但了解它们有助于我们更多地去了解底层的实现。其实在实际的编码过程中，我们也可以灵活地使用这些机制，去实现一些特殊的功能，如hook操作等。
 
+***注：如有不对之处，还请指正，欢迎加QQ好友：1318202110(南峰子)***
+
 ## 参考
 
 1. [Objective-C Runtime Reference](https://developer.apple.com/library/ios/documentation/Cocoa/Reference/ObjCRuntimeRef)

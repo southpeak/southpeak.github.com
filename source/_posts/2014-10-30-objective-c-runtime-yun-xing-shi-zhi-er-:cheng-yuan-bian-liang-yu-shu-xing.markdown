@@ -260,6 +260,8 @@ Objective-C针对这一问题，提供了一个解决方案：即关联对象(As
 
 本章中我们讨论了Runtime中与成员变量和属性相关的内容。成员变量与属性是类的数据基础，合理地使用Runtime中的相关操作能让我们更加灵活地来处理与类数据相关的工作。
 
+***注：如有不对之处，还请指正，欢迎加QQ好友：1318202110(南峰子)***
+
 ## 参考
 
 1. [Objective-C Runtime Programming Guide](https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Introduction/Introduction.html)
