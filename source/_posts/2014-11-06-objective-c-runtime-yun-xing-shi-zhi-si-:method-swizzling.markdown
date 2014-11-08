@@ -21,15 +21,46 @@ Method Swizzling是改变一个selector的实际实现的技术。通过这一�
 这种情况下，我们就可以使用Method Swizzling，如在代码所示：
 
 	#import <objc/runtime.h>
+	
 	@implementation UIViewController (Tracking)
-	+ (void)load {	    static dispatch_once_t onceToken;	    dispatch_once(&onceToken, ^{	        Class class = [self class];
-			// When swizzling a class method, use the following:	        // Class class = object_getClass((id)self);
-			SEL originalSelector = @selector(viewWillAppear:);	        SEL swizzledSelector = @selector(xxx_viewWillAppear:);
-			Method originalMethod = class_getInstanceMethod(class, originalSelector);	        Method swizzledMethod = class_getInstanceMethod(class, swizzledSelector);
-			BOOL didAddMethod =	            class_addMethod(class,	                originalSelector,	                method_getImplementation(swizzledMethod),	                method_getTypeEncoding(swizzledMethod));
-			if (didAddMethod) {	            class_replaceMethod(class,	                swizzledSelector,	                method_getImplementation(originalMethod),	                method_getTypeEncoding(originalMethod));	        } else {	            method_exchangeImplementations(originalMethod, swizzledMethod);	        }	    });	}
+	
+	+ (void)load {
+		    static dispatch_once_t onceToken;
+	    dispatch_once(&onceToken, ^{
+	        Class class = [self class];	        
+			// When swizzling a class method, use the following:
+				        // Class class = object_getClass((id)self);
+
+			SEL originalSelector = @selector(viewWillAppear:);
+				        SEL swizzledSelector = @selector(xxx_viewWillAppear:);
+
+			Method originalMethod = class_getInstanceMethod(class, originalSelector);
+				        Method swizzledMethod = class_getInstanceMethod(class, swizzledSelector);
+
+			BOOL didAddMethod =
+				            class_addMethod(class,
+	                originalSelector,
+	                method_getImplementation(swizzledMethod),
+	                method_getTypeEncoding(swizzledMethod));
+
+			if (didAddMethod) {
+				            class_replaceMethod(class,
+	                swizzledSelector,
+	                method_getImplementation(originalMethod),
+	                method_getTypeEncoding(originalMethod));
+	        } else {
+	            method_exchangeImplementations(originalMethod, swizzledMethod);
+	        }
+	    });
+	}
+
 	#pragma mark - Method Swizzling
-	- (void)xxx_viewWillAppear:(BOOL)animated {	    [self xxx_viewWillAppear:animated];	    NSLog(@"viewWillAppear: %@", self);	}
+	
+	- (void)xxx_viewWillAppear:(BOOL)animated {
+		    [self xxx_viewWillAppear:animated];
+	    NSLog(@"viewWillAppear: %@", self);
+	}
+
 	@end
 
 在这里，我们通过method swizzling修改了UIViewController的@selector(viewWillAppear:)对应的函数指针，使其实现指向了我们自定义的xxx_viewWillAppear的实现。这样，当UIViewController及其子类的对象调用viewWillAppear时，都会打印一条日志信息。
@@ -62,7 +93,10 @@ Method Swizzling是改变一个selector的实际实现的技术。通过这一�
 
 我们回过头来看看前面新的方法的实现代码：
 
-	- (void)xxx_viewWillAppear:(BOOL)animated {	    [self xxx_viewWillAppear:animated];	    NSLog(@"viewWillAppear: %@", NSStringFromClass([self class]));	}
+	- (void)xxx_viewWillAppear:(BOOL)animated {
+	    [self xxx_viewWillAppear:animated];
+	    NSLog(@"viewWillAppear: %@", NSStringFromClass([self class]));
+	}
 
 咋看上去是会导致无限循环的。但令人惊奇的是，并没有出现这种情况。在swizzling的过程中，方法中的[self xxx_viewWillAppear:animated]已经被重新指定到UIViewController类的-viewWillAppear:中。在这种情况下，不会产生无限循环。不过如果我们调用的是[self viewWillAppear:animated]，则会产生无限循环，因为这个方法的实现在运行时已经被重新指定为xxx_viewWillAppear:了。
 
