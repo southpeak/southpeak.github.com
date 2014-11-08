@@ -4,7 +4,7 @@
   <title><![CDATA[南峰子的技术博客]]></title>
   <link href="http://southpeak.github.io/atom.xml" rel="self"/>
   <link href="http://southpeak.github.io/"/>
-  <updated>2014-11-06T23:30:44+08:00</updated>
+  <updated>2014-11-08T21:24:55+08:00</updated>
   <id>http://southpeak.github.io/</id>
   <author>
     <name><![CDATA[南峰子]]></name>
@@ -12,6 +12,173 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Objective-C Runtime 运行时之五：协议与分类]]></title>
+    <link href="http://southpeak.github.io/blog/2014/11/08/objective-c-runtime-yun-xing-shi-zhi-wu-:xie-yi-yu-fen-lei/"/>
+    <updated>2014-11-08T21:22:33+08:00</updated>
+    <id>http://southpeak.github.io/blog/2014/11/08/objective-c-runtime-yun-xing-shi-zhi-wu-:xie-yi-yu-fen-lei</id>
+    <content type="html"><![CDATA[<p>Objective-C中的分类允许我们通过给一个类添加方法来扩充它（但是通过category不能添加新的实例变量），并且我们不需要访问类中的代码就可以做到。</p>
+
+<p>Objective-C中的协议是普遍存在的接口定义方式，即在一个类中通过@protocol定义接口，在另外类中实现接口，这种接口定义方式也成为“delegation”模式，@protocol声明了可以呗其他任何方法类实现的方法，协议仅仅是定义一个接口，而由其他的类去负责实现。</p>
+
+<p>在本章中，我们来看看runtime对分类与协议的支持。</p>
+
+<h2>基础数据类型</h2>
+
+<h3>Category</h3>
+
+<p>Category是表示一个指向分类的结构体的指针，其定义如下：</p>
+
+<pre><code>typedef struct objc_category *Category;
+
+struct objc_category {
+    char *category_name                          OBJC2_UNAVAILABLE; // 分类名
+    char *class_name                             OBJC2_UNAVAILABLE; // 分类所属的类名
+    struct objc_method_list *instance_methods    OBJC2_UNAVAILABLE; // 实例方法列表
+    struct objc_method_list *class_methods       OBJC2_UNAVAILABLE; // 类方法列表
+    struct objc_protocol_list *protocols         OBJC2_UNAVAILABLE; // 分类所实现的协议列表
+}  
+</code></pre>
+
+<p>这个结构体主要包含了分类定义的实例方法与类方法，其中instance_methods列表是objc_class中方法列表的一个子集，而class_methods列表是元类方法列表的一个子集。</p>
+
+<h3>Protocol</h3>
+
+<p>Protocol的定义如下：</p>
+
+<pre><code>typedef struct objc_object Protocol;
+</code></pre>
+
+<p>我们可以看到，Protocol其中实就是一个对象结构体。</p>
+
+<h2>操作函数</h2>
+
+<p>Runtime并没有在&lt;objc/runtime.h>头文件中提供针对分类的操作函数。因为这些分类中的信息都包含在objc_class中，我们可以通过针对objc_class的操作函数来获取分类的信息。如下例所示：</p>
+
+<pre><code>@interface RuntimeCategoryClass : NSObject
+- (void)method1;
+@end
+
+@interface RuntimeCategoryClass (Category)
+- (void)method2;
+@end
+
+@implementation RuntimeCategoryClass
+
+- (void)method1 {
+
+}
+
+@end
+
+@implementation RuntimeCategoryClass (Category)
+
+- (void)method2 {
+
+}
+
+@end
+
+#pragma mark -
+
+NSLog(@"测试objc_class中的方法列表是否包含分类中的方法");
+unsigned int outCount = 0;
+Method *methodList = class_copyMethodList(RuntimeCategoryClass.class, &amp;outCount);
+
+for (int i = 0; i &lt; outCount; i++) {
+    Method method = methodList[i];
+
+    const char *name = sel_getName(method_getName(method));
+
+    NSLog(@"RuntimeCategoryClass's method: %s", name);
+
+    if (strcmp(name, sel_getName(@selector(method2)))) {
+        NSLog(@"分类方法method2在objc_class的方法列表中");
+    }
+}
+</code></pre>
+
+<p>其输出是：</p>
+
+<pre><code>2014-11-08 10:36:39.213 [561:151847] 测试objc_class中的方法列表是否包含分类中的方法
+2014-11-08 10:36:39.215 [561:151847] RuntimeCategoryClass's method: method2
+2014-11-08 10:36:39.215 [561:151847] RuntimeCategoryClass's method: method1
+2014-11-08 10:36:39.215 [561:151847] 分类方法method2在objc_class的方法列表中
+</code></pre>
+
+<p>而对于Protocol，runtime提供了一系列函数来对其进行操作，这些函数包括：</p>
+
+<pre><code>// 返回指定的协议
+Protocol * objc_getProtocol ( const char *name );
+
+// 获取运行时所知道的所有协议的数组
+Protocol ** objc_copyProtocolList ( unsigned int *outCount );
+
+// 创建新的协议实例
+Protocol * objc_allocateProtocol ( const char *name );
+
+// 在运行时中注册新创建的协议
+void objc_registerProtocol ( Protocol *proto );
+
+// 为协议添加方法
+void protocol_addMethodDescription ( Protocol *proto, SEL name, const char *types, BOOL isRequiredMethod, BOOL isInstanceMethod );
+
+// 添加一个已注册的协议到协议中
+void protocol_addProtocol ( Protocol *proto, Protocol *addition );
+
+// 为协议添加属性
+void protocol_addProperty ( Protocol *proto, const char *name, const objc_property_attribute_t *attributes, unsigned int attributeCount, BOOL isRequiredProperty, BOOL isInstanceProperty );
+
+// 返回协议名
+const char * protocol_getName ( Protocol *p );
+
+// 测试两个协议是否相等
+BOOL protocol_isEqual ( Protocol *proto, Protocol *other );
+
+// 获取协议中指定条件的方法的方法描述数组
+struct objc_method_description * protocol_copyMethodDescriptionList ( Protocol *p, BOOL isRequiredMethod, BOOL isInstanceMethod, unsigned int *outCount );
+
+// 获取协议中指定方法的方法描述
+struct objc_method_description protocol_getMethodDescription ( Protocol *p, SEL aSel, BOOL isRequiredMethod, BOOL isInstanceMethod );
+
+// 获取协议中的属性列表
+objc_property_t * protocol_copyPropertyList ( Protocol *proto, unsigned int *outCount );
+
+// 获取协议的指定属性
+objc_property_t protocol_getProperty ( Protocol *proto, const char *name, BOOL isRequiredProperty, BOOL isInstanceProperty );
+
+// 获取协议采用的协议
+Protocol ** protocol_copyProtocolList ( Protocol *proto, unsigned int *outCount );
+
+// 查看协议是否采用了另一个协议
+BOOL protocol_conformsToProtocol ( Protocol *proto, Protocol *other );
+</code></pre>
+
+<p>● objc_getProtocol函数，需要注意的是如果仅仅是声明了一个协议，而未在任何类中实现这个协议，则该函数返回的是nil。</p>
+
+<p>● objc_copyProtocolList函数，获取到的数组需要使用free来释放</p>
+
+<p>● objc_allocateProtocol函数，如果同名的协议已经存在，则返回nil</p>
+
+<p>● objc_registerProtocol函数，创建一个新的协议后，必须调用该函数以在运行时中注册新的协议。协议注册后便可以使用，但不能再做修改，即注册完后不能再向协议添加方法或协议</p>
+
+<p>需要强调的是，协议一旦注册后就不可再修改，即无法再通过调用protocol_addMethodDescription、protocol_addProtocol和protocol_addProperty往协议中添加方法等。</p>
+
+<h2>小结</h2>
+
+<p>Runtime并没有提供过多的函数来处理分类。对于协议，我们可以动态地创建协议，并向其添加方法、属性及继承的协议，并在运行时动态地获取这些信息。</p>
+
+<p><strong><em>注：如有不对之处，还请指正，欢迎加QQ好友：1318202110(南峰子)</em></strong></p>
+
+<h2>参考</h2>
+
+<ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/ObjCRuntimeRef/">Objective-C Runtime Reference</a></li>
+</ol>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Objective-C Runtime 运行时之四：Method Swizzling]]></title>
@@ -6477,77 +6644,6 @@ manager = [[CBPeripheralManager alloc] initWithDelegate:self queue:nil options:n
 <li>代码示例：<a href="https://developer.apple.com/library/ios/samplecode/AirLocate/Introduction/Intro.html">AirLocate: Using CoreLocation to monitor, range, and configure your device as an iBeacon</a></li>
 </ol>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[URL加载系统之五：缓存、Cookies与协议]]></title>
-    <link href="http://southpeak.github.io/blog/2014/07/20/urljia-zai-xi-tong-zhi-wu-:huan-cun-,-cookiesyu-xie-yi/"/>
-    <updated>2014-07-20T22:56:30+08:00</updated>
-    <id>http://southpeak.github.io/blog/2014/07/20/urljia-zai-xi-tong-zhi-wu-:huan-cun-,-cookiesyu-xie-yi</id>
-    <content type="html"><![CDATA[<h2>缓存</h2>
-
-<p>URL加载系统为请求提供了基于磁盘和内存的组合响应缓存。这个缓存让应用减少了对网络连接的依赖，提高了性能。</p>
-
-<p>一个NSURLRequest实例通过设置缓存策略来指定本地缓存。默认的缓存策略是NSURLRequestUseProtocolCachePolicy，其行为是由协议指定的针对该协议最好的实现方式。另外几种缓存策略描述如下：</p>
-
-<ol>
-<li>NSURLRequestReloadIgnoringCacheData：URL加载系统将从服务端加载数据，而完全忽略缓存。</li>
-<li>NSURLRequestReturnCacheDataElseLoad：URL加载系统使用缓存数据，忽略其过期时间；只有在没有缓存版本的时候才从源端加载数据。</li>
-<li>NSURLRequestReturnCacheDataDontLoad：允许应用指定只有在缓存中的数据应该被返回。如果在创建NSURLConnection或NSURLDownload实例时使用这个缓存策略，如果响应没有在本地缓存中，则直接返回nil。这类似于使用离线模式，且从来不进行网络连接。</li>
-</ol>
-
-
-<p>需要注意的是，目前只有HTTP和HTTPS的响应还被缓存。</p>
-
-<p>缓存最常用的场景是使用HTTP协议做网络请求，同时设置缓存策略为NSURLRequestUseProtocolCachePolicy。如果一个请求的NSCachedURLResponse不存在，则加载系统会从源端获取数据。如果请求的缓存响应存在于本地，则URL加载系统检查响应来确定它指定的内容必须被重新验证。如果内容必须验证，则加载系统发出一个HEAD请求到源端以确定资源是否已经改变。如果没有改变，则URL加载系统返回缓存响应对象。如果已经改变了，则URL加载系统从源端获取数据。</p>
-
-<p>如果缓存响应对象没有指定内容必须被重新验证，则加载系统校验缓存响应对象的最大age或有效时间。如果缓存对象未过期，则加载系统返回缓存对象。如果响应过旧，则URL加载系统发起一个HEAD请求到源端查看资源是否已被修改。如果修改了，则URL加载系统从源端获取新的数据。否则，返回缓存响应对象。</p>
-
-<p>默认情况下，连接的数据基于请求的缓存策略来进行缓存，同时由处理请求的NSURLProtocol子类来解析。如果我们需要对缓存做更精确的控制，我们可以实现一些代理方法来允许应用来确定请求是否应该缓存：</p>
-
-<ol>
-<li>对于NSURLSession数据和上传任务，实现URLSession:dataTask:willCacheResponse:completionHandler:方法。这个代理方法只用于数据请求和上传任务。而下载任务的缓存由指定的缓存策略来决定。</li>
-<li>对于NSURLConnection，实现connection:willCacheResponse:方法</li>
-</ol>
-
-
-<p>对于NSURLSession，我们的代理方法调用一个完成处理器block来告知会话需要缓存什么东西。对于NSURLConnection，代理方法返回连接需要缓存的对象。不管是哪种情况，代理都会提供以下值之一：</p>
-
-<ol>
-<li>允许缓存的响应对象</li>
-<li>新创建的响应对象，用于缓存被修改的响应</li>
-<li>NULL，以阻止缓存</li>
-</ol>
-
-
-<p>代理方法也可以提供与NSCacheURLResponse对象相关的userInfo字典，将这些对象作为响应的一部分存储在缓存中。</p>
-
-<p>需要注意的是，如果我们使用NSURLSession眀实现了代理方法，则代理方法必须总是调用提供的完成处理器，否则会导致内存泄露。</p>
-
-<h2>Cookies</h2>
-
-<p>由于HTTP协议是无状态的，客户端通常使用cookie来提供URL请求间数据的持久化存储。URL加载系统提供接口来创建和管理cookie，将cookie作为HTTP请求的一部分进行发送，并在解析一个服务端的响应时获取cookie。</p>
-
-<p>NSHTTPCookie类封装了一个cookie，并提供了大量访问器来访问cookie的各种属性。该类同样提供了方法用于HTTP cookie头与NSHTTPCookie实例之间的互转。URL加载系统自动发送与NSURLRequest对象匹配的任何存储的cookie，除非该请求指明不需要发送cookie。同样，NSURLResponse对象是返回的cookie将根据当前设定的cookie接收策略来处理。</p>
-
-<p>NSHTTPCookieStorage提供接口来管理NSHTTPCookie对象的集合。与MacOS不同的是，iOS的cookie不能在应用间共享。NSHTTPCookieStorage允许一个应用指定cookie接收策略。</p>
-
-<h2>协议支持</h2>
-
-<p>URL加载系统允许客户端程序扩展协议，以支持自定义的传输数据的方式。URL加载系统默认只支持http, https, file, ftp和data协议。</p>
-
-<p>我们可以继承NSURLProtocol来实现一个自定义的协议，然后使用NSURLProtocol类的的registerClass:方法将其注册到URL加载系统中。当NSURLSession, NSURLConnection和NSURLDownload对象初始化一个NSURLRequest的连接时，URL加载系统以注册顺序的倒序来查询每一个注册类。每个类都将调用canInitWithRequest:方法，第一个返回YES的类将被用于处理请求。</p>
-
-<p>如果自定义协议需要额外的属性业支持请求与响应，则通过创建NSURLRequest, NSMutableRequest和NSResponse类的类别来提供这些属性的访问器。NSURLProtocol类提供方法在这些访问器中设置和获取属性值。</p>
-
-<p>URL加载系统负责在连接开始和完成时创建和释放NSURLProtocol实例。我们的应用不应该直接创建NSURLProtocol的实例。</p>
-
-<p>当NSURLProtocol子类通过URL加载系统初始化时，它提供了一个实现NSURLProtocolClient协议的客户端对象。NSURLProtocol子类将消息从NSURLProtocolClient协议发送到客户端对象，来告诉URL加载系统它创建了响应，接收数据，重定向到新的URL，请求认证，完成加载等操作。如果自定义协议支持认证，还必须实现NSURLAuthenticationChallengeSender协议。</p>
-
-<h4>参考</h4>
-
-<p><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/URLLoadingSystem/URLLoadingSystem.html">URL Loading System Programming Guide</a></p>
 ]]></content>
   </entry>
   
