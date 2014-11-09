@@ -4,7 +4,7 @@
   <title><![CDATA[南峰子的技术博客]]></title>
   <link href="http://southpeak.github.io/atom.xml" rel="self"/>
   <link href="http://southpeak.github.io/"/>
-  <updated>2014-11-08T21:24:55+08:00</updated>
+  <updated>2014-11-09T14:45:41+08:00</updated>
   <id>http://southpeak.github.io/</id>
   <author>
     <name><![CDATA[南峰子]]></name>
@@ -12,6 +12,272 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Objective-C Runtime 运行时之六：拾遗]]></title>
+    <link href="http://southpeak.github.io/blog/2014/11/09/objective-c-runtime-yun-xing-shi-zhi-liu-:shi-yi/"/>
+    <updated>2014-11-09T14:44:53+08:00</updated>
+    <id>http://southpeak.github.io/blog/2014/11/09/objective-c-runtime-yun-xing-shi-zhi-liu-:shi-yi</id>
+    <content type="html"><![CDATA[<p>前面几篇基本介绍了runtime中的大部分功能，包括对类与对象、成员变量与属性、方法与消息、分类与协议的处理。runtime大部分的功能都是围绕这几点来实现的。</p>
+
+<p>本章的内容并不算重点，主要针对前文中对Objective-C Runtime Reference内容遗漏的地方做些补充。当然这并不能包含所有的内容。runtime还有许多内容，需要读者去研究发现。</p>
+
+<h2>super</h2>
+
+<p>在Objective-C中，如果我们需要在类的方法中调用父类的方法时，通常都会用到super，如下所示：</p>
+
+<pre><code>@interface MyViewController: UIViewController
+
+@end
+
+@implementation MyViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    // do something
+    ...
+}
+
+@end
+</code></pre>
+
+<p>如何使用super我们都知道。现在的问题是，它是如何工作的呢？</p>
+
+<p>首先我们需要知道的是super与self不同。self是类的一个隐藏参数，每个方法的实现的第一个参数即为self。而super并不是隐藏参数，它实际上只是一个&#8221;编译器标示符&#8221;，它负责告诉编译器，当调用viewDidLoad方法时，去调用父类的方法，而不是本类中的方法。而它实际上与self指向的是相同的消息接收者。为了理解这一点，我们先来看看super的定义：</p>
+
+<pre><code>struct objc_super { id receiver; Class superClass; };
+</code></pre>
+
+<p>这个结构体有两个成员：</p>
+
+<ol>
+<li>receiver：即消息的实际接收者</li>
+<li>superClass：指针当前类的父类</li>
+</ol>
+
+
+<p>当我们使用super来接收消息时，编译器会生成一个objc_super结构体。就上面的例子而言，这个结构体的receiver就是MyViewController对象，与self相同；superClass指向MyViewController的父类UIViewController。</p>
+
+<p>接下来，发送消息时，不是调用objc_msgSend函数，而是调用objc_msgSendSuper函数，其声明如下：</p>
+
+<pre><code>id objc_msgSendSuper ( struct objc_super *super, SEL op, ... );
+</code></pre>
+
+<p>该函数第一个参数即为前面生成的objc_super结构体，第二个参数是方法的selector。该函数实际的操作是：从objc_super结构体指向的superClass的方法列表开始查找viewDidLoad的selector，找到后以objc->receiver去调用这个selector，而此时的操作流程就是如下方式了</p>
+
+<pre><code>objc_msgSend(objc_super-&gt;receiver, @selector(viewDidLoad))
+</code></pre>
+
+<p>由于objc_super->receiver就是self本身，所以该方法实际与下面这个调用是相同的：</p>
+
+<pre><code>objc_msgSend(self, @selector(viewDidLoad))
+</code></pre>
+
+<p>为了便于理解，我们看以下实例：</p>
+
+<pre><code>@interface MyClass : NSObject
+
+@end
+
+@implementation MyClass
+
+- (void)test {
+    NSLog(@"self class: %@", self.class);
+    NSLog(@"super class: %@", super.class);
+}
+
+@end
+</code></pre>
+
+<p>调用MyClass的test方法后，其输出是：</p>
+
+<pre><code>2014-11-08 15:55:03.256 [824:209297] self class: MyClass
+2014-11-08 15:55:03.256 [824:209297] super class: MyClass
+</code></pre>
+
+<p>从上例中可以看到，两者的输出都是MyClass。大家可以自行用上面介绍的内容来梳理一下。</p>
+
+<h2>库相关操作</h2>
+
+<p>库相关的操作主要是用于获取由系统提供的库相关的信息，主要包含以下函数：</p>
+
+<pre><code>// 获取所有加载的Objective-C框架和动态库的名称
+const char ** objc_copyImageNames ( unsigned int *outCount );
+
+// 获取指定类所在动态库
+const char * class_getImageName ( Class cls );
+
+// 获取指定库或框架中所有类的类名
+const char ** objc_copyClassNamesForImage ( const char *image, unsigned int *outCount );
+</code></pre>
+
+<p>通过这几个函数，我们可以了解到某个类所有的库，以及某个库中包含哪些类。如下代码所示：</p>
+
+<pre><code>NSLog(@"获取指定类所在动态库");
+
+NSLog(@"UIView's Framework: %s", class_getImageName(NSClassFromString(@"UIView")));
+
+NSLog(@"获取指定库或框架中所有类的类名");
+const char ** classes = objc_copyClassNamesForImage(class_getImageName(NSClassFromString(@"UIView")), &amp;outCount);
+for (int i = 0; i &lt; outCount; i++) {
+    NSLog(@"class name: %s", classes[i]);
+}
+</code></pre>
+
+<p>其输出结果如下：</p>
+
+<pre><code>2014-11-08 12:57:32.689 [747:184013] 获取指定类所在动态库
+2014-11-08 12:57:32.690 [747:184013] UIView's Framework: /System/Library/Frameworks/UIKit.framework/UIKit
+2014-11-08 12:57:32.690 [747:184013] 获取指定库或框架中所有类的类名
+2014-11-08 12:57:32.691 [747:184013] class name: UIKeyboardPredictiveSettings
+2014-11-08 12:57:32.691 [747:184013] class name: _UIPickerViewTopFrame
+2014-11-08 12:57:32.691 [747:184013] class name: _UIOnePartImageView
+2014-11-08 12:57:32.692 [747:184013] class name: _UIPickerViewSelectionBar
+2014-11-08 12:57:32.692 [747:184013] class name: _UIPickerWheelView
+2014-11-08 12:57:32.692 [747:184013] class name: _UIPickerViewTestParameters
+......
+</code></pre>
+
+<h2>块操作</h2>
+
+<p>我们都知道block给我们带到极大的方便，苹果也不断提供一些使用block的新的API。同时，苹果在runtime中也提供了一些函数来支持针对block的操作，这些函数包括：</p>
+
+<pre><code>// 创建一个指针函数的指针，该函数调用时会调用特定的block
+IMP imp_implementationWithBlock ( id block );
+
+// 返回与IMP(使用imp_implementationWithBlock创建的)相关的block
+id imp_getBlock ( IMP anImp );
+
+// 解除block与IMP(使用imp_implementationWithBlock创建的)的关联关系，并释放block的拷贝
+BOOL imp_removeBlock ( IMP anImp );
+</code></pre>
+
+<p>● imp_implementationWithBlock函数：参数block的签名必须是method_return_type ^(id self, method_args …)形式的。该方法能让我们使用block作为IMP。如下代码所示：</p>
+
+<pre><code>@interface MyRuntimeBlock : NSObject
+
+@end
+
+@implementation MyRuntimeBlock
+
+@end
+
+// 测试代码
+IMP imp = imp_implementationWithBlock(^(id obj, NSString *str) {
+    NSLog(@"%@", str);
+});
+
+class_addMethod(MyRuntimeBlock.class, @selector(testBlock:), imp, "v@:@");
+
+MyRuntimeBlock *runtime = [[MyRuntimeBlock alloc] init];
+[runtime performSelector:@selector(testBlock:) withObject:@"hello world!"];
+</code></pre>
+
+<p>输出结果是</p>
+
+<pre><code>2014-11-09 14:03:19.779 [1172:395446] hello world!
+</code></pre>
+
+<h2>弱引用操作</h2>
+
+<pre><code>// 加载弱引用指针引用的对象并返回
+id objc_loadWeak ( id *location );
+
+// 存储__weak变量的新值
+id objc_storeWeak ( id *location, id obj );
+</code></pre>
+
+<p>● objc_loadWeak函数：该函数加载一个弱指针引用的对象，并在对其做retain和autoreleasing操作后返回它。这样，对象就可以在调用者使用它时保持足够长的生命周期。该函数典型的用法是在任何有使用__weak变量的表达式中使用。</p>
+
+<p>● objc_storeWeak函数：该函数的典型用法是用于__weak变量做为赋值对象时。</p>
+
+<p>这两个函数的具体实施在此不举例，有兴趣的小伙伴可以参考《Objective-C高级编程：iOS与OS X多线程和内存管理》中对__weak实现的介绍。</p>
+
+<h2>宏定义</h2>
+
+<p>在runtime中，还定义了一些宏定义供我们使用，有些值我们会经常用到，如表示BOOL值的YES/NO；而有些值不常用，如OBJC_ROOT_CLASS。在此我们做一个简单的介绍。</p>
+
+<h3>布尔值</h3>
+
+<pre><code>#define YES  (BOOL)1
+#define NO   (BOOL)0
+</code></pre>
+
+<p>这两个宏定义定义了表示布尔值的常量，需要注意的是YES的值是1，而不是非0值。</p>
+
+<h3>空值</h3>
+
+<pre><code>#define nil  __DARWIN_NULL
+#define Nil  __DARWIN_NULL
+</code></pre>
+
+<p>其中nil用于空的实例对象，而Nil用于空类对象。</p>
+
+<h3>分发函数原型</h3>
+
+<pre><code>#define OBJC_OLD_DISPATCH_PROTOTYPES  1
+</code></pre>
+
+<p>该宏指明分发函数是否必须转换为合适的函数指针类型。当值为0时，必须进行转换</p>
+
+<h3>Objective-C根类</h3>
+
+<pre><code>#define OBJC_ROOT_CLASS 
+</code></pre>
+
+<p>如果我们定义了一个Objective-C根类，则编译器会报错，指明我们定义的类没有指定一个基类。这种情况下，我们就可以使用这个宏定义来避过这个编译错误。该宏在iOS 7.0后可用。</p>
+
+<p>其实在NSObject的声明中，我们就可以看到这个宏的身影，如下所示：</p>
+
+<pre><code>__OSX_AVAILABLE_STARTING(__MAC_10_0, __IPHONE_2_0)
+OBJC_ROOT_CLASS
+OBJC_EXPORT
+@interface NSObject &lt;NSObject&gt; {
+    Class isa  OBJC_ISA_AVAILABILITY;
+}
+</code></pre>
+
+<p>我们可以参考这种方式来定义我们自己的根类。</p>
+
+<h3>局部变量存储时长</h3>
+
+<pre><code>#define NS_VALID_UNTIL_END_OF_SCOPE 
+</code></pre>
+
+<p>该宏表明存储在某些局部变量中的值在优化时不应该被编译器强制释放。</p>
+
+<p>我们将局部变量标记为id类型或者是指向ObjC对象类型的指针，以便存储在这些局部变量中的值在优化时不会被编译器强制释放。相反，这些值会在变量再次被赋值之前或者局部变量的作用域结束之前都会被保存。</p>
+
+<h3>关联对象行为</h3>
+
+<pre><code>enum {
+   OBJC_ASSOCIATION_ASSIGN  = 0,
+   OBJC_ASSOCIATION_RETAIN_NONATOMIC  = 1,
+   OBJC_ASSOCIATION_COPY_NONATOMIC  = 3,
+   OBJC_ASSOCIATION_RETAIN  = 01401,
+   OBJC_ASSOCIATION_COPY  = 01403
+};
+</code></pre>
+
+<p>这几个值在前面已介绍过，在此不再重复。</p>
+
+<h2>总结</h2>
+
+<p>至此，本系列对runtime的整理已完结。当然这只是对runtime的一些基础知识的归纳，力图起个抛砖引玉的作用。还有许多关于runtime有意思东西还需要读者自己去探索发现。</p>
+
+<p><strong><em>注：如有不对之处，还请指正，欢迎加QQ好友：1318202110(南峰子)</em></strong></p>
+
+<h2>参考</h2>
+
+<ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/ObjCRuntimeRef/">Objective-C Runtime Reference</a></li>
+<li><a href="http://blog.csdn.net/itianyi/article/details/8678452">iOS:Objective-C中Self和Super详解</a></li>
+<li><a href="http://www.cocoachina.com/industry/20130819/6824.html">Objective-C的动态特性</a></li>
+</ol>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Objective-C Runtime 运行时之五：协议与分类]]></title>
@@ -6504,146 +6770,6 @@ centralManager = [[CBCentralManager alloc] initWithDelegate:self queue:nil optio
 <h2>参考</h2>
 
 <p><a href="https://developer.apple.com/library/ios/documentation/NetworkingInternetWeb/Conceptual/CoreBluetooth_concepts/AboutCoreBluetooth/Introduction.html">Core Bluetooth Programming Guide</a></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[iBeacon技术初探]]></title>
-    <link href="http://southpeak.github.io/blog/2014/07/27/ibeaconji-zhu-chu-tan/"/>
-    <updated>2014-07-27T15:22:43+08:00</updated>
-    <id>http://southpeak.github.io/blog/2014/07/27/ibeaconji-zhu-chu-tan</id>
-    <content type="html"><![CDATA[<p>苹果在WWDC 2013上正式推出了iBeacon，并在iOS7设备上配备了该功能。苹果期望将其做为一种技术标准，这个标准允许移动App(包括iOS或Android设备)监听来自于iBeacon设备上的信号并做出响应。这种iBeacon设备配备有低功耗蓝牙(Bluetooth Low Energy, BLE)通信功能，并使用BLE向周围发送自己特有的ID，移动设备上的App在接收到该ID后可以做出相应的反应。比如，我们在店铺里设置iBeacon发射器，便可让应用接收到信息并将这一信息通知给服务器，服务器向我们的App返回与该店铺相关的产品或折扣信息。本质上讲，iBeacon技术允许移动应用了解它们在某个局部范围内的位置，并向用户分发基于位置的超文本上下文内容。本文将对iBeacon技术做个简要的介绍。</p>
-
-<h2>低功耗蓝牙技术(Bluetooth Low Energy)</h2>
-
-<p>iBeacon的底层通信技术是采用低功耗蓝牙技术，这种技术是在短距离范围内数据传输的无线区域网络技术。顾名思义，它即要求低功耗，又需要保证传统蓝牙技术的通信范围。</p>
-
-<p>BLE与传统蓝牙有几点不同：</p>
-
-<ol>
-<li>耗电量：BLE是低耗电量的，iBeacon设备使用一个纽扣电池即可持续运作长达3年时间。</li>
-<li>低成本：BLE的成本只相当于传统蓝牙设备的60%-80%</li>
-<li>应用：BLE适用于只要求少量定期传输数据的简单应用。传统的蓝牙适用于需要持续通信和大量数据传输的复杂应用。</li>
-</ol>
-
-
-<p>BLE通信数据包主要由称为&#8221;Advertisements&#8221;的数据或小的数据包组成，并通过无线电波由Beacons或其它BLE设备以有规律的时间间隔来广播。BLE广告是一种单向通信(one-way communication)方法。希望被发现的Beacon设备可以以设定的时间间隔广播或&#8221;广告&#8221;自包含的数据包。这些数据包由智能手机等设备收集，并在设备上触发一些事件，如推送消息、提示等。</p>
-
-<p>苹果iBeacon标准要求广播时间的间隔是100ms。频率超高越耗电，但可以让智能手机或其它监听设备越快地发现iBeacon。标准的BLE广播距离是100m，这使Beacon在室内位置跟踪场景下的效果更理想。</p>
-
-<h2>监听Beacon区域</h2>
-
-<p>Beacon区域监听使用iOS设备的内置无线电来检测用户何时在广告iBeacon信息的BLE设备附近。由于是地理位置的监听，当用户进入或在一个Beacon区域时，我们可以使用这些功能来生成提示或提供其它相关的信息。一个Beacon区域通过以下值的组合来进行标识：</p>
-
-<ol>
-<li>proximity UUID(全局唯一标识)：一个128位值，唯一标识一类或一个组织中的一个或多个Beacon。</li>
-<li>major值，一个16位无符号整数，用于分组有相同proximity UUID值的相关的Beacon。</li>
-<li>minor值，一个16位无符号整数，用于区分具有相同proximity UUID值和major的值。</li>
-</ol>
-
-
-<p>因为一个Beacon区域可以包含多个iBeacon设备，Beacon区域监听支持同时监听多个感兴趣的设备。例如，一个App为了在特定商场提高用户体验，可用使用相同的proximity UUID来监听商场的所有商铺。当用户进入一个商店时，App检测商铺的iBeacon设备并使用major和minor值来获取额外的信息，如用户进入哪家商店或用户在商店的哪个区域(注意：虽然每个iBeacon都必须有一个proximity UUID，但major和minor的值是可选的)。</p>
-
-<h4>定义一个Beacon区域</h4>
-
-<p>我们使用<strong>CLBeaconRegion</strong>类的初始化方法来定义一个beacon区域，并在系统中注册，以开启一个监听。当创建一个CLBeaconRegion对象时，我们指定需要监听的Beacon区域的proximityUUID, major和minor属性。我们必须提供一个唯一标识区域的字符串以便我们在代码中能引用它。注意一个区域的标识与Beacon标识信息无关。</p>
-
-<p>为了注册一个beacon区域，调用CLLocationManager对象的startMonitoringForRegion方法。代码清单1是创建并注册的beacon区域的简单方法。</p>
-
-<h6>代码清单1：创建和注册一个beacon区域</h6>
-
-<pre><code>- (void)registerBeaconRegionWithUUID:(NSUUID *)proximityUUID andIdentifier:(NSString *)identifier
-{
-    CLBeaconRegion *beaconRegion = [[CLBeaconRegion alloc] initWithProximityUUID:proximityUUID identifier:identifier];
-
-    [manager startMonitoringForRegion:beaconRegion];
-}
-</code></pre>
-
-<p>App在注册并监听某个Beacon区域后，会立即开始监听此区域。当App监听到注册的Beacon区域时，系统会为App生成一个合适的区域事件。</p>
-
-<h4>处理边界穿越事件</h4>
-
-<p>当用户进入一个注册的Beacon区域时，CLLocationManager对象将调用其代理对象的locationManager:didEnterRegion:方法。类似的，当用户离开这个区域时，将调用代理对象的locationManager:didExitRegion:方法。注意，用户必须穿过区域边界来触发这些调用，如果用户已经在区域中，CLLocationManager对象将不会调用locationManager:didEnterRegion:。我们可以实现这些代理方法来提示用户或展示一个指定位置的UI。</p>
-
-<p>我们可以设置Beacon区域的notifyOnEntry和notifyOnExit属性来指定哪个边界穿越事件应该通知给我们的App。例如，如果在用户离开区域时不需要通知App，则可以设置区域的notifyOnEntry属性为NO。</p>
-
-<p>我们也可以在用户打开设备的屏幕时再通知用户已进入一个Beacon区域。我们只需要在注册Beacon区域时，简单的设置Beacon区域的notifyEntryStateOnDisplay属性为YES，以及设置notifyOnEntry属性为NO。为了防止多余的通知被发送给用户，只在进入一个区域时才发送一个本地通知。</p>
-
-<p>当用户已经在注册的Beacon区域内时，App可以调用CLLocationManager类的startRangingBeaconsInRegion:方法来确定我们的设备与区域中的一个或多个iBeacon设备的相对距离，并在距离改变时被通知。(注意：我们总是在尝试查找区域内的iBeacon设备时调用CLLocationManager的类方法isRangingAvailable)。对于大多数程序来说，知道这个相对距离是很有用的。例如，想像一个在每个展品上安装了iBeacon设备的博物馆。如果我们使用这个博物馆相应的App，当我们走近某个展品时，就可以通过iBeacon来向我们的App发送关于展品的信息。</p>
-
-<p>当指定Beacon区域的iBeacon设备进入范围、离开范围或相对距离改变时，CLLocationManager对象调用代理对象的locationManager:didRangeBeacons:inRegion:方法。这个代理方法提供一个CLBeacon对象的数组来表示当前设备范围内的iBeacon。iBeacon的数组根据离设备的相对距离来排序，最近的在最前面。我们可以使用这些对象中的信息来确定用户离每个iBeacon设备的距离。CLBeacon对象的proximity属性给出了到一个beacon的相对距离。</p>
-
-<p><em>注：iBeacon的排列依赖于检测到的BLE无线信号的强度，以及这些信号受墙壁、门或其它物理实体的影响。当我们使用iBeacon时需要考虑这些影响因素。</em></p>
-
-<p>代码清单2显示了如何使用一个Beacon的proximity属性来确定到用户设备的相对距离。</p>
-
-<h6>代码清单2：确定用户设备与beacon的相对距离</h6>
-
-<pre><code>- (void)locationManager:(CLLocationManager *)manager didRangeBeacons:(NSArray *)beacons inRegion:(CLBeaconRegion *)region
-{
-    if ([beacons count] &gt; 0)
-    {
-        CLBeacon *nearestExhibit = [beacons firstObject];
-
-        if (CLProximityNear == nearestExhibit.proximity)
-        {
-            NSLog(@"%d", nearestExhibit.major.integerValue);
-        }
-        else
-        {
-            NSLog(@"test");
-        }
-    }
-}
-</code></pre>
-
-<p>注意：当多个iBeacon设备广告了相同的proximityUUID, major和minor属性组合时，在locationManager:didRangeBeacons:inRegion:方法中它们可能会有不同的距离与精度。建议每一个beacon设备都是唯一标识的。</p>
-
-<h2>在iOS设备中开启iBeacon功能</h2>
-
-<p>支持使用BLE分享数据的iOS设备可以当作iBeacon设备来使用。由于应用必须运行于前台，因此iOS设备上的iBeacon支持主要用于测试目的和任何情况下都运行于前台的App。对于其它类型的iBeacon实现，我们必须从第三方的制造商那获取专用的iBeacon设备。</p>
-
-<p>因为将iOS设备作为一个iBeacon设备需要使用Core Bluetooth framework，所以我们需要在XCode工程中链接CoreBluetooth.framework。同时在相关的资源文件中导入&lt;CoreBluetooth/CoreBluetooth.h>头文件。</p>
-
-<p>要在一个iOS设备上创建和广告一个Beacon区域，首先我们需要生成一个128位的UUID作为我们的proximity UUID。我们可以在终端使用uuidgen命令来生成一个UUID。然后，我们使用这个UUID来创建一个Beacon区域，同时定义所需的major和minor值。代码清单3显示了如何创建一个新Beacon区域</p>
-
-<h6>代码清单3</h6>
-
-<pre><code>NSUUID *proximityUUID = [[NSUUID alloc] initWithUUIDString:@"D80415EC-AC22-4046-8497-4BDAC297323C"];
-
-CLBeaconRegion *beaconRegion = [[CLBeaconRegion alloc] initWithProximityUUID:proximityUUID identifier:@"com.mycompany.myregion"];        
-</code></pre>
-
-<p>现在我们已经创建了一个Beacon区域，然后我们需要使用Core Bluetooth framework的CBPeripheralManager来广告我们的Beacon的proximity UUID(及major或minor值)。在Core Bluetooth中，一个peripheral是使用BLE来广告和分享数据的设备。广告Beacon的数据是其它设备能检测并排列我们的Beacon设备的唯一方法。</p>
-
-<p>为了在Core Bluetooth中广告peripheral数据，我们调用CBPeripheralManager实例的startAdvertising:方法。这个方法需要广告数据的字典。然后我们创建一个CBPeripheralManager类的实例，并让其广告我们的Beacon来让其它设备监听。代码清单4所示了这一过程。</p>
-
-<h6>代码清单4</h6>
-
-<pre><code>NSDictionary *beaconPeripheralData = [beaconRegion peripheralDataWithMeasuredPower:nil];
-
-manager = [[CBPeripheralManager alloc] initWithDelegate:self queue:nil options:nil];
-[manager startAdvertising:beaconPeripheralData];
-</code></pre>
-
-<p><strong>重要：当我们创建一个peripheral管理对象时，peripheral管理对象会调用它的代理的peripheralManagerDidUpdateState:方法。我们必须实现这个代理方法以确保BLE在本地peripheral设备上可用。</strong></p>
-
-<p>在广告我们的iBeacon后，我们必须在前台继续运行程序来广播所需要的蓝牙信号。</p>
-
-<h2>小结</h2>
-
-<p>iBeacon是苹果提出的近场定位技术，其目标直指NFC。在App中使用iBeacon并不复杂，苹果已经为我们解决了大部分的底层技术问题。我们只需要简单的创建一个Beacon区域并监听它，在代理对象中处理相应的事件即可。它的实质就是一种定位技术，其在室内导航方面前景光明，相信这一技术会在今后大有作为。</p>
-
-<h2>参考</h2>
-
-<ol>
-<li><a href="https://developer.apple.com/library/ios/documentation/UserExperience/Conceptual/LocationAwarenessPG/Introduction/Introduction.html">Location and Maps Programming Guide</a></li>
-<li><a href="http://www.cocoachina.com/applenews/devnews/2014/0115/7705.html">如何使用iOS 7的iBeacons来提高你的应用</a></li>
-<li><a href="http://www.cocoachina.com/applenews/devnews/2014/0512/8377.html">开发使用 iBeacon 的 iOS 7 应用</a></li>
-<li>代码示例：<a href="https://developer.apple.com/library/ios/samplecode/AirLocate/Introduction/Intro.html">AirLocate: Using CoreLocation to monitor, range, and configure your device as an iBeacon</a></li>
-</ol>
-
 ]]></content>
   </entry>
   

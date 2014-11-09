@@ -11,8 +11,7 @@
   <meta name="baidu-site-verification" content="HoscFhWICI" />
 
   
-  <meta name="description" content="Swift的属性与Objective-C中的属性是一样的，不同的是Swift细化了属性的类型，另外除了类之外，结构体和枚举也可以有属性。 Swift中有这么几种属性： 存储属性(Stored properties)：存储实例的常量和变量，与类、结构体、枚举的实例相关
-计算属性(Computed &hellip;">
+  <meta name="description" content="扩展(Extension)用于为已存在的类、结构体或枚举添加新的功能。它类似于Objecitve-C中的分类，不同的是Swift的扩展没有名字 Swift的扩展可以做以下事情： 添加计算属性和静态计算属性 定义实例方法和类型方法 提供新的初始化方法 定义下标操作符 定义并使用新的嵌套类型 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -69,6 +68,213 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/06/27/ios-swift-extension/">Swift扩展(Extension)基础</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-06-27T20:54:59+08:00" pubdate data-updated="true">Jun 27<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/06/27/ios-swift-extension/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>扩展(Extension)用于为已存在的类、结构体或枚举添加新的功能。它类似于Objecitve-C中的分类，不同的是Swift的扩展没有名字</p>
+
+<p>Swift的扩展可以做以下事情：</p>
+
+<ul>
+<li><p> 添加计算属性和静态计算属性</p></li>
+<li><p> 定义实例方法和类型方法</p></li>
+<li><p> 提供新的初始化方法</p></li>
+<li><p> 定义下标操作符</p></li>
+<li><p> 定义并使用新的嵌套类型</p></li>
+<li><p> 让已存在类型实现一个协议</p></li>
+</ul>
+
+
+<p>在定义类型的扩展后，访扩展中的功能可以用于类型所有已存在的实例中，即使这些实例在扩展之前定义。</p>
+
+<p>我们使用关键字extension来声明一个扩展，一个扩展可以让类型实现一个或多个协议，如代码清单1所示：</p>
+
+<h6>代码清单1：</h6>
+
+<pre><code>extension SomeType: SomeProtocol, AnotherProtocol {
+    // implementation of protocol requirement goes here
+}
+</code></pre>
+
+<p>下面我们分别介绍如何去扩展一个已有类型的各种功能</p>
+
+<h2>计算属性</h2>
+
+<p>扩展可以添加实例计算属性和类型计算属性。如代码清单2所示：</p>
+
+<h6>代码清单2：</h6>
+
+<pre><code>extension Double {
+    var km: Double {return self * 1_000.0}
+    var m: Double { return self }
+    var cm: Double { return self / 100.0 }
+    var mm: Double { return self / 1_000.0 }
+    var ft: Double { return self / 3.28084 }
+}
+
+let onInch = 25.4.mm        // 0.0254
+let threeFeet = 3.ft        // 0.914399970739201
+</code></pre>
+
+<p>上例扩展了Double，并定义了一些实例计算属性。我们可以将其用于Double的实例，也可以用于Double类型的字面值。</p>
+
+<p>需要注意的是，扩展可以添加新的计算属性，但不能添加存储属性，也不能给已存在的属性添加观察者</p>
+
+<h2>初始化方法</h2>
+
+<p>扩展可以为已存在类型添加新的初始化方法。这可以让我们扩展某一类型以接受我们自定义的类型作为它的初始化方法，或者为现有类型提供额外的初始化方法。</p>
+
+<p>扩展可以为类添加新的便捷初始化方法，但不能添加命名初始化方法(designated initializers)和析构方法，这两者必须由类型的原始实现来提供。</p>
+
+<p>代码清单3定义了Rect类型，并通过扩展为其定义了一个新的初始化方法</p>
+
+<h6>代码清单3</h6>
+
+<pre><code>struct Size {
+    var width = 0.0, height = 0.0
+}
+
+struct Point {
+    var x = 0.0, y = 0.0
+}
+
+struct Rect {
+    var origin = Point()
+    var size = Size()
+}
+
+let defaultRect = Rect()
+let memeberwiseRect = Rect(origin: Point(x: 1.0, y: 2.0), size: Size(width: 5.0, height: 10.0))
+
+extension Rect {
+    init (center: Point, size: Size) {
+        let originX = center.x - (size.width / 2)
+        let originY = center.y - size.height / 2
+        self.init(origin: Point(x: originX, y: originY), size:size)
+    }
+}
+
+let centerRect = Rect(center: Point(x: 20.0, y: 3.0), size: Size(width: 10.0, height: 40.0))
+</code></pre>
+
+<p>需要注意的是，如果我们提供新的初始化方法，仍然需要确保在初始化方法结束前初始化实例的所有常量和变量。</p>
+
+<p>另外，如果我们扩展的类型的所有存储属性都有默认值，而没有定义初始化方法时，我们可以在扩展的初始化方法中调用默认的初始化方法和</p>
+
+<h2>方法</h2>
+
+<p>扩展可以为已存在类型添加新的实例方法和类型方法。对于结构体和枚举类型而言，如果扩展的方法需要修改self或者它的属性的话，需要将实例方法标记为mutating(与结构体和枚举的原始实现相同)。</p>
+
+<h6>代码清单4：演示了扩展方法的定义</h6>
+
+<pre><code>extension Int {
+    func repetitions(task: () -&gt; ()) {
+        for i in  0..self {
+            task()
+        }
+    }
+
+    mutating func square() {        // mutating
+        self = self * self
+    }
+}
+
+var someInt = 3
+someInt.square()
+</code></pre>
+
+<h2>下标</h2>
+
+<p>扩展可以为已存在类型添加新的下标。例如我们想为Int类型添加一个下标操作，指定下标为n时，返回数字从右侧起第n个数字，即</p>
+
+<ul>
+<li><p> 123456789[0] = 9</p></li>
+<li><p> 123456789[1] = 8</p></li>
+<li><p> …</p></li>
+</ul>
+
+
+<p>代码清单5给出了相应的实现</p>
+
+<h6>代码清单5</h6>
+
+<pre><code>extension Int {
+    subscript(digitIndex: Int) -&gt; Int {
+        var decimalBase = 1
+            for _ in 1...digitIndex {
+                decimalBase * 10
+            }
+            return (self / decimalBase) % 10
+    }
+}
+
+8738793219[0]   // 9
+8738793219[1]   // 1
+8738793219[2]   // 2
+8738793219[8]   // 7
+</code></pre>
+
+<h2>嵌套类型</h2>
+
+<p>扩展可以为已存在类型添加新的嵌套类型，如代码清单6所示</p>
+
+<h6>代码清单6：</h6>
+
+<pre><code>extension Character {
+    enum Kind {
+        case Vowel, Consonant, Other
+    }
+
+    var kind:Kind {
+    switch String(self).lowercaseString {
+        case "a", "e", "i", "o", "u":
+            return .Vowel
+        case "b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n",
+             "p", "q", "r", "s", "t", "v", "w", "x", "y", "z":
+            return .Consonant
+        default:
+            return .Other
+    }
+    }
+}
+</code></pre>
+
+<p>上面为Character类型添加了一个嵌套枚举，以表示字符的类型。定义之后，嵌套类型就可以用于Character的值了。</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -644,7 +850,7 @@ alsoIncrementByTen()  // returns a value of 40
 <section>
 <h1>分类</h1>
 <ul>
-  <li><a href='/blog/categories/ios'>ios (36)</a></li>
+  <li><a href='/blog/categories/ios'>ios (37)</a></li>
   <li><a href='/blog/categories/network'>network (3)</a></li>
   <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
   <li><a href='/blog/categories/swift'>swift (7)</a></li>
@@ -656,6 +862,10 @@ alsoIncrementByTen()  // returns a value of 40
 <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/11/09/objective-c-runtime-yun-xing-shi-zhi-liu-:shi-yi/">Objective-C Runtime 运行时之六：拾遗</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2014/11/08/objective-c-runtime-yun-xing-shi-zhi-wu-:xie-yi-yu-fen-lei/">Objective-C Runtime 运行时之五：协议与分类</a>
@@ -691,10 +901,6 @@ alsoIncrementByTen()  // returns a value of 40
     
       <li class="post">
         <a href="/blog/2014/09/23/xing-neng-yu-shi-jian/">性能与时间</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/09/21/zai-reactivecocoazhong-jiang-%5B%3F%5D-ge-viewmodelbang-ding-dao-uitableviewshang/">在ReactiveCocoa中将一个ViewModel绑定到UITableView上</a>
       </li>
     
   </ul>
