@@ -11,7 +11,7 @@
   <meta name="baidu-site-verification" content="HoscFhWICI" />
 
   
-  <meta name="description" content="Objective-C语言是一门动态语言，它将很多静态语言在编译和链接时期做的事放到了运行时来处理。这种动态语言的优势在于：我们写代码时更具灵活性，如我们可以把消息转发给我们想要的对象，或者随意交换一个方法的实现等。 这种特性意味着Objective-C不仅需要一个编译器， &hellip;">
+  <meta name="description" content="在前面一篇文章中，我们介绍了Runtime中与类和对象相关的内容，从这章开始，我们将讨论类实现细节相关的内容，主要包括类中成员变量，属性，方法，协议与分类的实现。 本章的主要内容将聚集在Runtime对成员变量与属性的处理。在讨论之前，我们先介绍一个重要的概念：类型编码。 类型编码(Type &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -68,6 +68,318 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/10/30/objective-c-runtime-yun-xing-shi-zhi-er-:cheng-yuan-bian-liang-yu-shu-xing/">Objective-C Runtime 运行时之二：成员变量与属性</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-10-30T16:03:21+08:00" pubdate data-updated="true">Oct 30<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/10/30/objective-c-runtime-yun-xing-shi-zhi-er-:cheng-yuan-bian-liang-yu-shu-xing/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>在前面一篇文章中，我们介绍了Runtime中与类和对象相关的内容，从这章开始，我们将讨论类实现细节相关的内容，主要包括类中成员变量，属性，方法，协议与分类的实现。</p>
+
+<p>本章的主要内容将聚集在Runtime对成员变量与属性的处理。在讨论之前，我们先介绍一个重要的概念：类型编码。</p>
+
+<h2>类型编码(Type Encoding)</h2>
+
+<p>作为对Runtime的补充，编译器将每个方法的返回值和参数类型编码为一个字符串，并将其与方法的selector关联在一起。这种编码方案在其它情况下也是非常有用的，因此我们可以使用@encode编译器指令来获取它。当给定一个类型时，@encode返回这个类型的字符串编码。这些类型可以是诸如int、指针这样的基本类型，也可以是结构体、类等类型。事实上，任何可以作为sizeof()操作参数的类型都可以用于@encode()。</p>
+
+<p>在Objective-C Runtime Programming Guide中的<a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html#//apple_ref/doc/uid/TP40008048-CH100-SW1">Type Encoding</a>一节中，列出了Objective-C中所有的类型编码。需要注意的是这些类型很多是与我们用于存档和分发的编码类型是相同的。但有一些不能在存档时使用。</p>
+
+<p><em>注：Objective-C不支持long double类型。@encode(long double)返回d，与double是一样的。</em></p>
+
+<p>一个数组的类型编码位于方括号中；其中包含数组元素的个数及元素类型。如以下示例：</p>
+
+<pre><code>float a[] = {1.0, 2.0, 3.0};
+NSLog(@"array encoding type: %s", @encode(typeof(a)));
+</code></pre>
+
+<p>输出是：</p>
+
+<pre><code>2014-10-28 11:44:54.731 RuntimeTest[942:50791] array encoding type: [3f]
+</code></pre>
+
+<p>其它类型可参考<a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html#//apple_ref/doc/uid/TP40008048-CH100-SW1">Type Encoding</a>，在此不细说。</p>
+
+<p>另外，还有些编码类型，@encode虽然不会直接返回它们，但它们可以作为协议中声明的方法的类型限定符。可以参考<a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html#//apple_ref/doc/uid/TP40008048-CH100-SW1">Type Encoding</a>。</p>
+
+<p>对于属性而言，还会有一些特殊的类型编码，以表明属性是只读、拷贝、retain等等，详情可以参考<a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtPropertyIntrospection.html#//apple_ref/doc/uid/TP40008048-CH101-SW6">Property Type String</a>。</p>
+
+<h2>成员变量、属性</h2>
+
+<p>Runtime中关于成员变量和属性的相关数据结构并不多，只有三个，并且都很简单。不过还有个非常实用但可能经常被忽视的特性，即关联对象，我们将在这小节中详细讨论。</p>
+
+<h3>基础数据类型</h3>
+
+<h4>Ivar</h4>
+
+<p>Ivar是表示实例变量的类型，其实际是一个指向objc_ivar结构体的指针，其定义如下：</p>
+
+<pre><code>typedef struct objc_ivar *Ivar;
+
+struct objc_ivar {
+    char *ivar_name                 OBJC2_UNAVAILABLE;  // 变量名
+    char *ivar_type                 OBJC2_UNAVAILABLE;  // 变量类型
+    int ivar_offset                 OBJC2_UNAVAILABLE;  // 基地址偏移字节
+#ifdef __LP64__
+    int space                       OBJC2_UNAVAILABLE;
+#endif
+} 
+</code></pre>
+
+<h4>objc_property_t</h4>
+
+<p>objc_property_t是表示Objective-C声明的属性的类型，其实际是指向objc_property结构体的指针，其定义如下：</p>
+
+<pre><code>typedef struct objc_property *objc_property_t;
+</code></pre>
+
+<h4>objc_property_attribute_t</h4>
+
+<p>objc_property_attribute_t定义了属性的特性(attribute)，它是一个结构体，定义如下：</p>
+
+<pre><code>typedef struct {
+    const char *name;           // 特性名
+    const char *value;          // 特性值
+} objc_property_attribute_t;
+</code></pre>
+
+<h3>关联对象(Associated Object)</h3>
+
+<p>关联对象是Runtime中一个非常实用的特性，不过可能很容易被忽视。</p>
+
+<p>关联对象类似于成员变量，不过是在运行时添加的。我们通常会把成员变量(Ivar)放在类声明的头文件中，或者放在类实现的@implementation后面。但这有一个缺点，我们不能在分类中添加成员变量。如果我们尝试在分类中添加新的成员变量，编译器会报错。</p>
+
+<p>我们可能希望通过使用(甚至是滥用)全局变量来解决这个问题。但这些都不是Ivar，因为他们不会连接到一个单独的实例。因此，这种方法很少使用。</p>
+
+<p>Objective-C针对这一问题，提供了一个解决方案：即关联对象(Associated Object)。</p>
+
+<p>我们可以把关联对象想象成一个Objective-C对象(如字典)，这个对象通过给定的key连接到类的一个实例上。不过由于使用的是C接口，所以key是一个void指针(const void *)。我们还需要指定一个内存管理策略，以告诉Runtime如何管理这个对象的内存。这个内存管理的策略可以由以下值指定：</p>
+
+<pre><code>OBJC_ASSOCIATION_ASSIGN
+OBJC_ASSOCIATION_RETAIN_NONATOMIC
+OBJC_ASSOCIATION_COPY_NONATOMIC
+OBJC_ASSOCIATION_RETAIN
+OBJC_ASSOCIATION_COPY
+</code></pre>
+
+<p>当宿主对象被释放时，会根据指定的内存管理策略来处理关联对象。如果指定的策略是assign，则宿主释放时，关联对象不会被释放；而如果指定的是retain或者是copy，则宿主释放时，关联对象会被释放。我们甚至可以选择是否是自动retain/copy。当我们需要在多个线程中处理访问关联对象的多线程代码时，这就非常有用了。</p>
+
+<p>我们将一个对象连接到其它对象所需要做的就是下面两行代码：</p>
+
+<pre><code>static char myKey;
+
+objc_setAssociatedObject(self, &amp;myKey, anObject, OBJC_ASSOCIATION_RETAIN);
+</code></pre>
+
+<p>在这种情况下，self对象将获取一个新的关联的对象anObject，且内存管理策略是自动retain关联对象，当self对象释放时，会自动release关联对象。另外，如果我们使用同一个key来关联另外一个对象时，也会自动释放之前关联的对象，这种情况下，先前的关联对象会被妥善地处理掉，并且新的对象会使用它的内存。</p>
+
+<pre><code>id anObject = objc_getAssociatedObject(self, &amp;myKey);
+</code></pre>
+
+<p>我们可以使用objc_removeAssociatedObjects函数来移除一个关联对象，或者使用objc_setAssociatedObject函数将key指定的关联对象设置为nil。</p>
+
+<p>我们下面来用实例演示一下关联对象的使用方法。</p>
+
+<p>假定我们想要动态地将一个Tap手势操作连接到任何UIView中，并且根据需要指定点击后的实际操作。这时候我们就可以将一个手势对象及操作的block对象关联到我们的UIView对象中。这项任务分两部分。首先，如果需要，我们要创建一个手势识别对象并将它及block做为关联对象。如下代码所示：</p>
+
+<pre><code>- (void)setTapActionWithBlock:(void (^)(void))block
+{
+    UITapGestureRecognizer *gesture = objc_getAssociatedObject(self, &amp;kDTActionHandlerTapGestureKey);
+
+    if (!gesture)
+    {
+        gesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(__handleActionForTapGesture:)];
+        [self addGestureRecognizer:gesture];
+        objc_setAssociatedObject(self, &amp;kDTActionHandlerTapGestureKey, gesture, OBJC_ASSOCIATION_RETAIN);
+    }
+
+    objc_setAssociatedObject(self, &amp;kDTActionHandlerTapBlockKey, block, OBJC_ASSOCIATION_COPY);
+}
+</code></pre>
+
+<p>这段代码检测了手势识别的关联对象。如果没有，则创建并建立关联关系。同时，将传入的块对象连接到指定的key上。注意block对象的关联内存管理策略。</p>
+
+<p>手势识别对象需要一个target和action，所以接下来我们定义处理方法：</p>
+
+<pre><code>- (void)__handleActionForTapGesture:(UITapGestureRecognizer *)gesture
+{
+    if (gesture.state == UIGestureRecognizerStateRecognized)
+    {
+        void(^action)(void) = objc_getAssociatedObject(self, &amp;kDTActionHandlerTapBlockKey);
+
+        if (action)
+        {
+            action();
+        }
+    }
+}
+</code></pre>
+
+<p>我们需要检测手势识别对象的状态，因为我们只需要在点击手势被识别出来时才执行操作。</p>
+
+<p>从上面的例子我们可以看到，关联对象使用起来并不复杂。它让我们可以动态地增强类现有的功能。我们可以在实际编码中灵活地运用这一特性。</p>
+
+<h3>成员变量、属性的操作方法</h3>
+
+<h4>成员变量</h4>
+
+<p>成员变量操作包含以下函数：</p>
+
+<pre><code>// 获取成员变量名
+const char * ivar_getName ( Ivar v );
+
+// 获取成员变量类型编码
+const char * ivar_getTypeEncoding ( Ivar v );
+
+// 获取成员变量的偏移量
+ptrdiff_t ivar_getOffset ( Ivar v );
+</code></pre>
+
+<p>● ivar_getOffset函数，对于类型id或其它对象类型的实例变量，可以调用object_getIvar和object_setIvar来直接访问成员变量，而不使用偏移量。</p>
+
+<h4>关联对象</h4>
+
+<p>关联对象操作函数包括以下：</p>
+
+<pre><code>// 设置关联对象
+void objc_setAssociatedObject ( id object, const void *key, id value, objc_AssociationPolicy policy );
+
+// 获取关联对象
+id objc_getAssociatedObject ( id object, const void *key );
+
+// 移除关联对象
+void objc_removeAssociatedObjects ( id object );
+</code></pre>
+
+<p>关联对象及相关实例已经在前面讨论过了，在此不再重复。</p>
+
+<h4>属性</h4>
+
+<p>属性操作相关函数包括以下：</p>
+
+<pre><code>// 获取属性名
+const char * property_getName ( objc_property_t property );
+
+// 获取属性特性描述字符串
+const char * property_getAttributes ( objc_property_t property );
+
+// 获取属性中指定的特性
+char * property_copyAttributeValue ( objc_property_t property, const char *attributeName );
+
+// 获取属性的特性列表
+objc_property_attribute_t * property_copyAttributeList ( objc_property_t property, unsigned int *outCount );
+</code></pre>
+
+<p>● property_copyAttributeValue函数，返回的char *在使用完后需要调用free()释放。
+● property_copyAttributeList函数，返回值在使用完后需要调用free()释放。</p>
+
+<h2>实例</h2>
+
+<p>假定这样一个场景，我们从服务端两个不同的接口获取相同的字典数据，但这两个接口是由两个人写的，相同的信息使用了不同的字段表示。我们在接收到数据时，可将这些数据保存在相同的对象中。对象类如下定义：</p>
+
+<pre><code>@interface MyObject: NSObject
+
+@property (nonatomic, copy) NSString    *   name;                  
+@property (nonatomic, copy) NSString    *   status;                 
+
+@end
+</code></pre>
+
+<p>接口A、B返回的字典数据如下所示：</p>
+
+<pre><code>@{@"name1": "张三", @"status1": @"start"}
+
+@{@"name2": "张三", @"status2": @"end"}
+</code></pre>
+
+<p>通常的方法是写两个方法分别做转换，不过如果能灵活地运用Runtime的话，可以只实现一个转换方法，为此，我们需要先定义一个映射字典(全局变量)</p>
+
+<pre><code>static NSMutableDictionary *map = nil;
+
+@implementation MyObject
+
++ (void)load
+{
+    map = [NSMutableDictionary dictionary];
+
+    map[@"name1"]                = @"name";
+    map[@"status1"]              = @"status";
+    map[@"name2"]                = @"name";
+    map[@"status2"]              = @"status";
+}
+
+@end
+</code></pre>
+
+<p>上面的代码将两个字典中不同的字段映射到MyObject中相同的属性上，这样，转换方法可如下处理：</p>
+
+<pre><code>- (void)setDataWithDic:(NSDictionary *)dic
+{
+    [dic enumerateKeysAndObjectsUsingBlock:^(NSString *key, id obj, BOOL *stop) {
+
+        NSString *propertyKey = [self propertyForKey:key];
+
+        if (propertyKey)
+        {
+            objc_property_t property = class_getProperty([self class], [propertyKey UTF8String]);
+
+            // TODO: 针对特殊数据类型做处理
+            NSString *attributeString = [NSString stringWithCString:property_getAttributes(property) encoding:NSUTF8StringEncoding];
+
+            ...
+
+            [self setValue:obj forKey:propertyKey];
+        }
+    }];
+}
+</code></pre>
+
+<p>当然，一个属性能否通过上面这种方式来处理的前提是其支持KVC。</p>
+
+<h2>小结</h2>
+
+<p>本章中我们讨论了Runtime中与成员变量和属性相关的内容。成员变量与属性是类的数据基础，合理地使用Runtime中的相关操作能让我们更加灵活地来处理与类数据相关的工作。</p>
+
+<p><strong><em>注：如有不对之处，还请指正，欢迎加QQ好友：1318202110(南峰子)</em></strong></p>
+
+<h2>参考</h2>
+
+<ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Introduction/Introduction.html">Objective-C Runtime Programming Guide</a></li>
+<li><a href="http://www.cocoanetics.com/2012/06/associated-objects/">Associated Objects</a></li>
+</ol>
+
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1612,238 +1924,6 @@ NSURL *jonsSite = [sites at:@"jon"]; // =&gt; http://www.jonmsterling.com/
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/09/23/xing-neng-yu-shi-jian/">性能与时间</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-09-23T23:55:35+08:00" pubdate data-updated="true">Sep 23<sup>rd</sup>, 2014</time>
-        
-        
-           | <a href="/blog/2014/09/23/xing-neng-yu-shi-jian/#comments">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>原文链接：<a href="http://www.macresearch.org/tutorial_performance_and_time">http://www.macresearch.org/tutorial_performance_and_time</a></p>
-
-<p>在讨论性能之前，先讨论一个重要的话题：时间。为了理解代码中的变化如何影响性能，我们需要一个排序的指标。有许多方法用于时间例程，一些比另一些合适。在本教程中我们将讨论Mach Absolute Time。</p>
-
-<h2>为什么是Mach?</h2>
-
-<p>时间例程依赖于所需要测量的时间域。某些情况下使用诸如clock()或getrusage()函数来做些简单的数学运算就足够了。如果时间例程将用于实际的开发框架之外，可移植性就很重要了。我不使用这些。为什么？</p>
-
-<p>对于我来说，调试代码的典型问题是：</p>
-
-<ol>
-<li>我只需要在即时测试时使用时间例程</li>
-<li>我不喜欢依赖于多种函数来包含不同的时间域。它们的行为可能不一致</li>
-<li>有时我需要一个高精度定时器</li>
-</ol>
-
-
-<h2>欢迎了解mach_absolute_time</h2>
-
-<p>mach_absolute_time是一个CPU/总线依赖函数，返回一个基于系统启动后的时钟”嘀嗒”数。它没有很好的文档定义，但这不应该成为使用它的障碍，因为在MAC OS X上可以确保它的行为，并且，它包含系统时钟包含的所有时间区域。那是否应该在产品代码中使用它呢？可能不应该。但是对于测试，它却恰到好处。</p>
-
-<p>使用mach_absolute_time时需要考虑两个因素：</p>
-
-<ol>
-<li>如何获取当前的Mach绝对时间</li>
-<li>如何将其转换为有意义的数字</li>
-</ol>
-
-
-<h2>获取mach_absolute_time</h2>
-
-<p>这非常简单</p>
-
-<pre><code>#include &lt;stdint.h&gt; 
-uint64_t start = mach_absolute_time();
-uint64_t stop = mach_absolute_time(); 
-</code></pre>
-
-<p>这样就可以了。我们通常获取两个值，以得到这两个时间的时间差。</p>
-
-<h2>将mach_absolute_time时间差转换为秒数</h2>
-
-<p>这稍微有点复杂，因为我们需要获取mach_absolute_time所基于的系统时间基准。如下代码：</p>
-
-<pre><code>#include &lt;stdint.h&gt;
-#include&lt;mach/mach_time.h&gt; 
-//Raw mach_absolute_times going in,difference in seconds out
-double subtractTimes( uint64_tendTime, uint64_t startTime )
-{
-    uint64_t difference = endTime - startTime;
-    static double conversion = 0.0;
-
-    if( conversion == 0.0 )
-    {
-        mach_timebase_info_data_t info;
-        kern_return_t err =mach_timebase_info( &amp;info );
-
-        //Convert the timebase into seconds
-        if( err == 0  )
-            conversion= 1e-9 * (double) info.numer / (double) info.denom;
-    }
-
-    return conversion * (double)difference;
-} 
-</code></pre>
-
-<p>这里最重要的是调用mach_timebase_info。我们传递一个结构体以返回时间基准值。最后，一旦我们获取到系统的心跳，我们便能生成一个转换因子。通常，转换是通过分子(info.numer)除以分母(info.denom)。这里我乘了一个1e-9来获取秒数。最后，我们获取两个时间的差值，并乘以转换因子，便得到真实的时间差。</p>
-
-<p>现在我们可能会想，为什么这比用clock好？看起来做了更多的事情。确实是有点，这便是为什么它在一个函数中。我们只需要传递我们的值到函数中并取得答案。</p>
-
-<h2>例子</h2>
-
-<p>让我们写个例子。下面是完整的代码清单(包括mach函数)。可以使用gcc mach.c –o mach来编译它：</p>
-
-<pre><code>#include &lt;stdio.h&gt;
-#include &lt;stdlib.h&gt;
-#include &lt;stdint.h&gt;
-#include &lt;math.h&gt;
-#include&lt;mach/mach_time.h&gt; 
-
-//Raw mach_absolute_times going in,difference in seconds out
-double subtractTimes( uint64_tendTime, uint64_t startTime )
-{
-    uint64_t difference = endTime -startTime;
-    static double conversion = 0.0;
-
-    if( conversion == 0.0 )
-    {        
-        mach_timebase_info_data_tinfo;        
-        kern_return_terr = mach_timebase_info( &amp;info );                       //Convert the timebaseinto seconds        
-
-        if(err == 0  )                       
-            conversion= 1e-9 * (double) info.numer / (double) info.denom;    
-    }
-
-    return conversion * (double)difference;
-} 
-
-int main()
-{
-    inti, j, count;
-    uint64_t start,stop;
-    doublecurrent = 0.0;
-    doubleanswer = 0.0;
-    doubleelapsed = 0.0;
-    intdim1 = 256;
-    intdim2 = 256;
-    intsize = 4*dim1*dim2;
-
-    //Allocatesome memory and warm it up
-    double *array =(double*)malloc(size*sizeof(double));       
-    for(i=0;i&lt;size;i++)array = (double)i;
-
-    count= 5;     
-    for(i=0;i&lt;count;i++)
-    {              
-        start = mach_absolute_time();                                 
-        //dosome work
-        for(j=0;j&lt;size;j++)
-        {
-            answer+= sqrt(array[j]);
-        }
-        stop = mach_absolute_time();
-        current= subtractTimes(stop,start);
-        printf("Timefor iteration: %1.12lf for answer: %1.12lf\n",current, answer);
-        elapsed+= current;
-    } 
-
-    printf("\nTotaltime in seconds = %1.12lf for answer: %1.12lf\n",elapsed/count,answer);
-    free(array);
-    return 0;
-} 
-</code></pre>
-
-<p>我们在这里做了什么？在这个例子中，我们有一个适当大小的double数组，当中存放了一些数字，然后获取这些数值的和的开方。为了测试，我们迭代了5次这个计算。每次迭代后我们打印花费的时间，并总结了计算所需的运行时间。在我的PowerMac G5(2.5)机器上，我获得如下结果：</p>
-
-<pre><code>[bigmac:~/misc] macresearch% gcc mach.c -omach
-[bigmac:~/misc] macresearch%./mach 
-Time for iteration: 0.006717496412for answer: 89478229.125529855490
-Time for iteration: 0.007274204955for answer: 178956458.251062750816
-Time for iteration: 0.006669191332for answer: 268434687.376589745283
-Time for iteration: 0.006953711252for answer: 357912916.502135872841
-Time for iteration: 0.007582157340for answer: 447391145.627681851387 
-Average time in seconds =0.007039352258 for answer: 447391145.627681851387
-</code></pre>
-
-<p>注意，在这里我没有进行优化，因为编译器有方法避开这样的无脑循环。另外，这只是一个例子。如果是真正的代码，我们会进行优化。</p>
-
-<p>好了，这就是这个例子的两个目的。</p>
-
-<p>首先，我使用的数组大小比我的缓存大。我这样做的目的是因为我们需要注意到数据溢出缓存的情况(正如这个例子一样，至少在我的系统中是这样。如果是在MacPro中，不会出现这种情况)。我们将在以后讨论缓存的事宜。当然，这是一个做作的例子，但有一些东西可供思考。其次，你注意到在内存分配之前我写了一句注释，这是什么意思呢？</p>
-
-<p>这在实际情况下是不需要关心的事情，因为内存总是在需要时已准备好使用。但当做一些小测试时来测试函数的性能时，它却可能是会影响到测试结果的实际问题。</p>
-
-<p>当动态分配内存时，第一次访问内存管理时会将其清0(在OS X中不管使用哪种动态分配函数:malloc, calloc…所有内存在用户使用前都会清0)。内存清零是一种安全预防措施(我们不需要递交一些包含安全信息的内容，如解密密钥)</p>
-
-<p>清零过程产生一个副作用(被系统标记为零填充页面故障)。所以为了让我们的计时更精确些，我们在使用内存之前一次性填充数据，以确保我们不会获取到零填充页面故障的处理时间。</p>
-
-<p>让我们来测试一下，注释下面这行代码</p>
-
-<pre><code>for(i=0;i&lt;size;i++) array =(double)i;
-</code></pre>
-
-<p>为:</p>
-
-<pre><code>//for(i=0;i&lt;size;i++) array =(double)i;
-</code></pre>
-
-<p>再次运行测试</p>
-
-<pre><code>[bigmac:~/misc] macresearch% ./mach
-Time for iteration: 0.009478866798for answer: 0.000000000000
-Time for iteration: 0.004756880234for answer: 0.000000000000
-Time for iteration: 0.004927868215for answer: 0.000000000000
-Time for iteration: 0.005227029674for answer: 0.000000000000
-Time for iteration: 0.004891864428for answer: 0.000000000000 
-Average time in seconds =0.005856501870 for answer: 0.000000000000
-</code></pre>
-
-<p>注意第一次迭代的时间比后序的时间多了将近一倍。同时还需要注意所有的answer都是0。再次说明内存被清零了。如果我们从堆上获取了内存，我们获取到的是无意义的数值。</p>
-
-<p>最后，但很重要的一点。不要依赖于内存的清零操作。很有可能获取到的内存是从一个静态分配区而来，那么可能会导致如下这样的问题</p>
-
-<pre><code>double array[3][3];
-</code></pre>
-
-<p>在我的系统上的打印结果是：</p>
-
-<pre><code>-1.99844 -1.29321e-231 -1.99844
--3.30953e-232 -5.31401e+303 0
-1.79209e-313 3.3146e-314 0
-</code></pre>
-
-<p>所以需要特别注意</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/3">&larr; Older</a>
@@ -1860,7 +1940,7 @@ Average time in seconds =0.005856501870 for answer: 0.000000000000
 <section>
 <h1>分类</h1>
 <ul>
-  <li><a href='/blog/categories/ios'>ios (37)</a></li>
+  <li><a href='/blog/categories/ios'>ios (38)</a></li>
   <li><a href='/blog/categories/network'>network (3)</a></li>
   <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
   <li><a href='/blog/categories/swift'>swift (7)</a></li>
@@ -1872,6 +1952,10 @@ Average time in seconds =0.005856501870 for answer: 0.000000000000
 <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/11/10/quartz-2dbian-cheng-zhi-nan-zhi-%5B%3F%5D-:gai-lan/">Quartz 2D编程指南之一：概览</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2014/11/09/objective-c-runtime-yun-xing-shi-zhi-liu-:shi-yi/">Objective-C Runtime 运行时之六：拾遗</a>
@@ -1907,10 +1991,6 @@ Average time in seconds =0.005856501870 for answer: 0.000000000000
     
       <li class="post">
         <a href="/blog/2014/10/17/osatomicyuan-zi-cao-zuo/">OSAtomic原子操作</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/09/23/xing-neng-yu-shi-jian/">性能与时间</a>
       </li>
     
   </ul>
