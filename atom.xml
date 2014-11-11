@@ -4,7 +4,7 @@
   <title><![CDATA[南峰子的技术博客]]></title>
   <link href="http://southpeak.github.io/atom.xml" rel="self"/>
   <link href="http://southpeak.github.io/"/>
-  <updated>2014-11-10T22:05:58+08:00</updated>
+  <updated>2014-11-11T23:38:53+08:00</updated>
   <id>http://southpeak.github.io/</id>
   <author>
     <name><![CDATA[南峰子]]></name>
@@ -12,6 +12,262 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Quartz 2D编程指南之二：图形上下文(Graphics Contexts)]]></title>
+    <link href="http://southpeak.github.io/blog/2014/11/11/quartz-2dbian-cheng-zhi-nan-zhi-er-:tu-xing-shang-xia-wen-graphics-contexts/"/>
+    <updated>2014-11-11T23:14:44+08:00</updated>
+    <id>http://southpeak.github.io/blog/2014/11/11/quartz-2dbian-cheng-zhi-nan-zhi-er-:tu-xing-shang-xia-wen-graphics-contexts</id>
+    <content type="html"><![CDATA[<p>一个Graphics Context表示一个绘制目标。它包含绘制系统用于完成绘制指令的绘制参数和设备相关信息。Graphics Context定义了基本的绘制属性，如颜色、裁减区域、线条宽度和样式信息、字体信息、混合模式等。</p>
+
+<p>我们可以通过几种方式来获取Graphics Context：Quartz提供的创建函数、Mac OS X框架或IOS的UIKit框架提供的函数。Quartz提供了多种Graphics Context的创建函数，包括bitmap和PDF，我们可以使用这些Graphics Context创建自定义的内容。</p>
+
+<p>本章介绍了如何为不同的绘制目标创建Graphics Context。在代码中，我们用CGContextRef来表示一个Graphics Context。当获得一个Graphics Context后，可以使用Quartz 2D函数在上下文(context)中进行绘制、完成操作(如平移)、修改图形状态参数(如线宽和填充颜色)等。</p>
+
+<h2>在iOS中的视图Graphics Context进行绘制</h2>
+
+<p>在iOS应用程序中，如果要在屏幕上进行绘制，需要创建一个UIView对象，并实现它的drawRect:方法。视图的drawRect:方法在视图显示在屏幕上及它的内容需要更新时被调用。在调用自定义的drawRect:后，视图对象自动配置绘图环境以便代码能立即执行绘图操作。作为配置的一部分，视图对象将为当前的绘图环境创建一个Graphics Context。我们可以通过调用UIGraphicsGetCurrentContext函数来获取这个Graphics Context。</p>
+
+<p>UIKit默认的坐标系统与Quartz不同。在UIKit中，原点位于左上角，y轴正方向为向下。UIView通过将修改Quartz的Graphics Context的CTM[原点平移到左下角，同时将y轴反转(y值乘以-1)]以使其与UIView匹配。</p>
+
+<h2>在Mac OS X中创建一个窗口Graphics Context</h2>
+
+<p>在Mac OS X中绘制时，我们需要创建一个窗口Graphics Context。Quartz 2D API 没有提供函数来获取窗口Graphics Context。取而代之的是用Cocoa框架来获取一个窗口上下文。</p>
+
+<p>我们可以在Cocoa应用程序的drawRect:中获取一个Quartz Graphics Context，如下代码所示：</p>
+
+<pre><code>CGContextRef myContext = [[NSGraphicsContext currentContext] graphicsPort];
+</code></pre>
+
+<p>currentContext方法在当前线程中返回NSGraphicsContext实例。graphicsPort方法返回一个低级别、平台相关的Graphics Context(Quartz Graphics Context)。</p>
+
+<p>在获取到Graphics Context后，我们可以在Cocoa应用程序中调用任何Quartz 2D的绘制函数。我们同样可以将Quartz 2D与Cocoa绘制操作混合使用。如图2-1是一个在Cocoa视图中用Quartz 2D绘制的实例。绘图由两个长方形组成(一个不透明的红色长方形和半透明的蓝色长方形)。</p>
+
+<p><strong>Figure 2-1  A view in the Cocoa framework that contains Quartz drawing</strong></p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/cocoa_draw.gif" alt="image" /></p>
+
+<p>为了实现图2-1实例，需要先创建一个Cocoa应用程序。在Interface Builder中，拖动一个Custom View到窗口中，并子类化。然后实现子类视图的，如代码清单2-1所示。视图的drawRect:包含了所有的Quartz绘制代码。</p>
+
+<p><em>注：NSView的drawRect:方法在每次视图需要绘制时自动调用。</em></p>
+
+<p><strong>Listing 2-1  Drawing to a window graphics context</strong></p>
+
+<pre><code>@implementation MyQuartzView
+- (id)initWithFrame:(NSRect)frameRect
+{
+    self = [super initWithFrame:frameRect];
+    return self;
+}
+- (void)drawRect:(NSRect)rec
+{
+    CGContextRef myContext = [[NSGraphicsContext  currentContext] graphicsPort]; //1
+   // ********** Your drawing code here **********       //2
+    CGContextSetRGBFillColor (myContext, 1, 0, 0, 1);     //3
+    CGContextFillRect (myContext, CGRectMake (0, 0, 200, 100 ));   //4
+    CGContextSetRGBFillColor (myContext, 0, 0, 1, .5);     //5
+    CGContextFillRect (myContext, CGRectMake (0, 0, 100, 200));   //6
+}
+@end
+</code></pre>
+
+<p>代码说明：</p>
+
+<ol>
+<li>为视图获取一个Graphics Context</li>
+<li>插入绘图代码的地方。以下四行是使用Quartz 2D函数的例子</li>
+<li>设置完全不透明的红色填充色。</li>
+<li>填充一个长方形，其原点为(0, 0), 大小为(200, 100)</li>
+<li>设置半透明的蓝色填充色。</li>
+<li>填充一个长方形，其原点为(0, 0), 大小为(100, 200)</li>
+</ol>
+
+
+<h2>创建一个PDF Graphics Context</h2>
+
+<p>当创建一个PDF Graphics Context并绘制时，Quartz将绘制操作记录为一系列的PDF绘制命令并写入文件中。我们需要提供一个PDF输出的位置及一个默认的media box(用于指定页面边界的长方形)。图2-2显示了在PDF Graphics Context中绘制及在preview打开PDF的结果。</p>
+
+<p><strong>Figure 2-2  A PDF created by using CGPDFContextCreateWithURL</strong></p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pdf_context_draw.gif" alt="image" /></p>
+
+<p>Quartz 2D API提供了两个函数来创建PDF Graphics Context:</p>
+
+<p>● CGPDFContextCreateWithURL：当你需要用Core Foundation URL指定pdf输出的位置时使用该函数。代码清单2-2显示了该函数的使用方法(代码2-2及后面代码的详细解释略)：</p>
+
+<p><strong>Listing 2-2  Calling CGPDFContextCreateWithURL to create a PDF graphics context</strong></p>
+
+<pre><code>CGContextRef MyPDFContextCreate (const CGRect *inMediaBox, CFStringRef path)
+{
+    CGContextRef myOutContext = NULL;
+    CFURLRef url;
+    url = CFURLCreateWithFileSystemPath (NULL, path, kCFURLPOSIXPathStyle, false);
+    if (url != NULL) {
+        myOutContext = CGPDFContextCreateWithURL (url,  inMediaBox,  NULL);
+        CFRelease(url);
+    }
+    return myOutContext;
+}
+</code></pre>
+
+<p>● CGPDFContextCreate：当需要将pdf输出发送给数据用户时使用该方法。代码清单2-3显示了该函数的使用方法：</p>
+
+<p><strong>Listing 2-3  Calling CGPDFContextCreate to create a PDF graphics context</strong></p>
+
+<pre><code>CGContextRef MyPDFContextCreate (const CGRect *inMediaBox, CFStringRef path)
+{
+    CGContextRef        myOutContext = NULL;
+    CFURLRef            url;
+    CGDataConsumerRef   dataConsumer;
+    url = CFURLCreateWithFileSystemPath (NULL,  path, kCFURLPOSIXPathStyle, false);
+    if (url != NULL)
+    {
+        dataConsumer = CGDataConsumerCreateWithURL (url);
+        if (dataConsumer != NULL)
+        {
+            myOutContext = CGPDFContextCreate (dataConsumer, inMediaBox, NULL);
+            CGDataConsumerRelease (dataConsumer);
+        }
+        CFRelease(url);
+    }
+    return myOutContext;
+}
+</code></pre>
+
+<p>代码清单2-4显示是如何调用MyPDFContextCreate程序及绘制操作。</p>
+
+<p><strong>Listing 2-4  Drawing to a PDF graphics context</strong></p>
+
+<pre><code>CGRect mediaBox;
+
+mediaBox = CGRectMake (0, 0, myPageWidth, myPageHeight);
+myPDFContext = MyPDFContextCreate (&amp;mediaBox, CFSTR("test.pdf"));
+CFStringRef myKeys[1];
+CFTypeRef myValues[1];
+myKeys[0] = kCGPDFContextMediaBox;
+myValues[0] = (CFTypeRef) CFDataCreate(NULL,(const UInt8 *)&amp;mediaBox, sizeof (CGRect));
+CFDictionaryRef pageDictionary = CFDictionaryCreate(NULL, (const void **) myKeys,
+                                                    (const void **) myValues, 1,
+                                                    &amp;kCFTypeDictionaryKeyCallBacks,
+                                                    &amp; kCFTypeDictionaryValueCallBacks);
+CGPDFContextBeginPage(myPDFContext, &amp;pageDictionary);
+    // ********** Your drawing code here **********
+    CGContextSetRGBFillColor (myPDFContext, 1, 0, 0, 1);
+    CGContextFillRect (myPDFContext, CGRectMake (0, 0, 200, 100 ));
+    CGContextSetRGBFillColor (myPDFContext, 0, 0, 1, .5);
+    CGContextFillRect (myPDFContext, CGRectMake (0, 0, 100, 200 ));
+CGPDFContextEndPage(myPDFContext);
+CFRelease(pageDictionary);
+CFRelease(myValues[0]);
+CGContextRelease(myPDFContext);
+</code></pre>
+
+<p>我们可以将任何内容(图片，文本，绘制路径)绘制到pdf中，并能添加链接及加密。</p>
+
+<h2>创建位图Graphics Context</h2>
+
+<p>一个位图Graphics Context接受一个指向内存缓存(包含位图存储空间)的指针，当我们绘制一个位图Graphics Context时，该缓存被更新。在释放Graphics Context后，我们将得到一个我们指定像素格式的全新的位图。</p>
+
+<p><em>注：位图Graphics Context有时用于后台绘制。CGLayer对象优化了后台绘制，因为Quartz在显卡上缓存了层。</em></p>
+
+<pre><code>iOS提示：iOS应用程序使用了UIGraphicsBeginImageContextWithOptions取代Quartz低层函数。如果使用Quartz创建一下后台bitmap，bitmap Graphics Context使用的坐标系统是Quartz默认的坐标系统。而使用UIGraphicsBeginImageContextWithOptions创建图形上下文，UIKit将会对坐标系统使用与UIView对象的图形上下文一样的转换。这允许应用程序使用相同的绘制代码而不需要担心坐标系统问题。虽然我们的应用程序可以手动调整CTM达到相同的效果，但这种做没有任何好处。
+</code></pre>
+
+<p>我们使用CGBitmapContextCreate来创建位图Graphics Context，该函数有如下参数：</p>
+
+<p>● data：一个指向内存目标的指针，该内存用于存储需要渲染的图形数据。内存块的大小至少需要(bytePerRow * height)字节。</p>
+
+<p>● width：指定位图的宽度，单位是像素(pixel)。</p>
+
+<p>● height：指定位图的高度， 单位是像素(pixel)。</p>
+
+<p>● bitsPerComponent：指定内存中一个像素的每个组件使用的位数。例如，一个32位的像素格式和一个rgb颜色空间，我们可以指定每个组件为8位。</p>
+
+<p>● bytesPerRow：指定位图每行的字节数。</p>
+
+<p>● colorspace：颜色空间用于位图上下文。在创建位图Graphics Context时，我们可以使用灰度(gray), RGB, CMYK, NULL颜色空间。</p>
+
+<p>● bitmapInfo：位图的信息，这些信息用于指定位图是否需要包含alpha组件，像素中alpha组件的相对位置(如果有的话)，alpha组件是否是预乘的，及颜色组件是整型值还是浮点值。</p>
+
+<p>代码清单2-5显示了如何创建位图Graphics Context。当向位图Graphics Context绘图时，Quartz将绘图记录到内存中指定的块中。</p>
+
+<p><strong>Listing 2-5  Creating a bitmap graphics context</strong></p>
+
+<pre><code>CGContextRef MyCreateBitmapContext (int pixelsWide, int pixelsHigh)
+{
+    CGContextRef    context = NULL;
+    CGColorSpaceRef colorSpace;
+    void *          bitmapData;
+    int             bitmapByteCount;
+    int             bitmapBytesPerRow;
+    bitmapBytesPerRow   = (pixelsWide * 4);
+    bitmapByteCount     = (bitmapBytesPerRow * pixelsHigh);
+    colorSpace = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
+    bitmapData = calloc( bitmapByteCount );
+    if (bitmapData == NULL)
+    {
+        fprintf (stderr, "Memory not allocated!");
+        return NULL;
+    }
+    context = CGBitmapContextCreate (bitmapData, pixelsWide, pixelsHigh, 8, bitmapBytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast);
+    if (context== NULL)
+    {
+        free (bitmapData);
+        fprintf (stderr, "Context not created!");
+        return NULL;
+    }
+    CGColorSpaceRelease( colorSpace );
+    return context;
+}
+</code></pre>
+
+<p>代码清单2-6显示了调用MyCreateBitmapContext 创建一个位图Graphics Context，使用位图Graphics Context来创建CGImage对象，然后将图片绘制到窗口Graphics Context中。绘制结果如图2-3所示：</p>
+
+<p><strong>Listing 2-6  Drawing to a bitmap graphics context</strong></p>
+
+<pre><code>CGRect myBoundingBox;
+myBoundingBox = CGRectMake (0, 0, myWidth, myHeight);
+myBitmapContext = MyCreateBitmapContext (400, 300);
+// ********** Your drawing code here ********** 
+CGContextSetRGBFillColor (myBitmapContext, 1, 0, 0, 1);
+CGContextFillRect (myBitmapContext, CGRectMake (0, 0, 200, 100 ));
+CGContextSetRGBFillColor (myBitmapContext, 0, 0, 1, .5);
+CGContextFillRect (myBitmapContext, CGRectMake (0, 0, 100, 200 ));
+myImage = CGBitmapContextCreateImage (myBitmapContext);
+CGContextDrawImage(myContext, myBoundingBox, myImage);
+char *bitmapData = CGBitmapContextGetData(myBitmapContext); 
+CGContextRelease (myBitmapContext);
+if (bitmapData) free(bitmapData); 
+CGImageRelease(myImage);
+</code></pre>
+
+<p><strong>Figure 2-3  An image created from a bitmap graphics context and drawn to a window graphics context</strong></p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/cocoa_draw.gif" alt="image" /></p>
+
+<h2>支持的像素格式</h2>
+
+<p>表2-1总结了位图Graphics Context支持的像素格式，相关的颜色空间及像素格式支持的Mac OS X最早版本。像素格式用bpp(每像素的位数)和bpc(每个组件的位数)来表示。表格同时也包含与像素格式相关的位图信息常量。</p>
+
+<p>表2-1：位图Graphics Context支持的像素格式</p>
+
+<p><img src="http://a1.qpic.cn/psb?/V130i6W71atwfr/yA.HJQ2EPTcENE9.Nk8Ql81JN5yDO08pmocm2G.CZ2g!/b/dPvSQHSSIAAA&amp;bo=DwOAAgAAAAADB6w!&amp;rf=viewer_4" alt="image" /></p>
+
+<h2>反锯齿</h2>
+
+<p>位图Graphics Context支持反锯齿，这一操作是人为的较正在位图中绘制文本或形状时产生的锯齿边缘。当位图的分辩率明显低于人眼的分辩率时就会产生锯齿。为了使位图中的对象显得平滑，Quartz使用不同的颜色来填充形状周边的像素。通过这种方式来混合颜色，使形状看起来更平滑。如图2-4显示的效果。我们可以通过调用CGContextSetShouldAntialias来关闭位图Graphics Context的反锯齿效果。反锯齿设置是图形状态的一部分。</p>
+
+<p>可以调用函数CGContextSetAllowsAntialiasing来控制一个特定Graphics Context是否支持反锯齿；false表示不支持。该设置不是图形状态的一部分。当上下文及图形状态设置为true时，Quartz执行反锯齿。</p>
+
+<p><strong>Figure 2-4  A comparison of aliased and anti-aliasing drawing</strong></p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/antialias.jpg" alt="image" /></p>
+
+<h2>获取打印的Graphics Context</h2>
+
+<p>Mac OS X中的Cocoa应用程序通过自定义的NSView子类来实现打印。一个视图通过调用print:方法来进行打印。然后视图以打印机为目标创建一个Graphics Context，并调用drawRect:方法。应用程序使用与在屏幕进行绘制相同的绘制代码。我们同样可以自定义drawRect: 方法将图形绘制到打印机。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Quartz 2D编程指南之一：概览]]></title>
@@ -6268,192 +6524,6 @@ self.passwordTextField.backgroundColor = self.passwordIsValid ? [UIColor clearCo
 
 
 <p>通常我们只在需要时才使用BLE，尽量减少设备扫描搜索操作。</p>
-
-<h2>参考</h2>
-
-<p><a href="https://developer.apple.com/library/ios/documentation/NetworkingInternetWeb/Conceptual/CoreBluetooth_concepts/AboutCoreBluetooth/Introduction.html">Core Bluetooth Programming Guide</a></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Core Bluetooth框架之二：后台处理]]></title>
-    <link href="http://southpeak.github.io/blog/2014/07/31/core-bluetoothkuang-jia-zhi-er-:hou-tai-chu-li/"/>
-    <updated>2014-07-31T23:28:24+08:00</updated>
-    <id>http://southpeak.github.io/blog/2014/07/31/core-bluetoothkuang-jia-zhi-er-:hou-tai-chu-li</id>
-    <content type="html"><![CDATA[<p>在开发BLE相关应用时，由于应用在后台时会有诸多资源限制，需要考虑应用的后台处理问题。默认情况下，当程序位于后台或挂起时，大多数普通的Core Bluetooth任务都无法使用，不管是Central端还是Peripheral端。但我们可以声明我们的应用支持Core Bluetooth后台执行模式，以允许程序从挂起状态中被唤醒以处理蓝牙相关的事件。</p>
-
-<p>然而，即使我们的应用支持两端的Core Bluetooth后台执行模式，它也不能一直运行。在某些情况下，系统可能会关闭我们的应用来释放内存，以为当前前台的应用提供更多的内存空间。在iOS7及后续版本中，Core Bluetooth支持保存Central及Peripheral管理器对象的状态信息，并在程序启动时恢复这些信息。我们可以使用这个特性来支持与蓝牙设备相关的长时间任务。</p>
-
-<p>下面我们将详细讨论下这些问题。</p>
-
-<h2>只支持前台操作(Foreground-Only)的应用</h2>
-
-<p>大多数应用在进入到后台后都会在短时间内进入挂起状态，除非我们请求执行一些特定的后台任务。当处理挂起状态时，我们的应用无法继续执行蓝牙相关的任务。</p>
-
-<p>在Central端，Foreground-Only应用在进入后台或挂起时，无法继续扫描并发现下在广告的Peripheral设备。而在Peripheral端，无法广告自身，同时Central端对其的任何访问操作都会返回一个错误。</p>
-
-<p>Foreground-Only应用挂起时，所有蓝牙相关的事件都会被系统放入一个队列，当应用进入前台后，系统会将这些事件发送给我们的应用。也就是说，当某些事件发生时，Core Bluetooth提供了一种方法来提示用户。用户可以使用这些提示来决定是否将应用放到前台。在《Core Bluetooth框架之一：Central与Peripheral》中我们介绍了connectPeripheral:options:方法，在调用这个方法时，我们可以设备options参数来设置这些提示：</p>
-
-<ol>
-<li>CBConnectPeripheralOptionNotifyOnConnectionKey：当应用挂起时，如果有一个连接成功时，如果我们想要系统为指定的peripheral显示一个提示时，就使用这个key值。</li>
-<li>CBConnectPeripheralOptionNotifyOnDisconnectionKey：当应用挂起时，如果连接断开时，如果我们想要系统为指定的peripheral显示一个断开连接的提示时，就使用这个key值。</li>
-<li>CBConnectPeripheralOptionNotifyOnNotificationKey：当应用挂起时，使用该key值表示只要接收到给定peripheral端的通知就显示一个提示。</li>
-</ol>
-
-
-<h2>Core Bluetooth后台执行模式</h2>
-
-<p>我们可以在Info.plist文件中设置Core Bluetooth后台执行模式，以让应用支持在后台执行一些蓝牙相关的任务。当应用声明了这一功能时，系统会将应用唤醒以允许它处理蓝牙相关的任务。这个特性对于与那种定时发送数据的BLE交互的应用非常有用。</p>
-
-<p>有两种Core Bluetooth后台执行模式，一种用于实现Central端操作，一种用于实现Peripheral端操作。如果我们的应用同时实现了这两端的功能，则需要声明同时支持两种模式。我们需要在Info.plist文件添加UIBackgroundModes键，同时添加以下两个值或其中之一：</p>
-
-<ol>
-<li>bluetooth-central(App communicates using CoreBluetooth)</li>
-<li>bluetooth-peripheral(App shares data using CoreBluetooth)</li>
-</ol>
-
-
-<h4>bluetooth-central模式</h4>
-
-<p>如果设置了bluetooth-central值，则我们的应用在后台时，仍然可以查找并连接到Peripheral设备，以及查找相应数据。另外，系统会在CBCentralManagerDelegate或CBPeripheralDelegate代理方法被调用时唤醒我们的应用，允许应用处理事件，如建立连接或断开连接等等。</p>
-
-<p>虽然应用在后台时，我们可以执行很多蓝牙相关任务，但需要记住应用在前后台扫描Peripheral设备时还是不一样的。当我们的应用在后台扫描Peripheral设备时，</p>
-
-<ol>
-<li>CBCentralManagerScanOptionAllowDuplicatesKey扫描选项会被忽略，同一个Peripheral端的多个发现事件会被聚合成一个发现事件。</li>
-<li>如果扫描Peripheral设备的多个应用都在后台，则Central设备扫描广告数据的时间间隔会增加。结果是发现一个广告的Peripheral设备可能需要很长时间。</li>
-</ol>
-
-
-<p>这些处理在iOS设备中最小化无线电的使用及改善电池的使用寿命非常有用。</p>
-
-<h4>bluetooth-peripheral模式</h4>
-
-<p>如果设置了bluetooth-peripheral值，则我们的应用在后台时，应用会被唤醒以处理来自于连接的Central端的读、写及订阅请求，Core Bluetooth还允许我们在后台进行广告。与Central端类似，也需要注意前后台的操作区别。特别是在广告时，有以下几点区别：</p>
-
-<ol>
-<li>CBAdvertisementDataLocalNameKey广告key值会被忽略，Peripheral端的本地名不会被广告</li>
-<li>CBAdvertisementDataServiceUUIDsKey键的所有服务的UUID都被放在一个&#8221;overflow&#8221;区域中，它们只能被那些显示要扫描它们的网络设备发现。</li>
-<li>如果多个应用在后台广告，则Peripheral设备发送广告包的时间间隔会变长。</li>
-</ol>
-
-
-<h2>在后台执行长(Long-Term)任务</h2>
-
-<p>虽然建议尽快完成后台任务，但有些应该仍然需要使用Core Bluetooth来执行一个长任务。这时就涉及到状态的保存与恢复操作。</p>
-
-<h4>状态保存与恢复</h4>
-
-<p>因为状态保存与恢复是内置于Core Bluetooth的，我们的程序可以选择这个特性，让系统保存Central和Peripheral管理器的状态并继续执行一些蓝牙相关的任务，即使此时程序不再运行。当这些任务中的一个完成时，系统会在后台重启程序，程序可以恢复先前的状态以处理事件。Core Bluetooth支持Central端、Peripheral端的状态保存与恢复，也可以同时支持两者。</p>
-
-<p>在Central端，系统会在关闭程序释放内存时保存Central管理器对象的状态(如果有多个Central管理器，我们可以选择系统跟踪哪个管理器)。对于给定的CBCentralManager对象，系统会跟踪如下信息：</p>
-
-<ol>
-<li>Central管理器扫描的服务</li>
-<li>Central管理器尝试或已经连接的Peripheral</li>
-<li>Central管理器订阅的特性</li>
-</ol>
-
-
-<p>在Peripheral端，对于给定的CBPeripheralManager对象，系统会跟踪以下信息：</p>
-
-<ol>
-<li>Peripheral管理器广告的数据</li>
-<li>Peripheral管理器发布到设备数据库的服务和特性</li>
-<li>订阅Peripheral管理器的特性值的Central端</li>
-</ol>
-
-
-<p>当系统将程序重启到后台后，我们可以重新重新初始化我们程序的Central和Peripheral管理器并恢复状态。我们接下来将详细介绍一下如何使用状态保存与恢复。</p>
-
-<h4>添加状态保存和恢复支持</h4>
-
-<p>Core Bluetooth中的状态保存与恢复是可选的特性，需要程序的支持才能工作。我们可以按照以下步骤来添加这一特性的支持：</p>
-
-<ol>
-<li>(必要步骤)当分配及初始化Central或Peripheral管理器对象时，选择性加入状态保存与恢复。</li>
-<li>(必要步骤)在系统重启程序时，重新初始化Central或Peripheral管理器对象</li>
-<li>(必要步骤)实现适当的恢复代理方法</li>
-<li>(可选步骤)更新Central或Peripheral管理器初始化过程</li>
-</ol>
-
-
-<h5>选择性加入状态保存与恢复</h5>
-
-<p>为了选择性加入状态保存与恢复特性，在分配及初始化Central或Peripheral管理器时提供一个一个唯一恢复标识。<strong>恢复标识</strong>是一个字条串，用来让Core Bluetooth和程序标识Central或Peripheral管理器。字符串的值只在自己的代码中有意义，但这个字符串告诉Core Bluetooth我们需要保存对象的状态。Core Bluetooth只保存那些有恢复标识的对象。</p>
-
-<p>例如，在实现Central端时，为了选择性加入状态保存与恢复特性，在初始化CBCentralManager对象时，可以指定初始化选项CBCentralManagerOptionRestoreIdentifierKey，并提供一个恢复标识，如下代码所示：</p>
-
-<pre><code>centralManager = [[CBCentralManager alloc] initWithDelegate:self queue:nil options:@{CBCentralManagerOptionRestoreIdentifierKey: @"restoreIdentifier"}];
-</code></pre>
-
-<p>实现Peripheral端时的操作也类似，只不过我们使用选项CBPeripheralManagerOptionRestoreIdentifierKey键。</p>
-
-<p>因为程序可以有多个Central或Peripheral管理器，所以需要确保恢复标识是唯一的，这样系统可以区分这些管理器对象。</p>
-
-<h5>重新初始化Central或Peripheral管理器对象</h5>
-
-<p>当系统重启程序到后台后，我们所需要做的第一件事就是使用恢复标识来重新初始化这些对象。如果我们的应用只有一个Central管理器或Peripheral管理器，且管理器在程序的整个生命周期都存在，则后续我们便不需要再做更多的处理。但如果我们有多个管理器，或者管理器不是存在于程序的整个生命周期，则系统重启应用时，我们需要知道重新初始化哪一个管理器。我们可以通过在程序代理对象的application:didFinishLaunchingWithOptions:方法中，使用合适的启动选项键来访问管理器对象的列表(这个列表是程序关闭是系统为程序保存的)。</p>
-
-<p>下面代码展示了程序重新启动时，我们获取所有Central管理器对象的恢复标识:</p>
-
-<pre><code>- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
-{
-    // Override point for customization after application launch.
-
-    NSArray *centralManagerIdentifiers = launchOptions[UIApplicationLaunchOptionsBluetoothCentralsKey];
-
-    // TODO: ...
-
-    return YES;
-}
-</code></pre>
-
-<p>有了这个恢复标识的列表后，我们就可以重新初始化我们所需要的管理器对象了。</p>
-
-<h5>实现适当的恢复代理方法</h5>
-
-<p>重新初始化Central或Peripheral管理器对象后，我们通过使用蓝牙系统的状态同步这些对象的状态来恢复它们。此时，我们需要实现一些恢复代理方法。对于Central管理器，我们实现centralManager:willRestoreState:代理方法；对于Peripheral管理器管理器，我们实现peripheralManager:willRestoreState:代理方法。</p>
-
-<p><em>对于选择性加入保存与恢复特性的应用来说，这些方法是程序启动到后台以完成一些蓝牙相关任务所调用的第一个方法。而对于非选择性加入特性的应用来说，会首先调用centralManagerDidUpdateState:和peripheralManagerDidUpdateState:代理方法。</em></p>
-
-<p>在上述两个代理方法中，最后一个参数是一个字典，包含程序关闭时保存的关于管理器的信息。如下代码所示，我们可以使用CBCentralManagerRestoredStatePeripheralsKey键来获取Central管理器已连接的或尝试连接的所有Peripheral设备的列表:</p>
-
-<pre><code>- (void)centralManager:(CBCentralManager *)central willRestoreState:(NSDictionary *)state
-{
-    NSArray *peripherals = state[CBCentralManagerRestoredStatePeripheralsKey];
-
-    // TODO: ...
-}
-</code></pre>
-
-<p>获取到这个列表后，我们便可以根据需要来做处理。</p>
-
-<h5>更新初始化过程</h5>
-
-<p>在实现了前面的三个步骤后，我们可能想更新我们的管理器的初始化过程。虽然这一步是可选的，但如果要确认任务是否运行正常时，非常有用。例如，我们的程序可能在解析所连接的Peripheral设备的数据的过程中被关闭。当程序使用这个Peripheral设备作恢复操作时，无法知道数据处理到哪了。我们需要确保程序从数据操作停止的位置继续开始操作。</p>
-
-<p>又如下面的代码展示了在centralManagerDidUpdateState:代理方法中初始化程序操作时，我们可以找出是否成功发现了被恢复的Peripheral设备的指定服务：</p>
-
-<pre><code>NSUInteger serviceUUIDIndex = [peripheral.services indexOfObjectPassingTest:^BOOL(CBService *obj, NSUInteger index, BOOL *stop) {        return [obj.UUID isEqual:myServiceUUIDString];    }];
-    if (serviceUUIDIndex == NSNotFound) {       [peripheral discoverServices:@[myServiceUUIDString]];       ...
-}    
-</code></pre>
-
-<p>如上例所述，如果系统在程序完成搜索服务时关闭了应用，则通过调用discoverServices:方法在关闭的那个点开始解析恢复的Peripheral数据。如果程序成功搜索到服务，我们可以确认是否搜索到正确的特性。通过更新初始化过程，我们可以确保在正确的时间调用正确的方法。</p>
-
-<h2>小结</h2>
-
-<p>虽然我们可能需要声明应用支持Core Bluetooth后台执行模式，以完成特定的任务，但总是应该慎重考虑执行后台操作。因为执行太多的蓝牙相关任务需要使用iOS设备的内置无线电，而无线电的使用会影响到电池的寿命，所以尽量减少在后台执行的任务。任何会被蓝牙相关任务唤醒的应用应该尽快处理任务并在完成时重新挂起。</p>
-
-<p>下面是一些基础的准则：</p>
-
-<ol>
-<li>应用应该是基于会话的，并提供接口以允许用户决定什么时候开始及结束蓝牙相关事件的分发。</li>
-<li>一旦被唤醒，一个应用大概有10s的时间来完成任务。理想情况下，应用应该尽快完成任务并重新挂起。系统可以对执行时间太长的后台任务进行限流甚至杀死。</li>
-<li>应用被唤醒时，不应该执行一些无关紧要的操作。</li>
-</ol>
-
 
 <h2>参考</h2>
 
