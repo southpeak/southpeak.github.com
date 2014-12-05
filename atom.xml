@@ -4,7 +4,7 @@
   <title><![CDATA[南峰子的技术博客]]></title>
   <link href="http://southpeak.github.io/atom.xml" rel="self"/>
   <link href="http://southpeak.github.io/"/>
-  <updated>2014-12-02T22:30:10+08:00</updated>
+  <updated>2014-12-05T17:37:22+08:00</updated>
   <id>http://southpeak.github.io/</id>
   <author>
     <name><![CDATA[南峰子]]></name>
@@ -12,6 +12,425 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Quartz 2D编程指南之六：模式(Pattern)]]></title>
+    <link href="http://southpeak.github.io/blog/2014/12/05/quartz-2dbian-cheng-zhi-nan-zhi-liu-:mo-shi-pattern/"/>
+    <updated>2014-12-05T16:35:04+08:00</updated>
+    <id>http://southpeak.github.io/blog/2014/12/05/quartz-2dbian-cheng-zhi-nan-zhi-liu-:mo-shi-pattern</id>
+    <content type="html"><![CDATA[<p>模式(Pattern)是绘制操作的一个序列，这些绘制操作可以重复地绘制到一个图形上下文上。我们可以像使用颜色一样使用这些模式。当我们使用pattern来绘制时，Quartz将Page分割成模式单元格的集合，其中每个单元格的大小不是模式图片的大小，并使用我们提供的回调函数来绘制这些单元格。图6-1演示了一个绘制到window图形上下文的模式。</p>
+
+<p>Figure 6-1  A pattern drawn to a window</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/patterned_window.gif" alt="image" /></p>
+
+<h2>模式的骨架(Anatomy)</h2>
+
+<p>模式单元格是模式的基础组件。图6-1中的模式的单元格如图6-2所示。其中黑色边框不是模式单元格的一部分；之所以画出来是为了显示模式单元格的边界。</p>
+
+<p>Figure 6-2  A pattern cell</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_cell_wborder.gif" alt="image" /></p>
+
+<p>该模式单元格的大小包含四个带颜色的矩形以及这些矩形上部及右侧的白色区域，如图6-3所示。每个模式单元格的黑色边框不是单元格的一部分；画出来只是为是标明单元格的边界。当我们创建一个模式单元格时，我们需要定义单元格的边界并在这个范围内进行绘制。</p>
+
+<p>Figure 6-3  Pattern cells with black rectangles drawn to show the bounds of each cell</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_parts_1.gif" alt="image" /></p>
+
+<p>我们可以指定水平和竖直方向上两个单元格之间的间距。图6-3所绘制的单元格是相互紧挨着的。而图6-4在两个方向上都指定了单元格之间的间距。我们可以为两个方向指定不同的间距。我们亦可以指定间距为负数，这样单元格便会重叠。</p>
+
+<p>Figure 6-4  Spacing between pattern cells</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_part_2.gif" alt="image" /></p>
+
+<p>当我们绘制一个模式单元格时，Quartz使用<strong>模式空间(pattern space)</strong>作为坐标系统。模式空间是一个抽象空间，它会使用我们创建模式时指定的变换矩阵(pattern matrix)来映射到默认用户空间。</p>
+
+<pre><code>注意：模式空间与用户空间是分开的。未转换的模式空间映射到基础的用户空间(未转换的)，而不管当前转换矩阵(CTM)。当我们在模式空间上应用转换时，Quartz只将转换应用于模式空间。
+</code></pre>
+
+<p>如果我们不想要Quartz来转换模式单元格，我们可以指定单位矩阵。然而，我们可以使用转换矩阵来达到有趣的效果。图6-5显示了缩放6-2中的模式单元格的效果。图6-6旋转了这些单元格。图6-7则平移了这些单元格。
+Figure 6-5  A scaled pattern cell</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_halfbyonehalf.gif" alt="image" /></p>
+
+<p>Figure 6-6  A rotated pattern cell</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_2PIdiv6.gif" alt="image" /><br/>
+Figure 6-7  A translated pattern cell</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_5_5_translate.gif" alt="image" /></p>
+
+<h2>着色模式(Colored Patterns)和模板模式(Stencil Patterns)</h2>
+
+<p>着色模式有与其相关的固有颜色。如果修改了创建模式单元格的颜色，则模式也便失去了意义。图6-8中显示的苏格兰格子就是着色模式的一个例子。着色模式中的颜色是模式单元格创建流程的一部分，而不是绘制流程的一部分。</p>
+
+<p>Figure 6-8  A colored pattern has inherent color</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/tartan.gif" alt="image" /></p>
+
+<p>而其它模式只限定了形状，因此可以认为是模板模式(或者是非着色模式、甚至可以作为图像蒙板)。图6-9中展示的红色和黑色星星就是使用相同的模式单元格。单元格由一个五角星组成。当定义模式单元格时，没有与之相关的颜色。颜色值是在绘制过程中指定的，而不是创建过程的一部分。</p>
+
+<p>Figure 6-9  A stencil pattern does not have inherent color</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/star_patterns.gif" alt="image" /></p>
+
+<p>在Quartz 2D中，我们可以创建这两种模式。</p>
+
+<h2>平铺(Tiling)</h2>
+
+<p>平铺(Tiling)是将模式单元格绘制到页面(Page)的某个部分的过程。当Quartz将模式渲染到一个设备时，Quartz可能需要调整模式以适应设备空间。即，在用户空间定义的模式单元格在渲染到设备时可能无法精确匹配，这是由用户空间单元和设备像素之间的差异导致的。</p>
+
+<p>Quartz有三个平铺选项，以在必要时调整模式：</p>
+
+<ol>
+<li>没有失真(no distortion): 以细微调整模式单元格之间的间距为代价，但通常不超过一个设备像素。</li>
+<li>最小的失真的恒定间距：设定单元格之间的间距，以细微调整单元大小为代价，但通常不超过一个设备像素。</li>
+<li>恒定间距：设定单元格之间间距，以调整单元格大小为代价，以求尽快的平铺</li>
+</ol>
+
+
+<h2>模式如何工作</h2>
+
+<p>模式操作类似于颜色，我们设置一个填充或描边(stroke)模式，然后调用绘制函数。Quartz使用我们设置的模式作为“涂料”。例如，如果我们要使用纯色绘制一个填充的的矩形，我们首先调用函数(如CGContextSetFillColor)来设置填充颜色。然后调用函数CGContextFillRect以使用我们指定的颜色来填充矩形。为了绘制一个模式，颜色调用函数CGContextSetFillPattern来设置指定的模式。绘制颜色和绘制模式的不同之处在于我们必须先定义一个模式。我们为函数CGContextSetFillPattern提供模式和颜色信息。我们将在下面的绘制着色模式和绘制模板模式章节看到如何创建、设置和绘制模式。</p>
+
+<p>这里有个例子说明Quartz在幕后是如何绘制一个模式的。当我们填充或描边一个模式时，Quartz会按照以下指令来绘制每一个模式单元格：</p>
+
+<ol>
+<li>保存图形状态</li>
+<li>将当前转换矩阵应用到原始的模式单元格上</li>
+<li>连接CTM与模式矩阵</li>
+<li>裁剪模式单元格的边界矩形</li>
+<li>调用绘制回调函数来绘制单元格</li>
+<li>恢复图形状态</li>
+</ol>
+
+
+<p>Quartz会执行所有平铺操作，重复绘制模式单元格到绘制空间，直到渲染满整个空间。我们可以填充和描边一个模式。模式单元格可以是指定的任何大小。如果我们想要看到模式，我们需要确保模式单元格与绘制空间匹配。例如，如果我们的模式单元格是8*10个单位的，而我们用这个模式来描边一个只有2个单位的直线，则这个模式单元格将会被裁剪。这种情况下，我们可能无法辨认出我们的模式。</p>
+
+<h2>绘制着色模式</h2>
+
+<p>绘制着色模式需要执行以下五步操作：</p>
+
+<ol>
+<li>写一个绘制着色模式单元格的回调函数</li>
+<li>设置着色模式的颜色空间</li>
+<li>设置着色模式的骨架(Anatomy)</li>
+<li>指定着色模式作为填充或描边模式</li>
+<li>使用着色模式绘制</li>
+</ol>
+
+
+<p>绘制模板模式也是类似这几步。两者之间的区别在于如何设置颜色信息。</p>
+
+<h3>写一个绘制着色模式单元格的回调函数</h3>
+
+<p>一个模式单元格看起来是什么样的完全取决于我们。在这个例子中，代码清单6-1绘制了图6-2所示的模式单元格。</p>
+
+<p>Listing 6-1  A drawing callback that draws a colored pattern cell</p>
+
+<pre><code>#define H_PATTERN_SIZE 16
+#define V_PATTERN_SIZE 18
+
+void MyDrawColoredPattern (void *info, CGContextRef myContext)
+{
+    CGFloat subunit = 5; 
+
+    CGSize size = {subunit, subunit};
+    CGPoint point1 = {0,0}, point2 = {subunit, subunit}, point3 = {0,subunit}, point4 = {subunit,0};
+    CGRect myRect1 = {point1, size}, myRect2 = {point2, size}, myRect3 = {point3, size}, myRect4 = {point4, size};
+
+    CGContextSetRGBFillColor (myContext, 0, 0, 1, 0.5);
+    CGContextFillRect (myContext, myRect1);
+    CGContextSetRGBFillColor (myContext, 1, 0, 0, 0.5);
+    CGContextFillRect (myContext, myRect2);
+    CGContextSetRGBFillColor (myContext, 0, 1, 0, 0.5);
+    CGContextFillRect (myContext, myRect3);
+    CGContextSetRGBFillColor (myContext, .5, 0, .5, 0.5);
+    CGContextFillRect (myContext, myRect4);
+}
+</code></pre>
+
+<p>模式单元格绘制函数是类似于下面这种格式的一个回调函数</p>
+
+<pre><code>typedef void (*CGPatternDrawPatternCallback) (
+                        void *info,
+                        CGContextRef context
+    );
+</code></pre>
+
+<p>我们可以随意命名我们的回调函数。代码清单6-1中命名为MyDrawColoredPattern。这个回调函数带有两个参数：</p>
+
+<ol>
+<li>info: 一个指向模式相关数据的指针。这个参数是可选的，可以传递NULL。传递给回调的数据与后面创建模式的数据是一样的。</li>
+<li>context: 绘制模式单元格的图形上下文</li>
+</ol>
+
+
+<p>代码清单6-1中绘制的模式单元格是随意的。以下是一些关于绘制代码的重要信息：</p>
+
+<ol>
+<li>需要声明模式大小。在绘制时我们需要记住模式大小。在这个例子中，大小是全局声明的，绘制函数没有具体提到大小，除了在注释中。然后，我们将模式大小指定给Quartz 2D。</li>
+<li>绘制函数后面是由CGPatternDrawPatternCallback回调函数类型定义定义的原型</li>
+<li>代码中执行的绘制设置了颜色，让其成为一个着色模式。</li>
+</ol>
+
+
+<h3>设置着色模式的颜色空间</h3>
+
+<p>代码清单6-1中的代码使用颜色来绘制模式单元格。我们必须设置基本的模式颜色空间为NULL，以确保Quartz使用绘制路径指定的颜色来绘制，如代码清单6-2所示。</p>
+
+<p>Listing 6-2  Creating a base pattern color space</p>
+
+<pre><code>CGColorSpaceRef patternSpace;
+
+// 创建模式颜色空间，并传递NULL作为参数
+patternSpace = CGColorSpaceCreatePattern (NULL);
+
+// 在模式颜色空间中设置填充颜色
+CGContextSetFillColorSpace (myContext, patternSpace);
+
+// 释放模式颜色空间
+CGColorSpaceRelease (patternSpace);
+</code></pre>
+
+<h3>设置着色模式的骨架</h3>
+
+<p>一个模式的骨架基本信息保存在CGPattern对象中。我们调用CGPatternCreate函数来创建一个CGPattern对象，其原型如代码清单6-3所示：</p>
+
+<p>Listing 6-3  The CGPatternCreate function prototype</p>
+
+<pre><code>CGPatternRef CGPatternCreate (  void *info,
+                                CGRect bounds,
+                                CGAffineTransform matrix,
+                                CGFloat xStep,
+                                CGFloat yStep,
+                                CGPatternTiling tiling,
+                                bool isColored,
+                                const CGPatternCallbacks *callbacks );
+</code></pre>
+
+<p>其中，</p>
+
+<ol>
+<li>info：是一个指针，指向我们要传递给绘制回调函数的数据</li>
+<li>bound：指定模式单元格的大小</li>
+<li>matrix：指定模式矩阵，它将模式坐标系统映射到图形上下文的默认坐标系统。如果希望两个坐标系统是一样的，则可以使用单位矩阵。</li>
+<li>xStep, yStep：指定单元格之间的水平和竖直间距。</li>
+<li>tiling：平铺模式，可以是kCGPatternTilingNoDistortion、kCGPatternTilingConstantSpacingMinimalDistortion、kCGPatternTilingConstantSpacing</li>
+<li>isColored：指定模式单元格是着色模式(true)还是模板模式(false)</li>
+<li><p>callbacks：是一个指向CGPatternCallbacks结构体的指针，则定义如下：</p>
+
+<p> struct CGPatternCallbacks
+ {
+     unsigned int version;
+     CGPatternDrawPatternCallback drawPattern;
+     CGPatternReleaseInfoCallback releaseInfo;
+ };</p></li>
+</ol>
+
+
+<p>我们可以设置version为0。drawPattern是指向绘制回调的指针。releaseInfo是指向一个回调函数，该回调在释放CGPattern对象时被调用，以释放存储在我们传递给绘制回调的info参数中的数据。如果在这个参数中没有传递任何数据，则设置该域为NULL。</p>
+
+<h3>指定着色模式作为填充或描边模式</h3>
+
+<p>我们可以调用CGContextSetFillPattern或者CGContextSetStrokePattern函数来使用模式进行填充或描边。Quartz可以将模式用于任何填充或描边流程。</p>
+
+<p>这两个函数包含以下几个参数：</p>
+
+<ol>
+<li>图形上下文</li>
+<li>先前创建的CGPattern对象</li>
+<li>颜色组件的数组</li>
+</ol>
+
+
+<p>虽然着色模式提供了自己的颜色，我们仍然需要传递一个单一的alpha值来告诉Quartz在绘制时着色模式的透明度。alpha值的范围在0到1中。可以如以下代码来设置着色模式的透明度：</p>
+
+<pre><code>CGFloat alpha = 1;
+
+CGContextSetFillPattern (myContext, myPattern, &amp;alpha);
+</code></pre>
+
+<h3>使用颜色模式绘制</h3>
+
+<p>在完成前面的步骤之后，我们就可以调用Quartz 2D函数来绘制了。我们的模式被当作“涂料”。例如，可以调用CGContextStrokePath, CGContextFillPath, CGContextFillRect或其它函数来绘制。</p>
+
+<h3>完整示例</h3>
+
+<p>代码清单6-4包含一个绘制着色模式的函数。这个函数包含了前面讨论的所有步骤。</p>
+
+<p>Listing 6-4  A function that paints a colored pattern</p>
+
+<pre><code>void MyColoredPatternPainting (CGContextRef myContext,
+                 CGRect rect)
+{
+    CGPatternRef    pattern;
+    CGColorSpaceRef patternSpace;
+    CGFloat         alpha = 1,
+                    width, height;
+    static const    CGPatternCallbacks callbacks = {0, 
+                                        &amp;MyDrawPattern,
+                                        NULL};
+
+    CGContextSaveGState (myContext);
+    patternSpace = CGColorSpaceCreatePattern (NULL);
+    CGContextSetFillColorSpace (myContext, patternSpace);
+    CGColorSpaceRelease (patternSpace);
+
+    pattern = CGPatternCreate (NULL, 
+                    CGRectMake (0, 0, H_PSIZE, V_PSIZE),
+                    CGAffineTransformMake (1, 0, 0, 1, 0, 0),
+                    H_PATTERN_SIZE, 
+                    V_PATTERN_SIZE, 
+                    kCGPatternTilingConstantSpacing,
+                    true, 
+                    &amp;callbacks);
+
+    CGContextSetFillPattern (myContext, pattern, &amp;alpha);
+    CGPatternRelease (pattern);
+    CGContextFillRect (myContext, rect);
+    CGContextRestoreGState (myContext);
+}
+</code></pre>
+
+<h2>绘制模板模式</h2>
+
+<p>与绘制着色模式类似，绘制模板模式也有5个步骤：</p>
+
+<ol>
+<li>写一个绘制模板模式单元格的回调函数</li>
+<li>设置模板模式的颜色空间</li>
+<li>设置模板模式的骨架(Anatomy)</li>
+<li>指定模板模式作为填充或描边模式</li>
+<li>使用模板模式绘制</li>
+</ol>
+
+
+<p>绘制模板模式与绘制着色模式的区别在于设置颜色信息。</p>
+
+<h3>写一个绘制模板模式单元格的回调函数</h3>
+
+<p>绘制模板模式单元格的回调与前面描述的绘制颜色模式单元格类似。不同的是绘制模式单元格回调不需要指定颜色值。图6-10中显示的模式单元格即没有从绘制回调中获取颜色。</p>
+
+<p>Figure 6-10  A stencil pattern cell</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/star_stencil.gif" alt="image" /></p>
+
+<p>代码清单6-5绘制了图6-10中的模式单元格。可以看到代码只是简单地创建并填充了一个路径，而没有设置颜色。</p>
+
+<p>Listing 6-5  A drawing callback that draws a stencil pattern cell</p>
+
+<pre><code>#define PSIZE 16    // size of the pattern cell
+
+static void MyDrawStencilStar (void *info, CGContextRef myContext)
+{
+    int k;
+    double r, theta;
+
+    r = 0.8 * PSIZE / 2;
+    theta = 2 * M_PI * (2.0 / 5.0); // 144 degrees
+
+    CGContextTranslateCTM (myContext, PSIZE/2, PSIZE/2);
+
+    CGContextMoveToPoint(myContext, 0, r);
+    for (k = 1; k &lt; 5; k++) {
+        CGContextAddLineToPoint (myContext,
+                    r * sin(k * theta),
+                    r * cos(k * theta));
+    }
+    CGContextClosePath(myContext);
+    CGContextFillPath(myContext);
+}
+</code></pre>
+
+<h3>设置模板模式的颜色空间</h3>
+
+<p>模板模式要求我们设置一个模式颜色空间用于Quartz的绘制，如代码清单6-6所示。</p>
+
+<p>Listing 6-6  Code that creates a pattern color space for a stencil pattern</p>
+
+<pre><code>CGPatternRef pattern;
+CGColorSpaceRef baseSpace;
+CGColorSpaceRef patternSpace;
+
+// 创建一个通用RGB颜色空间。 
+baseSpace = CGColorSpaceCreateWithName (kCGColorSpaceGenericRGB);
+
+// 创建一个模式颜色空间。该颜色空间指定如何表示模式的颜色。后面要设置模式的颜色时，必须使用这个颜色空间来进行设置
+patternSpace = CGColorSpaceCreatePattern (baseSpace);
+
+// 设置颜色空间来在填充模式时使用
+CGContextSetFillColorSpace (myContext, patternSpace);
+
+// 释放模式颜色空间
+CGColorSpaceRelease(patternSpace);
+
+// 释放基础颜色空间
+CGColorSpaceRelease(baseSpace);
+</code></pre>
+
+<h3>设置模板模式的骨架(Anatomy)</h3>
+
+<p>这一步与上面设置着色模式是一样的，不同的是isColored参数需要传递false。</p>
+
+<h3>指定模板模式作为填充或描边模式</h3>
+
+<p>我们可以调用CGContextSetFillPattern或者CGContextSetStrokePattern函数来使用模式进行填充或描边。Quartz可以将模式用于任何填充或描边流程。</p>
+
+<p>这两个函数包含以下几个参数：</p>
+
+<ol>
+<li>图形上下文</li>
+<li>先前创建的CGPattern对象</li>
+<li>颜色组件的数组</li>
+</ol>
+
+
+<p>由于模板模式在绘制回调中不提供颜色值，所以我们必须传递一个颜色给填充或描边函数来告诉Quartz使用什么颜色。代码清单6-7显示了为模板模式设置颜色的例子。</p>
+
+<p>Listing 6-7  Code that sets opacity for a colored pattern</p>
+
+<pre><code>static const CGFloat color[4] = { 0, 1, 1, 0.5 }; //cyan, 50% transparent
+
+CGContextSetFillPattern (myContext, myPattern, color);
+</code></pre>
+
+<h3>使用模板模式绘制</h3>
+
+<p>在完成前面的步骤之后，我们就可以调用Quartz 2D函数来绘制了。我们的模式被当作“涂料”。例如，可以调用CGContextStrokePath, CGContextFillPath, CGContextFillRect或其它函数来绘制。</p>
+
+<h3>完整示例</h3>
+
+<p>代码清单6-8包含一个绘制模板模式的函数。这个函数包含了前面讨论的所有步骤。</p>
+
+<pre><code>#define PSIZE 16
+
+void MyStencilPatternPainting (CGContextRef myContext,
+                                const Rect *windowRect)
+{
+    CGPatternRef pattern;
+    CGColorSpaceRef baseSpace;
+    CGColorSpaceRef patternSpace;
+    static const CGFloat color[4] = { 0, 1, 0, 1 };
+    static const CGPatternCallbacks callbacks = {0, &amp;drawStar, NULL};
+
+    baseSpace = CGColorSpaceCreateDeviceRGB ();
+    patternSpace = CGColorSpaceCreatePattern (baseSpace);
+    CGContextSetFillColorSpace (myContext, patternSpace);
+    CGColorSpaceRelease (patternSpace);
+    CGColorSpaceRelease (baseSpace);
+    pattern = CGPatternCreate(NULL, CGRectMake(0, 0, PSIZE, PSIZE),
+                  CGAffineTransformIdentity, PSIZE, PSIZE,
+                  kCGPatternTilingConstantSpacing,
+                  false, &amp;callbacks);
+    CGContextSetFillPattern (myContext, pattern, color);
+    CGPatternRelease (pattern);
+    CGContextFillRect (myContext,CGRectMake (0,0,PSIZE*20,PSIZE*20));
+}
+</code></pre>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Quartz 2D编程指南之五：变换]]></title>
@@ -5251,748 +5670,6 @@ RACSignal *fetchMetadata = [[visibleSignal delay:1.0f]
 
 
 <p>怎么样，下次创建程序的时候，是不是试试MVVM？试试吧。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[MVVM指南一：Flickr搜索实例]]></title>
-    <link href="http://southpeak.github.io/blog/2014/08/08/mvvmzhi-nan-yi-:flickrsou-suo-shi-li/"/>
-    <updated>2014-08-08T18:54:42+08:00</updated>
-    <id>http://southpeak.github.io/blog/2014/08/08/mvvmzhi-nan-yi-:flickrsou-suo-shi-li</id>
-    <content type="html"><![CDATA[<p>本文由Colin Eberhardt发表于raywenderlich，原文可查看<a href="http://www.raywenderlich.com/74106/mvvm-tutorial-with-reactivecocoa-part-1">MVVM Tutorial with ReactiveCocoa: Part &frac12;</a></p>
-
-<p>你可能已经在Twitter上听过这个这个笑话了：</p>
-
-<p>“iOS Architecture, where MVC stands for Massive View Controller”</p>
-
-<p>当然这在iOS开发圈内，这是个轻松的笑话，但我敢确定你大实践中遇到过这个问题：即视图控制器太大且难以管理。</p>
-
-<p>这篇文章将介绍另一种构建应用程序的模式&mdash;MVVM(Model-View-ViewModel)。通过结合ReactiveCocoa便利性，这个模式提供了一个很好的代替MVC的方案，它保证了让视图控制器的轻量性。</p>
-
-<p>在本文我，我们将通过构建一个简单的Flickr查询程序来一步步了解MVVM，这个程序的效果图如下所示：</p>
-
-<p><img src="http://cdn5.raywenderlich.com/wp-content/uploads/2014/06/FinishedApp.png" alt="image" /></p>
-
-<p>在开始写代码之前，我们先来了解一些基本的原理。</p>
-
-<p>原文简要介绍了一下ReactiveCocoa，在此不在翻译，可以查看以下文章：</p>
-
-<p><a href="http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-%5B%3F%5D-:xin-hao/">ReactiveCocoa指南一：信号</a></p>
-
-<p><a href="http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-er-:twittersou-suo-shi-li/">ReactiveCocoa指南二：Twitter搜索实例</a></p>
-
-<h2>MVVM模式介绍</h2>
-
-<p>正如其名称一下，MVVM是一个UI设计模式。它是MV*模式集合中的一员。MV*模式还包含MVC(Model View Controller)、MVP(Model View Presenter)等。这些模式的目的在于将UI逻辑与业务逻辑分离，以让程序更容易开发和测试。为了更好的理解MVVM模式，我们可以看看其来源。</p>
-
-<p>MVC是最初的UI设计模式，最早出现在Smalltalk语言中。下图展示了MVC模式的主要组成：</p>
-
-<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/06/MVCPattern-2.png" alt="image" /></p>
-
-<p>这个模式将UI分成Model(表示程序状态)、View(由UI控件组成)、Controller(处理用户交互与更新model)。MVC模式的最大问题是其令人相当困惑。它的概念看起来很好，但当我们实现MVC时，就会产生上图这种Model-View-Controller之间的环状关系。这种相互关系将会导致可怕的混乱。</p>
-
-<p>最近Martin Fowler介绍了MVC模式的一个变种，这种模式命名为MVVM，并被微软广泛采用并推广。</p>
-
-<p><img src="http://cdn5.raywenderlich.com/wp-content/uploads/2014/06/MVVMPattern.png" alt="image" /></p>
-
-<p>这个模式的核心是ViewModel，它是一种特殊的model类型，用于表示程序的UI状态。它包含描述每个UI控件的状态的属性。例如，文本输入域的当前文本，或者一个特定按钮是否可用。它同样暴露了视图可以执行哪些行为，如按钮点击或手势。</p>
-
-<p>我们可以将ViewModel看作是视图的模型(model-of-the-view)。MVVM模式中的三部分比MVC更加简洁，下面是一些严格的限制</p>
-
-<ol>
-<li>View引用了ViewModel，但反过来不行。</li>
-<li>ViewModel引用了Model，但反过来不行。</li>
-</ol>
-
-
-<p>如果我们破坏了这些规则，便无法正确地使用MVVM。</p>
-
-<p>这个模式有以下一些立竿见影的优势：</p>
-
-<ol>
-<li>轻量的视图：所有的UI逻辑都在ViewModel中。</li>
-<li>便于测试：我们可以在没有视图的情况下运行整个程序，这样大大地增加了它的可测试性。</li>
-</ol>
-
-
-<p>现在你可能注意到一个问题。如果View引用了ViewModel，但ViewModel没有引用View，那ViewModel如何更新视图呢？哈哈，这就得靠MVVM模式的私密武器了。</p>
-
-<h2>MVVM和数据绑定</h2>
-
-<p>MVVM模式依赖于数据绑定，它是一个框架级别的特性，用于自动连接对象属性和UI控件。例如，在微软的WPF框架中，下面的标签将一个TextField的Text属性绑定到ViewModel的Username属性中。</p>
-
-<pre><code>&lt;TextField Text=”{DataBinding Path=Username, Mode=TwoWay}”/&gt;
-</code></pre>
-
-<p>WPF框架将这两个属性绑定到一起。</p>
-
-<p>不过可惜的是，iOS没有数据绑定框架，幸运的是我们可以通过ReactiveCocoa来实现这一功能。我们从iOS开发的角度来看看MVVM模式，ViewController及其相关的UI(nib, stroyboard或纯代码的View)组成了View:</p>
-
-<p><img src="http://cdn5.raywenderlich.com/wp-content/uploads/2014/06/MVVMReactiveCocoa.png" alt="image" /></p>
-
-<p>&hellip;&hellip;而ReactiveCocoa绑定了View和ViewModel。</p>
-
-<p>理论讲得差不多了，我们可以开始新的历程了。</p>
-
-<h2>启动项目结构</h2>
-
-<p>可以从<a href="http://cdn5.raywenderlich.com/wp-content/uploads/2014/06/FlickrSearchStarterProject1.zip">FlickrSearchStarterProject.zip</a>中下载启动项目。我们使用Cocoapods来管理第三方库，在对应目录下执行pod install命令生成依赖库后，我们就可以打开生成的RWTFlickrSearch.xcworkspace来运行我们的项目了，初始运行效果如下图：</p>
-
-<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/06/first-launch.jpg" alt="image" /></p>
-
-<p>我们行熟悉下工程的结构：</p>
-
-<p><img src="http://cdn2.raywenderlich.com/wp-content/uploads/2014/06/EmptyInterface.png" alt="image" /></p>
-
-<p>Model和ViewModel分组目前是空的，我们会慢慢往里面添加东西。View分组包含以下几个类</p>
-
-<ol>
-<li>RWTFlickSearchViewController：程序的主屏幕，包含一个搜索输入域和一个GO按钮。</li>
-<li>RWTRecentSearchItemTableViewCell：用于在主页中显示搜索结果的table cell</li>
-<li>RWTSearchResultsViewController：搜索结果页，显示来自Flickr的tableview</li>
-<li>RWTSearchResultsTableViewCell：渲染来自Flickr的单个图片的table cell。</li>
-</ol>
-
-
-<p>现在来写我们的第一个ViewModel吧。</p>
-
-<h2>第一个ViewModel</h2>
-
-<p>在ViewModel分组中添加一个继承自NSObject的新类RWTFlickrSearchViewModel。然后在该类的头文件中，添加以下两行代码：</p>
-
-<pre><code>@property (nonatomic, strong) NSString *searchText;
-@property (nonatomic, strong) NSString *title;
-</code></pre>
-
-<p>searchText属性表示文本域中显示文本，title属性表示导航条上的标题。</p>
-
-<p>打开RWTFlickrSearchViewModel.m文件添加以下代码：</p>
-
-<pre><code>@implementation RWTFlickrSearchViewModel
-
-- (instancetype)init
-{
-    self = [super init];
-
-    if (self)
-    {
-        [self initialize];
-    }
-
-    return self;
-}
-
-- (void)initialize
-{
-    self.searchText = @"search text";
-    self.title = @"Flickr Search";
-}
-
-@end
-</code></pre>
-
-<p>这段代码简单地设置了ViewModel的初始状态。</p>
-
-<p>接下来我们将连接ViewModel到View。记住View保存了一个ViewModel的引用。在这种情况下，添加一个给定ViewModel的初始化方法来构造View是很有必要的。打开RWTFlickrSearchViewController.h，并导入ViewModel头文件：</p>
-
-<pre><code>#import "RWTFlickrSearchViewModel.h"
-</code></pre>
-
-<p>并添加以下初始化方法：</p>
-
-<pre><code>@interface RWTFlickrSearchViewController : UIViewController
-
-- (instancetype)initWithViewModel:(RWTFlickrSearchViewModel *)viewModel;
-
-@end
-</code></pre>
-
-<p>在RWTFlickrSearchViewController.m中，在类的扩展中添加以下私有属性：</p>
-
-<pre><code>@property (weak, nonatomic) RWTFlickrSearchViewModel *viewModel;
-</code></pre>
-
-<p>然后添加以下方法：</p>
-
-<pre><code>- (instancetype)initWithViewModel:(RWTFlickrSearchViewModel *)viewModel
-{
-    self = [super init];
-
-    if (self)
-    {
-        _viewModel = viewModel;
-    }
-
-    return self;
-}
-</code></pre>
-
-<p>这就在view中存储了一个到ViewModel的引用。<em>注意这是一个弱引用，这样View引用了ViewModel，但没有拥有它。</em></p>
-
-<p>接下来在viewDidLoad里面添加下面代码：</p>
-
-<pre><code>[self bindViewModel];
-</code></pre>
-
-<p>该方法的实现如下：</p>
-
-<pre><code>- (void)bindViewModel
-{
-    self.title = self.viewModel.title;
-    self.searchTextField.text = self.viewModel.searchText;
-}
-</code></pre>
-
-<p>最后我们需要创建ViewModel，并将其提供给View。在RWTAppDelegate.m中，添加以下头文件：</p>
-
-<pre><code>#import "RWTFlickrSearchViewModel.h"
-</code></pre>
-
-<p>同时添加一个私有属性：</p>
-
-<pre><code>@property (nonatomic, strong) RWTFlickrSearchViewModel *viewModel;
-</code></pre>
-
-<p>我们会发现这个类中已以有一个createInitialViewController方法了，我们用以下代码来更新它：</p>
-
-<pre><code>- (UIViewController *)createInitialViewController {
-    self.viewModel = [RWTFlickrSearchViewModel new];
-    return [[RWTFlickrSearchViewController alloc] initWithViewModel:self.viewModel];
-}
-</code></pre>
-
-<p>这个方法创建了一个ViewModel实例，然后构造并返回了View。这个视图作程序导航控制器的初始视图。</p>
-
-<p>运行后的状态如下：</p>
-
-<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/06/ViewWithState-333x500.png" alt="image" /></p>
-
-<p>这样我们就得到了第一个ViewModel。不过仍然有许多东西要学的。你可能已经发现了我们还没有使用ReactiveCocoa。到目前为止，用户在输入框上的输入操作不会影响到ViewModel。</p>
-
-<h2>检测可用的搜索状态</h2>
-
-<p>现在，我们来看看如何用ReactiveCocoa来绑定ViewModel和View，以将搜索输入框和按钮连接到ViewModel。</p>
-
-<p>在RWTFlickrSearchViewController.m中，我们使用如下代码更新bindViewModel方法。</p>
-
-<pre><code>- (void)bindViewModel
-{
-    self.title = self.viewModel.title;
-    RAC(self.viewModel, searchText) = self.searchTextField.rac_textSignal;
-}
-</code></pre>
-
-<p>在ReactiveCocoa中，使用了分类将rac_textSignal属性添加到UITextField类中。它是一个信号，在文本域每次更新时会发送一个包含当前文本的next事件。</p>
-
-<p>RAC是一个用于做绑定操作的宏，上面的代码会使用rac_textSignal发出的next信号来更新viewModel的searchText属性。</p>
-
-<p>搜索按钮应该只有在用户输入有效时才可点击。为了方便起见，我们以输入字符大于3时输入有效为准。在RWTFlickrSearchViewModel.m中导入以下头文件。</p>
-
-<pre><code>#import &lt;ReactiveCocoa/ReactiveCocoa.h&gt;
-</code></pre>
-
-<p>然后更新初始化方法：</p>
-
-<pre><code>- (void)initialize
-{
-    self.title = @"Flickr Search";
-
-    RACSignal *validSearchSignal =
-    [[RACObserve(self, searchText)
-      map:^id(NSString *text) {
-        return @(text.length &gt; 3);
-    }]
-     distinctUntilChanged];
-
-    [validSearchSignal subscribeNext:^(id x) {
-        NSLog(@"search text is valid %@", x);
-    }];
-}
-</code></pre>
-
-<p>运行程序并在输入框中输入一些字符，在控制台中我们可以看到以下输出：</p>
-
-<pre><code>2014-08-07 21:50:44.078 RWTFlickrSearch[3116:60b] search text is valid 0
-2014-08-07 21:50:59.493 RWTFlickrSearch[3116:60b] search text is valid 1
-2014-08-07 21:51:02.594 RWTFlickrSearch[3116:60b] search text is valid 0
-</code></pre>
-
-<p>上面的代码使用RACObserve宏来从ViewModel的searchText属性创建一个信号。map操作将文本转化为一个true或false值的流。</p>
-
-<p>最后，distinctUntilChanges确保信号只有在状态改变时才发出值。</p>
-
-<p>到目前为止，我们可以看到ReactiveCocoa被用于将绑定View绑定到ViewModel，确保了这两者是同步的。另进一步地，ViewModel内部的ReactiveCocoa代码用于观察自己的状态及执行其它操作。</p>
-
-<p>这就是MVVM模式的基本处理过程。ReactiveCocoa通常用于绑定View和ViewModel，但在程序的其它层也非常有用。</p>
-
-<h2>添加搜索命令</h2>
-
-<p>本节将上面创建的validSearchSignal来创建绑定到View的操作。打开RWTFlickrSearchViewModel.h并添加以下头文件</p>
-
-<pre><code>#import &lt;ReactiveCocoa/ReactiveCocoa.h&gt;
-</code></pre>
-
-<p>同时添加以下属性</p>
-
-<pre><code>@property (strong, nonatomic) RACCommand *executeSearch;
-</code></pre>
-
-<p>RACCommand是ReactiveCocoa中用于表示UI操作的一个类。它包含一个代表了UI操作的结果的信号以及标识操作当前是否被执行的一个状态。</p>
-
-<p>在RWTFlickrSearchViewModel.m的initialize方法的最后添加以下代码：</p>
-
-<pre><code>self.executeSearch = [[RACCommand alloc] initWithEnabled:validSearchSignal
-                                             signalBlock:^RACSignal *(id input) {
-                                                 return [self executeSearchSignal];
-                                             }];
-</code></pre>
-
-<p>这创建了一个在validSearchSignal发送true时可用的命令。另外，需要在下面实现executeSearchSignal方法，它提供了命令所执行的操作。</p>
-
-<pre><code>- (RACSignal *)executeSearchSignal
-{
-    return [[[[RACSignal empty] logAll] delay:2.0] logAll];
-}
-</code></pre>
-
-<p>在这个方法中，我们执行一些业务逻辑操作，以作为命令执行的结果，并通过信号异步返回结果。</p>
-
-<p>到目前为止，上述代码只提供了一个简单的实现：空信号会立即完成。delay操作会将其所接收到的next或complete事件延迟两秒执行。</p>
-
-<p>最后一步是将这个命令连接到View中。打开RWTFlickrSearchViewController.m并在bindViewModel方法的结尾中添加以下代码：</p>
-
-<pre><code>self.searchButton.rac_command = self.viewModel.executeSearch;
-</code></pre>
-
-<p>rac_command属性是UIButton的ReactiveCocoa分类中添加的属性。上面的代码确保点击按钮执行给定的命令，且按钮的可点击状态反应了命令的可用状态。</p>
-
-<p>运行代码，输入一些字符并点击GO，得到如下结果：</p>
-
-<p><img src="http://cdn3.raywenderlich.com/wp-content/uploads/2014/06/GoButtonEnabled-333x500.png" alt="image" /></p>
-
-<p>可以看到，当输入有效点击按钮时，按钮会置灰2秒钟，当执行的信号完成时又可点击。我们可以看下控制台的输出，可以发现空信号会立即完成，而延迟操作会在2秒后发出事件：</p>
-
-<pre><code>2014-08-07 22:21:25.128 RWTFlickrSearch[3161:60b] &lt;RACDynamicSignal: 0x17005ba20&gt; name: +empty completed
-2014-08-07 22:21:27.329 RWTFlickrSearch[3161:60b] &lt;RACDynamicSignal: 0x17005dd30&gt; name: [+empty] -delay: 2.000000 completed
-</code></pre>
-
-<p>是不是很酷？</p>
-
-<h2>绑定、绑定还是绑定</h2>
-
-<p>RACCommand监听了搜索按钮状态的更新，但处理activity indicator的可见性则由我们负责。RACCommand暴露了一个executing属性，它是一个信号，发送true或false来标明命令开始和结束执行的时间。我们可以用这个来影响当前命令的状态。</p>
-
-<p>在RWTFlickrSearchViewController.m中的bindViewModel方法结尾处添加以下代码：</p>
-
-<pre><code>RAC([UIApplication sharedApplication], networkActivityIndicatorVisible) = self.viewModel.executeSearch.executing;
-</code></pre>
-
-<p>这将UIApplication的networkActivityIndicatorVisible属性绑定到命令的executing信号中。这确保了不管命令什么时候执行，状态栏中的网络activity indicator都会显示。</p>
-
-<p>接下来添加以下代码：</p>
-
-<pre><code>RAC(self.loadingIndicator, hidden) = [self.viewModel.executeSearch.executing not];
-</code></pre>
-
-<p>当命令执行时，应该隐藏加载indicator。这可以通过not操作来反转信号。</p>
-
-<p>最后，添加以下代码：</p>
-
-<pre><code>[self.viewModel.executeSearch.executionSignals subscribeNext:^(id x) {
-    [self.searchTextField resignFirstResponder];
-}];
-</code></pre>
-
-<p>这段代码确保命令执行时隐藏键盘。executionSignals属性发送由命令每次执行时生成的信号。这个属性是信号的信号(见<a href="http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-%5B%3F%5D-:xin-hao/">ReactiveCocoa指南一：信号</a>)。当创建和发出一个新的命令执行信号时，隐藏键盘。</p>
-
-<p>运行程序看看效果如何吧。</p>
-
-<h2>Model在哪？</h2>
-
-<p>到目前为止，我们已经有了一个清晰的View(RWTFlickrSearchViewController)和ViewModel(RWTFlickrSearchViewModel)，但是Model在哪呢？</p>
-
-<p>答案很简单：没有！</p>
-
-<p>当前的程序执行一个命令来响应用户点击搜索按钮的操作，但是实现不做任何值的处理。ViewModel真正需要做的是使用当前的searchText来搜索Flickr，并返回一个匹配的列表。</p>
-
-<p>我们应该可以直接在ViewModel添加业务逻辑，但相信我，你不希望这么做。如果这是一个viewcontroller，我打赌你一定会直接这么做。</p>
-
-<p>ViewModel暴露属性来表示UI状态，它同样暴露命令来表示UI操作(通常是方法)。ViewModel负责管理基于用户交互的UI状态的改变。然而它不负责实际执行这些交互产生的的业务逻辑，那是Model的工作。</p>
-
-<p>接下来，我们将在程序中添加Model层。</p>
-
-<p>在Model分组中，添加RWTFlickrSearch协议并提供以下实现</p>
-
-<pre><code>#import &lt;ReactiveCocoa/ReactiveCocoa.h&gt;
-
-@protocol RWTFlickrSearch &lt;NSObject&gt;
-
-- (RACSignal *)flickrSearchSignal:(NSString *)searchString;
-
-@end
-</code></pre>
-
-<p>这个协议定义了Model层的初始接口，并将搜索Flickr的责任移出ViewModel。</p>
-
-<p>接下来在Model分组中添加RWTFlickrSearchImpl类，其继承自NSObject，并实现了RWTFlickrSearch协议，如下代码所示：</p>
-
-<pre><code>#import "RWTFlickrSearch.h"
-
-@interface RWTFlickrSearchImpl : NSObject &lt;RWTFlickrSearch&gt;
-
-@end
-</code></pre>
-
-<p>打开RWTFlickrSearchImpl.m文件，提供以下实现：</p>
-
-<p>@implementation RWTFlickrSearchImpl</p>
-
-<pre><code>- (RACSignal *)flickrSearchSignal:(NSString *)searchString
-{
-    return [[[[RACSignal empty] logAll] delay:2.0] logAll];
-}
-
-@end
-</code></pre>
-
-<p>看着是不是有hkko眼熟？没错，我们在上面的ViewModel中有相同的实现。</p>
-
-<p>接下来我们需要在ViewModel层中使用Model层。在ViewModel分组中添加RWTViewModelServices协议并如下实现：</p>
-
-<pre><code>#import "RWTFlickrSearch.h"
-
-@protocol RWTViewModelServices &lt;NSObject&gt;
-
-- (id&lt;RWTFlickrSearch&gt;)getFlickrSearchService;
-
-@end
-</code></pre>
-
-<p>这个协议定义了唯一的一个方法，以允许ViewModel获取一个引用，以指向RWTFlickrSearch协议的实现对象。</p>
-
-<p>打开RWTFlickrSearchViewModel.h并导入头文件</p>
-
-<pre><code>#import "RWTViewModelServices.h"
-</code></pre>
-
-<p>更新初始化方法并将RWTViewModelServices作为一个参数：</p>
-
-<pre><code>- (instancetype)initWithServices:(id&lt;RWTViewModelServices&gt;)services;
-</code></pre>
-
-<p>在RWTFlickrSearchViewModel.m中，添加类的分类并提供一个私有属性来维护一个到RWTViewModelServices的引用：</p>
-
-<pre><code>@interface RWTFlickrSearchViewModel ()
-
-@property (nonatomic, weak) id&lt;RWTViewModelServices&gt; services;
-
-@end
-</code></pre>
-
-<p>在该文件下面，添加初始化方法的实现：</p>
-
-<pre><code>- (instancetype)initWithServices:(id&lt;RWTViewModelServices&gt;)services
-{
-    self = [super init];
-
-    if (self)
-    {
-        _services = services;
-        [self initialize];
-    }
-
-    return self;
-}
-</code></pre>
-
-<p>这只是简单的存储了services的引用。</p>
-
-<p>最后，更新executeSearchSignal方法：</p>
-
-<pre><code>- (RACSignal *)executeSearchSignal
-{
-    return [[self.services getFlickrSearchService] flickrSearchSignal:self.searchText];
-}
-</code></pre>
-
-<p>最后是连接Model和ViewModel。</p>
-
-<p>在工程的根分组中，添加一个NSObject的子类RWTViewModelServicesImpl。打开RWTViewModelServicesImpl.h并实现RWTViewModelServices协议：</p>
-
-<pre><code>#import "RWTViewModelServices.h"
-
-@interface RWTViewModelServicesImpl : NSObject &lt;RWTViewModelServices&gt;
-
-@end
-</code></pre>
-
-<p>打开RWTViewModelServicesImpl.m，并添加实现：</p>
-
-<pre><code>#import "RWTFlickrSearchImpl.h"
-
-@interface RWTViewModelServicesImpl ()
-
-@property (strong, nonatomic) RWTFlickrSearchImpl *searchService;
-
-@end
-
-@implementation RWTViewModelServicesImpl
-
-- (instancetype)init
-{
-    if (self = [super init])
-    {
-        _searchService = [RWTFlickrSearchImpl new];
-    }
-
-    return self;
-}
-
-- (id&lt;RWTFlickrSearch&gt;)getFlickrSearchService
-{
-    return self.searchService;
-}
-
-@end
-</code></pre>
-
-<p>这个类简单创建了一个RWTFlickrSearchImpl实例，用于Model层搜索Flickr服务，并将其提供给ViewModel的请求。</p>
-
-<p>最后，在RWTAppDelegate.m中添加以下头文件</p>
-
-<pre><code>#import "RWTViewModelServicesImpl.h"
-</code></pre>
-
-<p>并添加一个新的私有属性</p>
-
-<pre><code>@property (nonatomic, strong) RWTViewModelServicesImpl *viewModelServices;
-</code></pre>
-
-<p>再更新createInitialViewController方法：</p>
-
-<pre><code>- (UIViewController *)createInitialViewController {
-    self.viewModelServices = [RWTViewModelServicesImpl new];
-    self.viewModel = [[RWTFlickrSearchViewModel alloc] initWithServices:self.viewModelServices];
-    return [[RWTFlickrSearchViewController alloc] initWithViewModel:self.viewModel];
-}
-</code></pre>
-
-<p>运行程序，验证程序有没有按之前的方式来工作。当然，这不是最有趣的变化，不过，可以看看新代码的形状了。</p>
-
-<p>Model层暴露了一个ViewModel层使用的&#8217;服务&#8217;。一个协议定义了这个服务的接口，提供了松散的组合。</p>
-
-<p>我们可以使用这种方式来为单元测试提供一个类似的服务实现。程序现在有了正确的MVVM结构，让我们小结一下：</p>
-
-<ol>
-<li>Model层暴露服务并负责提供程序的业务逻辑实现。</li>
-<li>ViewModel层表示程序的视图状态(view-state)。同时响应用户交互及来自Model层的事件，两者都受view-state变化的影响。</li>
-<li>View层很薄，只提供ViewModel状态的显示及输出用户交互事件。</li>
-</ol>
-
-
-<h2>搜索Flickr</h2>
-
-<p>我们继续来完成Flickr的搜索实现，事情变得越来越有趣了。</p>
-
-<p>首先我们创建表示搜索结果的模型对象。在Model分组中，添加RWTFlickrPhoto类，并为其添加三个属性。</p>
-
-<pre><code>@interface RWTFlickrPhoto : NSObject
-
-@property (nonatomic, strong) NSString *title;
-@property (nonatomic, strong) NSURL *url;
-@property (nonatomic, strong) NSString *identifier;
-
-@end
-</code></pre>
-
-<p>这个模型对象表示由Flickr搜索API返回一个图片。</p>
-
-<p>打开RWTFlickrPhoto.m，并添加以下描述方法的实现：</p>
-
-<pre><code>- (NSString *)description
-{
-    return self.title;
-}
-</code></pre>
-
-<p>接下来，新建一个新的模型对象类RWTFlickrSearchResults，并添加以下属性：</p>
-
-<pre><code>@interface RWTFlickrSearchResults : NSObject
-
-@property (strong, nonatomic) NSString *searchString;
-@property (strong, nonatomic) NSArray *photos;
-@property (nonatomic) NSInteger totalResults;
-
-@end
-</code></pre>
-
-<p>这个类表示由Flickr搜索返回的照片集合。</p>
-
-<p>是时候实现搜索Flickr了。打开RWTFlickrSearchImpl.m并导入以下头文件：</p>
-
-<pre><code>#import "RWTFlickrSearchResults.h"
-#import "RWTFlickrPhoto.h"
-#import &lt;objectiveflickr/ObjectiveFlickr.h&gt;
-#import &lt;LinqToObjectiveC/NSArray+LinqExtensions.h&gt;
-</code></pre>
-
-<p>然后添加以下类扩展：</p>
-
-<pre><code>@interface RWTFlickrSearchImpl () &lt;OFFlickrAPIRequestDelegate&gt;
-
-@property (strong, nonatomic) NSMutableSet *requests;
-@property (strong, nonatomic) OFFlickrAPIContext *flickrContext;
-
-@end
-</code></pre>
-
-<p>这个类实现了OFFlickrAPIRequestDelegate协议，并添加了两个私有属性。我们会很快看到如何使用这些值。</p>
-
-<p>继续添加代码：</p>
-
-<pre><code>- (instancetype)init
-{
-    self = [super init];
-
-    if (self)
-    {
-        NSString *OFSampleAppAPIKey = @"YOUR_API_KEY_GOES_HERE";
-        NSString *OFSampleAppAPISharedSecret = @"YOUR_SECRET_GOES_HERE";
-
-        _flickrContext = [[OFFlickrAPIContext alloc] initWithAPIKey:OFSampleAppAPIKey sharedSecret:OFSampleAppAPISharedSecret];
-
-        _requests = [NSMutableSet new];
-    }
-
-    return self;
-}
-</code></pre>
-
-<p>这段代码创建了一个Flickr的上下文，用于存储ObjectiveFlickr请求的数据。</p>
-
-<p>当前Model层服务类提供的API有一个单独的方法，用于查找基于文本搜索字符的图片。不过我们一会会添加更多的方法。</p>
-
-<p>在RWTFlickrSearchImpl.m中添加以下方法：</p>
-
-<pre><code>- (RACSignal *)signalFromAPIMethod:(NSString *)method arguments:(NSDictionary *)args transform:(id (^)(NSDictionary *response))block
-{
-    // 1. 创建请求信号
-    return [RACSignal createSignal:^RACDisposable *(id&lt;RACSubscriber&gt; subscriber) {
-
-        // 2. 创建一个Flick请求对象
-        OFFlickrAPIRequest *flickrRequest = [[OFFlickrAPIRequest alloc] initWithAPIContext:self.flickrContext];
-        flickrRequest.delegate = self;
-        [self.requests addObject:flickrRequest];
-
-        // 3. 从代理方法中创建一个信号
-        RACSignal *successSignal = [self rac_signalForSelector:@selector(flickrAPIRequest:didCompleteWithResponse:)
-                                                  fromProtocol:@protocol(OFFlickrAPIRequestDelegate)];
-
-        // 4. 处理响应
-        [[[successSignal
-         map:^id(RACTuple *tuple) {
-             return tuple.second;
-         }]
-         map:block]
-         subscribeNext:^(id x) {
-             [subscriber sendNext:x];
-             [subscriber sendCompleted];
-         }];
-
-        // 5. 开始请求
-        [flickrRequest callAPIMethodWithGET:method arguments:args];
-
-        // 6. 完成后，移除请求的引用
-        return [RACDisposable disposableWithBlock:^{
-            [self.requests removeObject:flickrRequest];
-        }];
-    }];
-}
-</code></pre>
-
-<p>这个方法需要传入请求方法及请求参数，然后使用block参数来转换响应对象。我们重点看一下第4步：</p>
-
-<pre><code>[[[successSignal
-  // 1. 从flickrAPIRequest:didCompleteWithResponse:代理方法中提取第二个参数
-  map:^id(RACTuple *tuple) {
-    return tuple.second;
-  }]
-  // 2. 转换结果
-  map:block]
-  subscribeNext:^(id x) {
-    // 3. 将结果发送给订阅者
-    [subscriber sendNext:x];
-    [subscriber sendCompleted];
-  }];
-</code></pre>
-
-<p>rac_signalForSelector:fromProtocol: 方法创建了successSignal，同样也在代理方法的调用中创建了信号。</p>
-
-<p>代理方法每次调用时，发出的next事件会附带包含方法参数的RACTuple。</p>
-
-<p>实现Flickr搜索的最后一步如下：</p>
-
-<pre><code>- (RACSignal *)flickrSearchSignal:(NSString *)searchString {
-  return [self signalFromAPIMethod:@"flickr.photos.search"
-                         arguments:@{@"text": searchString,
-                                     @"sort": @"interestingness-desc"}
-                         transform:^id(NSDictionary *response) {
-
-    RWTFlickrSearchResults *results = [RWTFlickrSearchResults new];
-    results.searchString = searchString;
-    results.totalResults = [[response valueForKeyPath:@"photos.total"] integerValue];
-
-    NSArray *photos = [response valueForKeyPath:@"photos.photo"];
-    results.photos = [photos linq_select:^id(NSDictionary *jsonPhoto) {
-      RWTFlickrPhoto *photo = [RWTFlickrPhoto new];
-      photo.title = [jsonPhoto objectForKey:@"title"];
-      photo.identifier = [jsonPhoto objectForKey:@"id"];
-      photo.url = [self.flickrContext photoSourceURLFromDictionary:jsonPhoto
-                                                              size:OFFlickrSmallSize];
-      return photo;
-    }];
-
-    return results;
-  }];
-}
-</code></pre>
-
-<p>上面的方法使用signalFromAPIMethod:arguments:transform:方法。flickr.photos.search方法提供的字典来搜索照片。</p>
-
-<p>传递给transform参数的block简单地将NSDictionary响应转化为一个等价的模型对象，让它在ViewModel中更容易使用。</p>
-
-<p>最后一步是打开RWTFlickrSearchViewModel.m方法，然后更新搜索信号来记录日志：</p>
-
-<pre><code>- (RACSignal *)executeSearchSignal {
-  return [[[self.services getFlickrSearchService]
-           flickrSearchSignal:self.searchText]
-           logAll];
-}
-</code></pre>
-
-<p>编译，运行并输入一些字符后可在控制台看到以下日志：</p>
-
-<pre><code>2014-06-03 [...] &lt;RACDynamicSignal: 0x8c368a0&gt; name: +createSignal: next: searchString=wibble, totalresults=1973, photos=(
-    "Wibble, wobble, wibble, wobble",
-    "unoa-army",
-    "Day 277: Cheers to the freakin' weekend!",
-    [...]
-    "Angry sky",
-    Nemesis
-)
-</code></pre>
-
-<p>这样我们MVVM指南的第一部分就差不多结束了，但在结束之前，让我们先看看内存问题吧。</p>
-
-<h2>内存管理</h2>
-
-<p>正如在<a href="http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-er-:twittersou-suo-shi-li/">ReactiveCocoa指南二：Twitter搜索实例</a>中所讲的一样，我们在block中使用了self，这可能会导致循环引用的问题。而为了避免此问题，我们需要使用@weakify和@strongify宏来打破这种循环引用。</p>
-
-<p>不过看看signalFromAPIMethod:arguments:transform:方法，你可能会迷惑为什么没有使用这两个宏来引用self？这是因为block是作为createSignal:方法的一个参数，它不会在self和block之间建立一个强引用关系。迷茫了吧？不相信的话只需要测试一样这段代码有没有内存泄露就行。当然这时候就得用Instruments了，自己去看吧。哈哈。</p>
-
-<h2>何去何从？</h2>
-
-<p>例子工程的完整代码可以在<a href="http://cdn4.raywenderlich.com/wp-content/uploads/2014/06/FlickrSearchPart1Project1.zip">这里</a>下载。在下一部分中，我们将看看如何从ViewModel中初始化一个视图控制器并实现更多的Flickr请求操作。</p>
 ]]></content>
   </entry>
   
