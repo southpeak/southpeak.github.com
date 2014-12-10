@@ -1,0 +1,503 @@
+---
+
+layout: post
+
+title: "Quartz 2D编程指南之八：渐变"
+
+date: 2014-12-10 09:00:26 +0800
+
+comments: true
+
+categories: iOS
+
+---
+
+Quartz提供了两个不透明数据odgago创建渐变：CGShadingRef和CGGradientRef。我们可以使用任何一个来创建轴向(axial)或径向(radial)渐变。一个渐变是从一个颜色到另外一种颜色的填充。
+
+一个轴向渐变(也称为线性渐变)沿着由两个端点连接的轴线渐变。所有位于垂直于轴线的某条线上的点都具有相同的颜色值。
+
+一个径向渐变也是沿着两个端点连接的轴线渐变，不过路径通常由两个圆来定义。
+
+本章提供了一些我们使用Quartz能够创建的轴向和径向渐变的类型的例子，并比较绘制渐变的两种方法，然后演示了如何使用每种不透明数据类型来创建渐变。
+
+## 轴向和径向渐变实例
+
+Quartz函数提供了一个丰富的功能来创建渐变效果。这一部分显示了一些我们能达到的效果。图8-1中的轴向渐变由橙色向黄色渐变。在这个例子中，渐变轴相对于原点倾斜了45度角。
+
+Figure 8-1  An axial gradient along a 45 degree axis
+
+![image](https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/two_color_gradient.jpg)
+
+Quartz也允许我们指定一系列的颜色和位置值，以沿着轴来创建更复杂的轴向渐变，如图8-2所示。起始点的颜色值是红色，结束点的颜色是紫罗兰色。同时，在轴上有五个位置，它们的颜色值分别被设置为橙、黄、绿、蓝和靛蓝。我们可以把它看成沿着同一轴线的六段连续的线性渐变。虽然这里的轴线与图8-1是一样的，但这不是必须的。轴线的角度由我们提供的两个端点定义。
+
+Figure 8-2  An axial gradient created with seven locations and colors
+
+![image](https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rainbow_gradient.jpg)
+
+图8-3显示了一个径向渐变，它从一个小的明亮的红色圆渐变到一个大小黑色的圆。
+
+Figure 8-3  A radial gradient that varies between two circles
+
+![image](https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/cylinder6.gif)
+
+使用Quartz，我们不局限于创建颜色值改变的渐变；我们可以只修改alpha值，或者创建alpha值与其它颜色组件一起改变的渐变。图8-4显示了一个渐变，其红、绿、蓝组件的值是不变的，但alpha值从1.0渐变到0.1。
+
+注意：如果我们使用alpha值来改变一个渐变，则在绘制一个PDF内容时我们不能捕获这个渐变。因此，这样的渐变无法打印。如果需要绘制一个渐变到PDF，则需要让alpha值为1.0。
+
+Figure 8-4  A radial gradient created by varying only the alpha component
+
+![image](https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/alpha_only.jpg)
+
+我们可以把一个圆放置到一个径向渐变中来创建各种形状。如果一个圆是另一个的一部分或者完全在另一个的外面，则Quartz创建了圆锥和一个圆柱。径向渐变的一个通常用法就是创建一个球体阴影，如图8-5所示。在这种情况下，一个单一的点(半径为0的圆)位于一个大圆以内。
+
+Figure 8-5  A radial gradient that varies between a point and a circle
+
+![image](https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/shaded_sphere.gif)
+
+我们可以像图8-6一样通过内嵌几个径向渐变来创建更复杂的效果。它使用同心圆来创建图形中的各环形部分。
+
+Figure 8-6  Nested radial gradients
+
+![image](https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/torus.gif)
+
+## CGShading和CGGradient对象的对比
+
+我们有两个对象类型用于创建渐变，你可能想知道哪一个更好用。本节就来回答这个问题。
+
+CGShadingRef这个不透明数据类型给我们更多的控制权，以确定如何计算每个端点的颜色。在我们创建CGShading对象之前，我们必须创建一个CGFunction对象(CGFunctionRef)，这个对象定义了一个用于计算渐变颜色的函数。写一个自定义的函数让我们能够创建平滑的渐变，如图8-3，8-3和8-5及更多非传统的效果，如图8-12所示。
+
+当创建一个CGShading对象时，我们指定其是轴向还是径向。除了计算函数外，我们还需要提供一个颜色空间、起始点和结束点或者是半径，这取决于是绘制轴向还是径向渐变。在绘制时，我们只是简单地传递CGShading对象及绘制上下文给CGContextDrawShading函数。Quartz为渐变上的每个点调用渐变计算函数。
+
+一个CGGradient对象是CGShading对象的子集，其更易于使用。CGGradientRef不透明类型易于作用，因为Quartz在渐变的每一个顶点上计算颜色值。我们不需要提供一个渐变计算函数。当创建一个渐变对象时，我们提供一个位置和颜色的数组。Quartz使用对应的颜色值来计算每个梯度的渐变，。我们可以使用单一的起始与结束点来设置一个渐变对象，如图8-1所示，或者提供一组端点来创建一个类似于图8-2的的效果。使用CGShading对象可以提供多于两个位置的能力。
+
+当我们创建一个CGGradient对象时，我们需要设置一个颜色空间、位置、和每个位置对应的颜色值。当使用一个渐变对象绘制上下文时，我们指定Quartz是绘制一个轴向还是径向渐变。在绘制时，我们指定开始结束点或半径，这取决于我们是绘制轴向还是径向渐变。而CGShading的几何形状是在创建时定义的，而不是绘制时。
+
+表8-1总结了两种不透明数据类型之间的区别。
+
+![image](http://)
+
+## 扩展渐变端点外部的颜色
+
+当我们创建一个渐变时，我们可以选择使用纯色来填充渐变端点外部的空间。Quartz使用使用渐变边界上的颜色作为填充颜色。我们可以扩展渐变起点、终点或两端的颜色。我们可以扩展使用CGShading对象或CGGradient对象创建的轴向或径向渐变。
+
+图8-7演示了一个轴向渐变，它扩展了起点和终点两侧的区域。图片中的线段显示了渐变的轴线。我们可以看到，填充颜色与起点和终点的颜色是对应的。
+
+Figure 8-7  Extending an axial gradient
+
+![image](https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/extend_axial2.gif)
+
+图8-8对比了一个未使用扩展的径向渐变和一个在起点和终点两侧使用扩展的径向渐变。Quartz获取了起点和终点的颜色值，并使用这边纯色值来扩展立面。
+
+Figure 8-8  Extending a radial gradient
+
+![image](https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/extend_radial.gif)
+
+## 使用CGGradient对象
+
+一个CGGradient对象是一个渐变的抽象定义--它简单地指定了颜色值和位置，但没有指定几何形状。我们可以在轴向和径向几何形状中使用这个对象。作为一个抽象定义，CGGradient对象可能比CGShading对象更容易重用。没有将几何形状存储在CGGradient对象中，这样允许我们使用相同的颜色方案来绘制不同的几何图形，而不需要为多个图形创建多个CGGradient对象。
+
+因为Quartz为我们计算渐变，使用一个CGGradient对象来创建和绘制一个渐变则更直接，只需要以下几步：
+
+1. 创建一个CGGradient对象，提供一个颜色空间，一个饱含两个或更多颜色组件的数组，一个包含两个或多个位置的数组，和两个数组中元素的个数。
+2. 调用CGContextDrawLinearGradient或CGContextDrawRadialGradient函数并提供一个上下文、一个CGGradient对象、绘制选项和开始结束几何图形来绘制渐变。
+3. 当不再需要时释放CGGradient对象。
+
+一个位置是一个值区间在0.0到1.0之间的CGFloat值，它指定了沿着渐变的轴线的标准化距离。值0.0指定的轴线的起点，1.0指定了轴线的终点。其它的值指定了一个距离的比例。最低限度情况下，Quartz使用两个位置值。如果我们传递NULL值作为位置数组参数，则Quartz使用0作为第一个位置，1作为第二个位置。
+
+每个颜色的颜色组件的数目取决于颜色空间。对于离屏绘制，我们使用一个RGB颜色空间。因为Quartz使用alpha来绘制，每个离屏颜色都有四个组件--红、绿、蓝和alpha。所以，对于离屏绘制，我们提供的颜色组件数组的元素的数目必须是位置数目的4倍。Quartz的RGBA颜色组件可以在0.0到1.0之间改变。
+
+代码清单8-1是创建一个CGGradient对象的代码片断。在声明了必须的变量后，代码设置了位置和颜色组件数组。然后创建了一个通用的RGB颜色空间。(在iOS中，不管RGB颜色空间是否可用，我们都应该调用CGColorSpaceCreateDeviceRGB)。然后，它传递必要的参数到CGGradientCreateWithColorComponents函数。我们同样可以使用CGGradientCreateWithColors，如果我们的程序设置了CGColor对象，这是一种便捷的方法。
+
+Listing 8-1  Creating a CGGradient object
+
+	CGGradientRef myGradient;
+	CGColorSpaceRef myColorspace;
+	size_t num_locations = 2;
+	CGFloat locations[2] = { 0.0, 1.0 };
+	CGFloat components[8] = { 1.0, 0.5, 0.4, 1.0,  // Start color
+	                          0.8, 0.8, 0.3, 1.0 }; // End color
+	 
+	myColorspace = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
+	myGradient = CGGradientCreateWithColorComponents (myColorspace, components,
+	                          locations, num_locations);
+
+在创建了CGGradient对象后，我们可以使用它来绘制一个轴向或线性渐变。代码清单8-2声明并设置了线性渐变的起始点然后绘制渐变。图8-1显示了结果。代码没有演示如何获取CGContext对象。
+
+Listing 8-2  Painting an axial gradient using a CGGradient object
+
+	CGPoint myStartPoint, myEndPoint;
+	myStartPoint.x = 0.0;
+	myStartPoint.y = 0.0;
+	myEndPoint.x = 1.0;
+	myEndPoint.y = 1.0;
+	CGContextDrawLinearGradient (myContext, myGradient, myStartPoint, myEndPoint, 0);
+
+代码清单8-3使用代码清单8-1中创建的CGGradient对象来绘制图8-9中径向渐变。这个例子同时也演示了使用纯色来填充渐变的扩展区域。
+
+Listing 8-3  Painting a radial gradient using a CGGradient object
+
+	CGPoint myStartPoint, myEndPoint;
+	CGFloat myStartRadius, myEndRadius;
+	myStartPoint.x = 0.15;
+	myStartPoint.y = 0.15;
+	myEndPoint.x = 0.5;
+	myEndPoint.y = 0.5;
+	myStartRadius = 0.1;
+	myEndRadius = 0.25;
+	CGContextDrawRadialGradient (myContext, myGradient, myStartPoint,
+	                         myStartRadius, myEndPoint, myEndRadius,
+	                         kCGGradientDrawsAfterEndLocation);
+
+Figure 8-9  A radial gradient painted using a CGGradient object
+
+![image](https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/radial_cggradient.jpg)
+
+图8-4中的径向渐变使用代码清单8-4中的变量来创建。
+
+Listing 8-4  The variables used to create a radial gradient by varying alpha
+
+	CGPoint myStartPoint, myEndPoint;
+	CGFloat myStartRadius, myEndRadius;
+	myStartPoint.x = 0.2;
+	myStartPoint.y = 0.5;
+	myEndPoint.x = 0.65;
+	myEndPoint.y = 0.5;
+	myStartRadius = 0.1;
+	myEndRadius = 0.25;
+	size_t num_locations = 2;
+	CGFloat locations[2] = { 0, 1.0 };
+	CGFloat components[8] = { 0.95, 0.3, 0.4, 1.0,
+	                          0.95, 0.3, 0.4, 0.1 };
+
+代码清单8-5显示了用于创建图8-10中的灰色渐变的变量，其中有3个位置。
+
+Listing 8-5  The variables used to create a gray gradient
+
+	size_t num_locations = 3;
+	CGFloat locations[3] = { 0.0, 0.5, 1.0};
+	CGFloat components[12] = {  1.0, 1.0, 1.0, 1.0,
+	                            0.5, 0.5, 0.5, 1.0,
+	                            1.0, 1.0, 1.0, 1.0 };
+	                            
+Figure 8-10  An axial gradient with three locations
+
+![image](https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/gray_gradient_3.jpg)
+
+## 使用CGShading对象
+
+我们通过调用函数CGShadingCreateAxial或CGShadingCreateRadial创建一个CGShading对象来设置一个渐变，调用这些函数需要提供以下参数：
+
+1. CGColorSpace对象：颜色空间
+2. 起始点和终点。对于轴向渐变，有轴线的起始点和终点的坐标。对于径向渐变，有起始圆和终点圆中心的坐标。
+3. 用于定义渐变区域的圆的起始半径与终止半径。
+4. 一个CGFunction对象，可以通过CGFunctionCreate函数来获取。这个回调例程必须返回绘制到特定点的颜色值。
+5. 一个布尔值，用于指定是否使用纯色来绘制起始点与终点的扩展区域。
+
+我们提供给CGShading创建函数的CGFunction对象包含一个回调结构体，及Quartz需要实现这个回调的所有信息。也许设置CGShasing对象的最棘手的部分是创建CGFunction对象。当我们调用CGFunctionCreate函数时，我们提供以下参数： 
+
+1. 指向回调所需要的数据的指针
+2. 回调的输入值的个数。Quartz要求回调携带一个输入值。
+3. 一个浮点数的数组。Quartz只会提供数组中的一个元素给回调函数。一个转入值的范围是0(渐变的开始点的颜色)到1(渐变的结束点的颜色)。
+4. 回调提供的输出值的数目。对于每一个输入值，我们的回调必须为每个颜色组件提供一个值，以及一个alpha值来指定透明度。颜色组件值由Quartz提供的颜色空间来解释，并会提供给CGShading创建函数。例如，如果我们使用RGB颜色空间，则我们提供值4作为输出值(R,G,B,A)的数目。
+5. 一个浮点数的数组，用于指定每个颜色组件的值及alpha值。
+6. 一个回调数据结构，包含结构体的版本(设置为0)、生成颜色组件值的回调、一个可选的用于释放回调中info参数表示的数据。该回调类似于以下格式：
+
+	void myCalculateShadingValues (void *info, const CGFloat *in, CGFloat *out)
+	
+在创建CGShading对象后，如果需要我们可以设置额外的裁减操作。然后调用CGContextDrawShading函数来使用渐变来绘制上下文的裁减区域。当调用这个函数时，Quartz调用回调函数来获取从起点到终点这个范围内的颜色值。
+
+当不再需要CGShading对象时，我们调用CGShadingRelease来释放它。
+
+下面我们将一步步地通过代码来看看如何使用CGShading对象来绘制渐变。
+
+### 使用CGShading对象绘制一个轴向渐变
+
+绘制轴向和径向渐变的步骤是差不多的。这个例子演示了如何使用一个CGShading对象来绘制一个轴向渐变，并在图形上下文中绘制一个半圆形的裁减路径，然后将渐变绘制到裁减区域来达到图8-11的效果。
+
+Figure 8-11  An axial gradient that is clipped and painted
+
+![image](https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/axial_shading_arc.gif)
+
+为了绘制图中的轴向渐变，需要按以下步骤来处理：
+
+1. 设置CGFunction对象来计算颜色值
+2. 创建轴向渐变的CGShading对象
+3. 裁减上下文
+4. 使用CGShading对象来绘制轴向渐变
+5. 释放对象
+
+#### 设置CGFunction对象来计算颜色值
+
+我们可以以我们想要的方式来计算颜色值，我们的颜色计算函数包含以下三个参数：
+
+1. void *info：这个值可以为NULL或者是一个指向传递给CGShading创建函数的数据。
+2. const CGFloat *in：Quartz传递in数组给回调。数组中的值必须在为CGFunction对象定义的输入值范围内。例如，输入范围是0到1；看代码清单8-7
+3. CGFloat *out：我们的回调函数传递out数组给Quartz。它包含用于颜色空间中每个颜色组件的元素及一个alpha值。输出值应该在CGFunction对象中定义的输出值的范围内，例如，输出范围是0到1；看代码清单8-7。
+
+更多关于参数的信息可以查看CGFunctionEvaluateCallback。
+
+代码清单8-6演示了一个函数，它通过将一个常数数组中的值乘以输入值来计算颜色组件值。因为输入值在0到1之间，所以输入值位于黑色(对于RGB来说值为0, 0, 0)和紫色(1, 0, 0.5)之间。注意最后一个组件通常设置为1，表示颜色总是完全不透明的。
+
+Listing 8-6  Computing color component values
+
+	static void myCalculateShadingValues (void *info,
+	                            const CGFloat *in,
+	                            CGFloat *out)
+	{
+	    CGFloat v;
+	    size_t k, components;
+	    static const CGFloat c[] = {1, 0, .5, 0 };
+	 
+	    components = (size_t)info;
+	 
+	    v = *in;
+	    for (k = 0; k < components -1; k++)
+	        *out++ = c[k] * v;
+	     *out++ = 1;
+	}
+
+在写完回调计算颜色值后，我们将其打包以作为CGFunction对象的一部分。代码清单显示了一个函数，它创建了一个包含代码清单8-6中的回调函数的CGFunction对象。
+
+Listing 8-7  Creating a CGFunction object
+
+	static CGFunctionRef myGetFunction (CGColorSpaceRef colorspace)
+	{
+	    size_t numComponents;
+	    static const CGFloat input_value_range [2] = { 0, 1 };
+	    static const CGFloat output_value_ranges [8] = { 0, 1, 0, 1, 0, 1, 0, 1 };
+	    static const CGFunctionCallbacks callbacks = { 0,
+	                                &myCalculateShadingValues,
+	                                NULL };
+	 
+	    numComponents = 1 + CGColorSpaceGetNumberOfComponents (colorspace);
+	    return CGFunctionCreate ((void *) numComponents,
+	                                1, 
+	                                input_value_range, 
+	                                numComponents, 
+	                                output_value_ranges, 
+	                                &callbacks);
+	}
+
+#### 创建一个轴向渐变的CGShading对象
+
+为了创建一个CGShading对象，我们调用CGShadingCreateAxial函数，如代码清单8-8所示。我们传递一个颜色空间，开始点和结束点，一个CGFunction对象，和一个用于指定是否填充渐变的开始点和结束点扩展的布尔值。
+
+Listing 8-8  Creating a CGShading object for an axial gradient
+
+	CGPoint     startPoint,
+	            endPoint;
+	CGFunctionRef myFunctionObject;
+	CGShadingRef myShading;
+	 
+	startPoint = CGPointMake(0,0.5);
+	endPoint = CGPointMake(1,0.5);
+	colorspace = CGColorSpaceCreateDeviceRGB();
+	myFunctionObject = myGetFunction (colorspace);
+	 
+	myShading = CGShadingCreateAxial (colorspace,
+	                        startPoint, endPoint,
+	                        myFunctionObject,
+	                        false, false);
+
+#### 裁减上下文
+
+当绘制一个渐变时，Quartz填充当前上下文。绘制一个渐变与操作颜色和模式不同，后者是用于描边或填充一个路径对象。因此，如果要我们的渐变出现在一个特定形状中，我们需要裁减上下文。代码清单8-9的代码添加了一个半圆形到当前上下文，以便渐变绘制到这个裁减区域，如图8-11。
+
+如果我们仔细看，会发现代码绘制的是一个半圆，而图中显示的是一个半椭圆形。为什么呢？我们会看到，当我们查看后面完整的绘制代码时，上下文被缩放了。稍后会详细说明。虽然我们不需要使用缩放或裁减，这些在Quartz 2D中的选项可以帮助我们达到有趣的效果。
+
+Listing 8-9  Adding a semicircle clip to the graphics context
+
+    CGContextBeginPath (myContext);
+    CGContextAddArc (myContext, .5, .5, .3, 0,
+                    my_convert_to_radians (180), 0);
+    CGContextClosePath (myContext);
+    CGContextClip (myContext);
+
+#### 使用CGShading对象来绘制轴向渐变
+
+调用函数CGContextDrawShading使用CGShading对象为指定的颜色渐变来填充当前上下文：
+
+	CGContextDrawShading (myContext, myShading);
+
+#### 释放对象
+
+当我们不再需要CGShading对象时，可以调用函数CGShadingRelease来释放它。我们需要同时释放CGColorSpace对象和CGFunction对象，如代码清单8-10所示：
+
+Listing 8-10  Releasing objects
+
+	CGShadingRelease (myShading);
+	CGColorSpaceRelease (colorspace);
+	CGFunctionRelease (myFunctionObject);
+
+#### 使用CGShading对象绘制轴向渐变的完整例程
+
+代码清单8-11显示了绘制一个轴向渐变的完整例程，使用8-7中的CGFunction对象和8-6中的回调函数。
+
+Listing 8-11  Painting an axial gradient using a CGShading object
+
+	void myPaintAxialShading (CGContextRef myContext,
+	                            CGRect bounds)
+	{
+	    CGPoint     startPoint,
+	                endPoint;
+	    CGAffineTransform myTransform;
+	    CGFloat width = bounds.size.width;
+	    CGFloat height = bounds.size.height;
+	 
+	 
+	    startPoint = CGPointMake(0,0.5); 
+	    endPoint = CGPointMake(1,0.5);
+	 
+	    colorspace = CGColorSpaceCreateDeviceRGB();
+	    myShadingFunction = myGetFunction(colorspace);
+	 
+	    shading = CGShadingCreateAxial (colorspace, 
+	                                 startPoint, endPoint,
+	                                 myShadingFunction,
+	                                 false, false);
+	 
+	    myTransform = CGAffineTransformMakeScale (width, height);
+	    CGContextConcatCTM (myContext, myTransform);
+	    CGContextSaveGState (myContext);
+	 
+	    CGContextClipToRect (myContext, CGRectMake(0, 0, 1, 1));
+	    CGContextSetRGBFillColor (myContext, 1, 1, 1, 1);
+	    CGContextFillRect (myContext, CGRectMake(0, 0, 1, 1));
+	 
+	    CGContextBeginPath (myContext);
+	    CGContextAddArc (myContext, .5, .5, .3, 0,
+	                        my_convert_to_radians (180), 0);
+	    CGContextClosePath (myContext);
+	    CGContextClip (myContext);
+	 
+	    CGContextDrawShading (myContext, shading);
+	    CGColorSpaceRelease (colorspace);
+	    CGShadingRelease (shading);
+	    CGFunctionRelease (myShadingFunction);
+	 
+	    CGContextRestoreGState (myContext); 
+	}
+
+### 使用CGShading对象绘制一个径向渐变
+
+这个例子演示了如何使用CGShading对象来生成如图8-12所示的输出
+
+Figure 8-12  A radial gradient created using a CGShading object
+
+![image](https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/radial_shading.gif)
+
+为了绘制一个径向渐变，我们需要按以下步骤来处理：
+
+1. 设置CGFunction对象来计算颜色值
+2. 创建径向渐变的CGShading对象
+3. 使用CGShading对象来绘制径向渐变
+4. 释放对象
+
+#### 设置CGFunction对象来计算颜色值
+
+计算径向渐变和轴向渐变颜色值的函数没有什么区别。事实上，我们可以依照上面的轴向的"设置CGFunction对象来计算颜色值"。代码清单8-12用于计算颜色，使用颜色按正弦变化。图8-12与图8-11的结果非常不同。虽然颜色输出值不同，代码清单8-12的代码与8-6中的函数遵循相同的原型。每个函数获取一个输入值并计算N个值，即颜色空间的每个颜色组件加一个alpha值。
+
+Listing 8-12  Computing color component values
+
+	static void  myCalculateShadingValues (void *info,
+	                                const CGFloat *in,
+	                                CGFloat *out)
+	{
+	    size_t k, components;
+	    double frequency[4] = { 55, 220, 110, 0 };
+	    components = (size_t)info;
+	    for (k = 0; k < components - 1; k++)
+	        *out++ = (1 + sin(*in * frequency[k]))/2;
+	     *out++ = 1; // alpha
+	}
+
+在写完颜色计算函数后调用它，我们需要创建一个CGFunction对象，如在轴向中"设置CGFunction对象来计算颜色值"所描述的一样。
+
+#### 创建径向渐变的CGShading对象
+
+为了创建一个CGShading对象或者一个径向渐变，我们调用CGShadingCreateRadial函数，如代码清单8-13所求，传递一个颜色空间、开始点和结束点，开始半径和结束半径，一个CGFunction对象，和一个用于指定是否填充渐变的开始点和结束点扩展的布尔值。
+
+Listing 8-13  Creating a CGShading object for a radial gradient
+
+    CGPoint startPoint, endPoint;
+    CGFloat startRadius, endRadius;
+ 
+    startPoint = CGPointMake(0.25,0.3);
+    startRadius = .1;
+    endPoint = CGPointMake(.7,0.7);
+    endRadius = .25;
+    colorspace = CGColorSpaceCreateDeviceRGB();
+    myShadingFunction = myGetFunction (colorspace);
+    CGShadingCreateRadial (colorspace,
+                    startPoint,
+                    startRadius,
+                    endPoint,
+                    endRadius,
+                    myShadingFunction,
+                    false,
+                    false);
+                    
+#### 使用CGShading对象来绘制径向渐变
+
+调用函数CGContextDrawShading使用CGShading对象为指定的颜色渐变来填充当前上下文：
+
+	CGContextDrawShading (myContext, myShading);
+	
+注意我们使用相同的函数来绘制渐变，而不管它是轴向还是径向。
+
+#### 释放对象
+
+当我们不再需要CGShading对象时，可以调用函数CGShadingRelease来释放它。我们需要同时释放CGColorSpace对象和CGFunction对象，如代码清单8-14所示：
+
+Listing 8-10  Releasing objects
+
+	CGShadingRelease (myShading);
+	CGColorSpaceRelease (colorspace);
+	CGFunctionRelease (myFunctionObject);
+
+#### 使用CGShading对象绘制径向渐变的完整例程
+
+代码清单8-15显示了绘制一个轴径向渐变的完整例程，使用8-7中的CGFunction对象和8-12中的回调函数。
+
+Listing 8-15  A routine that paints a radial gradient using a CGShading object
+
+	void myPaintRadialShading (CGContextRef myContext,
+	                            CGRect bounds);
+	{
+	    CGPoint startPoint,
+	            endPoint;
+	    CGFloat startRadius,
+	            endRadius;
+	    CGAffineTransform myTransform;
+	    CGFloat width = bounds.size.width;
+	    CGFloat height = bounds.size.height;
+	 
+	    startPoint = CGPointMake(0.25,0.3); 
+	    startRadius = .1;  
+	    endPoint = CGPointMake(.7,0.7); 
+	    endRadius = .25; 
+	 
+	    colorspace = CGColorSpaceCreateDeviceRGB(); 
+	    myShadingFunction = myGetFunction (colorspace);
+	 
+	    shading = CGShadingCreateRadial (colorspace, 
+	                            startPoint, startRadius,
+	                            endPoint, endRadius,
+	                            myShadingFunction,
+	                            false, false);
+	 
+	    myTransform = CGAffineTransformMakeScale (width, height); 
+	    CGContextConcatCTM (myContext, myTransform); 
+	    CGContextSaveGState (myContext); 
+	 
+	    CGContextClipToRect (myContext, CGRectMake(0, 0, 1, 1)); 
+	    CGContextSetRGBFillColor (myContext, 1, 1, 1, 1);
+	    CGContextFillRect (myContext, CGRectMake(0, 0, 1, 1));
+	 
+	    CGContextDrawShading (myContext, shading); 
+	    CGColorSpaceRelease (colorspace); 
+	    CGShadingRelease (shading);
+	    CGFunctionRelease (myShadingFunction);
+	 
+	    CGContextRestoreGState (myContext); 
+	}
