@@ -74,7 +74,7 @@ CGShadingRef这个不透明数据类型给我们更多的控制权，以确定�
 
 表8-1总结了两种不透明数据类型之间的区别。
 
-![image](http://)
+![image](http://a1.qpic.cn/psb?/V130i6W71atwfr/AaDaf5N2GhcgG29GukC4bGMrQsPTL35OU4kjfjH2tZo!/b/dDOyEHb5CAAA&bo=ggckAgAAAAADB4E!&rf=viewer_4)
 
 ## 扩展渐变端点外部的颜色
 
