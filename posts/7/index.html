@@ -11,7 +11,7 @@
   <meta name="baidu-site-verification" content="HoscFhWICI" />
 
   
-  <meta name="description" content="域命名约定 服务实例与服务类型的Bonjour名称与DNS域名相关。这里我们将介绍DNS域名，Bonjour本地“域”，和Bonjour服务实例与服务类型的命名规则。 域名与DNS DNS使用specific-to-general命名方案来为域名命名。最能用的域是&#8221;.&ldquo;, &hellip;">
+  <meta name="description" content="缓存 URL加载系统为请求提供了基于磁盘和内存的组合响应缓存。这个缓存让应用减少了对网络连接的依赖，提高了性能。 一个NSURLRequest实例通过设置缓存策略来指定本地缓存。默认的缓存策略是NSURLRequestUseProtocolCachePolicy， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -68,6 +68,107 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/07/20/urljia-zai-xi-tong-zhi-wu-:huan-cun-,-cookiesyu-xie-yi/">URL加载系统之五：缓存、Cookies与协议</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-07-20T22:56:30+08:00" pubdate data-updated="true">Jul 20<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/07/20/urljia-zai-xi-tong-zhi-wu-:huan-cun-,-cookiesyu-xie-yi/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h2>缓存</h2>
+
+<p>URL加载系统为请求提供了基于磁盘和内存的组合响应缓存。这个缓存让应用减少了对网络连接的依赖，提高了性能。</p>
+
+<p>一个NSURLRequest实例通过设置缓存策略来指定本地缓存。默认的缓存策略是NSURLRequestUseProtocolCachePolicy，其行为是由协议指定的针对该协议最好的实现方式。另外几种缓存策略描述如下：</p>
+
+<ol>
+<li>NSURLRequestReloadIgnoringCacheData：URL加载系统将从服务端加载数据，而完全忽略缓存。</li>
+<li>NSURLRequestReturnCacheDataElseLoad：URL加载系统使用缓存数据，忽略其过期时间；只有在没有缓存版本的时候才从源端加载数据。</li>
+<li>NSURLRequestReturnCacheDataDontLoad：允许应用指定只有在缓存中的数据应该被返回。如果在创建NSURLConnection或NSURLDownload实例时使用这个缓存策略，如果响应没有在本地缓存中，则直接返回nil。这类似于使用离线模式，且从来不进行网络连接。</li>
+</ol>
+
+
+<p>需要注意的是，目前只有HTTP和HTTPS的响应还被缓存。</p>
+
+<p>缓存最常用的场景是使用HTTP协议做网络请求，同时设置缓存策略为NSURLRequestUseProtocolCachePolicy。如果一个请求的NSCachedURLResponse不存在，则加载系统会从源端获取数据。如果请求的缓存响应存在于本地，则URL加载系统检查响应来确定它指定的内容必须被重新验证。如果内容必须验证，则加载系统发出一个HEAD请求到源端以确定资源是否已经改变。如果没有改变，则URL加载系统返回缓存响应对象。如果已经改变了，则URL加载系统从源端获取数据。</p>
+
+<p>如果缓存响应对象没有指定内容必须被重新验证，则加载系统校验缓存响应对象的最大age或有效时间。如果缓存对象未过期，则加载系统返回缓存对象。如果响应过旧，则URL加载系统发起一个HEAD请求到源端查看资源是否已被修改。如果修改了，则URL加载系统从源端获取新的数据。否则，返回缓存响应对象。</p>
+
+<p>默认情况下，连接的数据基于请求的缓存策略来进行缓存，同时由处理请求的NSURLProtocol子类来解析。如果我们需要对缓存做更精确的控制，我们可以实现一些代理方法来允许应用来确定请求是否应该缓存：</p>
+
+<ol>
+<li>对于NSURLSession数据和上传任务，实现URLSession:dataTask:willCacheResponse:completionHandler:方法。这个代理方法只用于数据请求和上传任务。而下载任务的缓存由指定的缓存策略来决定。</li>
+<li>对于NSURLConnection，实现connection:willCacheResponse:方法</li>
+</ol>
+
+
+<p>对于NSURLSession，我们的代理方法调用一个完成处理器block来告知会话需要缓存什么东西。对于NSURLConnection，代理方法返回连接需要缓存的对象。不管是哪种情况，代理都会提供以下值之一：</p>
+
+<ol>
+<li>允许缓存的响应对象</li>
+<li>新创建的响应对象，用于缓存被修改的响应</li>
+<li>NULL，以阻止缓存</li>
+</ol>
+
+
+<p>代理方法也可以提供与NSCacheURLResponse对象相关的userInfo字典，将这些对象作为响应的一部分存储在缓存中。</p>
+
+<p>需要注意的是，如果我们使用NSURLSession眀实现了代理方法，则代理方法必须总是调用提供的完成处理器，否则会导致内存泄露。</p>
+
+<h2>Cookies</h2>
+
+<p>由于HTTP协议是无状态的，客户端通常使用cookie来提供URL请求间数据的持久化存储。URL加载系统提供接口来创建和管理cookie，将cookie作为HTTP请求的一部分进行发送，并在解析一个服务端的响应时获取cookie。</p>
+
+<p>NSHTTPCookie类封装了一个cookie，并提供了大量访问器来访问cookie的各种属性。该类同样提供了方法用于HTTP cookie头与NSHTTPCookie实例之间的互转。URL加载系统自动发送与NSURLRequest对象匹配的任何存储的cookie，除非该请求指明不需要发送cookie。同样，NSURLResponse对象是返回的cookie将根据当前设定的cookie接收策略来处理。</p>
+
+<p>NSHTTPCookieStorage提供接口来管理NSHTTPCookie对象的集合。与MacOS不同的是，iOS的cookie不能在应用间共享。NSHTTPCookieStorage允许一个应用指定cookie接收策略。</p>
+
+<h2>协议支持</h2>
+
+<p>URL加载系统允许客户端程序扩展协议，以支持自定义的传输数据的方式。URL加载系统默认只支持http, https, file, ftp和data协议。</p>
+
+<p>我们可以继承NSURLProtocol来实现一个自定义的协议，然后使用NSURLProtocol类的的registerClass:方法将其注册到URL加载系统中。当NSURLSession, NSURLConnection和NSURLDownload对象初始化一个NSURLRequest的连接时，URL加载系统以注册顺序的倒序来查询每一个注册类。每个类都将调用canInitWithRequest:方法，第一个返回YES的类将被用于处理请求。</p>
+
+<p>如果自定义协议需要额外的属性业支持请求与响应，则通过创建NSURLRequest, NSMutableRequest和NSResponse类的类别来提供这些属性的访问器。NSURLProtocol类提供方法在这些访问器中设置和获取属性值。</p>
+
+<p>URL加载系统负责在连接开始和完成时创建和释放NSURLProtocol实例。我们的应用不应该直接创建NSURLProtocol的实例。</p>
+
+<p>当NSURLProtocol子类通过URL加载系统初始化时，它提供了一个实现NSURLProtocolClient协议的客户端对象。NSURLProtocol子类将消息从NSURLProtocolClient协议发送到客户端对象，来告诉URL加载系统它创建了响应，接收数据，重定向到新的URL，请求认证，完成加载等操作。如果自定义协议支持认证，还必须实现NSURLAuthenticationChallengeSender协议。</p>
+
+<h4>参考</h4>
+
+<p><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/URLLoadingSystem/URLLoadingSystem.html">URL Loading System Programming Guide</a></p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -983,161 +1084,6 @@ TKCoverflowViewDelegate协议的</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/07/16/urljia-zai-xi-tong-zhi-si-:ren-zheng-yu-tlslian-yan-zheng/">URL加载系统之四：认证与TLS链验证</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-07-16T18:51:03+08:00" pubdate data-updated="true">Jul 16<sup>th</sup>, 2014</time>
-        
-        
-           | <a href="/blog/2014/07/16/urljia-zai-xi-tong-zhi-si-:ren-zheng-yu-tlslian-yan-zheng/#comments">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>一个NSURLRequest对象经常会遇到认证请求，或者需要从其所连接的服务端请求证书。当需要认证请求时，NSURLConnection、NSURLSession和NSURLDownload类会通知它们的代理对象，以便能正确地做处理。不过需要注意的是，URL加载系统只有在服务端响应包含WWW-Authenticate头时才会调用代理来处理认证请求，而类似于代理认证和TLS信任验证这样的认证类型则不需要这个头。</p>
-
-<h2>确定如何响应一个认证请求</h2>
-
-<p>如果一个NSURLRequest对象需要认证时，则认证请求方式取决于使用的对象的类型：</p>
-
-<ol>
-<li>如果请求是与NSURLSession对象关联，则所有认证请求都会传递给代理，而不考虑认证的类型。</li>
-<li>如果请求是与NSURLConnection或NSURLDownload对象，则对象的代理接收一个connection:canAuthenticateAgainstProtectionSpace: (或者 download:canAuthenticateAgainstProtectionSpace:) 消息。这允许代理对象在尝试再次认证前分析服务端的属性，包括协议和认证方法。如果我们的代理对象不准备认证服务端的受保护空间，则返回NO，且系统尝试使用用户的keychain的信息进行认证。</li>
-<li>如果NSURLConnection或NSURLDownload的代理对象没有实现connection:canAuthenticateAgainstProtectionSpace: (或者 download:canAuthenticateAgainstProtectionSpace:)方法，且保护空间使用客户端证书认证或服务端信任认证，则系统假设我们返回NO。而对象其它所有类型，系统都返回YES。</li>
-</ol>
-
-
-<p>下一步，如果我们的代理对象同意处理认证，但是没有有效的证书（不管是作为请求URL的一部分或者在NSURLCredentialStorage中共享），则代理以收到以下消息：</p>
-
-<ol>
-<li>URLSession:didReceiveChallenge:completionHandler:2. URLSession:task:didReceiveChallenge:completionHandler:3. connection:didReceiveAuthenticationChallenge:4. download:didReceiveAuthenticationChallenge:</li>
-</ol>
-
-
-<p>为了让连接能够继续，则代理对象有三种选择：</p>
-
-<ol>
-<li>提供认证证书</li>
-<li>尝试在没有证书的情况下继续</li>
-<li>取消认证查询</li>
-</ol>
-
-
-<p>为了确保操作的正确流程，传递给这些方法的NSURLAuthenticationChallenge实例会包含一些信息，包括是什么触发了认证查询、查询的尝试次数、任何先前尝试的证书、请求证书的NSURLProtectionSpace对象，及查询的发送者。</p>
-
-<p>如果认证请求事先尝试认证且失败了(如用户在服务端修改了密码)，我们可以通过在认证请求调用proposedCredential来获取尝试凭据。代理可以使用这些证书来填充一个显示给用户的话框。</p>
-
-<p>调用认证请求的previousFailureCount可以返回身份验证尝试次数，这些尝试包括不同认证协议的尝试请求。代理可以将这些方法提供给用户，以确定先前提供的证书是否失败，或限制最大认证尝试次数。</p>
-
-<h2>响应认证请求</h2>
-
-<p>前面说过三种响应我们响应connection:didReceiveAuthenticationChallenge:代理方法的方式，我们将逐一介绍：</p>
-
-<h4>提供证书</h4>
-
-<p>为了进行认证，程序需要使用服务端期望的认证信息创建一个NSURLCredential对象。我们可以调用authenticationMethod来确定服务端的认证方法，这个认证方法是在提供的认证请求的保护空间中。NSURLCredential支持一些方法：</p>
-
-<ol>
-<li>HTTP基本认证(NSURLAuthenticationMethodHTTPBasic)：需要用户名和密码。提示用户输入必要信息并使用credentialWithUser:password:persistence:方法创建一个NSURLCredential对象。</li>
-<li>HTTP数字认证(NSURLAuthenticationMethodHTTPDigest):类似于基本认证，需要用户名和密码。提示用户输入必要信息并使用credentialWithUser:password:persistence:方法创建一个NSURLCredential对象。</li>
-<li>客户端证书认证(NSURLAuthenticationMethodClientCertificate): 需要系统标识和所有服务端认证所需要的证书。然后使用credentialWithIdentity:certificates:persistence:来创建一个NSURLCredential对象。</li>
-<li>服务端信任认证(NSURLAuthenticationMethodServerTrust)需要一个由认证请求的保护空间提供的信任。使用credentialForTrust:来创建一个NSURLCredential对象。</li>
-</ol>
-
-
-<p>在创建NSURLCredential对象后</p>
-
-<ol>
-<li>对于NSURLSession，使用提供的完成处理block将该对象传递给认证请求发送者</li>
-<li>对于NSURLConnection和NSURLDownload，使用useCredential:forAuthenticationChallenge:方法将对象传递给认证请求发送者。</li>
-</ol>
-
-
-<h4>尝试在没有证书的情况下继续</h4>
-
-<p>如果代理选择不提供证书，可以尝试继续操作：</p>
-
-<ol>
-<li>对于NSURLSession，传递下面的值给完成处理block:
- NSURLSessionAuthChallengePerformDefaultHandling:处理请求。尽管代理没有提供代理方法来处理认证请求
- NSURLSessionAuthChallengeRejectProtectionSpace:拒绝请求。依赖于服务端响应允许的认证类型，URL加载类可能多次调用这个代理方法。</li>
-<li>对于NSURLConnection和NSURLDownload，在[challenge sender]中调用continueWithoutCredentialsForAuthenticationChallenge:。</li>
-</ol>
-
-
-<p>依赖于协议的实现，这种处理方法可能会导致连接失败而以送connectionDidFailWithError:消息，或者返回可选的不需要认证的URL内容。</p>
-
-<h4>取消连接</h4>
-
-<p>代理可以选择取消认证请求</p>
-
-<ol>
-<li>对于NSURLSession，传递NSURLSessionAuthChallengeCancelAuthenticationChallenge给完成处理block</li>
-<li>对于NSURLConnection和NSURLDownload，在[challenge sender]中调用cancelAuthenticationChallenge:。代理接收connection:didCancelAuthenticationChallenge:消息，以提供用户反馈的机会。</li>
-</ol>
-
-
-<p>下面的代码演示了使用用户名和密码创建NSURLCredential对象来响应认证请求</p>
-
-<pre><code>-(void)connection:(NSURLConnection *)connection didReceiveAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge
-    {
-    if ([challenge previousFailureCount] == 0)
-
-    {
-                NSURLCredential *newCredential;
-        newCredential = [NSURLCredential credentialWithUser:[self preferencesName] password:[self preferencesPassword] persistence:NSURLCredentialPersistenceNone];
-        [[challenge sender] useCredential:newCredential forAuthenticationChallenge:challenge];
-    }
-
-    else
-
-    {           [[challenge sender] cancelAuthenticationChallenge:challenge];           // inform the user that the user name and password          // in the preferences are incorrect         [self showPreferencesCredentialsAreIncorrectPanel:self];        }
-
-}
-</code></pre>
-
-<p>如果代理没有实现connection:didReceiveAuthenticationChallenge:，而请求需要认证，则有效的证书必须位于URL证书存储中或作为请求URL的一部分。如果证书无效或者认证失败，则底层实现会发送一个continueWithoutCredentialForAuthenticationChallenge:消息。</p>
-
-<h2>执行自定义TLS链验证</h2>
-
-<p>在NSURL系统的AIP中，TLS链验证由应用的认证代理方法来处理，但它不是提供证书给服务端以验证用户，而是在TLS握手的过程中校验服务端提供的证书，然后再告诉URL加载系统是否应该接受还是拒绝这些证书。</p>
-
-<p>如果需要以非标准的方法(如接收一个指定的自标识的证书用于测试)来执行链验证，则应用必须如下处理：</p>
-
-<ol>
-<li>对于NSURLSession，实现URLSession:didReceiveChallenge:completionHandler:和URLSession:task:didReceiveChallenge:completionHandler:代理方法。如果实现了两者，由会话级别的方法负责处理认证。</li>
-<li>对于NSURLConnection和NSURLDownload，实现connection:canAuthenticateAgainstProtectionSpace:和download:canAuthenticateAgainstProtectionSpace:方法，如果保护空间有一个NSURLAuthenticationMethodServerTrust类型的认证，则返回YES。然后，实现connection:didReceiveAuthenticationChallenge:或download:didReceiveAuthenticationChallenge:方法来处理认证。</li>
-</ol>
-
-
-<p>在认证处理代理方法中，我们需要确认认证保护空间是否有NSURLAuthenticationMethodServerTrust类型的认证，如果有，则从保护空间获取serverTrust信息。</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/8">&larr; Older</a>
@@ -1154,7 +1100,7 @@ TKCoverflowViewDelegate协议的</p>
 <section>
 <h1>分类</h1>
 <ul>
-  <li><a href='/blog/categories/ios'>ios (45)</a></li>
+  <li><a href='/blog/categories/ios'>ios (46)</a></li>
   <li><a href='/blog/categories/network'>network (3)</a></li>
   <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
   <li><a href='/blog/categories/swift'>swift (7)</a></li>
@@ -1166,6 +1112,10 @@ TKCoverflowViewDelegate协议的</p>
 <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/12/10/quartz-2dbian-cheng-zhi-nan-zhi-jiu-:tou-ming-ceng/">Quartz 2D编程指南之九：透明层</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2014/12/10/quartz-2dbian-cheng-zhi-nan-zhi-ba-:jian-bian/">Quartz 2D编程指南之八：渐变</a>
@@ -1201,10 +1151,6 @@ TKCoverflowViewDelegate协议的</p>
     
       <li class="post">
         <a href="/blog/2014/11/09/objective-c-runtime-yun-xing-shi-zhi-liu-:shi-yi/">Objective-C Runtime 运行时之六：拾遗</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/11/08/objective-c-runtime-yun-xing-shi-zhi-wu-:xie-yi-yu-fen-lei/">Objective-C Runtime 运行时之五：协议与分类</a>
       </li>
     
   </ul>

@@ -5,13 +5,13 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>instancetype - 南峰子的技术博客</title>
+  <title>Quartz 2D编程指南之九：透明层 - 南峰子的技术博客</title>
   <meta name="author" content="南峰子">
       
   <meta name="baidu-site-verification" content="HoscFhWICI" />
 
   
-  <meta name="description" content="注：原文由Mattt Thompson发表于nshipster：instancetype。文章是2012年写的，所以有些内容现在已不适用。 在Objective-C中，约定(conventions)不仅仅是编码最佳实践的问题，同时对编译器来说，也是一种隐式说明。 例如， &hellip;">
+  <meta name="description" content="透明层(TransparencyLayers)通过组合两个或多个对象来生成一个组合图形。组合图形被看成是单一对象。当需要在一组对象上使用特效时，透明层非常有用，如图9-1所示的给三个圆使用阴影的效果。 Figure 9-1 Three circles as a composite in a &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -20,7 +20,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://southpeak.github.io/blog/2014/10/19/instancetype">
+  <link rel="canonical" href="http://southpeak.github.io/blog/2014/12/10/quartz-2dbian-cheng-zhi-nan-zhi-jiu-:tou-ming-ceng">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="南峰子的技术博客" type="application/atom+xml">
@@ -71,7 +71,7 @@
   
   <header>
     
-      <h1 class="entry-title">instancetype</h1>
+      <h1 class="entry-title">Quartz 2D编程指南之九：透明层</h1>
     
     
       <p class="meta">
@@ -87,7 +87,7 @@
   
 
 
-<time datetime="2014-10-19T00:26:03+08:00" pubdate data-updated="true">Oct 19<sup>th</sup>, 2014</time>
+<time datetime="2014-12-10T09:13:04+08:00" pubdate data-updated="true">Dec 10<sup>th</sup>, 2014</time>
         
         
            | <a href="#comments">Comments</a>
@@ -97,64 +97,65 @@
   </header>
 
 
-<div class="entry-content"><p>注：原文由Mattt Thompson发表于nshipster：<a href="http://nshipster.com/instancetype/">instancetype</a>。<strong>文章是2012年写的，所以有些内容现在已不适用。</strong></p>
+<div class="entry-content"><p>透明层(TransparencyLayers)通过组合两个或多个对象来生成一个组合图形。组合图形被看成是单一对象。当需要在一组对象上使用特效时，透明层非常有用，如图9-1所示的给三个圆使用阴影的效果。</p>
 
-<p>在Objective-C中，约定(conventions)不仅仅是编码最佳实践的问题，同时对编译器来说，也是一种隐式说明。</p>
+<p>Figure 9-1  Three circles as a composite in a transparency layer</p>
 
-<p>例如，alloc和init两个方法都返回id类型，而在Xcode中，编译器会对它们进行类型检查。这是怎么做到的呢？</p>
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/trans_layer1.gif" alt="image" /></p>
 
-<p>在Cocoa中，有一个这样的约定，命名为alloc/init的方法总是返回接收者类的实例。这些方法有一个相关的返回类型。</p>
+<p>如果没有使用透明层来渲染图9-1中的三个圆，对它们使用阴影的效果将是如图9-2所示：</p>
 
-<p>而类的构造方法(类方法)，虽然他们都是返回id类型，但没有从类型检查中获得好处，因为他们不遵循命名约定。</p>
+<p>Figure 9-2  Three circles painted as separate entities</p>
 
-<p>我们可以试试以下代码：</p>
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/trans_layer2.gif" alt="image" /></p>
 
-<pre><code>[[[NSArray alloc] init] mediaPlaybackAllowsAirPlay]; // 报错： "No visible @interface for `NSArray` declares the selector `mediaPlaybackAllowsAirPlay`"
+<h2>透明层的工作方式</h2>
 
-[[NSArray array] mediaPlaybackAllowsAirPlay]; // (No error) 注：这个方法调用只在老的编译器上成立，新的编译器会报相同的错误。
+<p>Quartz的透明层类似于许多流行的图形应用中的层。层是独立的实体。Quartz维护为每个上下文维护一个透明层栈，并且透明层是可以嵌套的。但由于层通常是栈的一部分，所以我们不能单独操作它们。</p>
+
+<p>我们通过调用函数CGContextBeginTransparencyLayer来开始一个透明层，该函数需要两个参数：图形上下文与CFDictionary对象。字典中包含我们所提供的指定层额外信息的选项，但由于Quartz 2D API中没有使用字典，所以我们传递一个NULL。在调用这个函数后，图形状态参数保持不变，除了alpha值[默认设置为1]、阴影[默认关闭]、混合模式[默认设置为normal]、及其它影响最终组合的参数。</p>
+
+<p>在开始透明层操作后，我们可以绘制任何想显示在层上的对象。指定上下文中的绘制操作将被当成一个组合对象绘制到一个透明背景上。这个背景被当作一个独立于图形上下文的目标缓存。</p>
+
+<p>当绘制完成后，我们调用函数CGContextEndTransparencyLayer。Quartz将结合对象放入上下文，并使用上下文的全局alpha值、阴影状态及裁减区域作用于组合对象。</p>
+
+<h2>在透明层中进行绘制</h2>
+
+<p>在透明层中绘制需要三步：</p>
+
+<ol>
+<li>调用函数CGContextBeginTransparencyLayer</li>
+<li>在透明层中绘制需要组合的对象</li>
+<li>调用函数CGContextEndTransparencyLayer</li>
+</ol>
+
+
+<p>图9-3显示了在透明层中绘制三个矩形，其中将这三个矩形当成一个整体来渲染阴影。</p>
+
+<p>Figure 9-3  Three rectangles painted to a transparency layer</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/trans_code.gif" alt="image" /></p>
+
+<p>代码清单9-1显示了如何利用透明层生成图9-3所示的矩形。</p>
+
+<p>Listing 9-1  Painting to a transparency layer</p>
+
+<pre><code>void MyDrawTransparencyLayer (CGContext myContext, float wd,float ht)
+{
+    CGSize myShadowOffset = CGSizeMake (10, -20);
+    CGContextSetShadow (myContext, myShadowOffset, 10);   
+    CGContextBeginTransparencyLayer (myContext, NULL);
+
+    // Your drawing code here
+    CGContextSetRGBFillColor (myContext, 0, 1, 0, 1);
+    CGContextFillRect (myContext, CGRectMake (wd/3+ 50,ht/2 ,wd/4,ht/4));
+    CGContextSetRGBFillColor (myContext, 0, 0, 1, 1);
+    CGContextFillRect (myContext, CGRectMake (wd/3-50,ht/2-100,wd/4,ht/4));
+    CGContextSetRGBFillColor (myContext, 1, 0, 0, 1);
+    CGContextFillRect (myContext, CGRectMake (wd/3,ht/2-50,wd/4,ht/4));
+    CGContextEndTransparencyLayer (myContext);
+}
 </code></pre>
-
-<p>由于alloc和init遵循返回相关结果类型的约定，所以会对NSArray执行类型检查。然而等价的类构造方法array则不遵循这一约定，只解释为id类型。</p>
-
-<p>id类型在不需要确保类型安全时非常有用，但一旦需要时，就无法处理了。</p>
-
-<p>而另一种方法，即显示声明返回类型(如前面例子中的(NSArray *))稍微改善了一些，但写起来有点麻烦，而且在继承体系中表现得不是很好。</p>
-
-<p>这时编译器就需要去解决这种针对Objective-C类型系统的边界情况了:</p>
-
-<p>instancetype是一个上下文关键字，可用在返回类型中以表示方法返回一个相关的结果类型，如：</p>
-
-<pre><code>@interface Person
-+ (instancetype)personWithName:(NSString *)name;
-@end
-</code></pre>
-
-<p>使用instancetype，编译器可以正确地知道personWithName:的返回结果是一个Person实例。</p>
-
-<p>我们现在看Foundation中的类构造器，可以发现大部分已经开始使用了instancetype了。新的API，如UICollectionViewLayoutAttributes，都是使用instancetype了。</p>
-
-<p><em>注：instancetype与id不同的是，它只能用在方法声明的返回值中。</em></p>
-
-<h4>更进一步的启示</h4>
-
-<p>语言特性是特别有趣的，因为它不清楚在软件设计的更高层次方面会带来什么样的影响。</p>
-
-<p>虽然instancetype看上去非常一般，只是对编译器有用，但也可能被用于一些更聪明的目的。</p>
-
-<p>Jonathan Sterling的文章<a href="http://www.jonmsterling.com/posts/2012-02-05-typed-collections-with-self-types-in-objective-c.html">this quite interesting article</a>，详细描述了instancetype如何被用于编码静态类型集合，而不需要使用泛型：</p>
-
-<pre><code>NSURL &lt;MapCollection&gt; *sites = (id)[NSURL mapCollection];
-[sites put:[NSURL URLWithString:@"http://www.jonmsterling.com/"]
-        at:@"jon"];
-[sites put:[NSURL URLWithString:@"http://www.nshipster.com/"]
-        at:@"nshipster"];
-
-NSURL *jonsSite = [sites at:@"jon"]; // =&gt; http://www.jonmsterling.com/
-</code></pre>
-
-<p>静态类型集合使得API更有表现力，这样开发者将不再需要去确定集合中的参数可以使用使用类型的对象了。</p>
-
-<p>不管这会不会成为Objective-C公认的约定，诸如instancetype这样一个低层特性可用于改变语言的形态已是非常棒的一件事了。</p>
 </div>
 
 
@@ -177,7 +178,7 @@ NSURL *jonsSite = [sites at:@"jon"]; // =&gt; http://www.jonmsterling.com/
   
 
 
-<time datetime="2014-10-19T00:26:03+08:00" pubdate data-updated="true">Oct 19<sup>th</sup>, 2014</time>
+<time datetime="2014-12-10T09:13:04+08:00" pubdate data-updated="true">Dec 10<sup>th</sup>, 2014</time>
       
 
 <span class="categories">
@@ -198,10 +199,8 @@ NSURL *jonsSite = [sites at:@"jon"]; // =&gt; http://www.jonmsterling.com/
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2014/10/17/osatomicyuan-zi-cao-zuo/" title="Previous Post: OSAtomic原子操作">&laquo; OSAtomic原子操作</a>
+        <a class="basic-alignment left" href="/blog/2014/12/10/quartz-2dbian-cheng-zhi-nan-zhi-ba-:jian-bian/" title="Previous Post: Quartz 2D编程指南之八：渐变">&laquo; Quartz 2D编程指南之八：渐变</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2014/10/19/iosji-zhu-zhou-bao-:di-%5B%3F%5D-qi-2014-dot-10-dot-13-~-2014-dot-10-dot-19/" title="Next Post: iOS技术周报：第一期(2014.10.13 ~ 2014.10.19)">iOS技术周报：第一期(2014.10.13 ~ 2014.10.19) &raquo;</a>
       
     </p>
   </footer>
@@ -212,7 +211,7 @@ NSURL *jonsSite = [sites at:@"jon"]; // =&gt; http://www.jonmsterling.com/
 <section>
     <h1>Comments</h1>
     <div id="comments" aria-live="polite"><!-- Duoshuo Comment BEGIN -->
-<div class="ds-thread" data-title="instancetype"></div>
+<div class="ds-thread" data-title="Quartz 2D编程指南之九：透明层"></div>
 <script type="text/javascript">
     var duoshuoQuery = {short_name:"southpeak"};
     (function() {
