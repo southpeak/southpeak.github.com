@@ -11,7 +11,7 @@
   <meta name="baidu-site-verification" content="HoscFhWICI" />
 
   
-  <meta name="description" content="Objective-C中的分类允许我们通过给一个类添加方法来扩充它（但是通过category不能添加新的实例变量），并且我们不需要访问类中的代码就可以做到。 Objective-C中的协议是普遍存在的接口定义方式，即在一个类中通过@protocol定义接口，在另外类中实现接口， &hellip;">
+  <meta name="description" content="前面几篇基本介绍了runtime中的大部分功能，包括对类与对象、成员变量与属性、方法与消息、分类与协议的处理。runtime大部分的功能都是围绕这几点来实现的。 本章的内容并不算重点，主要针对前文中对Objective-C Runtime Reference内容遗漏的地方做些补充。 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -68,6 +68,302 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/11/09/objective-c-runtime-yun-xing-shi-zhi-liu-:shi-yi/">Objective-C Runtime 运行时之六：拾遗</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-11-09T14:44:53+08:00" pubdate data-updated="true">Nov 9<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/11/09/objective-c-runtime-yun-xing-shi-zhi-liu-:shi-yi/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>前面几篇基本介绍了runtime中的大部分功能，包括对类与对象、成员变量与属性、方法与消息、分类与协议的处理。runtime大部分的功能都是围绕这几点来实现的。</p>
+
+<p>本章的内容并不算重点，主要针对前文中对Objective-C Runtime Reference内容遗漏的地方做些补充。当然这并不能包含所有的内容。runtime还有许多内容，需要读者去研究发现。</p>
+
+<h2>super</h2>
+
+<p>在Objective-C中，如果我们需要在类的方法中调用父类的方法时，通常都会用到super，如下所示：</p>
+
+<pre><code>@interface MyViewController: UIViewController
+
+@end
+
+@implementation MyViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    // do something
+    ...
+}
+
+@end
+</code></pre>
+
+<p>如何使用super我们都知道。现在的问题是，它是如何工作的呢？</p>
+
+<p>首先我们需要知道的是super与self不同。self是类的一个隐藏参数，每个方法的实现的第一个参数即为self。而super并不是隐藏参数，它实际上只是一个&#8221;编译器标示符&#8221;，它负责告诉编译器，当调用viewDidLoad方法时，去调用父类的方法，而不是本类中的方法。而它实际上与self指向的是相同的消息接收者。为了理解这一点，我们先来看看super的定义：</p>
+
+<pre><code>struct objc_super { id receiver; Class superClass; };
+</code></pre>
+
+<p>这个结构体有两个成员：</p>
+
+<ol>
+<li>receiver：即消息的实际接收者</li>
+<li>superClass：指针当前类的父类</li>
+</ol>
+
+
+<p>当我们使用super来接收消息时，编译器会生成一个objc_super结构体。就上面的例子而言，这个结构体的receiver就是MyViewController对象，与self相同；superClass指向MyViewController的父类UIViewController。</p>
+
+<p>接下来，发送消息时，不是调用objc_msgSend函数，而是调用objc_msgSendSuper函数，其声明如下：</p>
+
+<pre><code>id objc_msgSendSuper ( struct objc_super *super, SEL op, ... );
+</code></pre>
+
+<p>该函数第一个参数即为前面生成的objc_super结构体，第二个参数是方法的selector。该函数实际的操作是：从objc_super结构体指向的superClass的方法列表开始查找viewDidLoad的selector，找到后以objc->receiver去调用这个selector，而此时的操作流程就是如下方式了</p>
+
+<pre><code>objc_msgSend(objc_super-&gt;receiver, @selector(viewDidLoad))
+</code></pre>
+
+<p>由于objc_super->receiver就是self本身，所以该方法实际与下面这个调用是相同的：</p>
+
+<pre><code>objc_msgSend(self, @selector(viewDidLoad))
+</code></pre>
+
+<p>为了便于理解，我们看以下实例：</p>
+
+<pre><code>@interface MyClass : NSObject
+
+@end
+
+@implementation MyClass
+
+- (void)test {
+    NSLog(@"self class: %@", self.class);
+    NSLog(@"super class: %@", super.class);
+}
+
+@end
+</code></pre>
+
+<p>调用MyClass的test方法后，其输出是：</p>
+
+<pre><code>2014-11-08 15:55:03.256 [824:209297] self class: MyClass
+2014-11-08 15:55:03.256 [824:209297] super class: MyClass
+</code></pre>
+
+<p>从上例中可以看到，两者的输出都是MyClass。大家可以自行用上面介绍的内容来梳理一下。</p>
+
+<h2>库相关操作</h2>
+
+<p>库相关的操作主要是用于获取由系统提供的库相关的信息，主要包含以下函数：</p>
+
+<pre><code>// 获取所有加载的Objective-C框架和动态库的名称
+const char ** objc_copyImageNames ( unsigned int *outCount );
+
+// 获取指定类所在动态库
+const char * class_getImageName ( Class cls );
+
+// 获取指定库或框架中所有类的类名
+const char ** objc_copyClassNamesForImage ( const char *image, unsigned int *outCount );
+</code></pre>
+
+<p>通过这几个函数，我们可以了解到某个类所有的库，以及某个库中包含哪些类。如下代码所示：</p>
+
+<pre><code>NSLog(@"获取指定类所在动态库");
+
+NSLog(@"UIView's Framework: %s", class_getImageName(NSClassFromString(@"UIView")));
+
+NSLog(@"获取指定库或框架中所有类的类名");
+const char ** classes = objc_copyClassNamesForImage(class_getImageName(NSClassFromString(@"UIView")), &amp;outCount);
+for (int i = 0; i &lt; outCount; i++) {
+    NSLog(@"class name: %s", classes[i]);
+}
+</code></pre>
+
+<p>其输出结果如下：</p>
+
+<pre><code>2014-11-08 12:57:32.689 [747:184013] 获取指定类所在动态库
+2014-11-08 12:57:32.690 [747:184013] UIView's Framework: /System/Library/Frameworks/UIKit.framework/UIKit
+2014-11-08 12:57:32.690 [747:184013] 获取指定库或框架中所有类的类名
+2014-11-08 12:57:32.691 [747:184013] class name: UIKeyboardPredictiveSettings
+2014-11-08 12:57:32.691 [747:184013] class name: _UIPickerViewTopFrame
+2014-11-08 12:57:32.691 [747:184013] class name: _UIOnePartImageView
+2014-11-08 12:57:32.692 [747:184013] class name: _UIPickerViewSelectionBar
+2014-11-08 12:57:32.692 [747:184013] class name: _UIPickerWheelView
+2014-11-08 12:57:32.692 [747:184013] class name: _UIPickerViewTestParameters
+......
+</code></pre>
+
+<h2>块操作</h2>
+
+<p>我们都知道block给我们带到极大的方便，苹果也不断提供一些使用block的新的API。同时，苹果在runtime中也提供了一些函数来支持针对block的操作，这些函数包括：</p>
+
+<pre><code>// 创建一个指针函数的指针，该函数调用时会调用特定的block
+IMP imp_implementationWithBlock ( id block );
+
+// 返回与IMP(使用imp_implementationWithBlock创建的)相关的block
+id imp_getBlock ( IMP anImp );
+
+// 解除block与IMP(使用imp_implementationWithBlock创建的)的关联关系，并释放block的拷贝
+BOOL imp_removeBlock ( IMP anImp );
+</code></pre>
+
+<p>● imp_implementationWithBlock函数：参数block的签名必须是method_return_type ^(id self, method_args …)形式的。该方法能让我们使用block作为IMP。如下代码所示：</p>
+
+<pre><code>@interface MyRuntimeBlock : NSObject
+
+@end
+
+@implementation MyRuntimeBlock
+
+@end
+
+// 测试代码
+IMP imp = imp_implementationWithBlock(^(id obj, NSString *str) {
+    NSLog(@"%@", str);
+});
+
+class_addMethod(MyRuntimeBlock.class, @selector(testBlock:), imp, "v@:@");
+
+MyRuntimeBlock *runtime = [[MyRuntimeBlock alloc] init];
+[runtime performSelector:@selector(testBlock:) withObject:@"hello world!"];
+</code></pre>
+
+<p>输出结果是</p>
+
+<pre><code>2014-11-09 14:03:19.779 [1172:395446] hello world!
+</code></pre>
+
+<h2>弱引用操作</h2>
+
+<pre><code>// 加载弱引用指针引用的对象并返回
+id objc_loadWeak ( id *location );
+
+// 存储__weak变量的新值
+id objc_storeWeak ( id *location, id obj );
+</code></pre>
+
+<p>● objc_loadWeak函数：该函数加载一个弱指针引用的对象，并在对其做retain和autoreleasing操作后返回它。这样，对象就可以在调用者使用它时保持足够长的生命周期。该函数典型的用法是在任何有使用__weak变量的表达式中使用。</p>
+
+<p>● objc_storeWeak函数：该函数的典型用法是用于__weak变量做为赋值对象时。</p>
+
+<p>这两个函数的具体实施在此不举例，有兴趣的小伙伴可以参考《Objective-C高级编程：iOS与OS X多线程和内存管理》中对__weak实现的介绍。</p>
+
+<h2>宏定义</h2>
+
+<p>在runtime中，还定义了一些宏定义供我们使用，有些值我们会经常用到，如表示BOOL值的YES/NO；而有些值不常用，如OBJC_ROOT_CLASS。在此我们做一个简单的介绍。</p>
+
+<h3>布尔值</h3>
+
+<pre><code>#define YES  (BOOL)1
+#define NO   (BOOL)0
+</code></pre>
+
+<p>这两个宏定义定义了表示布尔值的常量，需要注意的是YES的值是1，而不是非0值。</p>
+
+<h3>空值</h3>
+
+<pre><code>#define nil  __DARWIN_NULL
+#define Nil  __DARWIN_NULL
+</code></pre>
+
+<p>其中nil用于空的实例对象，而Nil用于空类对象。</p>
+
+<h3>分发函数原型</h3>
+
+<pre><code>#define OBJC_OLD_DISPATCH_PROTOTYPES  1
+</code></pre>
+
+<p>该宏指明分发函数是否必须转换为合适的函数指针类型。当值为0时，必须进行转换</p>
+
+<h3>Objective-C根类</h3>
+
+<pre><code>#define OBJC_ROOT_CLASS 
+</code></pre>
+
+<p>如果我们定义了一个Objective-C根类，则编译器会报错，指明我们定义的类没有指定一个基类。这种情况下，我们就可以使用这个宏定义来避过这个编译错误。该宏在iOS 7.0后可用。</p>
+
+<p>其实在NSObject的声明中，我们就可以看到这个宏的身影，如下所示：</p>
+
+<pre><code>__OSX_AVAILABLE_STARTING(__MAC_10_0, __IPHONE_2_0)
+OBJC_ROOT_CLASS
+OBJC_EXPORT
+@interface NSObject &lt;NSObject&gt; {
+    Class isa  OBJC_ISA_AVAILABILITY;
+}
+</code></pre>
+
+<p>我们可以参考这种方式来定义我们自己的根类。</p>
+
+<h3>局部变量存储时长</h3>
+
+<pre><code>#define NS_VALID_UNTIL_END_OF_SCOPE 
+</code></pre>
+
+<p>该宏表明存储在某些局部变量中的值在优化时不应该被编译器强制释放。</p>
+
+<p>我们将局部变量标记为id类型或者是指向ObjC对象类型的指针，以便存储在这些局部变量中的值在优化时不会被编译器强制释放。相反，这些值会在变量再次被赋值之前或者局部变量的作用域结束之前都会被保存。</p>
+
+<h3>关联对象行为</h3>
+
+<pre><code>enum {
+   OBJC_ASSOCIATION_ASSIGN  = 0,
+   OBJC_ASSOCIATION_RETAIN_NONATOMIC  = 1,
+   OBJC_ASSOCIATION_COPY_NONATOMIC  = 3,
+   OBJC_ASSOCIATION_RETAIN  = 01401,
+   OBJC_ASSOCIATION_COPY  = 01403
+};
+</code></pre>
+
+<p>这几个值在前面已介绍过，在此不再重复。</p>
+
+<h2>总结</h2>
+
+<p>至此，本系列对runtime的整理已完结。当然这只是对runtime的一些基础知识的归纳，力图起个抛砖引玉的作用。还有许多关于runtime有意思东西还需要读者自己去探索发现。</p>
+
+<p><strong><em>注：如有不对之处，还请指正，欢迎加QQ好友：1318202110(南峰子)</em></strong></p>
+
+<h2>参考</h2>
+
+<ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/ObjCRuntimeRef/">Objective-C Runtime Reference</a></li>
+<li><a href="http://blog.csdn.net/itianyi/article/details/8678452">iOS:Objective-C中Self和Super详解</a></li>
+<li><a href="http://www.cocoachina.com/industry/20130819/6824.html">Objective-C的动态特性</a></li>
+</ol>
+
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1207,847 +1503,6 @@ objc_property_attribute_t * property_copyAttributeList ( objc_property_t propert
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/10/25/objective-c-runtime-yun-xing-shi-zhi-lei-yu-dui-xiang/">Objective-C Runtime 运行时之一：类与对象</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-10-25T21:00:05+08:00" pubdate data-updated="true">Oct 25<sup>th</sup>, 2014</time>
-        
-        
-           | <a href="/blog/2014/10/25/objective-c-runtime-yun-xing-shi-zhi-lei-yu-dui-xiang/#comments">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Objective-C语言是一门动态语言，它将很多静态语言在编译和链接时期做的事放到了运行时来处理。这种动态语言的优势在于：我们写代码时更具灵活性，如我们可以把消息转发给我们想要的对象，或者随意交换一个方法的实现等。</p>
-
-<p>这种特性意味着Objective-C不仅需要一个编译器，还需要一个运行时系统来执行编译的代码。对于Objective-C来说，这个运行时系统就像一个操作系统一样：它让所有的工作可以正常的运行。这个运行时系统即Objc Runtime。Objc Runtime其实是一个Runtime库，它基本上是用C和汇编写的，这个库使得C语言有了面向对象的能力。</p>
-
-<p>Runtime库主要做下面几件事：</p>
-
-<ol>
-<li>封装：在这个库中，对象可以用C语言中的结构体表示，而方法可以用C函数来实现，另外再加上了一些额外的特性。这些结构体和函数被runtime函数封装后，我们就可以在程序运行时创建，检查，修改类、对象和它们的方法了。</li>
-<li>找出方法的最终执行代码：当程序执行[object doSomething]时，会向消息接收者(object)发送一条消息(doSomething)，runtime会根据消息接收者是否能响应该消息而做出不同的反应。这将在后面详细介绍。</li>
-</ol>
-
-
-<p>Objective-C runtime目前有两个版本：Modern runtime和Legacy runtime。Modern Runtime 覆盖了64位的Mac OS X Apps，还有 iOS Apps，Legacy Runtime 是早期用来给32位 Mac OS X Apps 用的，也就是可以不用管就是了。</p>
-
-<p>在这一系列文章中，我们将介绍runtime的基本工作原理，以及如何利用它让我们的程序变得更加灵活。在本文中，我们先来介绍一下类与对象，这是面向对象的基础，我们看看在Runtime中，类是如何实现的。</p>
-
-<h2>类与对象基础数据结构</h2>
-
-<h3>Class</h3>
-
-<p>Objective-C类是由Class类型来表示的，它实际上是一个指向objc_class结构体的指针。它的定义如下：</p>
-
-<pre><code>typedef struct objc_class *Class;
-</code></pre>
-
-<p>查看objc/runtime.h中objc_class结构体的定义如下：</p>
-
-<pre><code>struct objc_class {
-    Class isa  OBJC_ISA_AVAILABILITY;
-
-#if !__OBJC2__
-    Class super_class                       OBJC2_UNAVAILABLE;  // 父类
-    const char *name                        OBJC2_UNAVAILABLE;  // 类名
-    long version                            OBJC2_UNAVAILABLE;  // 类的版本信息，默认为0
-    long info                               OBJC2_UNAVAILABLE;  // 类信息，供运行期使用的一些位标识
-    long instance_size                      OBJC2_UNAVAILABLE;  // 该类的实例变量大小
-    struct objc_ivar_list *ivars            OBJC2_UNAVAILABLE;  // 该类的成员变量链表
-    struct objc_method_list **methodLists   OBJC2_UNAVAILABLE;  // 方法定义的链表
-    struct objc_cache *cache                OBJC2_UNAVAILABLE;  // 方法缓存
-    struct objc_protocol_list *protocols    OBJC2_UNAVAILABLE;  // 协议链表
-#endif
-
-} OBJC2_UNAVAILABLE;
-</code></pre>
-
-<p>在这个定义中，下面几个字段是我们感兴趣的</p>
-
-<ol>
-<li>isa：需要注意的是在Objective-C中，所有的类自身也是一个对象，这个对象的Class里面也有一个isa指针，它指向metaClass(元类)，我们会在后面介绍它。</li>
-<li>super_class：指向该类的父类，如果该类已经是最顶层的根类(如NSObject或NSProxy)，则super_class为NULL。</li>
-<li>cache：用于缓存最近使用的方法。一个接收者对象接收到一个消息时，它会根据isa指针去查找能够响应这个消息的对象。在实际使用中，这个对象只有一部分方法是常用的，很多方法其实很少用或者根本用不上。这种情况下，如果每次消息来时，我们都是methodLists中遍历一遍，性能势必很差。这时，cache就派上用场了。在我们每次调用过一个方法后，这个方法就会被缓存到cache列表中，下次调用的时候runtime就会优先去cache中查找，如果cache没有，才去methodLists中查找方法。这样，对于那些经常用到的方法的调用，但提高了调用的效率。</li>
-<li>version：我们可以使用这个字段来提供类的版本信息。这对于对象的序列化非常有用，它可是让我们识别出不同类定义版本中实例变量布局的改变。</li>
-</ol>
-
-
-<p>针对cache，我们用下面例子来说明其执行过程：</p>
-
-<pre><code>NSArray *array = [[NSArray alloc] init];
-</code></pre>
-
-<p>其流程是：</p>
-
-<ol>
-<li>[NSArray alloc]先被执行。因为NSArray没有+alloc方法，于是去父类NSObject去查找。</li>
-<li>检测NSObject是否响应+alloc方法，发现响应，于是检测NSArray类，并根据其所需的内存空间大小开始分配内存空间，然后把isa指针指向NSArray类。同时，+alloc也被加进cache列表里面。</li>
-<li>接着，执行-init方法，如果NSArray响应该方法，则直接将其加入cache；如果不响应，则去父类查找。</li>
-<li>在后期的操作中，如果再以[[NSArray alloc] init]这种方式来创建数组，则会直接从cache中取出相应的方法，直接调用。</li>
-</ol>
-
-
-<h3>objc_object与id</h3>
-
-<p>objc_object是表示一个类的实例的结构体，它的定义如下(objc/objc.h)：</p>
-
-<pre><code>struct objc_object {
-    Class isa  OBJC_ISA_AVAILABILITY;
-};
-
-typedef struct objc_object *id;
-</code></pre>
-
-<p>可以看到，这个结构体只有一个字体，即指向其类的isa指针。这样，当我们向一个Objective-C对象发送消息时，运行时库会根据实例对象的isa指针找到这个实例对象所属的类。Runtime库会在类的方法列表及父类的方法列表中去寻找与消息对应的selector指向的方法。找到后即运行这个方法。</p>
-
-<p>当创建一个特定类的实例对象时，分配的内存包含一个objc_object数据结构，然后是类的实例变量的数据。NSObject类的alloc和allocWithZone:方法使用函数class_createInstance来创建objc_object数据结构。</p>
-
-<p>另外还有我们常见的id，它是一个objc_object结构类型的指针。它的存在可以让我们实现类似于C++中泛型的一些操作。该类型的对象可以转换为任何一种对象，有点类似于C语言中void *指针类型的作用。</p>
-
-<h3>objc_cache</h3>
-
-<p>上面提到了objc_class结构体中的cache字段，它用于缓存调用过的方法。这个字段是一个指向objc_cache结构体的指针，其定义如下：</p>
-
-<pre><code>struct objc_cache {
-    unsigned int mask /* total = mask + 1 */                 OBJC2_UNAVAILABLE;
-    unsigned int occupied                                    OBJC2_UNAVAILABLE;
-    Method buckets[1]                                        OBJC2_UNAVAILABLE;
-};
-</code></pre>
-
-<p>该结构体的字段描述如下：</p>
-
-<ol>
-<li>mask：一个整数，指定分配的缓存bucket的总数。在方法查找过程中，Objective-C runtime使用这个字段来确定开始线性查找数组的索引位置。指向方法selector的指针与该字段做一个AND位操作(index = (mask &amp; selector))。这可以作为一个简单的hash散列算法。</li>
-<li>occupied：一个整数，指定实际占用的缓存bucket的总数。</li>
-<li>buckets：指向Method数据结构指针的数组。这个数组可能包含不超过mask+1个元素。需要注意的是，指针可能是NULL，表示这个缓存bucket没有被占用，另外被占用的bucket可能是不连续的。这个数组可能会随着时间而增长。</li>
-</ol>
-
-
-<h3>元类(Meta Class)</h3>
-
-<p>在上面我们提到，所有的类自身也是一个对象，我们可以向这个对象发送消息(即调用类方法)。如：</p>
-
-<pre><code>NSArray *array = [NSArray array];
-</code></pre>
-
-<p>这个例子中，+array消息发送给了NSArray类，而这个NSArray也是一个对象。既然是对象，那么它也是一个objc_object指针，它包含一个指向其类的一个isa指针。那么这些就有一个问题了，这个isa指针指向什么呢？为了调用+array方法，这个类的isa指针必须指向一个包含这些类方法的一个objc_class结构体。这就引出了meta-class的概念</p>
-
-<pre><code>meta-class是一个类对象的类。
-</code></pre>
-
-<p>当我们向一个对象发送消息时，runtime会在这个对象所属的这个类的方法列表中查找方法；而向一个类发送消息时，会在这个类的meta-class的方法列表中查找。</p>
-
-<p>meta-class之所以重要，是因为它存储着一个类的所有类方法。每个类都会有一个单独的meta-class，因为每个类的类方法基本不可能完全相同。</p>
-
-<p>再深入一下，meta-class也是一个类，也可以向它发送一个消息，那么它的isa又是指向什么呢？为了不让这种结构无限延伸下去，Objective-C的设计者让所有的meta-class的isa指向基类的meta-class，以此作为它们的所属类。即，任何NSObject继承体系下的meta-class都使用NSObject的meta-class作为自己的所属类，而基类的meta-class的isa指针是指向它自己。这样就形成了一个完美的闭环。</p>
-
-<p>通过上面的描述，再加上对objc_class结构体中super_class指针的分析，我们就可以描绘出类及相应meta-class类的一个继承体系了，如下图所示：</p>
-
-<p><img src="http://cn.cocos2d-x.org/uploads/20141018/1413628797629491.png" alt="image" /></p>
-
-<p>对于NSObject继承体系来说，其实例方法对体系中的所有实例、类和meta-class都是有效的；而类方法对于体系内的所有类和meta-class都是有效的。</p>
-
-<p>讲了这么多，我们还是来写个例子吧：</p>
-
-<pre><code>void TestMetaClass(id self, SEL _cmd) {
-
-    NSLog(@"This objcet is %p", self);
-    NSLog(@"Class is %@, super class is %@", [self class], [self superclass]);
-
-    Class currentClass = [self class];
-    for (int i = 0; i &lt; 4; i++) {
-        NSLog(@"Following the isa pointer %d times gives %p", i, currentClass);
-        currentClass = objc_getClass((__bridge void *)currentClass);
-    }
-
-    NSLog(@"NSObject's class is %p", [NSObject class]);
-    NSLog(@"NSObject's meta class is %p", objc_getClass((__bridge void *)[NSObject class]));
-}
-
-#pragma mark -
-
-@implementation Test
-
-- (void)ex_registerClassPair {
-
-    Class newClass = objc_allocateClassPair([NSError class], "TestClass", 0);
-    class_addMethod(newClass, @selector(testMetaClass), (IMP)TestMetaClass, "v@:");
-    objc_registerClassPair(newClass);
-
-    id instance = [[newClass alloc] initWithDomain:@"some domain" code:0 userInfo:nil];
-    [instance performSelector:@selector(testMetaClass)];
-}
-
-@end
-</code></pre>
-
-<p>这个例子是在运行时创建了一个NSError的子类TestClass，然后为这个子类添加一个方法testMetaClass，这个方法的实现是TestMetaClass函数。</p>
-
-<p>运行后，打印结果是</p>
-
-<pre><code>2014-10-20 22:57:07.352 mountain[1303:41490] This objcet is 0x7a6e22b0
-2014-10-20 22:57:07.353 mountain[1303:41490] Class is TestStringClass, super class is NSError
-2014-10-20 22:57:07.353 mountain[1303:41490] Following the isa pointer 0 times gives 0x7a6e21b0
-2014-10-20 22:57:07.353 mountain[1303:41490] Following the isa pointer 1 times gives 0x0
-2014-10-20 22:57:07.353 mountain[1303:41490] Following the isa pointer 2 times gives 0x0
-2014-10-20 22:57:07.353 mountain[1303:41490] Following the isa pointer 3 times gives 0x0
-2014-10-20 22:57:07.353 mountain[1303:41490] NSObject's class is 0xe10000
-2014-10-20 22:57:07.354 mountain[1303:41490] NSObject's meta class is 0x0
-</code></pre>
-
-<p>我们在for循环中，我们通过objc_getClass来获取对象的isa，并将其打印出来，依此一直回溯到NSObject的meta-class。分析打印结果，可以看到最后指针指向的地址是0x0，即NSObject的meta-class的类地址。</p>
-
-<p><em>这里需要注意的是：我们在一个类对象调用class方法是无法获取meta-class，它只是返回类而已。</em></p>
-
-<h2>类与对象操作函数</h2>
-
-<p>runtime提供了大量的函数来操作类与对象。类的操作方法大部分是以class<em>为前缀的，而对象的操作方法大部分是以objc</em>或object_为前缀。下面我们将根据这些方法的用途来分类讨论这些方法的使用。</p>
-
-<h3>类相关操作函数</h3>
-
-<p>我们可以回过头去看看objc_class的定义，runtime提供的操作类的方法主要就是针对这个结构体中的各个字段的。下面我们分别介绍这一些的函数。并在最后以实例来演示这些函数的具体用法。</p>
-
-<h4>类名(name)</h4>
-
-<p>类名操作的函数主要有：</p>
-
-<pre><code>// 获取类的类名
-const char * class_getName ( Class cls );
-</code></pre>
-
-<p>● 对于class_getName函数，如果传入的cls为Nil，则返回一个字字符串。</p>
-
-<h4>父类(super_class)和元类(meta-class)</h4>
-
-<p>父类和元类操作的函数主要有：</p>
-
-<pre><code>// 获取类的父类
-Class class_getSuperclass ( Class cls );
-
-// 判断给定的Class是否是一个元类
-BOOL class_isMetaClass ( Class cls );
-</code></pre>
-
-<p>● class_getSuperclass函数，当cls为Nil或者cls为根类时，返回Nil。不过通常我们可以使用NSObject类的superclass方法来达到同样的目的。</p>
-
-<p>● class_isMetaClass函数，如果是cls是元类，则返回YES；如果否或者传入的cls为Nil，则返回NO。</p>
-
-<h4>实例变量大小(instance_size)</h4>
-
-<p>实例变量大小操作的函数有：</p>
-
-<pre><code>// 获取实例大小
-size_t class_getInstanceSize ( Class cls );
-</code></pre>
-
-<h4>成员变量(ivars)及属性</h4>
-
-<p>在objc_class中，所有的成员变量、属性的信息是放在链表ivars中的。ivars是一个数组，数组中每个元素是指向Ivar(变量信息)的指针。runtime提供了丰富的函数来操作这一字段。大体上可以分为以下几类：</p>
-
-<p>1.成员变量操作函数，主要包含以下函数：</p>
-
-<pre><code>// 获取类中指定名称实例成员变量的信息
-Ivar class_getInstanceVariable ( Class cls, const char *name );
-
-// 获取类成员变量的信息
-Ivar class_getClassVariable ( Class cls, const char *name );
-
-// 添加成员变量
-BOOL class_addIvar ( Class cls, const char *name, size_t size, uint8_t alignment, const char *types );
-
-// 获取整个成员变量列表
-Ivar * class_copyIvarList ( Class cls, unsigned int *outCount );
-</code></pre>
-
-<p>● class_getInstanceVariable函数，它返回一个指向包含name指定的成员变量信息的objc_ivar结构体的指针(Ivar)。</p>
-
-<p>● class_getClassVariable函数，目前没有找到关于Objective-C中类变量的信息，一般认为Objective-C不支持类变量。注意，返回的列表不包含父类的成员变量和属性。</p>
-
-<p>● Objective-C不支持往已存在的类中添加实例变量，因此不管是系统库提供的提供的类，还是我们自定义的类，都无法动态添加成员变量。但如果我们通过运行时来创建一个类的话，又应该如何给它添加成员变量呢？这时我们就可以使用class_addIvar函数了。不过需要注意的是，这个方法只能在objc_allocateClassPair函数与objc_registerClassPair之间调用。另外，这个类也不能是元类。成员变量的按字节最小对齐量是1&lt;&lt;alignment。这取决于ivar的类型和机器的架构。如果变量的类型是指针类型，则传递log2(sizeof(pointer_type))。</p>
-
-<p>● class_copyIvarList函数，它返回一个指向成员变量信息的数组，数组中每个元素是指向该成员变量信息的objc_ivar结构体的指针。这个数组不包含在父类中声明的变量。outCount指针返回数组的大小。需要注意的是，我们必须使用free()来释放这个数组。</p>
-
-<p>2.属性操作函数，主要包含以下函数：</p>
-
-<pre><code>// 获取指定的属性
-objc_property_t class_getProperty ( Class cls, const char *name );
-
-// 获取属性列表
-objc_property_t * class_copyPropertyList ( Class cls, unsigned int *outCount );
-
-// 为类添加属性
-BOOL class_addProperty ( Class cls, const char *name, const objc_property_attribute_t *attributes, unsigned int attributeCount );
-
-// 替换类的属性
-void class_replaceProperty ( Class cls, const char *name, const objc_property_attribute_t *attributes, unsigned int attributeCount );
-</code></pre>
-
-<p>这一种方法也是针对ivars来操作，不过只操作那些是属性的值。我们在后面介绍属性时会再遇到这些函数。</p>
-
-<p>3.在MAC OS X系统中，我们可以使用垃圾回收器。runtime提供了几个函数来确定一个对象的内存区域是否可以被垃圾回收器扫描，以处理strong/weak引用。这几个函数定义如下：</p>
-
-<pre><code>const uint8_t * class_getIvarLayout ( Class cls );
-void class_setIvarLayout ( Class cls, const uint8_t *layout );
-const uint8_t * class_getWeakIvarLayout ( Class cls );
-void class_setWeakIvarLayout ( Class cls, const uint8_t *layout );
-</code></pre>
-
-<p>但通常情况下，我们不需要去主动调用这些方法；在调用objc_registerClassPair时，会生成合理的布局。在此不详细介绍这些函数。</p>
-
-<h4>方法(methodLists)</h4>
-
-<p>方法操作主要有以下函数：</p>
-
-<pre><code>// 添加方法
-BOOL class_addMethod ( Class cls, SEL name, IMP imp, const char *types );
-
-// 获取实例方法
-Method class_getInstanceMethod ( Class cls, SEL name );
-
-// 获取类方法
-Method class_getClassMethod ( Class cls, SEL name );
-
-// 获取所有方法的数组
-Method * class_copyMethodList ( Class cls, unsigned int *outCount );
-
-// 替代方法的实现
-IMP class_replaceMethod ( Class cls, SEL name, IMP imp, const char *types );
-
-// 返回方法的具体实现
-IMP class_getMethodImplementation ( Class cls, SEL name );
-IMP class_getMethodImplementation_stret ( Class cls, SEL name );
-
-// 类实例是否响应指定的selector
-BOOL class_respondsToSelector ( Class cls, SEL sel );
-</code></pre>
-
-<p>● class_addMethod的实现会覆盖父类的方法实现，但不会取代本类中已存在的实现，如果本类中包含一个同名的实现，则函数会返回NO。如果要修改已存在实现，可以使用method_setImplementation。一个Objective-C方法是一个简单的C函数，它至少包含两个参数&mdash;self和_cmd。所以，我们的实现函数(IMP参数指向的函数)至少需要两个参数，如下所示：</p>
-
-<pre><code>void myMethodIMP(id self, SEL _cmd)
-{
-    // implementation ....
-}
-</code></pre>
-
-<p>与成员变量不同的是，我们可以为类动态添加方法，不管这个类是否已存在。</p>
-
-<p>另外，参数types是一个描述传递给方法的参数类型的字符数组，这就涉及到类型编码，我们将在后面介绍。</p>
-
-<p>● class_getInstanceMethod、class_getClassMethod函数，与class_copyMethodList不同的是，这两个函数都会去搜索父类的实现。</p>
-
-<p>● class_copyMethodList函数，返回包含所有实例方法的数组，如果需要获取类方法，则可以使用class_copyMethodList(object_getClass(cls), &amp;count)(一个类的实例方法是定义在元类里面)。该列表不包含父类实现的方法。outCount参数返回方法的个数。在获取到列表后，我们需要使用free()方法来释放它。</p>
-
-<p>● class_replaceMethod函数，该函数的行为可以分为两种：如果类中不存在name指定的方法，则类似于class_addMethod函数一样会添加方法；如果类中已存在name指定的方法，则类似于method_setImplementation一样替代原方法的实现。</p>
-
-<p>● class_getMethodImplementation函数，该函数在向类实例发送消息时会被调用，并返回一个指向方法实现函数的指针。这个函数会比method_getImplementation(class_getInstanceMethod(cls, name))更快。返回的函数指针可能是一个指向runtime内部的函数，而不一定是方法的实际实现。例如，如果类实例无法响应selector，则返回的函数指针将是运行时消息转发机制的一部分。</p>
-
-<p>● class_respondsToSelector函数，我们通常使用NSObject类的respondsToSelector:或instancesRespondToSelector:方法来达到相同目的。</p>
-
-<h4>协议(objc_protocol_list)</h4>
-
-<p>协议相关的操作包含以下函数：</p>
-
-<pre><code>// 添加协议
-BOOL class_addProtocol ( Class cls, Protocol *protocol );
-
-// 返回类是否实现指定的协议
-BOOL class_conformsToProtocol ( Class cls, Protocol *protocol );
-
-// 返回类实现的协议列表
-Protocol * class_copyProtocolList ( Class cls, unsigned int *outCount );
-</code></pre>
-
-<p>● class_conformsToProtocol函数可以使用NSObject类的conformsToProtocol:方法来替代。</p>
-
-<p>● class_copyProtocolList函数返回的是一个数组，在使用后我们需要使用free()手动释放。</p>
-
-<h4>版本(version)</h4>
-
-<p>版本相关的操作包含以下函数：</p>
-
-<pre><code>// 获取版本号
-int class_getVersion ( Class cls );
-
-// 设置版本号
-void class_setVersion ( Class cls, int version );
-</code></pre>
-
-<h4>其它</h4>
-
-<p>runtime还提供了两个函数来供CoreFoundation的tool-free bridging使用，即：</p>
-
-<pre><code>Class objc_getFutureClass ( const char *name );
-void objc_setFutureClass ( Class cls, const char *name );
-</code></pre>
-
-<p>通常我们不直接使用这两个函数。</p>
-
-<h4>实例(Example)</h4>
-
-<p>上面列举了大量类操作的函数，下面我们写个实例，来看看这些函数的实例效果：</p>
-
-<pre><code>//-----------------------------------------------------------
-// MyClass.h
-
-@interface MyClass : NSObject &lt;NSCopying, NSCoding&gt;
-
-@property (nonatomic, strong) NSArray *array;
-
-@property (nonatomic, copy) NSString *string;
-
-- (void)method1;
-
-- (void)method2;
-
-+ (void)classMethod1;
-
-@end
-
-//-----------------------------------------------------------
-// MyClass.m
-
-#import "MyClass.h"
-
-@interface MyClass () {
-    NSInteger       _instance1;
-
-    NSString    *   _instance2;
-}
-
-@property (nonatomic, assign) NSUInteger integer;
-
-- (void)method3WithArg1:(NSInteger)arg1 arg2:(NSString *)arg2;
-
-@end
-
-@implementation MyClass
-
-+ (void)classMethod1 {
-
-}
-
-- (void)method1 {
-    NSLog(@"call method method1");
-}
-
-- (void)method2 {
-
-}
-
-- (void)method3WithArg1:(NSInteger)arg1 arg2:(NSString *)arg2 {
-
-    NSLog(@"arg1 : %ld, arg2 : %@", arg1, arg2);
-}
-
-@end
-
-//-----------------------------------------------------------
-// main.h
-
-#import "MyClass.h"
-#import "MySubClass.h"
-#import &lt;objc/runtime.h&gt;
-
-int main(int argc, const char * argv[]) {
-    @autoreleasepool {
-
-        MyClass *myClass = [[MyClass alloc] init];
-        unsigned int outCount = 0;
-
-        Class cls = myClass.class;
-
-        // 类名
-        NSLog(@"class name: %s", class_getName(cls));
-
-        NSLog(@"==========================================================");
-
-        // 父类
-        NSLog(@"super class name: %s", class_getName(class_getSuperclass(cls)));
-        NSLog(@"==========================================================");
-
-        // 是否是元类
-        NSLog(@"MyClass is %@ a meta-class", (class_isMetaClass(cls) ? @"" : @"not"));
-        NSLog(@"==========================================================");
-
-        Class meta_class = objc_getMetaClass(class_getName(cls));
-        NSLog(@"%s's meta-class is %s", class_getName(cls), class_getName(meta_class));
-        NSLog(@"==========================================================");
-
-        // 变量实例大小
-        NSLog(@"instance size: %zu", class_getInstanceSize(cls));
-        NSLog(@"==========================================================");
-
-        // 成员变量
-        Ivar *ivars = class_copyIvarList(cls, &amp;outCount);
-        for (int i = 0; i &lt; outCount; i++) {
-            Ivar ivar = ivars[i];
-            NSLog(@"instance variable's name: %s at index: %d", ivar_getName(ivar), i);
-        }
-
-        free(ivars);
-
-        Ivar string = class_getInstanceVariable(cls, "_string");
-        if (string != NULL) {
-            NSLog(@"instace variable %s", ivar_getName(string));
-        }
-
-        NSLog(@"==========================================================");
-
-        // 属性操作
-        objc_property_t * properties = class_copyPropertyList(cls, &amp;outCount);
-        for (int i = 0; i &lt; outCount; i++) {
-            objc_property_t property = properties[i];
-            NSLog(@"property's name: %s", property_getName(property));
-        }
-
-        free(properties);
-
-        objc_property_t array = class_getProperty(cls, "array");
-        if (array != NULL) {
-            NSLog(@"property %s", property_getName(array));
-        }
-
-        NSLog(@"==========================================================");
-
-        // 方法操作
-        Method *methods = class_copyMethodList(cls, &amp;outCount);
-        for (int i = 0; i &lt; outCount; i++) {
-            Method method = methods[i];
-            NSLog(@"method's signature: %s", method_getName(method));
-        }
-
-        free(methods);
-
-        Method method1 = class_getInstanceMethod(cls, @selector(method1));
-        if (method1 != NULL) {
-            NSLog(@"method %s", method_getName(method1));
-        }
-
-        Method classMethod = class_getClassMethod(cls, @selector(classMethod1));
-        if (classMethod != NULL) {
-            NSLog(@"class method : %s", method_getName(classMethod));
-        }
-
-        NSLog(@"MyClass is%@ responsd to selector: method3WithArg1:arg2:", class_respondsToSelector(cls, @selector(method3WithArg1:arg2:)) ? @"" : @" not");
-
-        IMP imp = class_getMethodImplementation(cls, @selector(method1));
-        imp();
-
-        NSLog(@"==========================================================");
-
-        // 协议
-        Protocol * __unsafe_unretained * protocols = class_copyProtocolList(cls, &amp;outCount);
-        Protocol * protocol;
-        for (int i = 0; i &lt; outCount; i++) {
-            protocol = protocols[i];
-            NSLog(@"protocol name: %s", protocol_getName(protocol));
-        }
-
-        NSLog(@"MyClass is%@ responsed to protocol %s", class_conformsToProtocol(cls, protocol) ? @"" : @" not", protocol_getName(protocol));
-
-        NSLog(@"==========================================================");
-    }
-    return 0;
-}
-</code></pre>
-
-<p>这段程序的输出如下：</p>
-
-<pre><code>2014-10-22 19:41:37.452 RuntimeTest[3189:156810] class name: MyClass
-2014-10-22 19:41:37.453 RuntimeTest[3189:156810] ==========================================================
-2014-10-22 19:41:37.454 RuntimeTest[3189:156810] super class name: NSObject
-2014-10-22 19:41:37.454 RuntimeTest[3189:156810] ==========================================================
-2014-10-22 19:41:37.454 RuntimeTest[3189:156810] MyClass is not a meta-class
-2014-10-22 19:41:37.454 RuntimeTest[3189:156810] ==========================================================
-2014-10-22 19:41:37.454 RuntimeTest[3189:156810] MyClass's meta-class is MyClass
-2014-10-22 19:41:37.455 RuntimeTest[3189:156810] ==========================================================
-2014-10-22 19:41:37.455 RuntimeTest[3189:156810] instance size: 48
-2014-10-22 19:41:37.455 RuntimeTest[3189:156810] ==========================================================
-2014-10-22 19:41:37.455 RuntimeTest[3189:156810] instance variable's name: _instance1 at index: 0
-2014-10-22 19:41:37.455 RuntimeTest[3189:156810] instance variable's name: _instance2 at index: 1
-2014-10-22 19:41:37.455 RuntimeTest[3189:156810] instance variable's name: _array at index: 2
-2014-10-22 19:41:37.455 RuntimeTest[3189:156810] instance variable's name: _string at index: 3
-2014-10-22 19:41:37.463 RuntimeTest[3189:156810] instance variable's name: _integer at index: 4
-2014-10-22 19:41:37.463 RuntimeTest[3189:156810] instace variable _string
-2014-10-22 19:41:37.463 RuntimeTest[3189:156810] ==========================================================
-2014-10-22 19:41:37.463 RuntimeTest[3189:156810] property's name: array
-2014-10-22 19:41:37.463 RuntimeTest[3189:156810] property's name: string
-2014-10-22 19:41:37.464 RuntimeTest[3189:156810] property's name: integer
-2014-10-22 19:41:37.464 RuntimeTest[3189:156810] property array
-2014-10-22 19:41:37.464 RuntimeTest[3189:156810] ==========================================================
-2014-10-22 19:41:37.464 RuntimeTest[3189:156810] method's signature: method1
-2014-10-22 19:41:37.464 RuntimeTest[3189:156810] method's signature: method2
-2014-10-22 19:41:37.464 RuntimeTest[3189:156810] method's signature: method3WithArg1:arg2:
-2014-10-22 19:41:37.465 RuntimeTest[3189:156810] method's signature: integer
-2014-10-22 19:41:37.465 RuntimeTest[3189:156810] method's signature: setInteger:
-2014-10-22 19:41:37.465 RuntimeTest[3189:156810] method's signature: array
-2014-10-22 19:41:37.465 RuntimeTest[3189:156810] method's signature: string
-2014-10-22 19:41:37.465 RuntimeTest[3189:156810] method's signature: setString:
-2014-10-22 19:41:37.465 RuntimeTest[3189:156810] method's signature: setArray:
-2014-10-22 19:41:37.466 RuntimeTest[3189:156810] method's signature: .cxx_destruct
-2014-10-22 19:41:37.466 RuntimeTest[3189:156810] method method1
-2014-10-22 19:41:37.466 RuntimeTest[3189:156810] class method : classMethod1
-2014-10-22 19:41:37.466 RuntimeTest[3189:156810] MyClass is responsd to selector: method3WithArg1:arg2:
-2014-10-22 19:41:37.467 RuntimeTest[3189:156810] call method method1
-2014-10-22 19:41:37.467 RuntimeTest[3189:156810] ==========================================================
-2014-10-22 19:41:37.467 RuntimeTest[3189:156810] protocol name: NSCopying
-2014-10-22 19:41:37.467 RuntimeTest[3189:156810] protocol name: NSCoding
-2014-10-22 19:41:37.467 RuntimeTest[3189:156810] MyClass is responsed to protocol NSCoding
-2014-10-22 19:41:37.468 RuntimeTest[3189:156810] ==========================================================
-</code></pre>
-
-<h3>动态创建类和对象</h3>
-
-<p>runtime的强大之处在于它能在运行时创建类和对象。</p>
-
-<h4>动态创建类</h4>
-
-<p>动态创建类涉及到以下几个函数：</p>
-
-<pre><code>// 创建一个新类和元类
-Class objc_allocateClassPair ( Class superclass, const char *name, size_t extraBytes );
-
-// 销毁一个类及其相关联的类
-void objc_disposeClassPair ( Class cls );
-
-// 在应用中注册由objc_allocateClassPair创建的类
-void objc_registerClassPair ( Class cls );
-</code></pre>
-
-<p>● objc_allocateClassPair函数：如果我们要创建一个根类，则superclass指定为Nil。extraBytes通常指定为0，该参数是分配给类和元类对象尾部的索引ivars的字节数。</p>
-
-<p>为了创建一个新类，我们需要调用objc_allocateClassPair。然后使用诸如class_addMethod，class_addIvar等函数来为新创建的类添加方法、实例变量和属性等。完成这些后，我们需要调用objc_registerClassPair函数来注册类，之后这个新类就可以在程序中使用了。</p>
-
-<p>实例方法和实例变量应该添加到类自身上，而类方法应该添加到类的元类上。</p>
-
-<p>● objc_disposeClassPair函数用于销毁一个类，不过需要注意的是，如果程序运行中还存在类或其子类的实例，则不能调用针对类调用该方法。</p>
-
-<p>在前面介绍元类时，我们已经有接触到这几个函数了，在此我们再举个实例来看看这几个函数的使用。</p>
-
-<pre><code>Class cls = objc_allocateClassPair(MyClass.class, "MySubClass", 0);
-class_addMethod(cls, @selector(submethod1), (IMP)imp_submethod1, "v@:");
-class_replaceMethod(cls, @selector(method1), (IMP)imp_submethod1, "v@:");
-class_addIvar(cls, "_ivar1", sizeof(NSString *), log(sizeof(NSString *)), "i");
-
-objc_property_attribute_t type = {"T", "@\"NSString\""};
-objc_property_attribute_t ownership = { "C", "" };
-objc_property_attribute_t backingivar = { "V", "_ivar1"};
-objc_property_attribute_t attrs[] = {type, ownership, backingivar};
-
-class_addProperty(cls, "property2", attrs, 3);
-objc_registerClassPair(cls);
-
-id instance = [[cls alloc] init];
-[instance performSelector:@selector(submethod1)];
-[instance performSelector:@selector(method1)];
-</code></pre>
-
-<p>程序的输出如下：</p>
-
-<pre><code>2014-10-23 11:35:31.006 RuntimeTest[3800:66152] run sub method 1
-2014-10-23 11:35:31.006 RuntimeTest[3800:66152] run sub method 1
-</code></pre>
-
-<h4>动态创建对象</h4>
-
-<p>动态创建对象的函数如下：</p>
-
-<pre><code>// 创建类实例
-id class_createInstance ( Class cls, size_t extraBytes );
-
-// 在指定位置创建类实例
-id objc_constructInstance ( Class cls, void *bytes );
-
-// 销毁类实例
-void * objc_destructInstance ( id obj );
-</code></pre>
-
-<p>● class_createInstance函数：创建实例时，会在默认的内存区域为类分配内存。extraBytes参数表示分配的额外字节数。这些额外的字节可用于存储在类定义中所定义的实例变量之外的实例变量。该函数在ARC环境下无法使用。</p>
-
-<p>调用class_createInstance的效果与+alloc方法类似。不过在使用class_createInstance时，我们需要确切的知道我们要用它来做什么。在下面的例子中，我们用NSString来测试一下该函数的实际效果：</p>
-
-<pre><code>id theObject = class_createInstance(NSString.class, sizeof(unsigned));
-id str1 = [theObject init];
-
-NSLog(@"%@", [str1 class]);
-
-id str2 = [[NSString alloc] initWithString:@"test"];
-NSLog(@"%@", [str2 class]);
-</code></pre>
-
-<p>输出结果是：</p>
-
-<pre><code>2014-10-23 12:46:50.781 RuntimeTest[4039:89088] NSString
-2014-10-23 12:46:50.781 RuntimeTest[4039:89088] __NSCFConstantString
-</code></pre>
-
-<p>可以看到，使用class_createInstance函数获取的是NSString实例，而不是类簇中的默认占位符类__NSCFConstantString。</p>
-
-<p>● objc_constructInstance函数：在指定的位置(bytes)创建类实例。</p>
-
-<p>● objc_destructInstance函数：销毁一个类的实例，但不会释放并移除任何与其相关的引用。</p>
-
-<h3>实例操作函数</h3>
-
-<p>实例操作函数主要是针对我们创建的实例对象的一系列操作函数，我们可以使用这组函数来从实例对象中获取我们想要的一些信息，如实例对象中变量的值。这组函数可以分为三小类：</p>
-
-<p>1.针对整个对象进行操作的函数，这类函数包含</p>
-
-<pre><code>// 返回指定对象的一份拷贝
-id object_copy ( id obj, size_t size );
-
-// 释放指定对象占用的内存
-id object_dispose ( id obj );
-</code></pre>
-
-<p>有这样一种场景，假设我们有类A和类B，且类B是类A的子类。类B通过添加一些额外的属性来扩展类A。现在我们创建了一个A类的实例对象，并希望在运行时将这个对象转换为B类的实例对象，这样可以添加数据到B类的属性中。这种情况下，我们没有办法直接转换，因为B类的实例会比A类的实例更大，没有足够的空间来放置对象。此时，我们就要以使用以上几个函数来处理这种情况，如下代码所示：</p>
-
-<pre><code>NSObject *a = [[NSObject alloc] init];
-id newB = object_copy(a, class_getInstanceSize(MyClass.class));
-object_setClass(newB, MyClass.class);
-object_dispose(a);
-</code></pre>
-
-<p>2.针对对象实例变量进行操作的函数，这类函数包含：</p>
-
-<pre><code>// 修改类实例的实例变量的值
-Ivar object_setInstanceVariable ( id obj, const char *name, void *value );
-
-// 获取对象实例变量的值
-Ivar object_getInstanceVariable ( id obj, const char *name, void **outValue );
-
-// 返回指向给定对象分配的任何额外字节的指针
-void * object_getIndexedIvars ( id obj );
-
-// 返回对象中实例变量的值
-id object_getIvar ( id obj, Ivar ivar );
-
-// 设置对象中实例变量的值
-void object_setIvar ( id obj, Ivar ivar, id value );
-</code></pre>
-
-<p>如果实例变量的Ivar已经知道，那么调用object_getIvar会比object_getInstanceVariable函数快，相同情况下，object_setIvar也比object_setInstanceVariable快。</p>
-
-<p>3.针对对象的类进行操作的函数，这类函数包含：</p>
-
-<pre><code>// 返回给定对象的类名
-const char * object_getClassName ( id obj );
-
-// 返回对象的类
-Class object_getClass ( id obj );
-
-// 设置对象的类
-Class object_setClass ( id obj, Class cls );
-</code></pre>
-
-<h3>获取类定义</h3>
-
-<p>Objective-C动态运行库会自动注册我们代码中定义的所有的类。我们也可以在运行时创建类定义并使用objc_addClass函数来注册它们。runtime提供了一系列函数来获取类定义相关的信息，这些函数主要包括：</p>
-
-<pre><code>// 获取已注册的类定义的列表
-int objc_getClassList ( Class *buffer, int bufferCount );
-
-// 创建并返回一个指向所有已注册类的指针列表
-Class * objc_copyClassList ( unsigned int *outCount );
-
-// 返回指定类的类定义
-Class objc_lookUpClass ( const char *name );
-Class objc_getClass ( const char *name );
-Class objc_getRequiredClass ( const char *name );
-
-// 返回指定类的元类
-Class objc_getMetaClass ( const char *name );
-</code></pre>
-
-<p>● objc_getClassList函数：获取已注册的类定义的列表。我们不能假设从该函数中获取的类对象是继承自NSObject体系的，所以在这些类上调用方法是，都应该先检测一下这个方法是否在这个类中实现。</p>
-
-<p>下面代码演示了该函数的用法：</p>
-
-<pre><code>int numClasses;
-Class * classes = NULL;
-
-numClasses = objc_getClassList(NULL, 0);
-if (numClasses &gt; 0) {
-    classes = malloc(sizeof(Class) * numClasses);
-    numClasses = objc_getClassList(classes, numClasses);
-
-    NSLog(@"number of classes: %d", numClasses);
-
-    for (int i = 0; i &lt; numClasses; i++) {
-
-        Class cls = classes[i];
-        NSLog(@"class name: %s", class_getName(cls));
-    }
-
-    free(classes);
-}
-</code></pre>
-
-<p>输出结果如下：</p>
-
-<pre><code>2014-10-23 16:20:52.589 RuntimeTest[8437:188589] number of classes: 1282
-2014-10-23 16:20:52.589 RuntimeTest[8437:188589] class name: DDTokenRegexp
-2014-10-23 16:20:52.590 RuntimeTest[8437:188589] class name: _NSMostCommonKoreanCharsKeySet
-2014-10-23 16:20:52.590 RuntimeTest[8437:188589] class name: OS_xpc_dictionary
-2014-10-23 16:20:52.590 RuntimeTest[8437:188589] class name: NSFileCoordinator
-2014-10-23 16:20:52.590 RuntimeTest[8437:188589] class name: NSAssertionHandler
-2014-10-23 16:20:52.590 RuntimeTest[8437:188589] class name: PFUbiquityTransactionLogMigrator
-2014-10-23 16:20:52.591 RuntimeTest[8437:188589] class name: NSNotification
-2014-10-23 16:20:52.591 RuntimeTest[8437:188589] class name: NSKeyValueNilSetEnumerator
-2014-10-23 16:20:52.591 RuntimeTest[8437:188589] class name: OS_tcp_connection_tls_session
-2014-10-23 16:20:52.591 RuntimeTest[8437:188589] class name: _PFRoutines
-......还有大量输出
-</code></pre>
-
-<p>● 获取类定义的方法有三个：objc_lookUpClass, objc_getClass和objc_getRequiredClass。如果类在运行时未注册，则objc_lookUpClass会返回nil，而objc_getClass会调用类处理回调，并再次确认类是否注册，如果确认未注册，再返回nil。而objc_getRequiredClass函数的操作与objc_getClass相同，只不过如果没有找到类，则会杀死进程。</p>
-
-<p>● objc_getMetaClass函数：如果指定的类没有注册，则该函数会调用类处理回调，并再次确认类是否注册，如果确认未注册，再返回nil。不过，每个类定义都必须有一个有效的元类定义，所以这个函数总是会返回一个元类定义，不管它是否有效。</p>
-
-<h2>小结</h2>
-
-<p>在这一章中我们介绍了Runtime运行时中与类和对象相关的数据结构，通过这些数据函数，我们可以管窥Objective-C底层面向对象实现的一些信息。另外，通过丰富的操作函数，可以灵活地对这些数据进行操作。</p>
-
-<p><strong><em>注：如有不对之处，还请指正，欢迎加QQ好友：1318202110(南峰子)</em></strong></p>
-
-<h4>参考</h4>
-
-<ol>
-<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/ObjCRuntimeRef/">Objective-C Runtime Reference</a></li>
-<li><a href="http://www.cnblogs.com/whyandinside/archive/2013/02/26/2933552.html">Objective-C Runtime的数据类型</a></li>
-<li><a href="http://blog.csdn.net/windyitian/article/details/19810875">详解Objective-C的meta-class</a></li>
-<li><a href="http://stackoverflow.com/questions/16131172/what-are-class-setivarlayout-and-class-getivarlayout">what are class_setIvarLayout and class_getIvarLayout?</a></li>
-<li><a href="http://stackoverflow.com/questions/3805499/whats-the-difference-between-doing-alloc-and-class-createinstance">What&rsquo;s the difference between doing alloc and class_createInstance</a></li>
-</ol>
-
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/4">&larr; Older</a>
@@ -2064,7 +1519,7 @@ if (numClasses &gt; 0) {
 <section>
 <h1>分类</h1>
 <ul>
-  <li><a href='/blog/categories/ios'>ios (46)</a></li>
+  <li><a href='/blog/categories/ios'>ios (47)</a></li>
   <li><a href='/blog/categories/network'>network (3)</a></li>
   <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
   <li><a href='/blog/categories/swift'>swift (7)</a></li>
@@ -2076,6 +1531,10 @@ if (numClasses &gt; 0) {
 <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/12/11/quartz-2dbian-cheng-zhi-nan-zhi-shi-:quartz-2dzhong-de-shu-ju-guan-li/">Quartz 2D编程指南之十：Quartz 2D中的数据管理</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2014/12/10/quartz-2dbian-cheng-zhi-nan-zhi-jiu-:tou-ming-ceng/">Quartz 2D编程指南之九：透明层</a>
@@ -2111,10 +1570,6 @@ if (numClasses &gt; 0) {
     
       <li class="post">
         <a href="/blog/2014/11/10/quartz-2dbian-cheng-zhi-nan-zhi-%5B%3F%5D-:gai-lan/">Quartz 2D编程指南之一：概览</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/11/09/objective-c-runtime-yun-xing-shi-zhi-liu-:shi-yi/">Objective-C Runtime 运行时之六：拾遗</a>
       </li>
     
   </ul>

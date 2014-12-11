@@ -4,7 +4,7 @@
   <title><![CDATA[Category: ios | 南峰子的技术博客]]></title>
   <link href="http://southpeak.github.io/blog/categories/ios/atom.xml" rel="self"/>
   <link href="http://southpeak.github.io/"/>
-  <updated>2014-12-10T09:34:04+08:00</updated>
+  <updated>2014-12-11T09:20:29+08:00</updated>
   <id>http://southpeak.github.io/</id>
   <author>
     <name><![CDATA[南峰子]]></name>
@@ -12,6 +12,94 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Quartz 2D编程指南之十：Quartz 2D中的数据管理]]></title>
+    <link href="http://southpeak.github.io/blog/2014/12/11/quartz-2dbian-cheng-zhi-nan-zhi-shi-:quartz-2dzhong-de-shu-ju-guan-li/"/>
+    <updated>2014-12-11T09:19:08+08:00</updated>
+    <id>http://southpeak.github.io/blog/2014/12/11/quartz-2dbian-cheng-zhi-nan-zhi-shi-:quartz-2dzhong-de-shu-ju-guan-li</id>
+    <content type="html"><![CDATA[<p>管理数据是每一个图形应用程序所需要处理的工作。对于Quartz来说，数据管理涉及为Quartz 2D程序提供数据，及从中获取数据。一些Quartz 2D程序将数据传输到Quartz中，如从文件或程序其它部分获取图片或PDF数据。另一些程序则获取Quartz数据，如将图像或PDF数据写入到文件，或提供给程序其它部分这些数据。</p>
+
+<p>Quartz提供了一系列的函数来管理数据。通过学习本章，我们可以了解到哪些函数是最适合我们的程序的。</p>
+
+<pre><code>注：我们推荐使用图像I/O框架来读取和写入数据，该框架在iOS 4、Mac OS X 10.4或者更高版本中可用。查看《Image I/OProgramming Guide 》可以获取更多关于CGImageSourceRef和CGImageDestinationRef的信息。图像源和目标不仅提供了访问图像数据的方法，不提供了更多访问图像原数据的方法。
+</code></pre>
+
+<p>Quartz可识别三种类型的数据源和目标：</p>
+
+<ol>
+<li>URL：通过URL指定的数据可以作为数据的提供者和接收者。我们使用Core Foundation数据类型CFURLRef作为参数传递给Quartz函数。</li>
+<li>CFData：Core Foundation数据类型CFDataRef和CFMutableDataRef可简化Core Foundation对象的内存分配行为。CFData是一个”toll-freebridged”类，CocoaFoundation中对应的类是NSData；如果在Quartz 2D中使用Cocoa框架，你可以传递一个NSData对象给Quartz方法，以取代CFData对象。</li>
+<li>原始数据：我们可以提供一个指向任何类型数据的指针，连同处理这些数据基本内存管理的回调函数集合。</li>
+</ol>
+
+
+<p>这些数据，无论是URL、CFData对象，还是数据缓存，都可以是图像数据或PDF数据。图像数据可以是任何格式的数据。Quartz能够解析大部分常用的图像文件格式。一些Quartz数据管理函数专门用于处理图像数据，一些只处理PDF数据，还有一些可同时处理PDF和图像数据。</p>
+
+<p>URL，CFData和原始数据源和目标中的数据都是在Mac OS X 或者iOS图像领域范围之外的，如图10-1所示。Mac OS X或iOS的其它图像技术通常会提供它们自己的方式来和Quartz通信。例如，一个Mac OS X 应用程序可以传输一个Quartz图像给Core Image，并使用Core Image来实现更复杂的效果。</p>
+
+<p>Figure 10-1  Moving data to and from Quartz 2D in Mac OS X</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/movingdata.gif" alt="image" /></p>
+
+<h2>传输数据给Quartz 2D</h2>
+
+<p>表10-1列出了从数据源获取数据的方法。所有的这些函数，除了CGPDFDocumentCreateWithURL，都返回一个图像源(CGImageSourceRef)或者数据提供者(CGDataProviderRef)。图像源和数据提供者抽象了数据访问工作，并避免了程序去管理原始内存缓存。</p>
+
+<p>图像源是将图像数据传输给Quartz的首先方式。图像源可表示很多种图像数据。一个图像源可表示多于一个图像，也可表示缩略图、图像的属性和图像文件。当我们拥有CGImageSourceRef对象后，我们可以完成如下工作：</p>
+
+<ol>
+<li>使用函数CGImageSourceCreateImageAtIndex,CGImageSourceCreateThumbnailAtIndex, CGImageSourceCreateIncremental创建图像(CGImageRef). 一个CGImageRef数据类型表示一个单独的Quartz图像。</li>
+<li>通过函数CGImageSourceUpdateData或CGImageSourceUpdateDataProvider来添加内容到图像源中。</li>
+<li>使用函数CGImageSourceGetCount, CGImageSourceCopyProperties和CGImageSourceCopyTypeIdentifiers获取图像源的信息。</li>
+</ol>
+
+
+<p>CFPDFDocumentCreateWithURL函数可以方便地从URL指定的文件创建PDF文档。</p>
+
+<p>数据提供者是比较老的机制，它有很多限制。它们可用于获取图像或PDF数据。</p>
+
+<p>我们可以将数据提供者用于：</p>
+
+<ol>
+<li>一个图像创建函数，如CGImageCreate,CGImageCreateWithPNGDataProvider或者CGImageCreateWithJPEGDataProvider。</li>
+<li>PDF文档的创建函数CGPDFDocumentCreateWithProvider.</li>
+<li>函数CGImageSourceUpdateDataProvider用于更新已存在的图像源。</li>
+</ol>
+
+
+<p>关于图像的更多信息，可查看“Bitmap Images andImage Masks”。</p>
+
+<p><img src="http://cc.cocimg.com/bbs/attachment/thumb/Fid_6/6_38018_23d72ec7c568bf5.png" alt="image" /></p>
+
+<h2>获取Quartz 2D的数据</h2>
+
+<p>表10-2列出地从Quartz 2D中获取数据的方法。所有这些方法，除了CGPDFContextCreateWithURL，都返回一个图像目标(CGImageDestinationRef)或者是数据消费者(CGDataComsumerRef)。图像目标和数据消费者抽象的数据写入工作，让Quartz来处理细节。</p>
+
+<p>一个图像目标是获取Quartz数据的首先方法。与图像源一样，图像目标也可以表示很多图像数据，如一个单独图片、多个图片、缩略图、图像属性或者图片文件。在获取到CGImageDestinationRef后，我们可以完成以下工作：</p>
+
+<ol>
+<li>使用函数CGImageDestinationAddImage或者CGImageDestinationAddImageFromSource添加一个图像(CGImageRef)到目标中。一个CGImageRef表示一个图片。</li>
+<li>使用函数CGImageDestinationSetProperties设置属性</li>
+<li>使用函数CGImageDestinationCopyTypeIdentifiers和CGImageDestinationGetTypeID从图像目标中获取信息。</li>
+</ol>
+
+
+<p>函数CGPDFContextCreateWithURL可以方便地将PDF数据写入URL指定的位置。</p>
+
+<p>数据消费者是一种老的机制，有很多限制。它们用于写图像或PDF数据。我们可以将数据消费者用于：</p>
+
+<ol>
+<li>PDF上下文创建函数CGPDFContextCreate。该函数返回一个图形上下文，用于记录一系列的PDF绘制命令。</li>
+<li>函数CGImageDestinationCreateWithDataConsumer，用于从数据消费者中创建图像目标。</li>
+</ol>
+
+
+<p>关于图像的更多信息，可查看“Bitmap Images andImage Masks”。</p>
+
+<p><img src="http://cc.cocimg.com/bbs/attachment/thumb/Fid_6/6_38018_ad38140dfa05446.png" alt="image" /></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Quartz 2D编程指南之九：透明层]]></title>
@@ -1141,156 +1229,6 @@ void MyStencilPatternPainting (CGContextRef myContext,
     CGContextFillRect (myContext,CGRectMake (0,0,PSIZE*20,PSIZE*20));
 }
 </code></pre>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Quartz 2D编程指南之五：变换]]></title>
-    <link href="http://southpeak.github.io/blog/2014/12/02/quartz-2dbian-cheng-zhi-nan-zhi-wu-:bian-huan/"/>
-    <updated>2014-12-02T22:27:17+08:00</updated>
-    <id>http://southpeak.github.io/blog/2014/12/02/quartz-2dbian-cheng-zhi-nan-zhi-wu-:bian-huan</id>
-    <content type="html"><![CDATA[<p>Quartz 2D 绘制模型定义了两种独立的坐标空间：用户空间(用于表现文档页)和设备空间(用于表现设备的本地分辨率)。用户坐标空间用浮点数表示坐标，与设备空间的像素分辨率没有关系。当我们需要一个点或者显示文档时， Quartz会将用户空间坐标系统映射到设备空间坐标系统。因此，我们不需要重写应用程序或添加额外的代码来调整应用程序的输出以适应不同的设备。</p>
-
-<p>我们可以通过操作CTM(current transformation matrix)来修改默认的用户空间。在创建图形上下文后，CTM是单位矩阵，我们可以使用 Quartz的变换函数来修改CTM，从而修改用户空间中的绘制操作。</p>
-
-<p>本章内容包括：</p>
-
-<ol>
-<li>变换操作函数概览</li>
-<li>如何修改CTM</li>
-<li>如何创建一个仿射变换</li>
-<li>如何选择两个相同的变换</li>
-<li>如何获取user-to-device-space变换</li>
-</ol>
-
-
-<h2>Quartz变换函数</h2>
-
-<p>我们可能使用Quartz内置的变换函数方便的平移、旋转和缩放我们的绘图。只需要短短几行代码，我们便可以按顺序应用变换或结合使用变换。图5-1显示了缩放和旋转一幅图片的效果。我们使用的每个变换操作都更新了CTM。CTM总是用于表示用户空间和设备空间的当前映射关系。这种映射确保了应用程序的输出在任何显示器或打印机上看上去都很棒。</p>
-
-<p>Figure 5-1  Applying scaling and rotation</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/spaces.gif" alt="image" /></p>
-
-<p>Quartz 2D API提供了5个函数，以允许我们获取和修改CTM。我们可以旋转、平移、缩放CTM。我们还可以联结一个仿射变换矩阵。</p>
-
-<p>有时我们可以不想操作用户空间，直到我们决定将变换应用到CTM时，Quartz为此允许我们创建应用于此的仿射矩阵。我们可以使用另外一组函数来创建仿射变换，这些变换可以与CTM联结在一起。</p>
-
-<p>我们可以不需要了解矩阵的数学含义而使用这些函数。</p>
-
-<h2>修改CTM(Current Transformation Matrix)</h2>
-
-<p>我们在绘制图像前操作CTM来旋转、缩放或平移page,从而变换我们将要绘制的对象。以变换CTM之前，我们需要保存图形状态，以便绘制后能恢复。我们同样能用仿射矩阵来联结CTM。在本节中，我们将介绍与CTM函数相关的四种操作&mdash;平移、旋转、缩放和联结。</p>
-
-<p>假设我们提供了一个可用的图形上下文、一个指向可绘制图像的矩形的指针和一个可用的CGImage对象，则下面一行代码绘制了一个图像。该行代码可以绘制如图5-2所示的图片。在阅读了本节余下的部分后，我们将看到如何将变换应用于图像。</p>
-
-<pre><code>CGContextDrawImage (myContext, rect, myImage);
-</code></pre>
-
-<p>Figure 5-2  An image that is not transformed</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/normal_rooster.gif" alt="image" /></p>
-
-<p>平移变换根据我们指定的x, y轴的值移动坐标系统的原点。我们通过调用CGContextTranslateCTM函数来修改每个点的x, y坐标值。如图5-3显示了一幅图片沿x轴移动了100个单位，沿y轴移动了50个单位。具体代码如下：</p>
-
-<pre><code>CGContextTranslateCTM (myContext, 100, 50);
-</code></pre>
-
-<p>Figure 5-3  A translated image</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/translated_rooster.gif" alt="image" /></p>
-
-<p>旋转变换根据指定的角度来移动坐标空间。我们调用CGContextRotateCTM函数来指定旋转角度(以弧度为单位)。图5-4显示了图片以原点(左下角)为中心旋转45度，代码所下所示：</p>
-
-<pre><code>CGContextRotateCTM (myContext, radians(–45.));
-</code></pre>
-
-<p>由于旋转操作使图片的部分区域置于上下文之外，所以区域外的部分被裁减。我们用弧度来指定旋转角度。如果需要进行旋转操作，下面的代码将会很有用</p>
-
-<pre><code>#include &lt;math.h&gt;
-static inline double radians (double degrees) {return degrees * M_PI/180;}
-</code></pre>
-
-<p>Figure 5-4  A rotated image</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rotated_rooster.gif" alt="image" /></p>
-
-<p>缩放操作根据指定的x, y因子来改变坐标空间的大小，从而放大或缩小图像。x, y因子的大小决定了新的坐标空间是否比原始坐标空间大或者小。另外，通过指定x因子为负数，可以倒转x轴，同样可以指定y因子为负数来倒转y轴。通过调用CGContextScaleCTM函数来指定x, y缩放因子。图5-5显示了指定x因子为0.5，y因子为0.75后的缩放效果。代码如下：</p>
-
-<pre><code>CGContextScaleCTM (myContext, .5, .75);
-</code></pre>
-
-<p>Figure 5-5  A scaled image</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/scaled_rooster.gif" alt="image" /></p>
-
-<p>联合变换将两个矩阵相乘来联接现价变换操作。我们可以联接多个矩阵来得到一个包含所有矩阵累积效果矩阵。通过调用CGContextConcatCTM来联接CTM和仿射矩阵。
-另外一种得到累积效果的方式是执行两个或多个变换操作而不恢复图形状态。图5-6显示了先平移后旋转一幅图片的效果，代码如下：</p>
-
-<pre><code>CGContextTranslateCTM (myContext, w,h);
-CGContextRotateCTM (myContext, radians(-180.));
-</code></pre>
-
-<p>Figure 5-6  An image that is translated and rotated</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/tr_rooster.gif" alt="image" /></p>
-
-<p>图5-7显示了平移、缩放和旋转一幅图片，代码如下：</p>
-
-<pre><code>CGContextTranslateCTM (myContext, w/4, 0);
-CGContextScaleCTM (myContext, .25,  .5);
-CGContextRotateCTM (myContext, radians ( 22.));
-</code></pre>
-
-<p>Figure 5-7  An image that is translated, scaled, and then rotated</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/tsr_rooster.gif" alt="image" /></p>
-
-<p>变换操作的顺序会影响到最终的效果。如果调换顺序，将得到不同的结果。调换上面代码的顺序将得到如图5-8所示的效果，代码如下：</p>
-
-<pre><code>CGContextRotateCTM (myContext, radians ( 22.));
-CGContextScaleCTM (myContext, .25,  .5);
-CGContextTranslateCTM (myContext, w/4, 0);
-</code></pre>
-
-<p>Figure 5-8  An image that is rotated, scaled, and then translated</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rst_rooster.gif" alt="image" /></p>
-
-<h2>创建仿射变换</h2>
-
-<p>仿射变换操作在矩阵上，而不是在CTM上。我们可以使用这些函数来构造一个之后用于CTM(调用函数CGContextConcatCTM)的矩阵。仿射变换函数使用或者返回一个CGAffineTransform数据对象。我们可以构建简单或复杂的仿射变换。</p>
-
-<p>仿射变换函数能实现与CTM函数相同的操作&mdash;平移、旋转、缩放、联合。表5-1列出了仿射变换函数及其用途。注意每种变换都有两个函数。</p>
-
-<p>表5-1 仿射变换函数</p>
-
-<p><img src="http://a3.qpic.cn/psb?/V130i6W71atwfr/hkufClsdxuBLYsVz20Qnbp7zDQIfQE6MOeYCjgzwCVc!/b/dPEupXMnLwAA&amp;bo=mgdqAQAAAAADB9Q!&amp;rf=viewer_4" alt="image" /></p>
-
-<p>Quartz同样提供了一个仿射变换函数(CGAffineTransformInvert)来倒置矩阵。倒置操作通常用于在变换对象中提供点的倒置变换。当我们需要恢复一个被矩阵变换的值时，可以使用倒置操作。将值与倒置矩阵相乘，就可得到原先的值。我们通常不需要倒置操作，因为我们可以通过保存和恢复图形状态来倒置CTM的效果。</p>
-
-<p>在一些情况下，我们可能不需要变换整修空间，而只是一个点或一个大小。我们通过调用CGPointApplyAffineTransform在CGPoint结构上执行变换操作。调用CGSizeApplyAffineTransform在CGSize结构上执行变换操作。调用CGRectApplyAffineTransform在CGRect结构上执行变换操作。CGRectApplyAffineTransform返回一个最小的矩形，该矩形包含了被传递给CGRectApplyAffineTransform的矩形对象的角点。如果矩形上的仿射变换操作只有缩放和平移操作，则返回的矩形与四个变换后的角组成的矩形是一致的。</p>
-
-<p>可以通过调用函数CGAffineTransformMake来创建一个新的仿射变换，但与其它函数不同的是，它需要提供一个矩阵实体。</p>
-
-<h2>评价仿射变换</h2>
-
-<p>我们可以通过调用CGAffineTransformEqualToTransform函数来决定一个仿射变换是否与另一个相同。如果两个变换相同，则返回true；否则返回false。</p>
-
-<p>函数CGAffineTransformIsIdentity用于确认一个变换是否是单位变换。单位变换没有平移、缩放和旋转操作。Quartz常量CGAffineTransformIdentity表示一个单位变换。</p>
-
-<h2>获取用户空间到设备空间的变换</h2>
-
-<p>当使用Quartz 2D时，我们只是在用户空间下工作。Quartz为我们处理用户空间和设备空间的转换。如果我们的应用程序需要获取Quartz转换用户空间和设备空间的仿射变换，我们可以调用函数CGContextGetUserSpaceToDeviceSpaceTransform。</p>
-
-<p>Quartz提供了一系列的函数来转换用户空间和设备空间的几何体。我们会发现这些函数使用赶来比使用CGContextGetUserSpaceToDeviceSpaceTransform函数返回的仿射变换更好用。</p>
-
-<ol>
-<li>点：函数CGContextConvertPointToDeviceSpace和CGContextConvertPointToUserSpace将一个CGPoint数据结构从一个空间变换到另一个空间。</li>
-<li>大小：函数CGContextConvertSizeToDeviceSpace和CGContextConvertSizeToUserSpace将一个CGSize数据结构从一个空间变换到另一个空间。</li>
-<li>矩形：函数CGContextConvertRectToDeviceSpace和CGContextConvertRectToUserSpace将一个CGPoint数据结构从一个空间变换到另一个空间。</li>
-</ol>
-
 ]]></content>
   </entry>
   
