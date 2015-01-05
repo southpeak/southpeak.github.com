@@ -4,7 +4,7 @@
   <title><![CDATA[南峰子的技术博客]]></title>
   <link href="http://southpeak.github.io/atom.xml" rel="self"/>
   <link href="http://southpeak.github.io/"/>
-  <updated>2014-12-11T09:20:29+08:00</updated>
+  <updated>2015-01-05T23:11:45+08:00</updated>
   <id>http://southpeak.github.io/</id>
   <author>
     <name><![CDATA[南峰子]]></name>
@@ -12,6 +12,369 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Quartz 2D编程指南之十一：位图与图像遮罩]]></title>
+    <link href="http://southpeak.github.io/blog/2015/01/05/quartz-2dbian-cheng-zhi-nan-zhi-shi-%5B%3F%5D-:wei-tu-yu-tu-xiang-zhe-zhao/"/>
+    <updated>2015-01-05T23:10:23+08:00</updated>
+    <id>http://southpeak.github.io/blog/2015/01/05/quartz-2dbian-cheng-zhi-nan-zhi-shi-[?]-:wei-tu-yu-tu-xiang-zhe-zhao</id>
+    <content type="html"><![CDATA[<p>位图与图像遮罩和Quartz中的其它绘制元素一样。这两者在Quartz中都是用CGImageRef数据类型来表示。正如在本章后面看到的一样，我们有一系列的方法来创建一个图像。其中一些需要数据提供者或图像源来提供位图数据。另外一些函数则通过拷贝图像或在图像上应用操作来从已存在的图像中创建图像。不管我们是以何种方式来创建图像，我们都可以将图像绘制到任何类型的图形上下文。记住，位图是在指定分辨率下的一个字节数组。如果我们将位图绘制到一个依赖于分辨率的图形上下文中(如PDF图形上下文)，则位图受限于创建它的图形上下文的分辨率。</p>
+
+<p>我们可以通过调用CGImageMaskCreate函数来创建一个Quartz图像遮罩。我们将在“创建图像遮罩”一节中看到如何创建遮罩。使用图像遮罩不是绘制遮罩的唯一方法，具体的我们都会在下面看到。</p>
+
+<h2>位图和图像遮罩</h2>
+
+<p>一个位图是一个像素数组。每一个像素表示图像中的一个点。JPEG, TIFF和PNG图像文件都是位图。应用程序的icon也是位图。位图被限定在一个矩形内。但是通过使用alpha分量，它们可以呈现不同的形式，也可以旋转或被裁剪，如图11-1所示：</p>
+
+<p>Figure 11-1  Bitmap images</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/images.gif" alt="image" /></p>
+
+<p>位图中的每一个采样包含特定颜色空间下的一个或更多颜色分量，以及一个额外的用于指定alpha值以表示透明度的分量。每一个分量可以是从1-32位。在Mac OS X中，Quartz支持浮点值分量。在Mac OS X和iOS中支持的格式将会在下文中介绍。ColorSync提供了位图支持的颜色空间。</p>
+
+<p>Quartz同样支持图像遮罩(image masks)。一个图像遮罩也是一个位图，它指定了一个绘制区域，而不是颜色。从效果上来说，一个图像遮罩更像一个模块，它指定在page中绘制颜色的位置。Quartz使用当前的填充颜色来绘制一个图像遮罩。一个颜色遮罩可以有1-8位的深度。</p>
+
+<h2>位图信息</h2>
+
+<p>Quartz提供了很多图像格式并内建了多种常用的格式。在iOS中，这些格式包括JPEG, GIF, PNG, TIF, ICO, GMP, XBM, 和CUR。其它的位图格式或专有格式需要我们指定图像格式的详细信息，以便Quartz能正确地解析图像。我们提供给CGImageCreate函数的图像数据必须是以像素为单位的，而不是基于扫描线的。Quartz不支持平面数据。</p>
+
+<p>这一节描述了与位图相关的信息。当我们创建并使用Quartz图像时(使用CGImageRef数据类型)，我们将看到一些Quartz图像创建函数需要我们指定所有的信息，而其它函数只需要部分信息。我们所需要提供的信息依赖于位图数据的编码，以及位图是表示一个图像还是图像遮罩。</p>
+
+<pre><code>注意：当使用原始图像数据时，为了获得更好的性能，我们可以使用vImage框架。我们可以使用vImageBuffer_InitWithCGImage函数从一个CGImageRef引用导入图像数据到vImage中。
+</code></pre>
+
+<p>创建一个位图(CGImageRef)时，Quartz使用以下信息：</p>
+
+<ol>
+<li>位图数据源：可以是一个Quartz数据提供者或者是一个Quartz图像源。</li>
+<li>可选的解码数组。(Decode Array)</li>
+<li>插值设置：这是一个布尔值，指定Quartz在重置图像大小时是否使用插值算法。</li>
+<li>渲染意图：指定如何映射位于图形上下文中的目标颜色空间中的颜色。该值在图像遮罩中不需要。</li>
+<li>图像尺寸</li>
+<li>像素格式，包括每个分量中的位数，每个像素的位数和每行中的字节数。</li>
+<li>对于图像来说，颜色空间和位图布局信息描述了alpha的位置和位置是否使用浮点值。图像遮罩不需要这个信息。</li>
+</ol>
+
+
+<h3>解码数组</h3>
+
+<p>一个解码数组将图像颜色值映射到其它颜色值，这对于诸如对一个图像做去饱和或者反转颜色值非常有用。数组包含每个颜色分量的一个数值对。当Quartz渲染图像时，它利用一个线性转换将原始分量值映射到一个目标颜色空间中的指定范围内一个相关值。例如，在RGB颜色空间中的一个图像的解码数组包含6个输入，分别用于红、绿、蓝颜色分量。</p>
+
+<h3>像素格式</h3>
+
+<p>像素格式包含以下信息：</p>
+
+<ol>
+<li>每个分量的位数，即在一个像素中每个独立颜色分量的位数。对于一个图像遮罩，这个值是源像素中遮罩bit的数目。例如，如果源图片是8-bit的遮罩，则指定每个分量是8位。</li>
+<li>每个像素的位数，即一个源像素所占的总的位数。这个值必须至少是每个分量的位数乘以每个像素中分量的数目。</li>
+<li>每行的字节数，即图像中水平行的字节数。</li>
+</ol>
+
+
+<h3>颜色空间和位图布局</h3>
+
+<p>为了确保Quartz能正确的解析每个像素的位，我们必须指定：</p>
+
+<ol>
+<li>一个位图是否包含alpha通道。Quartz包含RGB,CMYK和灰度颜色空间。它也支持alpha，或者透明度，虽然并不是所有位图图像格式都支持alpha通道。当它可用时，alpha分量可以位于像素最显著的位置，也可以是最不显著的位置。</li>
+<li>对于有alpha分量的位图，指定颜色分量是否已经乘以了alpha值。预乘alpha(Premultiplied alpha)表示一个已将颜色分量乘以了alpha值的源颜色。这种预处理通过消除每个颜色分量的额外的乘法运算来加速图片的渲染。</li>
+<li>采样的数据格式&mdash;是整型还是浮点型。</li>
+</ol>
+
+
+<p>当我们使用CGImageCreate函数来创建一个图像时，我们提供一个类型为CGImageBitmapInfo的bitmapInfo参数，来指定位置布局信息。以下的常量指定了alpha分量的位置及颜色分量是否做预处理：</p>
+
+<ol>
+<li>kCGImageAlphaLast：alpha分量存储在每个像素中最不显著的位置，如RGBA。</li>
+<li>kCGImageAlphaFirst：alpha分量存储在每个像素中最显著的位置，如ARGB。</li>
+<li>kCGImageAlphaPremultipliedLast：alpha分量存储在每个像素中最不显著的位置，但颜色分量已经乘以了alpha值。</li>
+<li>kCGImageAlphaPremultipliedFirst：alpha分量存储在每个像素中最显著的位置，同时颜色分量已经乘以了alpha值。</li>
+<li>kCGImageAlphaNoneSkipLast：没有alpha分量。如果像素的总大小大于颜色空间中颜色分量数目所需要的空间，则最不显著位置的位将被忽略。</li>
+<li>kCGImageAlphaNoneSkipFirst：没有alpha分量。如果像素的总大小大于颜色空间中颜色分量数目所需要的空间，则最显著位置的位将被忽略。</li>
+<li>kCGImageAlphaNone：等于kCGImageAlphaNoneSkipLast。</li>
+</ol>
+
+
+<p>我们使用常量kCGBitmapFloatComponents来标识一个位图格式使用浮点值。对于浮点格式，我们将这个常量与上而描述的合适的常量进行逻辑OR操作。例如，对于每个像素有128位的使用预处理的浮点格式，同时alpha值位于像素中最不显示位置，我们将以下信息提供给Quartz：</p>
+
+<pre><code>kCGImageAlphaPremultipliedLast | kCGBitmapFloatComponents
+</code></pre>
+
+<p>图11-2演示了一个像素在使用16-或32-bit整型像素格式的CMYK和RGB颜色空间中如何表示。32-bit整型像素格式中，每个分量占8位。16-bit整型像素格式中每个分量占5位。Quartz同样支持128-bit浮点像素格式，每个分量占32位。128-bit格式没有显示在下图中。</p>
+
+<p>Figure 11-2  32-bit and 16-bit pixel formats for CMYK and RGB color spaces in Quartz 2D</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/colorformatrgba32.gif" alt="image" /></p>
+
+<h2>创建图像</h2>
+
+<p>表11-1罗列了Quartz提供的用于创建CGImageRef对象的函数。函数的选择依赖于图像的数据源。最常用的函数是CGImageCreate。它可以从任何类型的位图数据来创建一个图像。然而，它是最复杂的函数，因为需要提供所有的位图信息。为了使用这个函数，我们需要熟悉上面讨论的位图图像信息的内容。</p>
+
+<p>如果我们想从一个标准的图像格式，如PNG或JPEG，来创建一个CGImage对象，则最简单的方法是调用函数CGImageSourceCreateWithURL来创建一个图像源，然后调用CGImageSourceCreateImageAtIndex以使用从图像源中索引index指定的图像数据来创建一个图像。如果源图像文件只包含一个图像，则索引为0。如果图像文件格式支持包含多个图像的文件，则需要提供所需要图像的索引值，记住起始值是0。</p>
+
+<p>如果我们已经将内容渲染到一个位图图形上下文，并想要从中获取到CGImage对象，则调用CGBitmapContextCreateImage函数。</p>
+
+<p>有几个函数可以操作已有的图像，如拷贝、创建一个缩略图，或从一个大图像中创建一个图像。不管如何创建一个图像对象，我们都使用函数CGContextDrawImage将图像绘制到一个图形上下文中。记住CGImage是不可变的。当不再需要一个CGImage对象时，调用CGImageRelease函数来释放它。</p>
+
+<p><img src="http://a3.qpic.cn/psb?/V130i6W71atwfr/W9ZJHCPpoB6QElZy*ePoumPixMBNcMaHrVryzqP12b0!/b/dBmKcHUpFAAA&amp;bo=pAaAAgAAAAADBwI!&amp;rf=viewer_4" alt="image" /></p>
+
+<p>接下来将讨论如何创建：</p>
+
+<ol>
+<li>从一个已存在图像中创建一个子图像</li>
+<li>从一个图像图形上下文中创建一个图像</li>
+</ol>
+
+
+<h3>从一个大图片中创建一个图像</h3>
+
+<p>我们可以使用CGImageCreateWithImageInRect函数从一个大图像中创建一个图像。图11-3演示了这一情形。</p>
+
+<p>Figure 11-3  A subimage created from a larger image</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/subimage.gif" alt="image" /></p>
+
+<p>函数CGImageCreateWithImageInRect返回的图像保留了源图像的一个引用，这意味着我们在调用完这个函数后可以释放源图像。</p>
+
+<p>图11-4是另外一个例子。在这种情况下，公鸡的头部被从大图中提取出来，然后绘制到一个大于子图像的矩形中。</p>
+
+<p>代码清单11-1显示了创建并绘制子图像的过程。CGContextDrawImage函数绘制公鸡头部的矩形区域是所提取的子图像的四倍大小。清单中的只是一个代码片断。我们需要声明合适的变量，创建公鸡头像，并部署公鸡图像及公鸡头部子图像。因为只是代码片断，所以没有演示如何创建一个图形上下文。我们可以使用任何我们所喜欢的图形上下文。创建图形上下文的例子可以查看“图形上下文”一章。</p>
+
+<p>Figure 11-4  An image, a subimage taken from it and drawn so it’s enlarged</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rooster_image_zoom.gif" alt="image" /></p>
+
+<p>Listing 11-1  Code that creates a subimage and draws it enlarged</p>
+
+<pre><code>myImageArea = CGRectMake (rooster_head_x_origin, rooster_head_y_origin,
+                            myWidth, myHeight);
+mySubimage = CGImageCreateWithImageInRect (myRoosterImage, myImageArea);
+myRect = CGRectMake(0, 0, myWidth*2, myHeight*2);
+CGContextDrawImage(context, myRect, mySubimage);
+</code></pre>
+
+<h3>从一个位图图形上下文创建一个图像</h3>
+
+<p>为了从一个已存在的位图图形上下文创建一个图像，我们可以调用函数CGBitmapContextCreateImage，如以下：</p>
+
+<pre><code>CGImageRef myImage;
+myImage = CGBitmapContextCreateImage (myBitmapContext);
+</code></pre>
+
+<p>这个函数返回的CGImage对象是通过一个拷贝操作创建的。因此我们对位图图形上下文所做的修改都不会影响到已返回的CGImage对象。在一些情况下，这个拷贝操作实际上沿用了copy-on-write语义，即只有当位图图形上下文中的数据被修改时才会去实际拷贝这些数据。我们可能需要在绘制额外数据到位图图形上下文之前使用结果数据或者释放它们，以便我们可以避免实际去拷贝这些数据。</p>
+
+<p>如何创建一个位图图形上下文，可以参考&#8221;创建图形上下文&#8221;相关的内容。</p>
+
+<h2>创建一个图像遮罩</h2>
+
+<p>一个Quartz位图图像遮罩如同艺术家使用丝网印刷品(silkscreen)一样。一个位图图像遮罩定义了如何转换颜色，而不是使用哪些颜色。图像遮罩中的每个采样值指定了在特定位置中，当前填充颜色值被遮罩的数量。采样值指定了遮罩的不透明度。值越大，表示越不透明，Quartz在指定位置绘制的颜色越少。我们可以将采样值当成alpha值的反转。1表示透明的，而0表示不透明。</p>
+
+<p>图像遮罩的每个分量可能是1，2，4或者8位。对于1-bit的遮罩，采样值1指定遮罩的区域掩盖了当前的填充颜色。值为0表示当绘制遮罩时，显示当前的填充颜色。我们可以将1-bit遮罩当成黑色和白色；要么完全遮挡，要么完全显示。</p>
+
+<p>每个分量中有2，4，8位的图像遮罩代表灰度值。每个分量使用以下的公式将值映射到[0, 1]之间的值：</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/inline_equations.jpg" alt="image" /></p>
+
+<p>例如，一个4-bit的遮罩其值位于[0, 1]之间，且增长的步长为1/15。0和1这两个值分别是最小和最大值&mdash;分别表示完全遮盖或完全透明。0和1之间的值使用(1-MaskSampleValue)这个公式来处理局部绘制。例如，如果一个8-bit遮罩的采样值设置为0.7，则那些alpha值为(1-0.7)，即0.3的颜色将会被绘制。</p>
+
+<p>函数CGImageMaskCreate从我们提供的位图图像信息中创建一个Quartz图像遮罩。我们提供的信息与创建图像所提供的信息是一样的，只是不需要提供颜色空间信息，位图信息常量或渲染意图，我们可以从代码清单11-2中看到这个函数原型：</p>
+
+<p>Listing 11-2  The prototype for the function CGImageMaskCreate</p>
+
+<pre><code>CGImageRef CGImageMaskCreate (
+        size_t width,
+        size_t height,
+        size_t bitsPerComponent,
+        size_t bitsPerPixel,
+        size_t bytesPerRow,
+        CGDataProviderRef provider,
+        const CGFloat decode[],
+        bool shouldInterpolate
+);
+</code></pre>
+
+<h2>遮罩图像</h2>
+
+<p>遮罩技术可以让我们通过控制图片的哪一部分被绘制，以生成很多有趣的效果，我们可以：</p>
+
+<ol>
+<li>在一个图像上使用图像遮罩。我们也可以把一个图像作为遮罩图，以获取同使用图像遮罩相反的效果。</li>
+<li>使用颜色来遮罩图像的一部分，其中包含被称为颜色遮罩的技术</li>
+<li>将图形上下文剪切到一个图像或图像遮罩，当Quartz绘制内容到剪切的图形上下文时来遮罩一个图像。</li>
+</ol>
+
+
+<h3>使用一个图像遮罩来遮罩图像</h3>
+
+<p>函数CGImageCreateWithMask通过将图像遮罩使用到一个图像上的方式来创建一个图像。这个函数带有两个参数：</p>
+
+<ol>
+<li>原始图像，遮罩将用于其上。这个图像不能是图像遮罩，也不能有与之相关的遮罩颜色。</li>
+<li>一个图像遮罩，通过调用CGImageMaskCreate函数创建的。也可以提供一个图像来替代图像遮罩，但这将给出非常不同的结果。这将在下面描述。</li>
+</ol>
+
+
+<p>一个图像遮罩的采样如同一个反转的alpha值。一个图像遮罩采样值(S)：</p>
+
+<ol>
+<li>为1时，则不会绘制对应的图像样本。</li>
+<li>为0时，则允许完全绘制对应的图像样本。</li>
+<li>0和1之间的值，则让对应的图像样本的alpha的值为(1-S)。</li>
+</ol>
+
+
+<p>图11-5显示了一个由Quartz图像创建函数创建的图像，而图11-6显示了一个使用CGImageMaskCreate函数创建的图像遮罩。图11-7则显示了一个使用CGImageCreateWithMask函数将图像遮罩应用于一个图像的效果。</p>
+
+<p>Figure 11-5  The original image</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/two_tigers.gif" alt="image" /></p>
+
+<p>Figure 11-6  An image mask</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/two_tiger_mask.gif" alt="image" /></p>
+
+<p>注意，源图像中与遮罩黑色区域对应的区域绘制出来，而与白色区域对应的部分则没有绘制出来。而与遮罩灰色区域对应的区域则使用一个与(1-图像遮罩采样值)相同的alpha值来绘制。</p>
+
+<p>Figure 11-7  The image that results from applying the image mask to the original image</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/image_create_w_mask.gif" alt="image" /></p>
+
+<h3>使用一个图像来遮罩一个图像</h3>
+
+<p>我们可以使用函数CGImageCreateWithMask来用一个图像遮罩另一个图像，而不是使用一个图像遮罩。我们可以使用这种方式来达到与使用图像遮罩相反的效果。那此时我们传递给CGImageCreateWithMask函数的就不是一个图像遮罩了，而是传递一个通过Quartz图像创建函数创建的图像。</p>
+
+<p>用于遮罩的图像的采样也是操作alpha值。一个图像采样值(S)：</p>
+
+<ol>
+<li>为1时，则允许完全绘制对应的图像样本。</li>
+<li>为0时，则不会绘制对应的图像样本。</li>
+<li>0和1之间的值，则让对应的图像样本的alpha的值为S。</li>
+</ol>
+
+
+<p>图11-8显示了调用CGImageCreateWithMask函数将图11-6中的图像作为遮罩应用于图11-5中的图像上的效果。在这个例子中，我们假定图11-6中的图像是使用Quartz图像创建函数(如CGImageCreate)创建的。比较图11-8与图11-7，可以看出使用图像采样时，可以获取与使用图像遮罩采样相反的效果。</p>
+
+<p>在图11-8的结果图像中，源图像中与图像的黑色区域对应的区域没有绘制出来。与白色区域对应的区域则绘制出来了。在遮罩中与灰色区域对应的区域则使用与遮罩图像采样值相同的alpha值来绘制。</p>
+
+<p>Figure 11-8  The image that results from masking the original image with an image</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/image_mask_image.gif" alt="image" /></p>
+
+<h3>使用颜色来遮罩图像</h3>
+
+<p>函数CGImageCreateWithMaskingColors通过遮罩一种颜色或一个颜色范围内的颜色来创建一个图像。使用这个函数，我们可以执行如图11-9所示的颜色遮罩，当然也可以遮罩一个范围内的颜色，如图11-11、11-12和11-13所示的效果。</p>
+
+<p>函数CGImageCreateWithMaskingColors有两个参数：</p>
+
+<ol>
+<li>一个图像，它不能是遮罩图像，也不能是使用过图像遮罩或颜色遮罩的图像。</li>
+<li>一个颜色分量数组，指定了一个颜色或一组颜色值，以用于遮罩图像。</li>
+</ol>
+
+
+<p>Figure 11-9  Chroma key masking</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/chroma_key.gif" alt="image" /></p>
+
+<p>颜色分量数组中元素的个数必须等于图像所在颜色空间的颜色分量数目的两倍。对于颜色空间中的每一个颜色分量，提供一个最小值和一个最大值来限定遮罩颜色的范围。如果只使用一个颜色，则设置最大值等于最小值即可。颜色分量数组中的值按以下顺序来提供：</p>
+
+<pre><code>{min[1], max[1], ... min[N], max[N]}，其中N是分量的数目
+</code></pre>
+
+<p>如果图像使用整型像素分量，则颜色分量数组中的每个值必须在[0 .. 2<sup>bitsPerComponent</sup> &ndash; 1]范围之内。如果图像使用浮点像素分量，则值可以是表示任何有效的颜色分量值的浮点数。</p>
+
+<p>一个图像采样如果其颜色值在以下范围内，则不会被绘制：</p>
+
+<pre><code>{c[1], ... c[N]}，其中min[i] &lt;= c[i] &lt;= max[i] for 1 &lt;= i &lt;= N
+</code></pre>
+
+<p>图11-10中两只老虎的图像使用了每个分量有8位的RGB颜色空间。为了在这个图像上屏蔽一组颜色，我们提供一组在[0, 255]区间内的最小和最大颜色分量值。</p>
+
+<p>Figure 11-10  The original image</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/two_tigers1.gif" alt="image" /></p>
+
+<p>代码清单11-3演示了如何设置颜色分量数组，并将其提供给CGImageCreateWithMaskingColors函数以达到图11-11的效果。</p>
+
+<p>Listing 11-3  Masking light to mid-range brown colors in an image</p>
+
+<pre><code>CGImageRef myColorMaskedImage;
+const CGFloat myMaskingColors[6] = {124, 255,  68, 222, 0, 165};
+myColorMaskedImage = CGImageCreateWithMaskingColors (image,
+                                        myMaskingColors);
+CGContextDrawImage (context, myContextRect, myColorMaskedImage);
+</code></pre>
+
+<p>Figure 11-11  An image with light to midrange brown colors masked out</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/beige_brown_masking.gif" alt="image" /></p>
+
+<p>代码清单11-14同样操作图11-10并得到图11-12的效果。这个例子遮罩了一组暗色。</p>
+
+<p>Listing 11-4  Masking shades of brown to black</p>
+
+<pre><code>CGImageRef myMaskedImage;
+const CGFloat myMaskingColors[6] = { 0, 124, 0, 68, 0, 0 };
+myColorMaskedImage = CGImageCreateWithMaskingColors (image,
+                                        myMaskingColors);
+CGContextDrawImage (context, myContextRect, myColorMaskedImage);
+</code></pre>
+
+<p>Figure 11-12  A image after masking colors from dark brown to black</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/brown_black_masking_colors.gif" alt="image" /></p>
+
+<p>我们同样可以设置一个填充颜色来作为图像的遮罩颜色，以达到图11-13的效果，其中被遮罩区域使用了填充颜色。代码清单11-15演示了这一过程</p>
+
+<p>Listing 11-5  Masking a range of colors and setting a fill color and</p>
+
+<pre><code>CGImageRef myMaskedImage;
+const CGFloat myMaskingColors[6] = { 0, 124, 0, 68, 0, 0 };
+myColorMaskedImage = CGImageCreateWithMaskingColors (image,
+                                        myMaskingColors);
+CGContextSetRGBFillColor (myContext, 0.6373,0.6373, 0, 1);
+CGContextFillRect(context, rect);
+CGContextDrawImage(context, rect, myColorMaskedImage);
+</code></pre>
+
+<p>Figure 11-13  An image drawn after masking a range of colors and setting a fill color</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/fill_color_with_mask.gif" alt="image" /></p>
+
+<h3>通过裁减上下文来遮罩一个图片</h3>
+
+<p>函数CGContextClipToMask将遮罩映射为一个矩形并将其与图形上下文的当前裁减区域求个交集。我们提供以下参数：</p>
+
+<ol>
+<li>需要裁减的图形上下文</li>
+<li>要使用遮罩的矩形区域</li>
+<li>一个图像遮罩，其通过CGImageMaskCreate函数创建。我们可以使用图像来替代图像遮罩以达到相反的效果。但图像必须使用Quartz图像创建函数来创建，但不能是使用过图像遮罩或颜色遮罩的图像。</li>
+</ol>
+
+
+<p>裁减区域的结果依赖于是否提供了一个图像遮罩或图像给CGContextClipToMask函数。</p>
+
+<p>我们看看图11-14.假设它是通过调用CGImageMaskCreate函数创建的一个图像遮罩，然后将其作为CGContextClipToMask函数的参数。结果上下文允许绘制黑色区域，而不绘制白色区域，并使用(1-S)的alpha值来绘制灰色区域，其中S是图像遮罩的采样值。如果使用CGContextDrawImage函数来将一个图像绘制到裁减上下文，则可以获得图11-15所示的结果。</p>
+
+<p>Figure 11-14  A masking image</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/the_mask.gif" alt="image" /></p>
+
+<p>Figure 11-15  An image drawn to a context after clipping the content with an image mask</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/mask_as_mask.gif" alt="image" /></p>
+
+<p>当遮罩图像被当成一个图像时，可以获得相反的结果，如图11-16所示：</p>
+
+<p>Figure 11-16  An image drawn to a context after clipping the content with an image</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/inverse_mask_clip.gif" alt="image" /></p>
+
+<h2>在图像中使用混合模式</h2>
+
+<p>此处略，类似于在颜色中使用混合模式。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Quartz 2D编程指南之十：Quartz 2D中的数据管理]]></title>
@@ -5028,208 +5391,6 @@ NSURL *jonsSite = [sites at:@"jon"]; // =&gt; http://www.jonmsterling.com/
 <li><a href="http://blog.csdn.net/tuxiangqi/article/details/8076972">OSATOMIC与synchronized加锁的对比</a></li>
 </ol>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[性能与时间]]></title>
-    <link href="http://southpeak.github.io/blog/2014/09/23/xing-neng-yu-shi-jian/"/>
-    <updated>2014-09-23T23:55:35+08:00</updated>
-    <id>http://southpeak.github.io/blog/2014/09/23/xing-neng-yu-shi-jian</id>
-    <content type="html"><![CDATA[<p>原文链接：<a href="http://www.macresearch.org/tutorial_performance_and_time">http://www.macresearch.org/tutorial_performance_and_time</a></p>
-
-<p>在讨论性能之前，先讨论一个重要的话题：时间。为了理解代码中的变化如何影响性能，我们需要一个排序的指标。有许多方法用于时间例程，一些比另一些合适。在本教程中我们将讨论Mach Absolute Time。</p>
-
-<h2>为什么是Mach?</h2>
-
-<p>时间例程依赖于所需要测量的时间域。某些情况下使用诸如clock()或getrusage()函数来做些简单的数学运算就足够了。如果时间例程将用于实际的开发框架之外，可移植性就很重要了。我不使用这些。为什么？</p>
-
-<p>对于我来说，调试代码的典型问题是：</p>
-
-<ol>
-<li>我只需要在即时测试时使用时间例程</li>
-<li>我不喜欢依赖于多种函数来包含不同的时间域。它们的行为可能不一致</li>
-<li>有时我需要一个高精度定时器</li>
-</ol>
-
-
-<h2>欢迎了解mach_absolute_time</h2>
-
-<p>mach_absolute_time是一个CPU/总线依赖函数，返回一个基于系统启动后的时钟”嘀嗒”数。它没有很好的文档定义，但这不应该成为使用它的障碍，因为在MAC OS X上可以确保它的行为，并且，它包含系统时钟包含的所有时间区域。那是否应该在产品代码中使用它呢？可能不应该。但是对于测试，它却恰到好处。</p>
-
-<p>使用mach_absolute_time时需要考虑两个因素：</p>
-
-<ol>
-<li>如何获取当前的Mach绝对时间</li>
-<li>如何将其转换为有意义的数字</li>
-</ol>
-
-
-<h2>获取mach_absolute_time</h2>
-
-<p>这非常简单</p>
-
-<pre><code>#include &lt;stdint.h&gt; 
-uint64_t start = mach_absolute_time();
-uint64_t stop = mach_absolute_time(); 
-</code></pre>
-
-<p>这样就可以了。我们通常获取两个值，以得到这两个时间的时间差。</p>
-
-<h2>将mach_absolute_time时间差转换为秒数</h2>
-
-<p>这稍微有点复杂，因为我们需要获取mach_absolute_time所基于的系统时间基准。如下代码：</p>
-
-<pre><code>#include &lt;stdint.h&gt;
-#include&lt;mach/mach_time.h&gt; 
-//Raw mach_absolute_times going in,difference in seconds out
-double subtractTimes( uint64_tendTime, uint64_t startTime )
-{
-    uint64_t difference = endTime - startTime;
-    static double conversion = 0.0;
-
-    if( conversion == 0.0 )
-    {
-        mach_timebase_info_data_t info;
-        kern_return_t err =mach_timebase_info( &amp;info );
-
-        //Convert the timebase into seconds
-        if( err == 0  )
-            conversion= 1e-9 * (double) info.numer / (double) info.denom;
-    }
-
-    return conversion * (double)difference;
-} 
-</code></pre>
-
-<p>这里最重要的是调用mach_timebase_info。我们传递一个结构体以返回时间基准值。最后，一旦我们获取到系统的心跳，我们便能生成一个转换因子。通常，转换是通过分子(info.numer)除以分母(info.denom)。这里我乘了一个1e-9来获取秒数。最后，我们获取两个时间的差值，并乘以转换因子，便得到真实的时间差。</p>
-
-<p>现在我们可能会想，为什么这比用clock好？看起来做了更多的事情。确实是有点，这便是为什么它在一个函数中。我们只需要传递我们的值到函数中并取得答案。</p>
-
-<h2>例子</h2>
-
-<p>让我们写个例子。下面是完整的代码清单(包括mach函数)。可以使用gcc mach.c –o mach来编译它：</p>
-
-<pre><code>#include &lt;stdio.h&gt;
-#include &lt;stdlib.h&gt;
-#include &lt;stdint.h&gt;
-#include &lt;math.h&gt;
-#include&lt;mach/mach_time.h&gt; 
-
-//Raw mach_absolute_times going in,difference in seconds out
-double subtractTimes( uint64_tendTime, uint64_t startTime )
-{
-    uint64_t difference = endTime -startTime;
-    static double conversion = 0.0;
-
-    if( conversion == 0.0 )
-    {        
-        mach_timebase_info_data_tinfo;        
-        kern_return_terr = mach_timebase_info( &amp;info );                       //Convert the timebaseinto seconds        
-
-        if(err == 0  )                       
-            conversion= 1e-9 * (double) info.numer / (double) info.denom;    
-    }
-
-    return conversion * (double)difference;
-} 
-
-int main()
-{
-    inti, j, count;
-    uint64_t start,stop;
-    doublecurrent = 0.0;
-    doubleanswer = 0.0;
-    doubleelapsed = 0.0;
-    intdim1 = 256;
-    intdim2 = 256;
-    intsize = 4*dim1*dim2;
-
-    //Allocatesome memory and warm it up
-    double *array =(double*)malloc(size*sizeof(double));       
-    for(i=0;i&lt;size;i++)array = (double)i;
-
-    count= 5;     
-    for(i=0;i&lt;count;i++)
-    {              
-        start = mach_absolute_time();                                 
-        //dosome work
-        for(j=0;j&lt;size;j++)
-        {
-            answer+= sqrt(array[j]);
-        }
-        stop = mach_absolute_time();
-        current= subtractTimes(stop,start);
-        printf("Timefor iteration: %1.12lf for answer: %1.12lf\n",current, answer);
-        elapsed+= current;
-    } 
-
-    printf("\nTotaltime in seconds = %1.12lf for answer: %1.12lf\n",elapsed/count,answer);
-    free(array);
-    return 0;
-} 
-</code></pre>
-
-<p>我们在这里做了什么？在这个例子中，我们有一个适当大小的double数组，当中存放了一些数字，然后获取这些数值的和的开方。为了测试，我们迭代了5次这个计算。每次迭代后我们打印花费的时间，并总结了计算所需的运行时间。在我的PowerMac G5(2.5)机器上，我获得如下结果：</p>
-
-<pre><code>[bigmac:~/misc] macresearch% gcc mach.c -omach
-[bigmac:~/misc] macresearch%./mach 
-Time for iteration: 0.006717496412for answer: 89478229.125529855490
-Time for iteration: 0.007274204955for answer: 178956458.251062750816
-Time for iteration: 0.006669191332for answer: 268434687.376589745283
-Time for iteration: 0.006953711252for answer: 357912916.502135872841
-Time for iteration: 0.007582157340for answer: 447391145.627681851387 
-Average time in seconds =0.007039352258 for answer: 447391145.627681851387
-</code></pre>
-
-<p>注意，在这里我没有进行优化，因为编译器有方法避开这样的无脑循环。另外，这只是一个例子。如果是真正的代码，我们会进行优化。</p>
-
-<p>好了，这就是这个例子的两个目的。</p>
-
-<p>首先，我使用的数组大小比我的缓存大。我这样做的目的是因为我们需要注意到数据溢出缓存的情况(正如这个例子一样，至少在我的系统中是这样。如果是在MacPro中，不会出现这种情况)。我们将在以后讨论缓存的事宜。当然，这是一个做作的例子，但有一些东西可供思考。其次，你注意到在内存分配之前我写了一句注释，这是什么意思呢？</p>
-
-<p>这在实际情况下是不需要关心的事情，因为内存总是在需要时已准备好使用。但当做一些小测试时来测试函数的性能时，它却可能是会影响到测试结果的实际问题。</p>
-
-<p>当动态分配内存时，第一次访问内存管理时会将其清0(在OS X中不管使用哪种动态分配函数:malloc, calloc…所有内存在用户使用前都会清0)。内存清零是一种安全预防措施(我们不需要递交一些包含安全信息的内容，如解密密钥)</p>
-
-<p>清零过程产生一个副作用(被系统标记为零填充页面故障)。所以为了让我们的计时更精确些，我们在使用内存之前一次性填充数据，以确保我们不会获取到零填充页面故障的处理时间。</p>
-
-<p>让我们来测试一下，注释下面这行代码</p>
-
-<pre><code>for(i=0;i&lt;size;i++) array =(double)i;
-</code></pre>
-
-<p>为:</p>
-
-<pre><code>//for(i=0;i&lt;size;i++) array =(double)i;
-</code></pre>
-
-<p>再次运行测试</p>
-
-<pre><code>[bigmac:~/misc] macresearch% ./mach
-Time for iteration: 0.009478866798for answer: 0.000000000000
-Time for iteration: 0.004756880234for answer: 0.000000000000
-Time for iteration: 0.004927868215for answer: 0.000000000000
-Time for iteration: 0.005227029674for answer: 0.000000000000
-Time for iteration: 0.004891864428for answer: 0.000000000000 
-Average time in seconds =0.005856501870 for answer: 0.000000000000
-</code></pre>
-
-<p>注意第一次迭代的时间比后序的时间多了将近一倍。同时还需要注意所有的answer都是0。再次说明内存被清零了。如果我们从堆上获取了内存，我们获取到的是无意义的数值。</p>
-
-<p>最后，但很重要的一点。不要依赖于内存的清零操作。很有可能获取到的内存是从一个静态分配区而来，那么可能会导致如下这样的问题</p>
-
-<pre><code>double array[3][3];
-</code></pre>
-
-<p>在我的系统上的打印结果是：</p>
-
-<pre><code>-1.99844 -1.29321e-231 -1.99844
--3.30953e-232 -5.31401e+303 0
-1.79209e-313 3.3146e-314 0
-</code></pre>
-
-<p>所以需要特别注意</p>
 ]]></content>
   </entry>
   
