@@ -1,0 +1,451 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Quartz 2D编程指南之十三：PDF文档的创建、显示及转换 - 南峰子的技术博客</title>
+  <meta name="author" content="南峰子">
+      
+  <meta name="baidu-site-verification" content="HoscFhWICI" />
+
+  
+  <meta name="description" content="PDF文档存储依赖于分辨率的向量图形、文本和位图，并用于程序的一系列指令中。一个PDF文档可以包含多页的图形和文本。PDF可用于创建跨平台、只读的文档，也可用于绘制依赖于分辨率的图形。 Quartz为所有应用程序创建高保真的PDF文档，这些文档保留应用的绘制操作，如图13-1所示。 &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://southpeak.github.io/blog/2015/01/08/quartz-2dbian-cheng-zhi-nan-zhi-shi-san-:pdfwen-dang-de-chuang-jian-,-xian-shi-ji-zhuan-huan">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="南峰子的技术博客" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<!--<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">-->
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">南峰子的技术博客</a></h1>
+  
+    <h2>攀登，一步一个脚印，方能知其乐</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:southpeak.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/categories/ios">iOS开发</a></li>
+  <li><a href="/blog/archives">所有文章</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Quartz 2D编程指南之十三：PDF文档的创建、显示及转换</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-01-08T22:51:40+08:00" pubdate data-updated="true">Jan 8<sup>th</sup>, 2015</time>
+        
+        
+           | <a href="#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>PDF文档存储依赖于分辨率的向量图形、文本和位图，并用于程序的一系列指令中。一个PDF文档可以包含多页的图形和文本。PDF可用于创建跨平台、只读的文档，也可用于绘制依赖于分辨率的图形。</p>
+
+<p>Quartz为所有应用程序创建高保真的PDF文档，这些文档保留应用的绘制操作，如图13-1所示。PDF文档的结果将通过系统的其它部分或第三方法的产品来有针对性地进行优化。Quartz创建的PDF文档在Preview和Acrobat中都能正确的显示。</p>
+
+<p>Figure 13-1  Quartz creates high-quality PDF documents</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/postscript_to_PDF.gif" alt="image" /></p>
+
+<p>Quartz不仅仅只使用PDF作为它的数字页，它同样包含一些API来显示和生成PDF文件，及完成一些其它PDF相关的工作。</p>
+
+<h2>打开和查看PDF</h2>
+
+<p>Quartz提供了CGPDFDocumentRef数据类型来表示PDF文档。我们可以使用CGPDFDocumentCreateWithProvider或CGPDFDocumentCreateWithURL来创建CGPDFDocument对象。在创建CGPDFDocument对象后，我们可以将其绘制到图形上下文中。图13-2显示了在一个窗体中绘制PDF文档。</p>
+
+<p>Figure 13-2  A PDF document</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rooster_up.gif" alt="image" /></p>
+
+<p>代码清单13-1显示了如何创建一个CGPDFDocument对象及获取文档的页数。</p>
+
+<p>Listing 13-1  Creating a CGPDFDocument object from a PDF file</p>
+
+<pre><code>CGPDFDocumentRef MyGetPDFDocumentRef (const char *filename)
+{
+    CFStringRef path;
+    CFURLRef url;
+    CGPDFDocumentRef document;
+    size_t count;
+
+    path = CFStringCreateWithCString (NULL, filename,
+                         kCFStringEncodingUTF8);
+    url = CFURLCreateWithFileSystemPath (NULL, path, 
+                        kCFURLPOSIXPathStyle, 0);
+    CFRelease (path);
+    document = CGPDFDocumentCreateWithURL (url);
+    CFRelease(url);
+    count = CGPDFDocumentGetNumberOfPages (document);
+    if (count == 0) {
+        printf("`%s' needs at least one page!", filename);
+        return NULL;
+    }
+    return document;
+}
+</code></pre>
+
+<p>代码清单显示了如何将一个PDF页绘制到图形上下文中。</p>
+
+<p>Listing 13-2  Drawing a PDF page</p>
+
+<pre><code>void MyDisplayPDFPage (CGContextRef myContext,
+                    size_t pageNumber,
+                    const char *filename)
+{
+    CGPDFDocumentRef document;
+    CGPDFPageRef page;
+
+    document = MyGetPDFDocumentRef (filename);
+    page = CGPDFDocumentGetPage (document, pageNumber);
+    CGContextDrawPDFPage (myContext, page);
+    CGPDFDocumentRelease (document);
+}
+</code></pre>
+
+<h2>为PDF页创建一个转换</h2>
+
+<p>Quartz提供了函数CGPDFPageGetDrawingTransform来创建一个仿射变换，该变换基于将PDF页的BOX映射到指定的矩形中。函数原型是：</p>
+
+<pre><code>CGAffineTransform CGPDFPageGetDrawingTransform (
+        CGPPageRef page,
+        CGPDFBox box,
+        CGRect rect,
+        int rotate,
+        bool preserveAspectRatio
+);
+</code></pre>
+
+<p>该函数通过如下算法来返回一个仿射变换：</p>
+
+<ol>
+<li>将在box参数中指定的PDF box的类型相关的矩形(media, crop, bleed, trim, art)与指定的PDF页的/MediaBox入口求交集。相交的部分即为一个有效的矩形(effectiverectangle)。</li>
+<li>将effective rectangle旋转参数/Rotate入口指定的角度。</li>
+<li>将得到的矩形放到rect参数指定的中间。</li>
+<li>如果rotate参数是一个非零且是90的倍数，函数将effective rectangel旋转该值指定的角度。正值往右旋转；负值往左旋转。需要注意的是我们传入的是角度，而不是弧度。记住PDF页的/Rotate入口也包含一个旋转，我们提供的rotate参数是与/Rotate入口接合在一起的。</li>
+<li>如果需要，可以缩放矩形，从而与我们提供的矩形保持一致。</li>
+<li>如果我们通过传递true值给preserveAspectRadio参数以指定保持长宽比，则最后的矩形将与rect参数的矩形的边一致。</li>
+</ol>
+
+
+<p>【注：上面这段翻译得不是很好】</p>
+
+<p>例如，我们可以使用这个函数来创建一个与图13-3类似的PDF浏览程序。如果我们提供一个Rotate Left/Rotate Right属性，则可以调用CGPDFPageGetDrawingTransform来根据当前的窗体大小和旋转设置计算出适当的转换。</p>
+
+<p>Figure 13-3  A PDF page rotated 90 degrees to the right</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rooster_rotate.gif" alt="image" /></p>
+
+<p>程序清单13-3显示了为一个PDF页创建及应用仿射变换，然后绘制PDF。</p>
+
+<p>Listing 13-3  Creating an affine transform for a PDF page</p>
+
+<pre><code>void MyDrawPDFPageInRect (CGContextRef context,
+                    CGPDFPageRef page,
+                    CGPDFBox box,
+                    CGRect rect,
+                    int rotation,
+                    bool preserveAspectRatio)
+{
+    CGAffineTransform m;
+
+    m = CGPDFPageGetDrawingTransform (page, box, rect, rotation,
+                                    preserveAspectRato);
+    CGContextSaveGState (context);
+    CGContextConcatCTM (context, m);
+    CGContextClipToRect (context,CGPDFPageGetBoxRect (page, box));
+    CGContextDrawPDFPage (context, page);
+    CGContextRestoreGState (context);
+}
+</code></pre>
+
+<h2>创建PDF文件</h2>
+
+<p>使用Quartz创建PDF与绘制其它图形上下文一下简单。我们指定一个PDF文件地址，设置一个PDF图形上下文，并使用与其它图形上下文一样的绘制程序。如代码清单13-4所示的MyCreatePDFFile函数，显示了创建一个PDF的所有工作。</p>
+
+<p>注意，代码在CGPDFContextBeginPage和CGPDFContextEndPage中来绘制PDF。我们可以传递一个CFDictionary对象来指定页属性，包括media, crop, bleed,trim和art boxes。</p>
+
+<p>Listing 13-4  Creating a PDF file</p>
+
+<pre><code>void MyCreatePDFFile (CGRect pageRect, const char *filename)
+{
+    CGContextRef pdfContext;
+    CFStringRef path;
+    CFURLRef url;
+    CFDataRef boxData = NULL;
+    CFMutableDictionaryRef myDictionary = NULL;
+    CFMutableDictionaryRef pageDictionary = NULL;
+
+    path = CFStringCreateWithCString (NULL, filename, 
+                                kCFStringEncodingUTF8);
+    url = CFURLCreateWithFileSystemPath (NULL, path, 
+                     kCFURLPOSIXPathStyle, 0);
+    CFRelease (path);
+    myDictionary = CFDictionaryCreateMutable(NULL, 0,
+                        &amp;kCFTypeDictionaryKeyCallBacks,
+                        &amp;kCFTypeDictionaryValueCallBacks); 
+    CFDictionarySetValue(myDictionary, kCGPDFContextTitle, CFSTR("My PDF File"));
+    CFDictionarySetValue(myDictionary, kCGPDFContextCreator, CFSTR("My Name"));
+    pdfContext = CGPDFContextCreateWithURL (url, &amp;pageRect, myDictionary); 
+    CFRelease(myDictionary);
+    CFRelease(url);
+    pageDictionary = CFDictionaryCreateMutable(NULL, 0,
+                        &amp;kCFTypeDictionaryKeyCallBacks,
+                        &amp;kCFTypeDictionaryValueCallBacks); 
+    boxData = CFDataCreate(NULL,(const UInt8 *)&amp;pageRect, sizeof (CGRect));
+    CFDictionarySetValue(pageDictionary, kCGPDFContextMediaBox, boxData);
+    CGPDFContextBeginPage (pdfContext, pageDictionary); 
+    myDrawContent (pdfContext);
+    CGPDFContextEndPage (pdfContext);
+    CGContextRelease (pdfContext);
+    CFRelease(pageDictionary); 
+    CFRelease(boxData);
+}
+</code></pre>
+
+<h2>添加链接</h2>
+
+<p>我们可以在PDF上下文中添加链接和锚点。Quartz提供了三个函数，每个函数都以PDF图形上下文作为参数，还有链接的信息：</p>
+
+<ol>
+<li>CGPDFContextSetURLForRect可以让我们指定在点击当前PDF页中的矩形时打开一个URL。</li>
+<li>CGPDFContextSetDestinationForRect指定在点击当前PDF页中的矩形区域时设置目标以进行跳转。我们需要提供一个目标名。</li>
+<li>CGPDFContextAddDestinationAtPoint指定在点击当前PDF页中的一个点时设置目标以进行跳转。我们需要提供一个目标名。</li>
+</ol>
+
+
+<h2>保护PDF内容</h2>
+
+<p>为了保护PDF内容，我们可以在辅助字典中指定一些安全选项并传递给CGPDFContextCreate。我们可以通过包含如下关键字来设置所有者密码、用户密码、PDF是否可以被打印或拷贝：</p>
+
+<ol>
+<li>kCGPDFContextOwnerPassword: 定义PDF文档的所有者密码。如果指定该值，则文档使用所有者密码来加密；否则文档不加密。该关键字的值必须是ASCII编码的CFString对象。只有前32位是用于密码的。该值没有默认值。如果该值不能表示成ASCII，则无法创建文档并返回NULL。Quartz使用40-bit加密。</li>
+<li>kCGPDFContextUserPassword: 定义PDF文档的用户密码。如果文档加密了，则该值是文档的用户密码。如果没有指定，则用户密码为空。该关键字的值必须是ASCII编码的CFString对象。只有前32位是用于密码的。如果该值不能表示成ASCII，则无法创建文档并返回NULL。</li>
+<li>kCGPDFContextAllowsPrinting:指定当使用用户密码锁定时文档是否可以打印。该值必须是CFBoolean对象。默认值是kCGBooleanTrue。</li>
+<li>kCGPDFContextAllowsCopying: 指定当使用用户密码锁定时文档是否可以拷贝。该值必须是CFBoolean对象。默认值是kCGBooleanTrue。</li>
+</ol>
+
+
+<p>代码清单14-4(下一章)显示了确认PDF文档是否被锁定，及用密码打开文档。</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">南峰子</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-01-08T22:51:40+08:00" pubdate data-updated="true">Jan 8<sup>th</sup>, 2015</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/ios/'>ios</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/01/08/quartz-2dbian-cheng-zhi-nan-zhi-shi-er-:core-graphicsceng-hui-zhi/" title="Previous Post: Quartz 2D编程指南之十二：Core Graphics层绘制">&laquo; Quartz 2D编程指南之十二：Core Graphics层绘制</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+
+
+<section>
+    <h1>Comments</h1>
+    <div id="comments" aria-live="polite"><!-- Duoshuo Comment BEGIN -->
+<div class="ds-thread" data-title="Quartz 2D编程指南之十三：PDF文档的创建、显示及转换"></div>
+<script type="text/javascript">
+    var duoshuoQuery = {short_name:"southpeak"};
+    (function() {
+     var ds = document.createElement('script');
+     ds.type = 'text/javascript';ds.async = true;
+     ds.src = 'http://static.duoshuo.com/embed.js';
+     ds.charset = 'UTF-8';
+     (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+     })();
+</script>
+<!-- Duoshuo Comment END --></div>
+</section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+<section>
+<h1>分类</h1>
+<ul>
+  <li><a href='/blog/categories/ios'>ios (50)</a></li>
+  <li><a href='/blog/categories/network'>network (3)</a></li>
+  <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
+  <li><a href='/blog/categories/swift'>swift (7)</a></li>
+  <li><a href='/blog/categories/system'>system (1)</a></li>
+  <li><a href='/blog/categories/网络'>网络 (8)</a></li>
+</ul>
+</section>
+
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/01/08/quartz-2dbian-cheng-zhi-nan-zhi-shi-san-:pdfwen-dang-de-chuang-jian-,-xian-shi-ji-zhuan-huan/">Quartz 2D编程指南之十三：PDF文档的创建、显示及转换</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/08/quartz-2dbian-cheng-zhi-nan-zhi-shi-er-:core-graphicsceng-hui-zhi/">Quartz 2D编程指南之十二：Core Graphics层绘制</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/05/quartz-2dbian-cheng-zhi-nan-zhi-shi-%5B%3F%5D-:wei-tu-yu-tu-xiang-zhe-zhao/">Quartz 2D编程指南之十一：位图与图像遮罩</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/12/11/quartz-2dbian-cheng-zhi-nan-zhi-shi-:quartz-2dzhong-de-shu-ju-guan-li/">Quartz 2D编程指南之十：Quartz 2D中的数据管理</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/12/10/quartz-2dbian-cheng-zhi-nan-zhi-jiu-:tou-ming-ceng/">Quartz 2D编程指南之九：透明层</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/12/10/quartz-2dbian-cheng-zhi-nan-zhi-ba-:jian-bian/">Quartz 2D编程指南之八：渐变</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/12/05/quartz-2dbian-cheng-zhi-nan-zhi-qi-:yin-ying/">Quartz 2D编程指南之七：阴影</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/12/05/quartz-2dbian-cheng-zhi-nan-zhi-liu-:mo-shi-pattern/">Quartz 2D编程指南之六：模式(Pattern)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/12/02/quartz-2dbian-cheng-zhi-nan-zhi-wu-:bian-huan/">Quartz 2D编程指南之五：变换</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/12/01/quartz-2dbian-cheng-zhi-nan-zhi-si-:yan-se-yu-yan-se-kong-jian/">Quartz 2D编程指南之四：颜色与颜色空间</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2015 - 南峰子 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

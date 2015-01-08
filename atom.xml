@@ -4,7 +4,7 @@
   <title><![CDATA[南峰子的技术博客]]></title>
   <link href="http://southpeak.github.io/atom.xml" rel="self"/>
   <link href="http://southpeak.github.io/"/>
-  <updated>2015-01-05T23:11:45+08:00</updated>
+  <updated>2015-01-08T22:57:11+08:00</updated>
   <id>http://southpeak.github.io/</id>
   <author>
     <name><![CDATA[南峰子]]></name>
@@ -12,6 +12,427 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Quartz 2D编程指南之十三：PDF文档的创建、显示及转换]]></title>
+    <link href="http://southpeak.github.io/blog/2015/01/08/quartz-2dbian-cheng-zhi-nan-zhi-shi-san-:pdfwen-dang-de-chuang-jian-,-xian-shi-ji-zhuan-huan/"/>
+    <updated>2015-01-08T22:51:40+08:00</updated>
+    <id>http://southpeak.github.io/blog/2015/01/08/quartz-2dbian-cheng-zhi-nan-zhi-shi-san-:pdfwen-dang-de-chuang-jian-,-xian-shi-ji-zhuan-huan</id>
+    <content type="html"><![CDATA[<p>PDF文档存储依赖于分辨率的向量图形、文本和位图，并用于程序的一系列指令中。一个PDF文档可以包含多页的图形和文本。PDF可用于创建跨平台、只读的文档，也可用于绘制依赖于分辨率的图形。</p>
+
+<p>Quartz为所有应用程序创建高保真的PDF文档，这些文档保留应用的绘制操作，如图13-1所示。PDF文档的结果将通过系统的其它部分或第三方法的产品来有针对性地进行优化。Quartz创建的PDF文档在Preview和Acrobat中都能正确的显示。</p>
+
+<p>Figure 13-1  Quartz creates high-quality PDF documents</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/postscript_to_PDF.gif" alt="image" /></p>
+
+<p>Quartz不仅仅只使用PDF作为它的数字页，它同样包含一些API来显示和生成PDF文件，及完成一些其它PDF相关的工作。</p>
+
+<h2>打开和查看PDF</h2>
+
+<p>Quartz提供了CGPDFDocumentRef数据类型来表示PDF文档。我们可以使用CGPDFDocumentCreateWithProvider或CGPDFDocumentCreateWithURL来创建CGPDFDocument对象。在创建CGPDFDocument对象后，我们可以将其绘制到图形上下文中。图13-2显示了在一个窗体中绘制PDF文档。</p>
+
+<p>Figure 13-2  A PDF document</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rooster_up.gif" alt="image" /></p>
+
+<p>代码清单13-1显示了如何创建一个CGPDFDocument对象及获取文档的页数。</p>
+
+<p>Listing 13-1  Creating a CGPDFDocument object from a PDF file</p>
+
+<pre><code>CGPDFDocumentRef MyGetPDFDocumentRef (const char *filename)
+{
+    CFStringRef path;
+    CFURLRef url;
+    CGPDFDocumentRef document;
+    size_t count;
+
+    path = CFStringCreateWithCString (NULL, filename,
+                         kCFStringEncodingUTF8);
+    url = CFURLCreateWithFileSystemPath (NULL, path, 
+                        kCFURLPOSIXPathStyle, 0);
+    CFRelease (path);
+    document = CGPDFDocumentCreateWithURL (url);
+    CFRelease(url);
+    count = CGPDFDocumentGetNumberOfPages (document);
+    if (count == 0) {
+        printf("`%s' needs at least one page!", filename);
+        return NULL;
+    }
+    return document;
+}
+</code></pre>
+
+<p>代码清单显示了如何将一个PDF页绘制到图形上下文中。</p>
+
+<p>Listing 13-2  Drawing a PDF page</p>
+
+<pre><code>void MyDisplayPDFPage (CGContextRef myContext,
+                    size_t pageNumber,
+                    const char *filename)
+{
+    CGPDFDocumentRef document;
+    CGPDFPageRef page;
+
+    document = MyGetPDFDocumentRef (filename);
+    page = CGPDFDocumentGetPage (document, pageNumber);
+    CGContextDrawPDFPage (myContext, page);
+    CGPDFDocumentRelease (document);
+}
+</code></pre>
+
+<h2>为PDF页创建一个转换</h2>
+
+<p>Quartz提供了函数CGPDFPageGetDrawingTransform来创建一个仿射变换，该变换基于将PDF页的BOX映射到指定的矩形中。函数原型是：</p>
+
+<pre><code>CGAffineTransform CGPDFPageGetDrawingTransform (
+        CGPPageRef page,
+        CGPDFBox box,
+        CGRect rect,
+        int rotate,
+        bool preserveAspectRatio
+);
+</code></pre>
+
+<p>该函数通过如下算法来返回一个仿射变换：</p>
+
+<ol>
+<li>将在box参数中指定的PDF box的类型相关的矩形(media, crop, bleed, trim, art)与指定的PDF页的/MediaBox入口求交集。相交的部分即为一个有效的矩形(effectiverectangle)。</li>
+<li>将effective rectangle旋转参数/Rotate入口指定的角度。</li>
+<li>将得到的矩形放到rect参数指定的中间。</li>
+<li>如果rotate参数是一个非零且是90的倍数，函数将effective rectangel旋转该值指定的角度。正值往右旋转；负值往左旋转。需要注意的是我们传入的是角度，而不是弧度。记住PDF页的/Rotate入口也包含一个旋转，我们提供的rotate参数是与/Rotate入口接合在一起的。</li>
+<li>如果需要，可以缩放矩形，从而与我们提供的矩形保持一致。</li>
+<li>如果我们通过传递true值给preserveAspectRadio参数以指定保持长宽比，则最后的矩形将与rect参数的矩形的边一致。</li>
+</ol>
+
+
+<p>【注：上面这段翻译得不是很好】</p>
+
+<p>例如，我们可以使用这个函数来创建一个与图13-3类似的PDF浏览程序。如果我们提供一个Rotate Left/Rotate Right属性，则可以调用CGPDFPageGetDrawingTransform来根据当前的窗体大小和旋转设置计算出适当的转换。</p>
+
+<p>Figure 13-3  A PDF page rotated 90 degrees to the right</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rooster_rotate.gif" alt="image" /></p>
+
+<p>程序清单13-3显示了为一个PDF页创建及应用仿射变换，然后绘制PDF。</p>
+
+<p>Listing 13-3  Creating an affine transform for a PDF page</p>
+
+<pre><code>void MyDrawPDFPageInRect (CGContextRef context,
+                    CGPDFPageRef page,
+                    CGPDFBox box,
+                    CGRect rect,
+                    int rotation,
+                    bool preserveAspectRatio)
+{
+    CGAffineTransform m;
+
+    m = CGPDFPageGetDrawingTransform (page, box, rect, rotation,
+                                    preserveAspectRato);
+    CGContextSaveGState (context);
+    CGContextConcatCTM (context, m);
+    CGContextClipToRect (context,CGPDFPageGetBoxRect (page, box));
+    CGContextDrawPDFPage (context, page);
+    CGContextRestoreGState (context);
+}
+</code></pre>
+
+<h2>创建PDF文件</h2>
+
+<p>使用Quartz创建PDF与绘制其它图形上下文一下简单。我们指定一个PDF文件地址，设置一个PDF图形上下文，并使用与其它图形上下文一样的绘制程序。如代码清单13-4所示的MyCreatePDFFile函数，显示了创建一个PDF的所有工作。</p>
+
+<p>注意，代码在CGPDFContextBeginPage和CGPDFContextEndPage中来绘制PDF。我们可以传递一个CFDictionary对象来指定页属性，包括media, crop, bleed,trim和art boxes。</p>
+
+<p>Listing 13-4  Creating a PDF file</p>
+
+<pre><code>void MyCreatePDFFile (CGRect pageRect, const char *filename)
+{
+    CGContextRef pdfContext;
+    CFStringRef path;
+    CFURLRef url;
+    CFDataRef boxData = NULL;
+    CFMutableDictionaryRef myDictionary = NULL;
+    CFMutableDictionaryRef pageDictionary = NULL;
+
+    path = CFStringCreateWithCString (NULL, filename, 
+                                kCFStringEncodingUTF8);
+    url = CFURLCreateWithFileSystemPath (NULL, path, 
+                     kCFURLPOSIXPathStyle, 0);
+    CFRelease (path);
+    myDictionary = CFDictionaryCreateMutable(NULL, 0,
+                        &amp;kCFTypeDictionaryKeyCallBacks,
+                        &amp;kCFTypeDictionaryValueCallBacks); 
+    CFDictionarySetValue(myDictionary, kCGPDFContextTitle, CFSTR("My PDF File"));
+    CFDictionarySetValue(myDictionary, kCGPDFContextCreator, CFSTR("My Name"));
+    pdfContext = CGPDFContextCreateWithURL (url, &amp;pageRect, myDictionary); 
+    CFRelease(myDictionary);
+    CFRelease(url);
+    pageDictionary = CFDictionaryCreateMutable(NULL, 0,
+                        &amp;kCFTypeDictionaryKeyCallBacks,
+                        &amp;kCFTypeDictionaryValueCallBacks); 
+    boxData = CFDataCreate(NULL,(const UInt8 *)&amp;pageRect, sizeof (CGRect));
+    CFDictionarySetValue(pageDictionary, kCGPDFContextMediaBox, boxData);
+    CGPDFContextBeginPage (pdfContext, pageDictionary); 
+    myDrawContent (pdfContext);
+    CGPDFContextEndPage (pdfContext);
+    CGContextRelease (pdfContext);
+    CFRelease(pageDictionary); 
+    CFRelease(boxData);
+}
+</code></pre>
+
+<h2>添加链接</h2>
+
+<p>我们可以在PDF上下文中添加链接和锚点。Quartz提供了三个函数，每个函数都以PDF图形上下文作为参数，还有链接的信息：</p>
+
+<ol>
+<li>CGPDFContextSetURLForRect可以让我们指定在点击当前PDF页中的矩形时打开一个URL。</li>
+<li>CGPDFContextSetDestinationForRect指定在点击当前PDF页中的矩形区域时设置目标以进行跳转。我们需要提供一个目标名。</li>
+<li>CGPDFContextAddDestinationAtPoint指定在点击当前PDF页中的一个点时设置目标以进行跳转。我们需要提供一个目标名。</li>
+</ol>
+
+
+<h2>保护PDF内容</h2>
+
+<p>为了保护PDF内容，我们可以在辅助字典中指定一些安全选项并传递给CGPDFContextCreate。我们可以通过包含如下关键字来设置所有者密码、用户密码、PDF是否可以被打印或拷贝：</p>
+
+<ol>
+<li>kCGPDFContextOwnerPassword: 定义PDF文档的所有者密码。如果指定该值，则文档使用所有者密码来加密；否则文档不加密。该关键字的值必须是ASCII编码的CFString对象。只有前32位是用于密码的。该值没有默认值。如果该值不能表示成ASCII，则无法创建文档并返回NULL。Quartz使用40-bit加密。</li>
+<li>kCGPDFContextUserPassword: 定义PDF文档的用户密码。如果文档加密了，则该值是文档的用户密码。如果没有指定，则用户密码为空。该关键字的值必须是ASCII编码的CFString对象。只有前32位是用于密码的。如果该值不能表示成ASCII，则无法创建文档并返回NULL。</li>
+<li>kCGPDFContextAllowsPrinting:指定当使用用户密码锁定时文档是否可以打印。该值必须是CFBoolean对象。默认值是kCGBooleanTrue。</li>
+<li>kCGPDFContextAllowsCopying: 指定当使用用户密码锁定时文档是否可以拷贝。该值必须是CFBoolean对象。默认值是kCGBooleanTrue。</li>
+</ol>
+
+
+<p>代码清单14-4(下一章)显示了确认PDF文档是否被锁定，及用密码打开文档。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Quartz 2D编程指南之十二：Core Graphics层绘制]]></title>
+    <link href="http://southpeak.github.io/blog/2015/01/08/quartz-2dbian-cheng-zhi-nan-zhi-shi-er-:core-graphicsceng-hui-zhi/"/>
+    <updated>2015-01-08T22:47:51+08:00</updated>
+    <id>http://southpeak.github.io/blog/2015/01/08/quartz-2dbian-cheng-zhi-nan-zhi-shi-er-:core-graphicsceng-hui-zhi</id>
+    <content type="html"><![CDATA[<p>CGLayer对象(CGLayerRef数据类型)允许程序使用层来进行绘制。</p>
+
+<p>层适合于以下几种情况：</p>
+
+<ol>
+<li>高质量离屏渲染，以绘制我们想重用的图形。例如，我们可能要建立一个场景并重用相同的背景。将背景场景绘制于一个层上，然后在需要的时候再绘制层。一个额外的好处是我们不需要知道颜色空间或其它设备依赖的信息来绘制层。</li>
+<li>重复绘制。例如，我们可能想创建一个由相同元素反复绘制而组成的模式。将元素绘制到一个层中，然后重复绘制这个层，如图12-1所示。任何我们重复绘制的Quartz对象，包括CGPath, CGShading和CGPDFPage对象，都可以通过将其绘制到CGLayer来优化性能。注意一个层不仅仅是用于离屏绘制；我们也可以将其用于那些不是面向屏幕的图形上下文，如PDF图形上下文。</li>
+<li>缓存。虽然我们可以将层用于此目的，但通常不需要这样做，因为Quartz Compositor已经做了此事。如果我们必须绘制一个缓存，则使用层来代替位图图形上下文。</li>
+</ol>
+
+
+<p>Figure 12-1  Repeatedly painting the same butterfly image</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/stamp_layers.gif" alt="image" /></p>
+
+<p>CGLayer对象和透明层是与CGPath对象以及CGContext函数创建的路径并行的。对于一个CGLayer或者CGPath对象，我们可以将其绘制到一个抽象目标，之后可以将其完整地绘制到另一个目标，如显示器或才PDF中。当我们在透明层上绘制或者使用绘制路径的CGContext函数时，可以直接绘制到图形上下文表示的目标上，而不需要负责组装绘制的中间抽象目标。</p>
+
+<h2>层如何工作</h2>
+
+<p>一个层由CGLayerRef数据类型表示，是为优化性能而设计的。在可能的时候，Quartz使用合适的机制将一个CGLayer对象缓存到与之相关的Quartz图形上下文中。例如，与显卡相关的图形上下文可能将层缓存到显卡中，这样绘制在层中的内容时，就比渲染从一个位图图形上下文中构造的类似图像要快得多。基于这个原因，层比位图图形上下文更适用于离屏绘制。</p>
+
+<p>所有的Quartz绘制函数都是绘制到图形上下文中。图形上下文提供了一个抽象的渲染目标，而将我们从目标的细节中解放出来。我们使用用户空间，Quartz执行必要的转换来将绘图正确地渲染到目标。当我们使用CGLayer对象来绘制时，我们也是绘制到图形上下文中。图12-1演示了层绘制的必要步骤。</p>
+
+<p>Figure 12-2  Layer drawing</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/layer_context.gif" alt="image" /></p>
+
+<p>所有在图形上下文中层的绘制都是以使用函数CGLayerCreateWithContext创建一个CGLayer对象开始的。用于创建CGLayer对象的图形上下文通常是一个window图形上下文。Quartz创建一个层，使得它具有图形上下文的所有特性：包括分辨率，颜色空间和图形状态设置。如果我们不想使用图形上下文的大小，则可以提供一个大小给层。在图12-2中，左侧显示了用于创建层的图形上下文。框右侧的灰色部分，即标记为CGLayer对象的部分表示新创建的层。</p>
+
+<p>在我们可以绘制层之前，我们必须通过调用CGLayerGetContext函数来获取与层相关的图形上下文。这个图形上下文与用于创建层的图形上下文是差不多的。只要用于创建层的图形上下文是一个window图形上下文，则CGLayer图形上下文会尽可能地被缓存到GPU中。图12-2中位于框右侧的白色部分表示新创建的层图形上下文。</p>
+
+<p>在层图形上下文中绘制与在其它图形上下文中绘制一样，将层图形上下文作为参数传给绘制函数。图12-2显示了一片绘制到层图形上下文的叶子。</p>
+
+<p>当我们准备使用层的内容时，我们可以调用函数CGContextDrawLayerInRect或者CGContextDrawLayerAtPoint将层绘制到一个图形上下文。通常情况下，我们会将层绘制到创建层对象的图形上下文中，但这不是必须的。我们可以将层绘制到任意的图形上下文，记住：层带有创建层对象的图形上下文的所有特性，这可能会产生一些限制(如性能或分辨率)。例如，与屏幕关联的层可能会被缓存到显卡中。如果目标上下文是一个打印机或PDF上下文，则可能需要将层对象从显卡中取出并放到内存中，从而导致性能很差。</p>
+
+<p>图12-2显示了层的内容&mdash;叶子&mdash;被重复地绘制到创建层对象的图形上下文中。我们可以在释放CGLayer对象之前，任意地重复使用层中的绘图。</p>
+
+<h2>使用层来绘制</h2>
+
+<p>我们需要按照如下几个步骤来使用层对象进行绘制：</p>
+
+<ol>
+<li>创建一个使用已存在的图形上下文初始化的层对象</li>
+<li>为层获取图形上下文</li>
+<li>绘制到CGLayer图形上下文</li>
+<li>将层绘制到目标图形上下文</li>
+</ol>
+
+
+<p>我们将在下面详细描述这几个步骤。</p>
+
+<h3>创建一个使用已存在的图形上下文初始化的层对象</h3>
+
+<p>函数CGLayerCreateWithContext返回一个使用已存在的图形上下文初始化的层对象。这个层对象继承了该图形上下文的所有特性，包括颜色空间、大小、分辨率和像素格式。后期当我们绘制层对象到一个目标时，Quartz会自动对层与目标上下文进行颜色匹配。</p>
+
+<p>函数CGLayerCreateWithContext带有三个参数：</p>
+
+<ol>
+<li>用于创建层的图形上下文。通常我们传递一个window图形上下文以便后面可以离屏绘制层。</li>
+<li>层相对于图形上下文的大小。层的大小可以和图形上下文一样，或者更小。如果想要获得层的大小，我们可以调用函数CGLayerGetSize。</li>
+<li>一个辅助字典。这个参数现在已经不用了，所以传递NULL即可。</li>
+</ol>
+
+
+<h3>为层获取图形上下文</h3>
+
+<p>Quartz总是在一个图形上下文中进行绘制。现在我们有了一个层对象，我们必须创建一个与层相关的图形上下文。所有绘制到层图形上下文的内容都是层的一部分。</p>
+
+<p>函数CGLayerGetContext获取一个层对象作为参数，并返回与之相关的图形上下文。</p>
+
+<h3>绘制到CGLayer图形上下文</h3>
+
+<p>在获取到与层相关的图形上下文之后，我们可以在层图形上下文中绘制任何东西。我们可以打开一个PDF文件或一个图像文件，并将文件内容绘制到层中。我们可以使用Quartz 2D的任何函数来绘制矩形、直线或其它绘制单元。图12-3显示了在层中绘制一个矩形和直线。</p>
+
+<p>Figure 12-3  A layer that contains two rectangles and a series of lines</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rect_star_layer.gif" alt="image" /></p>
+
+<p>例如，为了在CGLayer图形上下文中绘制一个填充矩形，我们调用函数CGContextFillRect，并提供从CGLayerGetContext函数中获取到的图形上下文作为参数。假设这个图形上下文命名为myLayerContext，则函数调用如下：</p>
+
+<pre><code>CGContextFillRect (myLayerContext, myRect)
+</code></pre>
+
+<h3>将层绘制到目标图形上下文</h3>
+
+<p>当我们已经准备好将层绘制到目标图形上下文时，我们可以使用以下任一一个函数：</p>
+
+<ol>
+<li>CGContextDrawLayerInRect：将层绘制到图形上下文中指定的矩形内。</li>
+<li>CGContextDrawLayerAtPoint：将层绘制到图形上下文中指定的点。</li>
+</ol>
+
+
+<p>通常情况下，我们提供的目标图形上下文是一个window图形上下文，这也是我们用于创建层对象所使用的图形上下文。图12-4显示了重复绘制图12-3所绘制的层。为了达到模式效果，我们可以使用上面两个方法中的任意一个，只是每次改变偏移量而已。例如，我们每次绘制层时，可以调用函数CGContextTranslateCTM来改变坐标系统的原点。</p>
+
+<p>Figure 12-4  Drawing a layer repeatedly</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rect_star_pattern.gif" alt="image" /></p>
+
+<pre><code>注意：我们不必要将层绘制到初始层所使用的图形上下文中。然而，如果我们将层绘制到其它图形上下文中，原始图形上下文的所有限制都会反映到我们的绘图中。
+</code></pre>
+
+<h2>例子：使用多个CGLayer对象来绘制旗子</h2>
+
+<p>这一节演示了如何使用CGLayer对象来在屏幕上绘制图12-5中的旗子。首先我们会看到如何将旗子分解成简单的绘制单元，然后会看到要完成这些任务的代码。</p>
+
+<p>Figure 12-5  The result of using layers to draw the United States flag</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/us_flag.gif" alt="image" /></p>
+
+<p>从上面可以看出，旗子主要分三部分：</p>
+
+<ol>
+<li>红色条纹和白色条纹的模式。我们可以将这个模式分解为一个单一的红色条纹，因为对于屏幕绘制来说，我们可以假设其背景颜色为白色。我们创建一个红色矩形，然后以变化的偏移量来重复绘制这个矩形，以创建美国国旗上的七条红色条纹。我们将红色矩形绘制到一个层，然后将其绘制到屏幕上七次。</li>
+<li>一个蓝色矩形。我们只需要一个蓝色矩形，所以没有必要使用层。当绘制蓝色矩形时，直接将其绘制到屏幕上。</li>
+<li>50个白色星星的模式。与红色条纹一下，可以使用层来绘制星星。我们创建星星边框的一个路径，然后使用白条来填充。将一个星星绘制到层，然后重复50次绘制这个层，每次绘制时适当调整偏移量。</li>
+</ol>
+
+
+<p>代码清单12-2完成了对图12-5的绘制。myDrawFlag例程在一个Cocoa程序中调用。这个程序传递一个window图形上下文和一个与图形上下文相关的视图的大小。</p>
+
+<p>Listing 12-1  Code that uses layers to draw a flag</p>
+
+<pre><code>void myDrawFlag (CGContextRef context, CGRect* contextRect)
+{
+    int          i, j,
+                 num_six_star_rows = 5,
+                 num_five_star_rows = 4;
+    CGFloat      start_x = 5.0,
+                 start_y = 108.0,
+                 red_stripe_spacing = 34.0,
+                 h_spacing = 26.0,
+                 v_spacing = 22.0;
+    CGContextRef myLayerContext1,
+                 myLayerContext2;
+    CGLayerRef   stripeLayer,
+                 starLayer;
+    CGRect       myBoundingBox,
+                 stripeRect,
+                 starField;
+ // ***** Setting up the primitives *****
+    CGPoint point1 = {5, 5}, point2 = {10, 15}, point3 = {10, 15}, point4 = {15, 5};
+    CGPoint point5 = {15, 5}, point6 = {2.5, 11}, point7 = {2.5, 11}, point8 = {16.5, 11};
+    CGPoint point9 = {16.5, 11}, point10 = {5, 5};
+    const CGPoint myStarPoints[] = {point1, point2,
+                                    point3, point4,
+                                    point5, point6,
+                                    point7, point8,
+                                    point9, point10};
+
+    stripeRect  = CGRectMake (0, 0, 400, 17); // stripe
+    starField  =  CGRectMake (0, 102, 160, 119); // star field
+
+    myBoundingBox = CGRectMake (0, 0, contextRect-&gt;size.width, 
+                                      contextRect-&gt;size.height);
+
+     // ***** Creating layers and drawing to them *****
+    stripeLayer = CGLayerCreateWithContext (context, 
+                            stripeRect.size, NULL);
+    myLayerContext1 = CGLayerGetContext (stripeLayer);
+
+    CGContextSetRGBFillColor (myLayerContext1, 1, 0 , 0, 1);
+    CGContextFillRect (myLayerContext1, stripeRect);
+
+    starLayer = CGLayerCreateWithContext (context,
+                            starField.size, NULL);
+    myLayerContext2 = CGLayerGetContext (starLayer);
+    CGContextSetRGBFillColor (myLayerContext2, 1.0, 1.0, 1.0, 1);
+    CGContextAddLines (myLayerContext2, myStarPoints, 10);
+    CGContextFillPath (myLayerContext2);    
+
+     // ***** Drawing to the window graphics context *****
+    CGContextSaveGState(context);    
+    for (i=0; i&lt; 7;  i++)   
+    {
+        CGContextDrawLayerAtPoint (context, CGPointZero, stripeLayer);
+        CGContextTranslateCTM (context, 0.0, red_stripe_spacing);
+    }
+    CGContextRestoreGState(context);
+
+    CGContextSetRGBFillColor (context, 0, 0, 0.329, 1.0);
+    CGContextFillRect (context, starField);
+
+    CGContextSaveGState (context);              
+    CGContextTranslateCTM (context, start_x, start_y);      
+    for (j=0; j&lt; num_six_star_rows;  j++)   
+    {
+        for (i=0; i&lt; 6;  i++)
+        {
+            CGContextDrawLayerAtPoint (context,CGPointZero,
+                                            starLayer);
+            CGContextTranslateCTM (context, h_spacing, 0);
+        }
+        CGContextTranslateCTM (context, (-i*h_spacing), v_spacing); 
+    }
+    CGContextRestoreGState(context);
+
+    CGContextSaveGState(context);
+    CGContextTranslateCTM (context, start_x + h_spacing/2, 
+                                 start_y + v_spacing/2);
+    for (j=0; j&lt; num_five_star_rows;  j++) 
+    {
+        for (i=0; i&lt; 5;  i++)
+        {
+        CGContextDrawLayerAtPoint (context, CGPointZero,
+                            starLayer);
+            CGContextTranslateCTM (context, h_spacing, 0);
+        }
+        CGContextTranslateCTM (context, (-i*h_spacing), v_spacing);
+    }
+    CGContextRestoreGState(context);
+
+    CGLayerRelease(stripeLayer);
+    CGLayerRelease(starLayer);        
+}
+</code></pre>
+
+<p>在此不再翻译对代码的注释，请各位看官查看文档原文<a href="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/dq_layers/dq_layers.html#//apple_ref/doc/uid/TP30001066-CH219-TPXREF101">Core Graphics Layer Drawing</a>。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Quartz 2D编程指南之十一：位图与图像遮罩]]></title>
@@ -5130,265 +5551,6 @@ performActivityWithOptions:reason:usingBlock:
 <li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/NSFastEnumeration_protocol/index.html#//apple_ref/occ/intf/NSFastEnumeration">NSFastEnumeration Protocol Reference</a></li>
 <li><a href="http://www.ituring.com.cn/article/details/1348">Objective-C——在Cocoa Touch框架中使用迭代器模式</a></li>
 <li><a href="http://blog.csdn.net/amdbenq/article/details/7862718">快速枚举</a></li>
-</ol>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[instancetype]]></title>
-    <link href="http://southpeak.github.io/blog/2014/10/19/instancetype/"/>
-    <updated>2014-10-19T00:26:03+08:00</updated>
-    <id>http://southpeak.github.io/blog/2014/10/19/instancetype</id>
-    <content type="html"><![CDATA[<p>注：原文由Mattt Thompson发表于nshipster：<a href="http://nshipster.com/instancetype/">instancetype</a>。<strong>文章是2012年写的，所以有些内容现在已不适用。</strong></p>
-
-<p>在Objective-C中，约定(conventions)不仅仅是编码最佳实践的问题，同时对编译器来说，也是一种隐式说明。</p>
-
-<p>例如，alloc和init两个方法都返回id类型，而在Xcode中，编译器会对它们进行类型检查。这是怎么做到的呢？</p>
-
-<p>在Cocoa中，有一个这样的约定，命名为alloc/init的方法总是返回接收者类的实例。这些方法有一个相关的返回类型。</p>
-
-<p>而类的构造方法(类方法)，虽然他们都是返回id类型，但没有从类型检查中获得好处，因为他们不遵循命名约定。</p>
-
-<p>我们可以试试以下代码：</p>
-
-<pre><code>[[[NSArray alloc] init] mediaPlaybackAllowsAirPlay]; // 报错： "No visible @interface for `NSArray` declares the selector `mediaPlaybackAllowsAirPlay`"
-
-[[NSArray array] mediaPlaybackAllowsAirPlay]; // (No error) 注：这个方法调用只在老的编译器上成立，新的编译器会报相同的错误。
-</code></pre>
-
-<p>由于alloc和init遵循返回相关结果类型的约定，所以会对NSArray执行类型检查。然而等价的类构造方法array则不遵循这一约定，只解释为id类型。</p>
-
-<p>id类型在不需要确保类型安全时非常有用，但一旦需要时，就无法处理了。</p>
-
-<p>而另一种方法，即显示声明返回类型(如前面例子中的(NSArray *))稍微改善了一些，但写起来有点麻烦，而且在继承体系中表现得不是很好。</p>
-
-<p>这时编译器就需要去解决这种针对Objective-C类型系统的边界情况了:</p>
-
-<p>instancetype是一个上下文关键字，可用在返回类型中以表示方法返回一个相关的结果类型，如：</p>
-
-<pre><code>@interface Person
-+ (instancetype)personWithName:(NSString *)name;
-@end
-</code></pre>
-
-<p>使用instancetype，编译器可以正确地知道personWithName:的返回结果是一个Person实例。</p>
-
-<p>我们现在看Foundation中的类构造器，可以发现大部分已经开始使用了instancetype了。新的API，如UICollectionViewLayoutAttributes，都是使用instancetype了。</p>
-
-<p><em>注：instancetype与id不同的是，它只能用在方法声明的返回值中。</em></p>
-
-<h4>更进一步的启示</h4>
-
-<p>语言特性是特别有趣的，因为它不清楚在软件设计的更高层次方面会带来什么样的影响。</p>
-
-<p>虽然instancetype看上去非常一般，只是对编译器有用，但也可能被用于一些更聪明的目的。</p>
-
-<p>Jonathan Sterling的文章<a href="http://www.jonmsterling.com/posts/2012-02-05-typed-collections-with-self-types-in-objective-c.html">this quite interesting article</a>，详细描述了instancetype如何被用于编码静态类型集合，而不需要使用泛型：</p>
-
-<pre><code>NSURL &lt;MapCollection&gt; *sites = (id)[NSURL mapCollection];
-[sites put:[NSURL URLWithString:@"http://www.jonmsterling.com/"]
-        at:@"jon"];
-[sites put:[NSURL URLWithString:@"http://www.nshipster.com/"]
-        at:@"nshipster"];
-
-NSURL *jonsSite = [sites at:@"jon"]; // =&gt; http://www.jonmsterling.com/
-</code></pre>
-
-<p>静态类型集合使得API更有表现力，这样开发者将不再需要去确定集合中的参数可以使用使用类型的对象了。</p>
-
-<p>不管这会不会成为Objective-C公认的约定，诸如instancetype这样一个低层特性可用于改变语言的形态已是非常棒的一件事了。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[OSAtomic原子操作]]></title>
-    <link href="http://southpeak.github.io/blog/2014/10/17/osatomicyuan-zi-cao-zuo/"/>
-    <updated>2014-10-17T10:56:00+08:00</updated>
-    <id>http://southpeak.github.io/blog/2014/10/17/osatomicyuan-zi-cao-zuo</id>
-    <content type="html"><![CDATA[<p>并发编程一个主要问题就是如何同步数据。同步数据的方式有很多种，这里我们介绍一下libkern/OSAtomic.h。这个头文件包含是大量关于原子操作和同步操作的函数，如果要对数据进行同步操作，这里面的函数可以作为我们的首选项。不同平台这些函数的实现是自定义的。另外，它们是线程安全的。</p>
-
-<p>需要注意的是，传递给这些函数的所有地址都必须是“自然对齐”的，例如int32_t * 指针必须是32位对齐的(地址的低位2个bit为0)，int64_t * 指针必须是64位对齐的(低3位为0)。</p>
-
-<p>这些原子函数的一些版本整合了内存屏障(memory barriers)，而另一些则没有。在诸如PPC这样的弱有序(weakly-ordered)架构中，Barriers严格限制了内存访问顺序。所有出现在barriers之前的加载和存储操作完成后，才会运行barriers之后的加载和存储操作。</p>
-
-<p>在单处理器系统中，barriers操作通常是一个空操作。在多处理器系统中，barriers在某些平台上可能是相当昂贵的操作，如PPC。</p>
-
-<p>大多数代码都应该使用barrier函数来确保在线程间共享的内存是正确同步的。例如，如果我们想要初始化一个共享的数据结构，然后自动增加某个变量值来标识初始化操作完成，则我们必须使用OSAtomicIncrement32Barrier来确保数据结构的存储操作在变量自动增加前完成。</p>
-
-<p>同样的，该数据结构的消费者也必须使用OSAtomicIncrement32Barrier，以确保在自动递增变量值之后再去加载这些数据。另一方面，如果我们只是简单地递增一个全局计数器，那么使用OSAtomicIncrement32会更安全且可能更快。</p>
-
-<p>如果不能确保我们使用的是哪个版本，则使用barrier变量以保证是安全的。</p>
-
-<p>另外，自旋锁和队列操作总是包含一个barrier。</p>
-
-<p>这个头文件中的函数主要可以分为以下几类</p>
-
-<h2>内存屏障(Memory barriers)</h2>
-
-<p>内存屏障的概念如上所述，它是一种屏障和指令类，可以让CPU或编译器强制将barrier之前和之后的内存操作分开。CPU采用了一些可能导致乱序执行的性能优化。在单个线程的执行中，内存操作的顺序一般是悄无声息的，但是在并发编程和设备驱动程序中就可能出现一些不可预知的行为，除非我们小心地去控制。排序约束的特性是依赖于硬件的，并由架构的内存顺序模型来定义。一些架构定义了多种barrier来执行不同的顺序约束。</p>
-
-<p>OSMemoryBarrier()函数就是用来设置内存屏障，它即可以用于读操作，也可以用于写操作。</p>
-
-<p>示例代码：</p>
-
-<pre><code>// 代码来自ReactiveCocoa:RACDisposable类
-
-- (id)initWithBlock:(void (^)(void))block {
-    NSCParameterAssert(block != nil);
-
-    self = [super init];
-    if (self == nil) return nil;
-
-    _disposeBlock = (void *)CFBridgingRetain([block copy]);
-    OSMemoryBarrier();
-
-    return self;
-}
-</code></pre>
-
-<h2>自旋锁(Spinlocks)</h2>
-
-<p>自旋锁是在多处理器系统(SMP)上为保护一段关键代码的执行或者关键数据的一种保护机制，是实现synchronization的一种手段。</p>
-
-<p>libkern/OSAtomic.h中包含了三个关于自旋锁的函数：OSSpinLockLock, OSSpinLockTry, OSSpinLockUnlock</p>
-
-<p>示例代码：</p>
-
-<pre><code>// 代码来自ReactiveCocoa:RACCompoundDisposable类
-
-- (void)dispose {
-#if RACCompoundDisposableInlineCount
-    RACDisposable *inlineCopy[RACCompoundDisposableInlineCount];
-#endif
-
-    CFArrayRef remainingDisposables = NULL;
-
-    OSSpinLockLock(&amp;_spinLock);
-    {
-        _disposed = YES;
-
-#if RACCompoundDisposableInlineCount
-        for (unsigned i = 0; i &lt; RACCompoundDisposableInlineCount; i++) {
-            inlineCopy[i] = _inlineDisposables[i];
-            _inlineDisposables[i] = nil;
-        }
-#endif
-
-        remainingDisposables = _disposables;
-        _disposables = NULL;
-    }
-    OSSpinLockUnlock(&amp;_spinLock);
-
-#if RACCompoundDisposableInlineCount
-    // Dispose outside of the lock in case the compound disposable is used
-    // recursively.
-    for (unsigned i = 0; i &lt; RACCompoundDisposableInlineCount; i++) {
-        [inlineCopy[i] dispose];
-    }
-#endif
-
-    if (remainingDisposables == NULL) return;
-
-    CFIndex count = CFArrayGetCount(remainingDisposables);
-    CFArrayApplyFunction(remainingDisposables, CFRangeMake(0, count), &amp;disposeEach, NULL);
-    CFRelease(remainingDisposables);
-}
-</code></pre>
-
-<h2>原子队列操作</h2>
-
-<p>队列操作主要包含两类：</p>
-
-<ol>
-<li>不加锁的FIFO入队和出队原子操作，包含OSAtomicFifoDequeue和OSAtomicFifoEnqueue两个函数</li>
-<li>不加锁的LIFO入队和出队原子操作，包含OSAtomicDequeue和OSAtomicEnqueue两个函数。这两个函数是线程安全的，对有潜在精确要求的代码来说，这会是强大的构建方式。</li>
-</ol>
-
-
-<h2>比较和交换</h2>
-
-<p>这组函数可以细分为三组函数：</p>
-
-<ol>
-<li>OSAtomicCompareAndSwap**[Barrier](type __oldValue, type __newValue, volatile type *__theValue)：这组函数用于比较__oldValue是否与__theValue指针指向的内存位置的值匹配，如果匹配，则将__newValue的值存储到__theValue指向的内存位置。可以根据需要使用barrier版本。</li>
-<li>OSAtomicTestAndClear/OSAtomicTestAndClearBarrier( uint32_t __n, volatile void *__theAddress )：这组函数用于测试__theAddress指向的值中由__n指定的bit位，如果该位未被清除，则清除它。需要注意的是最低bit位应该是1，而不是0。对于一个64-bit的值来说，如果要清除最高位的值，则__n应该是64。</li>
-<li>OSAtomicTestAndSet/OSAtomicTestAndSetBarrier(uint32_t __n, volatile void *__theAddress)：与OSAtomicTestAndClear相反，这组函数测试值后，如果指定位没有设置，则设置它。</li>
-</ol>
-
-
-<p>示例代码：</p>
-
-<pre><code>void * sharedBuffer(void)
-{
-    static void * buffer;
-    if (buffer == NULL) {
-        void * newBuffer = calloc(1, 1024);
-        if (!OSAtomicCompareAndSwapPtrBarrier(NULL, newBuffer, &amp;buffer)) {
-            free(newBuffer);
-        }
-    }
-    return buffer;
-}
-</code></pre>
-
-<p>上述代码的作用是如果没有缓冲区，我们将创建一个newBuffer，然后将其写到buffer中。</p>
-
-<h2>布尔操作(AND, OR, XOR)</h2>
-
-<p>这组函数可根据以下两个规则来分类：</p>
-
-<ol>
-<li>是否使用Barrier</li>
-<li>返回值是原始值还是操作完成后的值</li>
-</ol>
-
-
-<p>以And为例，有4个函数：OSAtomicAnd32, OSAtomicAnd32Barrier, OSAtomicAnd32Orig, OSAtomicAnd32OrigBarrier。每个函数均带有两个参数：__theMask(uint32_t)和__theValue(volatile uint32_t *)。函数将__theMask与__theValue指向的值做AND操作。</p>
-
-<p>类似，还有OR操作和XOR操作。</p>
-
-<h2>数学操作</h2>
-
-<p>这组函数主要包括：</p>
-
-<ol>
-<li>加操作：OSAtomicAdd**, OSAtomicAdd**Barrier</li>
-<li>递减操作：OSAtomicDecrement**, OSAtomicDecrement**Barrier</li>
-<li>递增操作：OSAtomicIncrement**, OSAtomicIncrement**Barrier</li>
-</ol>
-
-
-<p>示例代码：</p>
-
-<pre><code>// 代码摘自ReactiveCocoa:RACDynamicSequence
-
-- (void)dealloc {
-    static volatile int32_t directDeallocCount = 0;
-
-    if (OSAtomicIncrement32(&amp;directDeallocCount) &gt;= DEALLOC_OVERFLOW_GUARD) {
-        OSAtomicAdd32(-DEALLOC_OVERFLOW_GUARD, &amp;directDeallocCount);
-
-        // Put this sequence's tail onto the autorelease pool so we stop
-        // recursing.
-        __autoreleasing RACSequence *tail __attribute__((unused)) = _tail;
-    }
-
-    _tail = nil;
-}
-</code></pre>
-
-<h2>小结</h2>
-
-<p>相较于@synchronized，OSAtomic原子操作更趋于数据的底层，从更深层次来对单例进行保护。同时，它没有阻断其它线程对函数的访问。</p>
-
-<h2>参考</h2>
-
-<ol>
-<li><a href="https://developer.apple.com/library/mac/documentation/System/Reference/OSAtomic_header_reference/Reference/reference.html">OSAtomic.h User-Space Reference</a></li>
-<li><a href="http://blog.csdn.net/wzb56_earl/article/details/6634622">Memory barrier</a></li>
-<li><a href="http://www.cocoachina.com/industry/20130821/6842.html">Objc的底层并发API</a></li>
-<li><a href="http://blog.csdn.net/tuxiangqi/article/details/8076972">OSATOMIC与synchronized加锁的对比</a></li>
 </ol>
 
 ]]></content>

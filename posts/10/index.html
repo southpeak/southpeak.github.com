@@ -11,7 +11,7 @@
   <meta name="baidu-site-verification" content="HoscFhWICI" />
 
   
-  <meta name="description" content="Swift的Protocol(协议)与Objective-C的协议一样，用于定义一系列的特定任务和功能的集合。Protocol自身并不提供这些任务的实现，只是描述实现看起来应该是什么样的。类、结构体或枚举可以实现一个Protocol，并提供Protocol中任务和功能的具体实现。 &hellip;">
+  <meta name="description" content="这篇是两年前在CocoaChina上写的(德鲁伊)，现在把它归集到这边来。大家也可以查看原文。 Cover flow是苹果首创的将多首歌曲的封面以3D界面的形式显示出来的方式。如下图所示： 从图中可以看到，显示在中间的图片为目标图片，两侧的图片在y轴都旋转了一定的角度， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -68,6 +68,454 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/07/05/cover-flow/">Cover flow基本原理及Tapku实现方法</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-07-05T17:51:43+08:00" pubdate data-updated="true">Jul 5<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/07/05/cover-flow/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>这篇是两年前在CocoaChina上写的(德鲁伊)，现在把它归集到这边来。大家也可以查看<a href="http://www.cocoachina.com/bbs/read.php?tid=75699">原文</a>。</p>
+
+<p>Cover flow是苹果首创的将多首歌曲的封面以3D界面的形式显示出来的方式。如下图所示：</p>
+
+<p><img src="http://cc.cocimg.com/bbs/attachment/Fid_6/6_38018_be3432a30663e7e.png" alt="image" /></p>
+
+<p>从图中可以看到，显示在中间的图片为目标图片，两侧的图片在y轴都旋转了一定的角度，并且每两张图片之间都保持了一定的距离。在交互（如点击两侧的图片）的时候，滑动到中间的图片会逐渐放大，旋转的角度由原来的旋转角度a变为0，且位置上移动中间，变成新的目标图片；同时原处于中间位置的图片则缩小、旋转一定的角度、位置偏移到一侧。所以在整个过程中，主要有两个属性发生了变化：角度与位置(缩放只是视觉上的，并没有进行缩放操作)。</p>
+
+<p>在每次点击一张图片时，如果这张图片在目标图片的左边，则所有的图片都会向右移动，同时做相应的旋转；相反，点击目标图片右侧的图片时，所有图片都会向左移动并做相应的旋转。</p>
+
+<p>从如上描述的效果，可以看出在Cover Flow中最主要的的操作有两个：3D仿射变换与动画。仿射变换实质上是一种线性变换，通常主要用到的仿射变换有平移(Translation)、旋转(Rotation)、缩放(Scale)。
+对于这两种操作，iOS都提供了非常简便的接口来实现。接下来我们便以tapku的实现方法为例，来说明实现Cover Flow的基本过程。</p>
+
+<h2>一、图片的布局</h2>
+
+<p>从效果图可以看出，图片是按一条直接排列，图片与图片之间有一定的间距，目标图片是正向显示，两侧的图片则按一定的角度进行了旋转，与目标图片形成一定的角度。同时我们还能看到每个图片都有一个倒影，并且这个倒影是渐变的，由上而下逐渐透明度逐渐减小。</p>
+
+<h4>1、 Cover Flow单元的定义</h4>
+
+<p>在tapku中，每一个图片附属于一个视图(TKCoverflowCoverView)，这个视图相当于UITableViewCell，它包含了三个要素：图片(imageView)，倒影图片(reflected)，渐变层(gradientLayer)。渐变层覆盖于倒影图片上，且大小位置一致。</p>
+
+<p>TKCoverflowCoverView的声明及布局代码如下所示：</p>
+
+<pre><code>@interface TKCoverflowCoverView : UIView {
+    float baseline;
+    UIImageView *imageView;
+    UIImageView *reflected;
+    CAGradientLayer *gradientLayer;
+}
+@end
+
+- (id)initWithFrame:(CGRect)frame {
+    self = [super initWithFrame:frame];
+    if (self) {
+        self.opaque = NO;
+        self.backgroundColor = [UIColor clearColor];
+        self.layer.anchorPoint = CGPointMake(0.5, 0.5);
+
+        imageView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, self.frame.size.width, self.frame.size.width)];
+        [self addSubview:imageView];
+        reflected = [[UIImageView alloc] initWithFrame:CGRectMake(0, self.frame.size.width, self.frame.size.width, self.frame.size.width)];
+        reflected.transform = CGAffineTransformScale(reflected.transform, 1, -1);
+        [self addSubview:reflected];
+
+        gradientLayer = [CAGradientLayer layer];
+        gradientLayer.colors = [NSArray arrayWithObjects:(id)[UIColor colorWithWhite:0 alpha:0.5].CGColor,(id)[UIColor colorWithWhite:0 alpha:1].CGColor,nil];
+        gradientLayer.startPoint = CGPointMake(0, 0);
+        gradientLayer.endPoint = CGPointMake(0, 0.4);
+        gradientLayer.frame = CGRectMake(0, self.frame.size.width, self.frame.size.width, self.frame.size.width);
+        [self.layer addSublayer:gradientLayer];
+    }
+
+    return self;
+}
+</code></pre>
+
+<p>注意：此次将视图的锚点(anchorPoint属性)设置为(0.5, 0.5)，即视图的中心点，目的是让视图以中心点为基点进行旋转。</p>
+
+<p>在进行仿射变换时，视图作为一个整体进行变换。</p>
+
+<h4>2、图片的布局</h4>
+
+<p>tapku中，图片的布局与交互是在TKCoverflowView类中完成的。类TKCoverflowView继承自UIScrollView，相当于是TableView。</p>
+
+<p>该类中定义是两个仿射变量：</p>
+
+<pre><code>CATransform3D leftTransform, rightTransform
+</code></pre>
+
+<p>这两个变量分别设置了两侧图片的仿射变换，具体的设置方法为</p>
+
+<pre><code>- (void) setupTransforms{
+    leftTransform = CATransform3DMakeRotation(coverAngle, 0, 1, 0);
+    leftTransform = CATransform3DConcat(leftTransform,CATransform3DMakeTranslation(-spaceFromCurrent, 0, -300));
+    rightTransform = CATransform3DMakeRotation(-coverAngle, 0, 1, 0);
+    rightTransform = CATransform3DConcat(rightTransform,CATransform3DMakeTranslation(spaceFromCurrent, 0, -300));
+}
+</code></pre>
+
+<p>其中coverAngle为旋转的角度。对每个仿射变量同时设置了旋转也平移变换。</p>
+
+<p>Cover Flow单元是存储在一个数组中：
+复制代码
+NSMutableArray *coverViews;</p>
+
+<p>初始化时设置数组的大小，并存入空对象。在后期获取某个索引位置的单元时，如果该单元为空，则生成一个新的TKCoverflowCoverView并放入相应位置。</p>
+
+<pre><code>if([coverViews objectAtIndex:cnt] == [NSNull null]){
+    TKCoverflowCoverView *cover = [dataSource coverflowView:self coverAtIndex:cnt];
+    [coverViews replaceObjectAtIndex:cnt withObject:cover];
+    ......
+}
+</code></pre>
+
+<p>每个Cover Flow单元的位置计算如下</p>
+
+<pre><code>CGRect r = cover.frame;
+r.origin.y = currentSize.height / 2 - (coverSize.height/2) - (coverSize.height/16);
+r.origin.x = (currentSize.width/2 - (coverSize.width/ 2)) + (coverSpacing) * cnt;
+cover.frame = r;
+</code></pre>
+
+<p>其中currentSize,coverSize,coverSpacing都是固定值。从中可以看出所有单元的y值都是一样的，而x值则与其在数组中的索引值相关，索引越大，x值也越大。而这就涉及我们之后的一个问题。一会再讲。
+假定目标图片的索引为currentIndex，则目标图片两侧的仿射属性设置如下：</p>
+
+<pre><code>if(cnt &gt; currentIndex){
+    cover.layer.transform = rightTransform;
+}
+else
+    cover.layer.transform = leftTransform;
+</code></pre>
+
+<p>如上即为Cover Flow的基本布局，可以与UITableView比较一下。</p>
+
+<h2>二、交互</h2>
+
+<p>Cover Flow的基本交互是点击两侧的图片，则被点击的图片成为新的目标图片并移动中屏幕中间，而其它图片一起移动，在这个过程中所需要做的就两件事：旋转与平移。</p>
+
+<p>方法很简单：在动画块中重新设置Cover Flow单元的transform属性，这样就可以缓动实现这个动画的过程。实际上只有新旧目标图片及中间的图片需要做这种变换，其余图片的transform属性都是不变的。</p>
+
+<pre><code>float speed = 0.3;
+[UIView beginAnimations:string context:nil];
+[UIView setAnimationDuration:speed];
+[UIView setAnimationCurve:UIViewAnimationCurveEaseOut];
+[UIView setAnimationBeginsFromCurrentState:YES];
+[UIView setAnimationDelegate:self];
+[UIView setAnimationDidStopSelector:@selector(animationDidStop:finished:context:)]; 
+for(UIView *v in views){
+int i = [coverViews indexOfObject:v];
+    if(i &lt; index) v.layer.transform = leftTransform;
+    else if(i &gt; index) v.layer.transform = rightTransform;
+    else v.layer.transform = CATransform3DIdentity;
+}
+[UIView commitAnimations];
+</code></pre>
+
+<p>但这在做的只是旋转了Cover Flow的内容，并没有对Cover Flow进行水平平移，Cover Flow水平位置已由其origin.x值固定。那么水平上的平移是如何实现的呢，我们看下面的代码：</p>
+
+<pre><code>- (void) snapToAlbum:(BOOL)animated{
+    UIView *v = [coverViews objectAtIndex:currentIndex];
+    if((NSObject*)v!=[NSNull null]){
+        [self setContentOffset:CGPointMake(v.center.x - (currentSize.width/2), 0) animated:animated];
+    }
+    else
+    {  
+        [self setContentOffset:CGPointMake(coverSpacing*currentIndex, 0) animated:animated];
+    }
+}
+</code></pre>
+
+<p>其所做的就是以目标图片为中心，整体平移TKCoverflowView视图。</p>
+
+<h2>三、总结</h2>
+
+<p>由上可以看出，Cover Flow特效的原理很简单：对新旧目标图片及中间的图片以动画的形式做仿射变换。至于仿射变换如何处理，有不同的方法。tapku所实现的方法可以说相对简单灵活。</p>
+
+<p>Android, Flash都有类似的Cover Flow特效实现方法，有兴趣的童鞋可以参考一下。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/07/02/ios-swift-cpointer/">Swift中C指针的基本使用方法</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-07-02T20:51:30+08:00" pubdate data-updated="true">Jul 2<sup>nd</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/07/02/ios-swift-cpointer/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Swift尽可能避免让我们直接去访问指针。但当我们需要直接访问内存时，我们可以使用Swift提供的几种指针类型。在下面几个表中列出了各种情况下C类型指针语法与Swift语法对应关系，其中Type作为实际类型的占位符</p>
+
+<p>对于函数参数，有以下对应关系</p>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th>    C语法    </th>
+<th>   Swift语法   </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td> const void * </td>
+<td>  CConstVoidPointer |</td>
+</tr>
+<tr>
+<td></td>
+<td>  void *  </td>
+<td>  CMutableVoidPointer |</td>
+</tr>
+<tr>
+<td></td>
+<td>const Type * </td>
+<td> CConstPointer<Type> |</td>
+</tr>
+<tr>
+<td></td>
+<td>Type *</td>
+<td>CMutablePointer<Type>|</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>对于返回值，变量，二级以上的指针参数，有以下对应关系</p>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th>    C语法    </th>
+<th>   Swift语法   </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td>void * </td>
+<td> COpaquePointer|</td>
+</tr>
+<tr>
+<td></td>
+<td>Type * </td>
+<td> UnsafePointer<Type>|</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>对于类类型，有以下对应关系</p>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th>    C语法    </th>
+<th>   Swift语法   </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td>Type * const * </td>
+<td> CConstPointer<Type> |</td>
+</tr>
+<tr>
+<td></td>
+<td>Type * __strong * </td>
+<td> CMutablePointer<Type> |</td>
+</tr>
+<tr>
+<td></td>
+<td>Type ** </td>
+<td> AutoreleasingUnsafePointer<Type>|</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>下面简单介绍一下这几种类型的指针</p>
+
+<h2>C可变指针</h2>
+
+<p>当我们声明一个包含CMutablePointer<Type>参数的指针时，可以接收以下类型的值</p>
+
+<ol>
+<li>nil, 作为空指针传入</li>
+<li>一个CMutablePointer<Type>值</li>
+<li>一个in-out表达式，它的操作数是Type类型的左值。该表达式作为左值地址传入</li>
+<li>一个in-out Type[]值，它作为数组的首地址指针传入，且在调用时扩展了数据的生命周期</li>
+</ol>
+
+
+<p>假如我们声明了如下一个函数：</p>
+
+<pre><code>func takesAMutablePointer(x: CMutablePointer&lt;Float&gt;) { /*...*/ }
+</code></pre>
+
+<p>那么我们可以用以下任何一种方式来调用</p>
+
+<pre><code>var x: Float = 0.0
+var p: CMutablePointer&lt;Float&gt; = &amp;x
+var a: Float[] = [1.0, 2.0, 3.0]
+
+takesAMutablePointer(nil)
+takesAMutablePointer(p)
+takesAMutablePointer(&amp;x)
+takesAMutablePointer(&amp;a)
+</code></pre>
+
+<p>当声明一个包含CMutableVoidPointer参数的函数时，它可以接收与CMutablePointer<Type>相同的形参，其中Type为任意类型。需要注意的是如果直接传递CMutablePointer<Type>，目前的编译器会直接报编译错误</p>
+
+<pre><code>func takesAMutableVoidPointer(x: CMutableVoidPointer) { /* ... */ }
+
+var x: Float = 0.0, y: Int = 0
+var p: CMutablePointer&lt;Float&gt; = &amp;x, q: CMutablePointer&lt;Int&gt; = &amp;y
+var a: Float[] = [1.0, 2.0, 3.0], b: Int[] = [1, 2, 3]
+
+takesAMutableVoidPointer(nil)
+//takesAMutableVoidPointer(p)   编辑错误:CMutablePointer&lt;Float&gt; is not convertible to CMutableVoidPointer
+//takesAMutableVoidPointer(q)
+takesAMutableVoidPointer(&amp;x)
+takesAMutableVoidPointer(&amp;y)
+takesAMutableVoidPointer(&amp;a)
+takesAMutableVoidPointer(&amp;b)
+</code></pre>
+
+<h2>C常量指针</h2>
+
+<p>当我们声明一个带有CConstPointer<Type>参数的函数时，可以接收以下类型的值：</p>
+
+<ol>
+<li>nil, 作为空指针传入</li>
+<li>一个CMutablePointer<Type>, CMutableVoidPointer, CConstPointer<Type>, CConstVoidPointer, 或者AutoreleasingUnsafePointer<Type>类型的值，如果需要则会转换成CConstPointer<Type></li>
+<li>一个in-out表达式，它的操作数是Type类型的左值。该表达式作为左值地址传入</li>
+<li>一个in-out Type[]值，它作为数组的首地址指针传入，且在调用时扩展了数据的生命周期</li>
+</ol>
+
+
+<p>假如我们声明如下函数:</p>
+
+<pre><code>func takesAConstPointer(x: CConstPointer&lt;Float&gt;) { /*...*/ }
+</code></pre>
+
+<p>那么我们可以用以下任何一种方式来调用</p>
+
+<pre><code>var x: Float = 0.0
+var p: CConstPointer&lt;Float&gt; = nil
+
+takesAConstPointer(nil)
+takesAConstPointer(p)
+takesAConstPointer(&amp;x)
+takesAConstPointer([1.0, 2.0, 3.0])
+</code></pre>
+
+<p>当声明一个包含CConstVoidPointer参数的函数时，它可以接收与CConstPointer<Type>相同的形参，其中Type为任意类型。</p>
+
+<pre><code>func takesAConstVoidPointer(x: CConstVoidPointer) { /* ... */ }
+
+var x: Float = 0.0, y: Int = 0
+var p:CConstPointer&lt;Float&gt; = nil, q: CConstPointer&lt;Int&gt; = nil
+
+takesAConstVoidPointer(nil)
+//takesAConstVoidPointer(p)
+//takesAConstVoidPointer(q)
+takesAConstVoidPointer(&amp;x)
+takesAConstVoidPointer(&amp;y)
+takesAConstVoidPointer([1.0, 2.0, 3.0])
+takesAConstVoidPointer([1, 2, 3])
+</code></pre>
+
+<h2>AutoreleasingUnsafePointer</h2>
+
+<p>当我们声明一个带有AutoreleasingUnsafePointer参数的函数时，可以接收以下类型的值：</p>
+
+<ol>
+<li>nil, 作为空指针传入</li>
+<li>一个AutoreleasingUnsafePointer<Type>值</li>
+<li>一个in-out表达式，其操作数是临时非所属(nonowning)缓冲区，存储了原始值的拷贝。缓冲区的地址被传递给调用函数，且在返回时，缓冲区的值被加载(loaded)、保留(retained)并重新指派(reassigned)给操作数</li>
+</ol>
+
+
+<p>注意上面清单中不包含数组</p>
+
+<p>如果我们声明了以下函数</p>
+
+<pre><code>func takesAnAutoreleasingUnsafePointer(x: AutoreleasingUnsafePointer&lt;NSDate?&gt;) { /*...*/ }
+</code></pre>
+
+<p>则可以用以下方式来调用</p>
+
+<pre><code>var x: NSDate? = nil
+var p: AutoreleasingUnsafePointer&lt;NSDate?&gt; = nil
+
+takesAnAutoreleasingUnsafePointer(nil)
+takesAnAutoreleasingUnsafePointer(p)
+takesAnAutoreleasingUnsafePointer(&amp;x)
+</code></pre>
+
+<p>最后需要注意的是在Swift中，没有导入C函数指针</p>
+
+<p>参考文档：<a href="https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/BuildingCocoaApps/index.html">Using Swift with Cocoa and Objective-C</a></p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -777,330 +1225,6 @@ println(AudioChannel.maxInputLevelForAllChannels)   // 10
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/06/27/ios-swift-closures-2/">Swift闭包二：循环引用</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-06-27T19:10:38+08:00" pubdate data-updated="true">Jun 27<sup>th</sup>, 2014</time>
-        
-        
-           | <a href="/blog/2014/06/27/ios-swift-closures-2/#comments">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>我们在<a href="http://southpeak.github.io/blog/2014/06/27/ios-swift-closures/">闭包的基础概念</a>中讲到闭包是引用类型的，因此，与Objective-C的block一样，可能导致循环引用的问题。</p>
-
-<h2>问题的产生</h2>
-
-<p>当我们给一个类指定一个闭包属性时，这个类的实例便包含了闭包的一个引用。如果在这个闭包中，又引用了类实例本身，这是闭包便创建了一个指向类实例的强引用，这种情况下，又产生了循环引用。</p>
-
-<p>如代码清单1所示：HTMLElement类定义了一个闭包属性asHTML。在这个闭包中引用了self，即闭包捕获了self，这就意味着闭包维护了一个指向HTMLElement实例的强引用。这样就在两者间创建了一个强引用循环。</p>
-
-<h6>代码清单1：闭包循环引用</h6>
-
-<pre><code>class HTMLElement {
-
-    let name:String
-    let text:String?
-
-    @lazy var asHTML:() -&gt; String = {
-        if let text = self.text {
-            return "&lt;\(self.name)]]&gt;\(self.text)&lt;/\(self.name)&gt;"
-        } else {
-            return "&lt;\(self.name) /&gt;"
-        }
-    }
-
-    init(name:String, text:String? = nil) {
-        self.name = name
-        self.text = text
-    }
-
-    deinit {
-        println("\(name) is being deinitialized")
-    }
-}
-</code></pre>
-
-<h2>解决方案</h2>
-
-<p>我们可以通过“捕获列表”来解决这种循环引用问题。“捕获列表”定义了在闭包内部捕获的引用类型的使用规则。与两个类之间的强引用循环一样，我们声明每一个捕获引用为weak或者unowned引用。选择weak或者unowned依赖于两者之间的关系。</p>
-
-<p>一个“捕获列表项”是一个weak(unowned)—类实例引用对。它们放在[]中，项与项之间使用“,”号隔开。</p>
-
-<p>当闭包和捕获实例总是相互引用，且两者同时释放时，我们将“捕获引用”设置为unowned。如果“捕获引用”可能在某个点被设置成nil，则将其设置为weak。weak引用通常都是optional类型，当引用的实例被释放时，被设置成nil。</p>
-
-<p>在代码清单1中，我们可以用unowned来处理这种循环引用问题。如代码清单2所示：</p>
-
-<h6>代码清单2：unowned引用</h6>
-
-<pre><code>class HTMLElement {
-
-    let name:String
-    let text:String?
-
-    @lazy var asHTML:() -&gt; String = {
-        [unowned self] in
-        if let text = self.text {
-            return "&lt;\(self.name)]]&gt;\(self.text)&lt;/\(self.name)&gt;"
-        } else {
-            return "&lt;\(self.name) /&gt;"
-        }
-    }
-
-    init(name:String, text:String? = nil) {
-        self.name = name
-        self.text = text
-    }
-
-    deinit {
-        println("\(name) is being deinitialized")
-    }
-}
-</code></pre>
-
-<p>在这种情况下，闭包维护了HTMLElement实例的一个unowned引用，而不再是一个强引用。</p>
-
-<p>注：虽然在闭包中多次引用了self，但闭包只会维护HTMLElement实例的一个引用</p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/06/27/ios-swift-closures/">Swift闭包一：闭包基础概念</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-06-27T16:25:56+08:00" pubdate data-updated="true">Jun 27<sup>th</sup>, 2014</time>
-        
-        
-           | <a href="/blog/2014/06/27/ios-swift-closures/#comments">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>熟悉Objective-C的朋友一定知道Objective-C中的block，iOS在6.0后开始大量使用block。而在swift中，也提供了类似的功能：Closures(在Java等语言中翻译为“闭包”)。</p>
-
-<p>Closures是自包含的功能块。它可以捕获和存储其所在上下文的常量和变量的引用。全局函数和嵌套函数其实都是闭包。闭包有以下三种形式：</p>
-
-<ol>
-<li>全局函数：有函数名，但不能获取任何外部值</li>
-<li>嵌套函数：有函数名，同时可以从其上下文中捕获值</li>
-<li>闭包表达式：以一种轻量级的语法定义的未命名闭包，可以从其上下文中捕获值</li>
-</ol>
-
-
-<p>swift对闭包表达式作了一些优化处理，主要包括：</p>
-
-<ol>
-<li>从上下方中推断出参数和返回值</li>
-<li>可以从单一表达式闭包中隐式返回</li>
-<li>速记(Shorthand)参数名</li>
-<li>尾随闭包语法</li>
-</ol>
-
-
-<p>下面会对这几点分别说明</p>
-
-<h2>闭包表达式</h2>
-
-<p>闭包表达式提供了一种更加简洁、专注的方式来实现内嵌函数的功能。闭包表达式的通用格式如下</p>
-
-<pre><code>{(parameters) -&gt; return type in
-    statement   
-}
-</code></pre>
-
-<p>闭包的参数可以是常量、变量、inout、可变参数列表、元组，但是不能提供默认值。返回值可以是通用类型，也可以是元组。闭包实现体位于in关键字后面，该关键字是闭包参数和返回值的声明和实现体的分界。</p>
-
-<h6>代码清单1: 使用sort函数对数组进行排序</h6>
-
-<pre><code>let names = ["Chris", "Alex", "Ewa", "Barry", "Daniella"]
-
-// 方法1：使用普通函数(或内嵌函数)提供排序功能
-func backwards(s1:String, s2:String) -&gt; Bool {
-    return s1 &gt; s2
-}
-
-var reversed = sort(names, backwards)
-
-// 方法2：使用闭包表达式提供排序功能
-reversed = sort(names, {
-        (s1:String, s2:String) -&gt; Bool in
-            return s1 &gt; s2
-    })
-
-// 方法3：类型推断,省略闭包表达式的参数及返回类型
-reversed = sort(names, { s1, s2 in return s1 &gt; s2})
-
-// 方法4：单一表达式：省略return关键字
-reversed = sort(names, { s1, s2 in s1 &gt; s2 })
-
-// 方法5：速记参数名
-reversed = sort(names, { $0 &gt; $1 })
-
-// 方法6：操作符函数
-reversed = sort(names, &gt;)
-</code></pre>
-
-<p>swift标准库提供了sort用来对数据进行排序，它包含两个参数：</p>
-
-<ol>
-<li>待排序的已知类型的数组</li>
-<li>排序函数(闭包)：带有两个类型相同的参数，并返回Bool值来告知第一个参数是显示排在第二个参数之前还是之后。</li>
-</ol>
-
-
-<p>代码清单1提供了几种方式来实现sort的排序函数</p>
-
-<ol>
-<li>方法1：使用普通函数(嵌套函数)，这种方法略显示复杂，且代码不够紧凑</li>
-<li>方法2：内联闭包表达式，参数和返回值都位于大括号内，而不是外部</li>
-<li>方法3：借助于swift强大的类型推断功能，我们甚至可以省略参数和返回值的类型。这样返回箭头->和返回类型都可以省略。在传递闭包给函数时，总是可以推断出参数类型和返回值，所以，我们很少需要明确写出内联闭包的完整格式。</li>
-<li>方法4：如果闭包体只有一行代码，则可以省略retrun关键字，让闭包隐式返回单一表达式的值。</li>
-<li>方法5：速记(Shorthand)参数名：swift为内联闭包提供了速记参数名，可以通过$0, $1, $2等参数名来索引闭包的参数。如果使用这种参数名，则可以直接省略参数列表，而参数的个数和类型可以自动推断出来。in关键字也可以省略</li>
-<li>方法6：更极端的情况是，swift的字符串类型定义了>操作符，该操作符可以看作是带有两个参数的函数，并返回一个Bool值。而这正好符合sort函数的需求，我们可以只是简单的传入一个>，swift可以自动推断出我们想使用的实现。</li>
-</ol>
-
-
-<h2>尾随闭包(Trailing Closures)</h2>
-
-<p>如果将闭包作为函数的最后一个参数，且闭包的实现体很长，则调用函数时可以使用尾随闭包。尾随闭包位于参数列表括号的后面。其格式如下：</p>
-
-<pre><code>someFunctionThatTakesAClosure() {
-    // 尾随闭包实现    
-}
-</code></pre>
-
-<p>因此sort函数同样可以如下实现</p>
-
-<h6>代码清单2: 使用尾随闭包实现sort函数</h6>
-
-<pre><code>// 方法7：尾随闭包
-reversed = sort(names) { $0 &gt; $1 }
-</code></pre>
-
-<p>另外，如果函数只有一个闭包参数，同时将闭包参数实现为尾随闭包，则在调用函数时可以省略参数列表的()，如代码清单3所示：</p>
-
-<h6>代码清单3：函数只有一个闭包参数，同时将闭包参数实现为尾随闭包</h6>
-
-<pre><code>let strings = numbers.map {
-    (var name) -&gt; String in
-    var output = ""
-    while number &gt; 0 {
-        output = digitNames[number % 10]! + output
-        number /= 10
-    }
-
-    return number
-}
-</code></pre>
-
-<h2>获取上下文的值</h2>
-
-<p>和Objective-C的block一样，闭包可以获取定义它的上下文中常量或变量的值，同时可以在闭包体内引用和修改这些常量或变量的值，即使定义这些常量或变量的域已经销毁。</p>
-
-<p>由于内嵌函数也是闭包，因此我们以内嵌函数为例，看看闭包如何获取上下文的常量和变量</p>
-
-<h6>代码清单4：获取上下文值</h6>
-
-<pre><code>func makeIncrementor(amount:Int) -&gt; () -&gt; Int {
-    var runningTotal = 0
-    func incrementor() -&gt; Int {
-        runningTotal += amount
-        return runningTotal
-    }
-
-    return incrementor
-}
-</code></pre>
-
-<p>在代码清单4中，内嵌函数incriminator从上下文获取了两个值runningTotal和amount，其中amount是函数makeIncrementor的参数，runningTotal是函数内部定义的变量。由于incrementor没有修改amount，所以它实际上存储了amount的一份拷贝。而runningTotal在incremetor中被修改了，因此increminator存储了runningTotal的引用，这样确保runningTotal一直有效。</p>
-
-<p>swift决定捕获的值哪些需要拷贝值，而哪些只拷贝引用。在runningTotal不再使用时，swift负责释放其内存。</p>
-
-<h6>代码清单5：makeIncrementor使用</h6>
-
-<pre><code>let incrementByTen = makeIncrementor(amount:10)
-
-incrementByTen()    // returns a value of 10
-incrementByTen()    // returns a value of 20
-incrementByTen()    // returns a value of 30
-
-// 定义另一个incrementor，则它有自己独立的runningTotal
-let incrementBySeven = makeIncrementor(amount:7)
-
-incrementBySeven()  // returns a value of 7
-incrementBySeven()  // returns a value of 14
-incrementBySeven()  // returns a value of 21
-</code></pre>
-
-<h2>引用类型</h2>
-
-<p>在代码清单5中，虽然incrementByTen和incrementBySeven定义为常量，但是闭包仍然可以增加runningTotal的值。这是因为函数和闭包都是引用类型。</p>
-
-<p>当定义一个函数(闭包)常量或变量时，实际上定义的是一个指向函数(闭包)的引用。这意味着如果指定一个闭包给两个不同的常量或变量，则这两个常量和变量将引用同一个函数(闭包)</p>
-
-<h6>代码清单6：引用函数(闭包)</h6>
-
-<pre><code>let incrementByTen = makeIncrementor(amount:10)
-incrementByTen()    // returns a value of 10
-incrementByTen()    // returns a value of 20
-incrementByTen()    // returns a value of 30
-
-let alsoIncrementByTen = incrementByTen
-alsoIncrementByTen()  // returns a value of 40
-</code></pre>
-
-<p>这样，就引出另一个问题：循环引用。我们将会在<a href="http://southpeak.github.io/blog/2014/06/27/ios-swift-closures-2/">下一篇文章</a>中介绍这个问题。</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/11">&larr; Older</a>
@@ -1117,7 +1241,7 @@ alsoIncrementByTen()  // returns a value of 40
 <section>
 <h1>分类</h1>
 <ul>
-  <li><a href='/blog/categories/ios'>ios (48)</a></li>
+  <li><a href='/blog/categories/ios'>ios (50)</a></li>
   <li><a href='/blog/categories/network'>network (3)</a></li>
   <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
   <li><a href='/blog/categories/swift'>swift (7)</a></li>
@@ -1129,6 +1253,14 @@ alsoIncrementByTen()  // returns a value of 40
 <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/01/08/quartz-2dbian-cheng-zhi-nan-zhi-shi-san-:pdfwen-dang-de-chuang-jian-,-xian-shi-ji-zhuan-huan/">Quartz 2D编程指南之十三：PDF文档的创建、显示及转换</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/08/quartz-2dbian-cheng-zhi-nan-zhi-shi-er-:core-graphicsceng-hui-zhi/">Quartz 2D编程指南之十二：Core Graphics层绘制</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2015/01/05/quartz-2dbian-cheng-zhi-nan-zhi-shi-%5B%3F%5D-:wei-tu-yu-tu-xiang-zhe-zhao/">Quartz 2D编程指南之十一：位图与图像遮罩</a>
@@ -1160,14 +1292,6 @@ alsoIncrementByTen()  // returns a value of 40
     
       <li class="post">
         <a href="/blog/2014/12/01/quartz-2dbian-cheng-zhi-nan-zhi-si-:yan-se-yu-yan-se-kong-jian/">Quartz 2D编程指南之四：颜色与颜色空间</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/11/16/quartz-2dbian-cheng-zhi-nan-zhi-san-:lu-jing-path/">Quartz 2D编程指南之三：路径(Path)</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/11/11/quartz-2dbian-cheng-zhi-nan-zhi-er-:tu-xing-shang-xia-wen-graphics-contexts/">Quartz 2D编程指南之二：图形上下文(Graphics Contexts)</a>
       </li>
     
   </ul>
