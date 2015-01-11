@@ -179,7 +179,7 @@ Mantle就是针对这几个问题而开发的一个开源库。
 	
 	@end
 	
-这样，在转换过程中，会自动调用这些方法来做数据的转换。而如果没有实现相应的方法，则会调用默认的+JSONTransformerForKey:来做处理，具体的实现可以参考[《源码篇：Mantle》](http://)。
+这样，在转换过程中，会自动调用这些方法来做数据的转换。而如果没有实现相应的方法，则会调用默认的+JSONTransformerForKey:来做处理，具体的实现可以参考[《源码篇：Mantle》](http://southpeak.github.io/blog/2015/01/11/yuan-ma-pian-:mantle/)。
 
 有了上面这些准备工作，我们就需要通过MTLJSONAdapter类来适配MTLModel对象和JSON数据了，这个更容易了，代码如下所示：
 
@@ -237,6 +237,6 @@ Mantle使用简单方便，极大的简化了我们的代码，可以满足我�
 ## 参考与推荐
 
 1. [Mantle工程](https://github.com/Mantle/Mantle)
-2. [源码篇：Mantle](http://)
+2. [源码篇：Mantle](http://southpeak.github.io/blog/2015/01/11/yuan-ma-pian-:mantle/)
 2. [Mantle 初步使用](http://ourui.github.io/blog/2014/01/22/mantle-use/)
 3. [使用Mantle处理Model层对象](http://blog.codingcoder.com/use-mantle-to-model/)
