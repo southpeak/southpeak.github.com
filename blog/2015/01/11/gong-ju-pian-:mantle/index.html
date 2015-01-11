@@ -273,7 +273,7 @@
 @end
 </code></pre>
 
-<p>这样，在转换过程中，会自动调用这些方法来做数据的转换。而如果没有实现相应的方法，则会调用默认的+JSONTransformerForKey:来做处理，具体的实现可以参考<a href="http://">《源码篇：Mantle》</a>。</p>
+<p>这样，在转换过程中，会自动调用这些方法来做数据的转换。而如果没有实现相应的方法，则会调用默认的+JSONTransformerForKey:来做处理，具体的实现可以参考<a href="http://southpeak.github.io/blog/2015/01/11/yuan-ma-pian-:mantle/">《源码篇：Mantle》</a>。</p>
 
 <p>有了上面这些准备工作，我们就需要通过MTLJSONAdapter类来适配MTLModel对象和JSON数据了，这个更容易了，代码如下所示：</p>
 
@@ -342,7 +342,7 @@ GHIssue *issue = [MTLJSONAdapter modelOfClass:GHIssue.class fromJSONDictionary:J
 
 <ol>
 <li><a href="https://github.com/Mantle/Mantle">Mantle工程</a></li>
-<li><a href="http://">源码篇：Mantle</a></li>
+<li><a href="http://southpeak.github.io/blog/2015/01/11/yuan-ma-pian-:mantle/">源码篇：Mantle</a></li>
 <li><a href="http://ourui.github.io/blog/2014/01/22/mantle-use/">Mantle 初步使用</a></li>
 <li><a href="http://blog.codingcoder.com/use-mantle-to-model/">使用Mantle处理Model层对象</a></li>
 </ol>
