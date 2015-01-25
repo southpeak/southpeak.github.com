@@ -11,7 +11,7 @@
   <meta name="baidu-site-verification" content="HoscFhWICI" />
 
   
-  <meta name="description" content="前面几篇基本介绍了runtime中的大部分功能，包括对类与对象、成员变量与属性、方法与消息、分类与协议的处理。runtime大部分的功能都是围绕这几点来实现的。 本章的内容并不算重点，主要针对前文中对Objective-C Runtime Reference内容遗漏的地方做些补充。 &hellip;">
+  <meta name="description" content="注：这一系列文章是《Quartz 2D Programming Guide》译文，三年前翻译的，放在cocoachina上面(账号名：德鲁伊)。觉得cocoachina文章的排版还不尽人意，所以现在把它们整理到这里来，也顺便温习一下。 前言 Quartz 2D是一个二维图形绘制引擎， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -68,6 +68,167 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/11/10/quartz-2dbian-cheng-zhi-nan-zhi-%5B%3F%5D-:gai-lan/">Quartz 2D编程指南之一：概览</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-11-10T22:02:30+08:00" pubdate data-updated="true">Nov 10<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/11/10/quartz-2dbian-cheng-zhi-nan-zhi-%5B%3F%5D-:gai-lan/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p><em>注：这一系列文章是《Quartz 2D Programming Guide》译文，三年前翻译的，放在cocoachina上面(账号名：德鲁伊)。觉得cocoachina文章的排版还不尽人意，所以现在把它们整理到这里来，也顺便温习一下。</em></p>
+
+<h2>前言</h2>
+
+<p>Quartz 2D是一个二维图形绘制引擎，支持iOS环境和Mac OS X环境。我们可以使用Quartz 2D API来实现许多功能，如基本路径的绘制、透明度、描影、绘制阴影、透明层、颜色管理、反锯齿、PDF文档生成和PDF元数据访问。在需要的时候，Quartz 2D还可以借助图形硬件的功能。</p>
+
+<p>在Mac OS X中，Quartz 2D可以与其它图形图像技术混合使用，如Core Image、Core Video、OpenGL、QuickTime。例如，通过使用 QuickTime的GraphicsImportCreateCGImage函数，可以用 Quartz从一个 QuickTime图形导入器中创建一个图像。</p>
+
+<h2>Page</h2>
+
+<p>Quartz 2D在图像中使用了<strong>绘画者模型</strong>(painter&rsquo;s model)。在绘画者模型中，每个连续的绘制操作都是将一个绘制层(a layer of &lsquo;paint&rsquo;)放置于一个画布(&lsquo;canvas&rsquo;)，我们通常称这个画布为Page。 Page上的绘图可以通过额外的绘制操作来叠加更多的绘图。Page上的图形对象只能通过叠加更多的绘图来改变。这个模型允许我们使用小的图元来构建复杂的图形。</p>
+
+<p>图1-1展示了绘画者模型如何工作。从图中可以看出不同的绘制顺序所产生的效果不一样。</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/painters_model.gif" alt="image" /></p>
+
+<p>Page可以是一张纸(如果输出设备是打印机)，也可以是虚拟的纸张(如果输出设备是PDF文件)，还可以是bitmap图像。这根据实际使用的graphics context而定。</p>
+
+<h2>绘制目标：Graphics Context</h2>
+
+<p>Graphics Context是一个数据类型(CGContextRef)，用于封装Quartz绘制图像到输出设备的信息。设备可以是PDF文件、bitmap或者显示器的窗口上。Graphics Context中的信息包括在Page中的图像的图形绘制参数和设备相关的表现形式。Quartz中所有的对象都是绘制到一个Graphics Context中。</p>
+
+<p>我们可以将Graphics Context想像成绘制目标，如图1-2所示。当用Quartz绘图时，所有设备相关的特性都包含在我们所使用的Graphics Context中。换句话说，我们可以简单地给Quartz绘图序列指定不同的Graphics Context，就可将相同的图像绘制到不同的设备上。我们不需要处理任何设备相关的计算；这些都由Quartz替我们完成。</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/draw_destinations.gif" alt="image" /></p>
+
+<p>Quartz提供了以下几种类型的Graphics Context，详细的介绍将在后续章节说明。</p>
+
+<ol>
+<li>Bitmap Graphics Context</li>
+<li>PDF Graphics Context</li>
+<li>Window Graphics Context</li>
+<li>Layer Context</li>
+<li>Post Graphics Context</li>
+</ol>
+
+
+<h2>Quartz 2D 数据类型</h2>
+
+<p>除了 Graphics Context 之外，Quartz 2D API还定义一些数据类型。由于这些API就Core Graphics框架的一部分，所以这些数据类型都是以CG开头的。</p>
+
+<p>Quartz 2D使用这些数据类型来创建对象，通过操作这些对象来获取特定的图形。图1-3例举了三个使用Quartz 2D的绘制操作所获得的图像。</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/drawing_primitives.gif" alt="image" /></p>
+
+<p>下面列出了Quartz 2D包含的数据类型：</p>
+
+<ol>
+<li>CGPathRef：用于向量图，可创建路径，并进行填充或描画(stroke)</li>
+<li>CGImageRef：用于表示bitmap图像和基于采样数据的bitmap图像遮罩。</li>
+<li>CGLayerRef：用于表示可用于重复绘制(如背景)和幕后(offscreen)绘制的绘画层</li>
+<li>CGPatternRef：用于重绘图</li>
+<li>CGShadingRef、CGGradientRef：用于绘制渐变</li>
+<li>CGFunctionRef：用于定义回调函数，该函数包含一个随机的浮点值参数。当为阴影创建渐变时使用该类型</li>
+<li>CGColorRef, CGColorSpaceRef：用于告诉Quartz如何解释颜色</li>
+<li>CGImageSourceRef,CGImageDestinationRef：用于在Quartz中移入移出数据</li>
+<li>CGFontRef：用于绘制文本</li>
+<li>CGPDFDictionaryRef, CGPDFObjectRef, CGPDFPageRef, CGPDFStream, CGPDFStringRef, and CGPDFArrayRef：用于访问PDF的元数据</li>
+<li>CGPDFScannerRef, CGPDFContentStreamRef：用于解析PDF元数据</li>
+<li>CGPSConverterRef：用于将PostScript转化成PDF。在iOS中不能使用。</li>
+</ol>
+
+
+<h2>图形状态</h2>
+
+<p>Quartz通过修改当前图形状态(current graphics state)来修改绘制操作的结果。图形状态包含用于绘制程序的参数。绘制程序根据这些绘图状态来决定如何渲染结果。例如，当你调用设置填充颜色的函数时，你将改变存储在当前绘图状态中的颜色值。</p>
+
+<p>Graphics Context包含一个<strong>绘图状态栈</strong>。当Quartz创建一个Graphics Context时，栈为空。当保存图形状态时，Quartz将当前图形状态的一个副本压入栈中。当还原图形状态时，Quartz将栈顶的图形状态出栈。出栈的状态成为当前图形状态。</p>
+
+<p>可使用函数CGContextSaveGState来保存图形状态，CGContextRestoreGState来还原图形状态。</p>
+
+<p>注意：并不是当前绘制环境的所有属性都是图形状态的元素。如，图形状态不包含当前路径(current path)。下面列出了图形状态相关的参数：</p>
+
+<p><img src="http://a3.qpic.cn/psb?/V130i6W71atwfr/PQrRj6T.J63Q5vpnXXmsn*SQu2eYI*V3vJy7Ju7kex8!/b/dCbEpnPCHwAA&amp;bo=9gK1AQAAAAADB2I!&amp;rf=viewer_4" alt="image" /></p>
+
+<h2>Quartz 2D 坐标系统</h2>
+
+<p>坐标系统定义是被绘制到Page上的对象的位置及大小范围，如图1-4所示。我们在<strong>用户空间坐标系统</strong>(user-space coordination system，简称用户空间)中指定图形的位置及大小。坐标值是用浮点数来定义的。</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/quartz_coordinates.gif" alt="image" /></p>
+
+<p>由于不同的设备有不同的图形功能，所以图像的位置及大小依赖于设备。例如，一个显示设备可能每英寸只能显示少于96个像素，而打印机可能每英寸能显示300个像素。如果在设备级别上定义坐标系统，则在一个设备上绘制的图形无法在其它设备上正常显示。</p>
+
+<p>Quartz通过使用<strong>当前转换矩阵</strong>(current transformation matrix， CTM)将一个独立的坐标系统(user space)映射到输出设备的坐标系统(device space)，以此来解决设备依赖问题。 CTM是一种特殊类型的矩阵(affine transform, 仿射矩阵)，通过平移(translation)、旋转(rotation)、缩放(scale)操作将点从一个坐标空间映射到另外一个坐标空间。</p>
+
+<p>CTM还有另外一个目的：允许你通过转换来决定对象如何被绘制。例如，为了绘制一个旋转了45度的盒子，我们可以在绘制盒子之前旋转Page的坐标系统。Quartz使用旋转过的坐标系统来将盒子绘制到输出设备中。</p>
+
+<p>用户空间的点用坐标对(x, y)来表示，(0, 0)表示坐标原点。Quartz中默认的坐标系统是：沿着x轴从左到右坐标值逐渐增大；沿着y轴从下到上坐标值逐渐增大。</p>
+
+<p>有一些技术在设置它们的graphics context时使用了不同于Quartz的默认坐标系统。相对于Quartz来说，这些坐标系统是修改的坐标系统(modified coordinate system)，当在这些坐标系统中显示Quartz绘制的图形时，必须进行转换。最常见的一种修改的坐标系统是原点位于左上角，而沿着y轴从上到下坐标值逐渐增大。我们可以在如下一些地方见到这种坐标系统：</p>
+
+<ol>
+<li>在Mac OS X中，重写过isFlipped方法以返回yes的NSView类的子类</li>
+<li>在iOS中，由UIView返回的绘图上下文</li>
+<li>在iOS中，通过调用UIGraphicsBeginImageContextWithOptions函数返回的绘图上下文</li>
+</ol>
+
+
+<p>如果应用程序想以相同的绘制程序在一个UIView对象和PDF Graphics Context上进行绘制，需要做一个变换以使PDF Graphics Context使用与UIView相同的坐标系。要达到这一目的，只需要对PDF的上下文的原点做一个平移(移到左上角)和用-1对y坐标值进行缩放。图1-5显示了这种变换操作：</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/flipped_coordinates.jpg" alt="image" /></p>
+
+<p>我们的应用程序负责调整Quartz调用以确保有一个转换应用到上下文中。例如，如果你想要一个图片或PDF正确的绘制到一个Graphics Context中，你的应用程序可能需要临时调整Graphics Context的CTM。在iOS中，如果使用UIImage对象来包裹创建的CGImage对象，可以不需要修改CTM。UIImage将自动进行补偿以适用UIKit的坐标系统。</p>
+
+<p><em>重要：如果你打算在iOS上开发与Quartz相关的程序，了解以上所讨论的是很有用的，但不是必须的。在iOS 3.2及后续的版本中，当UIKit为你的应用程序创建一个绘图上下文时，也对上下文进行了额外的修改以匹配UIKit的约定。特别的，patterns和shadows(不被CTM影响)单独进行调整以匹配UIKit坐标系统。在这种情况下，没有一个等价的机制让CTM来转换Quartz和UIKit的上下文。我们必须认识到在什么样的上下文中进行绘制，并调整行为以匹配上下文的预期。</em></p>
+
+<h2>内存管理：对象所有权</h2>
+
+<p>Quartz使用Core Foundation内存管理模型(引用计数)。所以，对象的创建与销毁与通常的方式是一样的。在Quartz中，需要记住如下一些规则：</p>
+
+<ol>
+<li>如果创建或拷贝一个对象，你将拥有它，因此你必须释放它。通常，如果使用含有”Create”或“Copy”单词的函数获取一个对象，当使用完后必须释放，否则将导致内存泄露。</li>
+<li>如果使用不含有”Create”或“Copy”单词的函数获取一个对象，你将不会拥有对象的引用，不需要释放它。</li>
+<li>如果你不拥有一个对象而打算保持它，则必须retain它并且在不需要时release掉。可以使用Quartz 2D的函数来指定retain和release一个对象。例如，如果创建了一个CGColorspace对象，则使用函数CGColorSpaceRetain和CGColorSpaceRelease来retain和release对象。同样，可以使用Core Foundation的CFRetain和CFRelease，但是注意不能传递NULL值给这些函数。</li>
+</ol>
+
+
+<h2>参考</h2>
+
+<ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/dq_overview/dq_overview.html#//apple_ref/doc/uid/TP30001066-CH202-TPXREF101">Quartz 2D Programming Guide</a></li>
+</ol>
+
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1191,318 +1352,6 @@ for ( i = 0 ; i &lt; 1000 ; i++ )
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/10/30/objective-c-runtime-yun-xing-shi-zhi-er-:cheng-yuan-bian-liang-yu-shu-xing/">Objective-C Runtime 运行时之二：成员变量与属性</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-10-30T16:03:21+08:00" pubdate data-updated="true">Oct 30<sup>th</sup>, 2014</time>
-        
-        
-           | <a href="/blog/2014/10/30/objective-c-runtime-yun-xing-shi-zhi-er-:cheng-yuan-bian-liang-yu-shu-xing/#comments">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>在前面一篇文章中，我们介绍了Runtime中与类和对象相关的内容，从这章开始，我们将讨论类实现细节相关的内容，主要包括类中成员变量，属性，方法，协议与分类的实现。</p>
-
-<p>本章的主要内容将聚集在Runtime对成员变量与属性的处理。在讨论之前，我们先介绍一个重要的概念：类型编码。</p>
-
-<h2>类型编码(Type Encoding)</h2>
-
-<p>作为对Runtime的补充，编译器将每个方法的返回值和参数类型编码为一个字符串，并将其与方法的selector关联在一起。这种编码方案在其它情况下也是非常有用的，因此我们可以使用@encode编译器指令来获取它。当给定一个类型时，@encode返回这个类型的字符串编码。这些类型可以是诸如int、指针这样的基本类型，也可以是结构体、类等类型。事实上，任何可以作为sizeof()操作参数的类型都可以用于@encode()。</p>
-
-<p>在Objective-C Runtime Programming Guide中的<a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html#//apple_ref/doc/uid/TP40008048-CH100-SW1">Type Encoding</a>一节中，列出了Objective-C中所有的类型编码。需要注意的是这些类型很多是与我们用于存档和分发的编码类型是相同的。但有一些不能在存档时使用。</p>
-
-<p><em>注：Objective-C不支持long double类型。@encode(long double)返回d，与double是一样的。</em></p>
-
-<p>一个数组的类型编码位于方括号中；其中包含数组元素的个数及元素类型。如以下示例：</p>
-
-<pre><code>float a[] = {1.0, 2.0, 3.0};
-NSLog(@"array encoding type: %s", @encode(typeof(a)));
-</code></pre>
-
-<p>输出是：</p>
-
-<pre><code>2014-10-28 11:44:54.731 RuntimeTest[942:50791] array encoding type: [3f]
-</code></pre>
-
-<p>其它类型可参考<a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html#//apple_ref/doc/uid/TP40008048-CH100-SW1">Type Encoding</a>，在此不细说。</p>
-
-<p>另外，还有些编码类型，@encode虽然不会直接返回它们，但它们可以作为协议中声明的方法的类型限定符。可以参考<a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html#//apple_ref/doc/uid/TP40008048-CH100-SW1">Type Encoding</a>。</p>
-
-<p>对于属性而言，还会有一些特殊的类型编码，以表明属性是只读、拷贝、retain等等，详情可以参考<a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtPropertyIntrospection.html#//apple_ref/doc/uid/TP40008048-CH101-SW6">Property Type String</a>。</p>
-
-<h2>成员变量、属性</h2>
-
-<p>Runtime中关于成员变量和属性的相关数据结构并不多，只有三个，并且都很简单。不过还有个非常实用但可能经常被忽视的特性，即关联对象，我们将在这小节中详细讨论。</p>
-
-<h3>基础数据类型</h3>
-
-<h4>Ivar</h4>
-
-<p>Ivar是表示实例变量的类型，其实际是一个指向objc_ivar结构体的指针，其定义如下：</p>
-
-<pre><code>typedef struct objc_ivar *Ivar;
-
-struct objc_ivar {
-    char *ivar_name                 OBJC2_UNAVAILABLE;  // 变量名
-    char *ivar_type                 OBJC2_UNAVAILABLE;  // 变量类型
-    int ivar_offset                 OBJC2_UNAVAILABLE;  // 基地址偏移字节
-#ifdef __LP64__
-    int space                       OBJC2_UNAVAILABLE;
-#endif
-} 
-</code></pre>
-
-<h4>objc_property_t</h4>
-
-<p>objc_property_t是表示Objective-C声明的属性的类型，其实际是指向objc_property结构体的指针，其定义如下：</p>
-
-<pre><code>typedef struct objc_property *objc_property_t;
-</code></pre>
-
-<h4>objc_property_attribute_t</h4>
-
-<p>objc_property_attribute_t定义了属性的特性(attribute)，它是一个结构体，定义如下：</p>
-
-<pre><code>typedef struct {
-    const char *name;           // 特性名
-    const char *value;          // 特性值
-} objc_property_attribute_t;
-</code></pre>
-
-<h3>关联对象(Associated Object)</h3>
-
-<p>关联对象是Runtime中一个非常实用的特性，不过可能很容易被忽视。</p>
-
-<p>关联对象类似于成员变量，不过是在运行时添加的。我们通常会把成员变量(Ivar)放在类声明的头文件中，或者放在类实现的@implementation后面。但这有一个缺点，我们不能在分类中添加成员变量。如果我们尝试在分类中添加新的成员变量，编译器会报错。</p>
-
-<p>我们可能希望通过使用(甚至是滥用)全局变量来解决这个问题。但这些都不是Ivar，因为他们不会连接到一个单独的实例。因此，这种方法很少使用。</p>
-
-<p>Objective-C针对这一问题，提供了一个解决方案：即关联对象(Associated Object)。</p>
-
-<p>我们可以把关联对象想象成一个Objective-C对象(如字典)，这个对象通过给定的key连接到类的一个实例上。不过由于使用的是C接口，所以key是一个void指针(const void *)。我们还需要指定一个内存管理策略，以告诉Runtime如何管理这个对象的内存。这个内存管理的策略可以由以下值指定：</p>
-
-<pre><code>OBJC_ASSOCIATION_ASSIGN
-OBJC_ASSOCIATION_RETAIN_NONATOMIC
-OBJC_ASSOCIATION_COPY_NONATOMIC
-OBJC_ASSOCIATION_RETAIN
-OBJC_ASSOCIATION_COPY
-</code></pre>
-
-<p>当宿主对象被释放时，会根据指定的内存管理策略来处理关联对象。如果指定的策略是assign，则宿主释放时，关联对象不会被释放；而如果指定的是retain或者是copy，则宿主释放时，关联对象会被释放。我们甚至可以选择是否是自动retain/copy。当我们需要在多个线程中处理访问关联对象的多线程代码时，这就非常有用了。</p>
-
-<p>我们将一个对象连接到其它对象所需要做的就是下面两行代码：</p>
-
-<pre><code>static char myKey;
-
-objc_setAssociatedObject(self, &amp;myKey, anObject, OBJC_ASSOCIATION_RETAIN);
-</code></pre>
-
-<p>在这种情况下，self对象将获取一个新的关联的对象anObject，且内存管理策略是自动retain关联对象，当self对象释放时，会自动release关联对象。另外，如果我们使用同一个key来关联另外一个对象时，也会自动释放之前关联的对象，这种情况下，先前的关联对象会被妥善地处理掉，并且新的对象会使用它的内存。</p>
-
-<pre><code>id anObject = objc_getAssociatedObject(self, &amp;myKey);
-</code></pre>
-
-<p>我们可以使用objc_removeAssociatedObjects函数来移除一个关联对象，或者使用objc_setAssociatedObject函数将key指定的关联对象设置为nil。</p>
-
-<p>我们下面来用实例演示一下关联对象的使用方法。</p>
-
-<p>假定我们想要动态地将一个Tap手势操作连接到任何UIView中，并且根据需要指定点击后的实际操作。这时候我们就可以将一个手势对象及操作的block对象关联到我们的UIView对象中。这项任务分两部分。首先，如果需要，我们要创建一个手势识别对象并将它及block做为关联对象。如下代码所示：</p>
-
-<pre><code>- (void)setTapActionWithBlock:(void (^)(void))block
-{
-    UITapGestureRecognizer *gesture = objc_getAssociatedObject(self, &amp;kDTActionHandlerTapGestureKey);
-
-    if (!gesture)
-    {
-        gesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(__handleActionForTapGesture:)];
-        [self addGestureRecognizer:gesture];
-        objc_setAssociatedObject(self, &amp;kDTActionHandlerTapGestureKey, gesture, OBJC_ASSOCIATION_RETAIN);
-    }
-
-    objc_setAssociatedObject(self, &amp;kDTActionHandlerTapBlockKey, block, OBJC_ASSOCIATION_COPY);
-}
-</code></pre>
-
-<p>这段代码检测了手势识别的关联对象。如果没有，则创建并建立关联关系。同时，将传入的块对象连接到指定的key上。注意block对象的关联内存管理策略。</p>
-
-<p>手势识别对象需要一个target和action，所以接下来我们定义处理方法：</p>
-
-<pre><code>- (void)__handleActionForTapGesture:(UITapGestureRecognizer *)gesture
-{
-    if (gesture.state == UIGestureRecognizerStateRecognized)
-    {
-        void(^action)(void) = objc_getAssociatedObject(self, &amp;kDTActionHandlerTapBlockKey);
-
-        if (action)
-        {
-            action();
-        }
-    }
-}
-</code></pre>
-
-<p>我们需要检测手势识别对象的状态，因为我们只需要在点击手势被识别出来时才执行操作。</p>
-
-<p>从上面的例子我们可以看到，关联对象使用起来并不复杂。它让我们可以动态地增强类现有的功能。我们可以在实际编码中灵活地运用这一特性。</p>
-
-<h3>成员变量、属性的操作方法</h3>
-
-<h4>成员变量</h4>
-
-<p>成员变量操作包含以下函数：</p>
-
-<pre><code>// 获取成员变量名
-const char * ivar_getName ( Ivar v );
-
-// 获取成员变量类型编码
-const char * ivar_getTypeEncoding ( Ivar v );
-
-// 获取成员变量的偏移量
-ptrdiff_t ivar_getOffset ( Ivar v );
-</code></pre>
-
-<p>● ivar_getOffset函数，对于类型id或其它对象类型的实例变量，可以调用object_getIvar和object_setIvar来直接访问成员变量，而不使用偏移量。</p>
-
-<h4>关联对象</h4>
-
-<p>关联对象操作函数包括以下：</p>
-
-<pre><code>// 设置关联对象
-void objc_setAssociatedObject ( id object, const void *key, id value, objc_AssociationPolicy policy );
-
-// 获取关联对象
-id objc_getAssociatedObject ( id object, const void *key );
-
-// 移除关联对象
-void objc_removeAssociatedObjects ( id object );
-</code></pre>
-
-<p>关联对象及相关实例已经在前面讨论过了，在此不再重复。</p>
-
-<h4>属性</h4>
-
-<p>属性操作相关函数包括以下：</p>
-
-<pre><code>// 获取属性名
-const char * property_getName ( objc_property_t property );
-
-// 获取属性特性描述字符串
-const char * property_getAttributes ( objc_property_t property );
-
-// 获取属性中指定的特性
-char * property_copyAttributeValue ( objc_property_t property, const char *attributeName );
-
-// 获取属性的特性列表
-objc_property_attribute_t * property_copyAttributeList ( objc_property_t property, unsigned int *outCount );
-</code></pre>
-
-<p>● property_copyAttributeValue函数，返回的char *在使用完后需要调用free()释放。
-● property_copyAttributeList函数，返回值在使用完后需要调用free()释放。</p>
-
-<h2>实例</h2>
-
-<p>假定这样一个场景，我们从服务端两个不同的接口获取相同的字典数据，但这两个接口是由两个人写的，相同的信息使用了不同的字段表示。我们在接收到数据时，可将这些数据保存在相同的对象中。对象类如下定义：</p>
-
-<pre><code>@interface MyObject: NSObject
-
-@property (nonatomic, copy) NSString    *   name;                  
-@property (nonatomic, copy) NSString    *   status;                 
-
-@end
-</code></pre>
-
-<p>接口A、B返回的字典数据如下所示：</p>
-
-<pre><code>@{@"name1": "张三", @"status1": @"start"}
-
-@{@"name2": "张三", @"status2": @"end"}
-</code></pre>
-
-<p>通常的方法是写两个方法分别做转换，不过如果能灵活地运用Runtime的话，可以只实现一个转换方法，为此，我们需要先定义一个映射字典(全局变量)</p>
-
-<pre><code>static NSMutableDictionary *map = nil;
-
-@implementation MyObject
-
-+ (void)load
-{
-    map = [NSMutableDictionary dictionary];
-
-    map[@"name1"]                = @"name";
-    map[@"status1"]              = @"status";
-    map[@"name2"]                = @"name";
-    map[@"status2"]              = @"status";
-}
-
-@end
-</code></pre>
-
-<p>上面的代码将两个字典中不同的字段映射到MyObject中相同的属性上，这样，转换方法可如下处理：</p>
-
-<pre><code>- (void)setDataWithDic:(NSDictionary *)dic
-{
-    [dic enumerateKeysAndObjectsUsingBlock:^(NSString *key, id obj, BOOL *stop) {
-
-        NSString *propertyKey = [self propertyForKey:key];
-
-        if (propertyKey)
-        {
-            objc_property_t property = class_getProperty([self class], [propertyKey UTF8String]);
-
-            // TODO: 针对特殊数据类型做处理
-            NSString *attributeString = [NSString stringWithCString:property_getAttributes(property) encoding:NSUTF8StringEncoding];
-
-            ...
-
-            [self setValue:obj forKey:propertyKey];
-        }
-    }];
-}
-</code></pre>
-
-<p>当然，一个属性能否通过上面这种方式来处理的前提是其支持KVC。</p>
-
-<h2>小结</h2>
-
-<p>本章中我们讨论了Runtime中与成员变量和属性相关的内容。成员变量与属性是类的数据基础，合理地使用Runtime中的相关操作能让我们更加灵活地来处理与类数据相关的工作。</p>
-
-<p><strong><em>注：如有不对之处，还请指正，欢迎加QQ好友：1318202110(南峰子)</em></strong></p>
-
-<h2>参考</h2>
-
-<ol>
-<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Introduction/Introduction.html">Objective-C Runtime Programming Guide</a></li>
-<li><a href="http://www.cocoanetics.com/2012/06/associated-objects/">Associated Objects</a></li>
-</ol>
-
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/5">&larr; Older</a>
@@ -1519,7 +1368,7 @@ objc_property_attribute_t * property_copyAttributeList ( objc_property_t propert
 <section>
 <h1>分类</h1>
 <ul>
-  <li><a href='/blog/categories/ios'>ios (52)</a></li>
+  <li><a href='/blog/categories/ios'>ios (53)</a></li>
   <li><a href='/blog/categories/network'>network (3)</a></li>
   <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
   <li><a href='/blog/categories/swift'>swift (7)</a></li>
@@ -1531,6 +1380,10 @@ objc_property_attribute_t * property_copyAttributeList ( objc_property_t propert
 <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/01/25/at-gong-ju-pian-:lldbdiao-shi-qi/">@工具篇：LLDB调试器</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2015/01/11/yuan-ma-pian-:mantle/">源码篇：Mantle</a>
@@ -1566,10 +1419,6 @@ objc_property_attribute_t * property_copyAttributeList ( objc_property_t propert
     
       <li class="post">
         <a href="/blog/2014/12/05/quartz-2dbian-cheng-zhi-nan-zhi-qi-:yin-ying/">Quartz 2D编程指南之七：阴影</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/12/05/quartz-2dbian-cheng-zhi-nan-zhi-liu-:mo-shi-pattern/">Quartz 2D编程指南之六：模式(Pattern)</a>
       </li>
     
   </ul>

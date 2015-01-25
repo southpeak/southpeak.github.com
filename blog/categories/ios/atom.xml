@@ -4,7 +4,7 @@
   <title><![CDATA[Category: ios | 南峰子的技术博客]]></title>
   <link href="http://southpeak.github.io/blog/categories/ios/atom.xml" rel="self"/>
   <link href="http://southpeak.github.io/"/>
-  <updated>2015-01-11T22:34:07+08:00</updated>
+  <updated>2015-01-25T21:34:55+08:00</updated>
   <id>http://southpeak.github.io/</id>
   <author>
     <name><![CDATA[南峰子]]></name>
@@ -12,6 +12,645 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[@工具篇：LLDB调试器]]></title>
+    <link href="http://southpeak.github.io/blog/2015/01/25/at-gong-ju-pian-:lldbdiao-shi-qi/"/>
+    <updated>2015-01-25T21:33:25+08:00</updated>
+    <id>http://southpeak.github.io/blog/2015/01/25/at-gong-ju-pian-:lldbdiao-shi-qi</id>
+    <content type="html"><![CDATA[<p>随着Xcode 5的发布，LLDB调试器已经取代了GDB，成为了Xcode工程中默认的调试器。它与LLVM编译器一起，带给我们更丰富的流程控制和数据检测的调试功能。LLDB为Xcode提供了底层调试环境，其中包括内嵌在Xcode IDE中的位于调试区域的控制面板，在这里我们可以直接调用LLDB命令。如图1所示：</p>
+
+<p>图1：位于Xcode调试区域的控制台</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/IDEs/Conceptual/gdb_to_lldb_transition_guide/art/lldb_in_xc5_command_window_2x.png" alt="image" /></p>
+
+<p>在本文中，我们主要整理一下LLDB调试器提供给我们的调试命令，更详细的内容可以查看<a href="http://lldb.llvm.org/tutorial.html">The LLDB Debugger</a>。</p>
+
+<h2>LLDB命令结构</h2>
+
+<p>在使用LLDB前，我们需要了解一下LLDB的命令结构及语法，这样可以尽可能地挖掘LLDB的潜能，以帮助我们更充分地利用它。</p>
+
+<p>LLDB命令的语法有其通用结构，通常是以下形式的：</p>
+
+<pre><code>&lt;command&gt; [&lt;subcommand&gt; [&lt;subcommand&gt;...]] &lt;action&gt; [-options [option-value]] [argument [argument...]]
+</code></pre>
+
+<p>其中：</p>
+
+<ol>
+<li>&lt;command>(命令)和&lt;subcommand>(子命令)：LLDB调试命令的名称。命令和子命令按层级结构来排列：一个命令对象为跟随其的子命令对象创建一个上下文，子命令又为其子命令创建一个上下文，依此类推。</li>
+<li>&lt;action>：我们想在前面的命令序列的上下文中执行的一些操作。</li>
+<li>&lt;options>：行为修改器(action modifiers)。通常带有一些值。</li>
+<li>&lt;argument>：根据使用的命令的上下文来表示各种不同的东西。</li>
+</ol>
+
+
+<p>LLBD命令行的解析操作在执行命令之前完成。上面的这些元素之间通过空格来分割，如果某一元素自身含有空格，则可以使用双引用。而如果元素中又包含双引号，则可以使用反斜杠；或者元素使用单引号。如下所示：</p>
+
+<pre><code>(lldb) command [subcommand] -option "some \"quoted\" string"
+(lldb) command [subcommand] -option 'some "quoted" string'
+</code></pre>
+
+<p>这种命令解析设计规范了LLDB命令语法，并对所有命令做了个统一。</p>
+
+<h3>命令选项</h3>
+
+<p>LLDB中的命令选项有规范形式和缩写形式两种格式。以设置断点的命令breakpoint set为例，以下列表了其部分选项的格式，其中括号中的是规范形式：</p>
+
+<pre><code>breakpoint set
+   -M &lt;method&gt; ( --method &lt;method&gt; )
+   -S &lt;selector&gt; ( --selector &lt;selector&gt; )
+   -b &lt;function-name&gt; ( --basename &lt;function-name&gt; )
+   -f &lt;filename&gt; ( --file &lt;filename&gt; )
+   -l &lt;linenum&gt; ( --line &lt;linenum&gt; )
+   -n &lt;function-name&gt; ( --name &lt;function-name&gt; )
+…
+</code></pre>
+
+<p>各选项的顺序是任意的。如果后面的参数是以"&ndash;&ldquo;开头的，则在选项后面添加&rdquo;&mdash;&ldquo;作为选项的终止信号，以告诉LLDB我们处理的选项的正确位置。如下命令所示：</p>
+
+<pre><code>(lldb) process launch --stop-at-entry -- -program_arg_1 value -program_arg_2 value
+</code></pre>
+
+<p>如上所示，命令的选项是&mdash;stop-at-entry，参数是-program_arg_1和-program_arg_2，我们使用"&mdash;&ldquo;将选项与参数作一下区分。</p>
+
+<h3>原始命令</h3>
+
+<p>LLDB命令解析器支持"原始(raw)&ldquo;命令，即没有命令选项，命令字符串的剩余部分未经解析就传递给命令。例如，expression就是一个原始命令。</p>
+
+<p>不过原始命令也可以有选项，如果命令字符串中有虚线，则在命令名与命令字符串之间放置一个选项结束符(&mdash;)来表明没有命令标记。</p>
+
+<p>我们可以通过help命令的输出来查看一个命令是否是原始命令。</p>
+
+<h3>命令补全(Command Completion)</h3>
+
+<p>LLDB支持源文件名，符号名，文件名，等等的命令补全(Commmand Completion)。终端窗口中的补全是通过在命令行中输入一个制表符来初始化的。Xcode控制台中的补全与在源码编辑器中的补全方式是一样的：补全会在第三个字符被键入时自动弹出，或者通过Esc键手动弹出。</p>
+
+<p>一个命令中的私有选项可以有不同的完成者(completers)。如breakpoint中的&mdash;file <path>选项作为源文件的完成者，&mdash;shlib <path>选项作为当前加载的库的完成者，等等。这些行为是特定的，例如，如果指定&mdash;shlib <path>，且以&mdash;file <path>结尾，则LLDB只会列出由&mdash;shlib <path>指定的共享类库。</p>
+
+<h3>Python脚本</h3>
+
+<p>对于高级用户来说，LLDB有一个内置的Python解析器，可以通过脚本命令来访问。调试器中的所有特性在Python解析器中都可以作为类来访问。这样，我们就可以使用LLDB-Python库来写Python函数，并通过脚本将其加载到运行会话中，以执行一些更复杂的调试操作。</p>
+
+<h2>在命令行中调试程序</h2>
+
+<p>通常我们都是在Xcode中直接使用LLDB调试器，Xcode会帮我们完成很多操作。当然，如果我们想让自己看着更Bigger，或者想了解下调试器具体的一些流程，就可以试试直接在终端使用LLDB命令来调试程序。在终端中使用LLDB调试器，我们需要了解以下内容：</p>
+
+<ol>
+<li>加载程序以备调试</li>
+<li>将一个运行的程序绑定到LLDB</li>
+<li>设置断点和观察点</li>
+<li>控制程序的执行</li>
+<li>在调试的程序中导航</li>
+<li>检查状态和值的变量</li>
+<li>执行替代代码</li>
+</ol>
+
+
+<p>了解在终端中这些操作是如何进行的，可以帮助我们更深入的了解调试器在Xcode中是如何运作的。下面我们分步来介绍一下。</p>
+
+<h3>指定需要调试的程序</h3>
+
+<p>首先我们需要设置需要调试的程序。我们可以使用如下命令做到这一点：</p>
+
+<pre><code>$ lldb /Projects/Sketch/build/Debug/Sketch.app 
+Current executable set to '/Projects/Sketch/build/Debug/Sketch.app' (x86_64).
+</code></pre>
+
+<p>或者在运行lldb后，使用file命令来处理，如下所示：</p>
+
+<pre><code>$ lldb 
+(lldb) file /Projects/Sketch/build/Debug/Sketch.app 
+Current executable set to '/Projects/Sketch/build/Debug/Sketch.app' (x86_64).
+</code></pre>
+
+<h3>设置断点</h3>
+
+<p>在设置完程序后，我们可能想设置一点断点来调试程序。此时我们可以使用breakpoint set命令来设置断点，这个命令简单、直观，且有智能补全，接下来我们看看它的具体操作。</p>
+
+<p>如果想在某个文件中的某行设置一个断点，可使用以下命令：</p>
+
+<pre><code>(lldb) breakpoint set --file foo.c --line 12
+</code></pre>
+
+<p>如果想给某个函数设置断点，可使用以下命令：</p>
+
+<pre><code>(lldb) breakpoint set --name foo
+</code></pre>
+
+<p>如果想给C++中所有命名为foo的方法设置断点，可以使用以下命令：</p>
+
+<pre><code>(lldb) breakpoint set --method foo
+</code></pre>
+
+<p>如果想给Objective-C中所有命名为alignLeftEdges:的选择器设置断点，则可以使用以下命令：</p>
+
+<pre><code>(lldb) breakpoint set --selector alignLeftEdges:
+</code></pre>
+
+<p>我们可以使用&mdash;shlib &lt;path>来将断点限定在一个特定的可执行库中：</p>
+
+<pre><code>(lldb) breakpoint set --shlib foo.dylib --name foo
+</code></pre>
+
+<p>看吧，断点设置命令还是很强大的。</p>
+
+<p>如果我们想查看程序中所有的断点，则可以使用breakpoint list命令，如下所示：</p>
+
+<pre><code>(lldb) breakpoint list
+Current breakpoints:
+1: name = 'alignLeftEdges:', locations = 1, resolved = 1
+  1.1: where = Sketch`-[SKTGraphicView alignLeftEdges:] + 33 at /Projects/Sketch/SKTGraphicView.m:1405, address = 0x0000000100010d5b, resolved, hit count = 0
+</code></pre>
+
+<p>从上面的输出结果可以看出，一个断点一般有两部分：</p>
+
+<ol>
+<li>断点的逻辑规范，这一部分是用户提供给breakpoint set命令的。</li>
+<li>与规范匹配的断点的位置。</li>
+</ol>
+
+
+<p>如上所示，通过"breakpoint set &mdash;selector alignLeftEdges:&ldquo;设置的断点，其信息中会显示出所有alignLeftEdges:方法的位置。</p>
+
+<p>breakpoint list命令输出列表显示每个逻辑断点都有一个整数标识，如上所示断点标识为1。而每个位置也会有一个标识，如上所示的1.1。</p>
+
+<p>输出列表中另一个信息是断点位置是否是已解析的(resolved)。这个标识表示当与之相关的文件地址被加载到程序进行调试时，其位置是已解析的。例如，如果在共享库中设置的断点之后被卸载了，则断点的位置还会保留，但其不能再被解析。</p>
+
+<p>不管是逻辑断点产生的所有位置，还是逻辑断点解析的任何特定位置，我们都可以使用断点触发命令来对其进行删除、禁用、设置条件或忽略计数操作。例如，如果我们想添加一个命令，以在LLDB命中断点1.1时打印跟踪栈，则可以执行以下命令</p>
+
+<pre><code>(lldb) breakpoint command add 1.1
+Enter your debugger command(s). Type 'DONE' to end.
+&gt; bt
+&gt; DONE
+</code></pre>
+
+<p>如果想更详细地了解"breakpoint command add"命令的使用，可以使用help帮助系统来查看。</p>
+
+<h3>设置观察点</h3>
+
+<p>作为断点的补充，LLDB支持观察点以在不中断程序运行的情况下监测一些变量。例如，我们可以使用以下命令来监测名为global的变量的写操作，并在(global==5)为真时停止监测：</p>
+
+<pre><code>(lldb) watch set var global
+Watchpoint created: Watchpoint 1: addr = 0x100001018 size = 4 state = enabled type = w
+   declare @ '/Volumes/data/lldb/svn/ToT/test/functionalities/watchpoint/watchpoint_commands/condition/main.cpp:12'
+(lldb) watch modify -c '(global==5)'
+(lldb) watch list
+Current watchpoints:
+Watchpoint 1: addr = 0x100001018 size = 4 state = enabled type = w
+    declare @ '/Volumes/data/lldb/svn/ToT/test/functionalities/watchpoint/watchpoint_commands/condition/main.cpp:12'
+    condition = '(global==5)'
+(lldb) c
+Process 15562 resuming
+(lldb) about to write to 'global'...
+Process 15562 stopped and was programmatically restarted.
+Process 15562 stopped and was programmatically restarted.
+Process 15562 stopped and was programmatically restarted.
+Process 15562 stopped and was programmatically restarted.
+Process 15562 stopped
+* thread #1: tid = 0x1c03, 0x0000000100000ef5 a.out`modify + 21 at main.cpp:16, stop reason = watchpoint 1
+    frame #0: 0x0000000100000ef5 a.out`modify + 21 at main.cpp:16
+   13
+   14      static void modify(int32_t &amp;var) {
+   15          ++var;
+-&gt; 16      }
+   17
+   18      int main(int argc, char** argv) {
+   19          int local = 0;
+(lldb) bt
+* thread #1: tid = 0x1c03, 0x0000000100000ef5 a.out`modify + 21 at main.cpp:16, stop reason = watchpoint 1
+    frame #0: 0x0000000100000ef5 a.out`modify + 21 at main.cpp:16
+    frame #1: 0x0000000100000eac a.out`main + 108 at main.cpp:25
+    frame #2: 0x00007fff8ac9c7e1 libdyld.dylib`start + 1
+(lldb) frame var global
+(int32_t) global = 5
+(lldb) watch list -v
+Current watchpoints:
+Watchpoint 1: addr = 0x100001018 size = 4 state = enabled type = w
+    declare @ '/Volumes/data/lldb/svn/ToT/test/functionalities/watchpoint/watchpoint_commands/condition/main.cpp:12'
+    condition = '(global==5)'
+    hw_index = 0  hit_count = 5     ignore_count = 0
+(lldb)
+</code></pre>
+
+<p>可以使用help watchpoint来查看该命令的使用。</p>
+
+<h3>使用LLDB来启动程序</h3>
+
+<p>一旦指定了调试哪个程序，并为其设置了一些断点后，就可以开始运行程序了。我们可以使用以下命令来启动程序：</p>
+
+<pre><code>(lldb) process launch
+(lldb) run
+(lldb) r
+</code></pre>
+
+<p>我们同样可以使用进程ID或进程名来连接一个已经运行的程序。当使用名称来连接一个程序时，LLDB支持&mdash;waitfor选项。这个选项告诉LLDB等待下一个名称为指定名称的程序出现，然后连接它。例如，下面3个命令都是用于连接Sketch程序(假定其进程ID为123)：</p>
+
+<pre><code>(lldb) process attach --pid 123
+(lldb) process attach --name Sketch
+(lldb) process attach --name Sketch --waitfor
+</code></pre>
+
+<p>启动或连接程序后，进程可能由于某些原因而停止，如：</p>
+
+<pre><code>(lldb) process attach -p 12345
+Process 46915 Attaching
+Process 46915 Stopped
+1 of 3 threads stopped with reasons:
+* thread #1: tid = 0x2c03, 0x00007fff85cac76a, where = libSystem.B.dylib`__getdirentries64 + 10,
+stop reason = signal = SIGSTOP, queue = com.apple.main-thread
+</code></pre>
+
+<p>注意“1 of 3 threads stopped with reasons:”及其下面一行。在多线程环境下，在内核实际返回控制权给调试器前，可能会有多个线程命中同一个断点。在这种情况下，我们可以在停止信息中看到所有因此而停止的线程。</p>
+
+<h3>控制程序</h3>
+
+<p>启动程序后，LLDB允许程序在到达断点前继续运行。LLDB中流程控制的命令都在thread命令层级中。如下所示：</p>
+
+<pre><code>(lldb) thread continue
+Resuming thread 0x2c03 in process 46915
+Resuming process 46915
+</code></pre>
+
+<p>另外，还有以下命令：</p>
+
+<pre><code>(lldb) thread step-in // The same as "step" or "s" in GDB.
+(lldb) thread step-over // The same as "next" or "n" in GDB.
+(lldb) thread step-out // The same as "finish" or "f" in GDB.
+(lldb) thread step-inst // The same as "stepi" / "si" in GDB.
+(lldb) thread step-over-inst // The same as "nexti" / "ni" in GDB.
+</code></pre>
+
+<p>LLDB还提供了run until line按步调度模式，如：</p>
+
+<pre><code>lldb) thread until 100
+</code></pre>
+
+<p>这条命令会运行线程，直到当前frame到达100行。如果代码在运行的过程中跳过了100行，则当frame被弹出栈后终止执行。</p>
+
+<h3>查看线程状态</h3>
+
+<p>在进程停止后，LLDB会选择一个当前线程和线程中当前帧(frame)。很多检测状态的命令可以用于这个线程或帧。</p>
+
+<p>为了检测进程的当前状态，可以从以下命令开始：</p>
+
+<pre><code>(lldb) thread list
+Process 46915 state is Stopped
+* thread #1: tid = 0x2c03, 0x00007fff85cac76a, where = libSystem.B.dylib`__getdirentries64 + 10, stop reason = signal = SIGSTOP, queue = com.apple.main-thread
+  thread #2: tid = 0x2e03, 0x00007fff85cbb08a, where = libSystem.B.dylib`kevent + 10, queue = com.apple.libdispatch-manager
+  thread #3: tid = 0x2f03, 0x00007fff85cbbeaa, where = libSystem.B.dylib`__workq_kernreturn + 10
+</code></pre>
+
+<p>星号(*)表示thread #1为当前线程。为了获取线程的跟踪栈，可以使用以下命令：</p>
+
+<pre><code>(lldb) thread backtrace
+
+thread #1: tid = 0x2c03, stop reason = breakpoint 1.1, queue = com.apple.main-thread
+ frame #0: 0x0000000100010d5b, where = Sketch`-[SKTGraphicView alignLeftEdges:] + 33 at /Projects/Sketch/SKTGraphicView.m:1405
+ frame #1: 0x00007fff8602d152, where = AppKit`-[NSApplication sendAction:to:from:] + 95
+ frame #2: 0x00007fff860516be, where = AppKit`-[NSMenuItem _corePerformAction] + 365
+ frame #3: 0x00007fff86051428, where = AppKit`-[NSCarbonMenuImpl performActionWithHighlightingForItemAtIndex:] + 121
+ frame #4: 0x00007fff860370c1, where = AppKit`-[NSMenu performKeyEquivalent:] + 272
+ frame #5: 0x00007fff86035e69, where = AppKit`-[NSApplication _handleKeyEquivalent:] + 559
+ frame #6: 0x00007fff85f06aa1, where = AppKit`-[NSApplication sendEvent:] + 3630
+ frame #7: 0x00007fff85e9d922, where = AppKit`-[NSApplication run] + 474
+ frame #8: 0x00007fff85e965f8, where = AppKit`NSApplicationMain + 364
+ frame #9: 0x0000000100015ae3, where = Sketch`main + 33 at /Projects/Sketch/SKTMain.m:11
+ frame #10: 0x0000000100000f20, where = Sketch`start + 52
+</code></pre>
+
+<p>如果想查看所有线程的调用栈，则可以使用以下命令：</p>
+
+<pre><code>(lldb) thread backtrace all
+</code></pre>
+
+<h3>查看调用栈状态</h3>
+
+<p>检查帧参数和本地变量的最简便的方式是使用frame variable命令：</p>
+
+<pre><code>(lldb) frame variable
+self = (SKTGraphicView *) 0x0000000100208b40
+_cmd = (struct objc_selector *) 0x000000010001bae1
+sender = (id) 0x00000001001264e0
+selection = (NSArray *) 0x00000001001264e0
+i = (NSUInteger) 0x00000001001264e0
+c = (NSUInteger) 0x00000001001253b0
+</code></pre>
+
+<p>如果没有指定任何变量名，则会显示所有参数和本地变量。如果指定参数名或变量名，则只打印指定的值。如：</p>
+
+<pre><code>(lldb) frame variable self
+(SKTGraphicView *) self = 0x0000000100208b40
+</code></pre>
+
+<p>frame variable命令不是一个完全的表达式解析器，但它支持一些简单的操作符，如&amp;,*,&ndash;>,[]。这个数组括号可用于指针，以将指针作为数组处理。如下所示：</p>
+
+<pre><code>(lldb) frame variable *self
+(SKTGraphicView *) self = 0x0000000100208b40
+(NSView) NSView = {
+(NSResponder) NSResponder = {
+...
+
+(lldb) frame variable &amp;self
+(SKTGraphicView **) &amp;self = 0x0000000100304ab
+
+(lldb) frame variable argv[0]
+(char const *) argv[0] = 0x00007fff5fbffaf8 "/Projects/Sketch/build/Debug/Sketch.app/Contents/MacOS/Sketch"
+</code></pre>
+
+<p>frame variable命令会在变量上执行"对象打印"操作。目前，LLDB只支持Objective-C打印，使用的是对象的description方法。</p>
+
+<p>如果想查看另外一帧，可以使用frame select命令，如下所示：</p>
+
+<pre><code>(lldb) frame select 9
+frame #9: 0x0000000100015ae3, where = Sketch`function1 + 33 at /Projects/Sketch/SKTFunctions.m:11
+</code></pre>
+
+<h3>小结</h3>
+
+<p>以上所介绍的命令可以让我们在终端中直接调试程序。当然，很多命令也可以在Xcode中直接使用。这些命令可以让我们了解程序运行的状态，当然有些状态可以在Xcode中了解到。建议在调试过程中，可以多使用这些命令。</p>
+
+<p>如果想了解这一过程中使用的各种命令，可以查看<a href="https://developer.apple.com/library/mac/documentation/IDEs/Conceptual/gdb_to_lldb_transition_guide/document/lldb-command-examples.html#//apple_ref/doc/uid/TP40012917-CH3-SW5">苹果的官方文档</a>。</p>
+
+<h2>在Xcode中调试程序</h2>
+
+<p>对于我们日常的开发工作来说，更多的时候是在Xcode中进行调试工作。因此上面所描述的流程，其实Xcode已经帮我们完成了大部分的工作，而且很多东西也可以在Xcode里面看到。因此，我们可以把精力都集中在代码层面上。</p>
+
+<p>在<a href="https://developer.apple.com/library/mac/documentation/IDEs/Conceptual/gdb_to_lldb_transition_guide/document/lldb-command-examples.html#//apple_ref/doc/uid/TP40012917-CH3-SW5">苹果的官方文档</a>中列出了我们在调试中能用到的一些命令，我们在这重点讲一些常用的命令。</p>
+
+<h3>打印</h3>
+
+<p>打印变量的值可以使用print命令，该命令如果打印的是简单类型，则会列出简单类型的类型和值。如果是对象，还会打印出对象指针地址，如下所示：</p>
+
+<pre><code>(lldb) print a
+(NSInteger) $0 = 0
+(lldb) print b
+(NSInteger) $1 = 0
+(lldb) print str
+(NSString *) $2 = 0x0000000100001048 @"abc"
+(lldb) print url
+(NSURL *) $3 = 0x0000000100206cc0 @"abc"
+</code></pre>
+
+<p>在输出结果中我们还能看到类似于$0,$1这样的符号，我们可以将其看作是指向对象的一个引用，我们在控制面板中可以直接使用这个符号来操作对应的对象，这些东西存在于LLDB的全名空间中，目的是为了辅助调试。如下所示：</p>
+
+<pre><code>(lldb) exp $0 = 100
+(NSInteger) $9 = 100
+(lldb) p a
+(NSInteger) $10 = 100
+</code></pre>
+
+<p>另外$后面的数值是递增的，每打印一个与对象相关的命令，这个值都会加1。</p>
+
+<p>上面的print命令会打印出对象的很多信息，如果我们只想查看对象的值的信息，则可以使用po(print object的缩写)命令，如下所示：</p>
+
+<pre><code>(lldb) po str
+abc
+</code></pre>
+
+<p>当然，po命令是"exp -O &mdash;&ldquo;命令的别名，使用"exp -O &mdash;"能达到同样的效果。</p>
+
+<p>对于简单类型，我们还可以为其指定不同的打印格式，其命令格式是print/，如下所示：</p>
+
+<pre><code>(lldb) p/x a
+(NSInteger) $13 = 0x0000000000000064
+</code></pre>
+
+<p>格式的完整清单可以参考<a href="https://sourceware.org/gdb/onlinedocs/gdb/Output-Formats.html">Output Formats</a>。</p>
+
+<h3>expression</h3>
+
+<p>在开发中，我们经常会遇到这样一种情况：我们设置一个视图的背景颜色，运行后发现颜色不好看。嗯，好吧，在代码里面修改一下，再编译运行一下，嗯，还是不好看，然后再修改吧～～这样无形中浪费了我们大把的时间。在这种情况下，expression命令强大的功能就能体现出来了，它不仅会改变调试器中的值，还改变了程序中的实际值。我们先来看看实际效果，如下所示：</p>
+
+<pre><code>(lldb) exp a = 10
+(NSInteger) $0 = 10
+(lldb) exp b = 100
+(NSInteger) $1 = 100
+2015-01-25 14:00:41.313 test[18064:71466] a + b = 110, abc
+</code></pre>
+
+<p>expression命令的功能不仅于此，正如上面的po命令，其实际也是"expression -O &mdash;&ldquo;命令的别名。更详细使用可以参考<a href="https://developer.apple.com/library/mac/documentation/IDEs/Conceptual/gdb_to_lldb_transition_guide/document/lldb-command-examples.html#//apple_ref/doc/uid/TP40012917-CH3-SW5">Evaluating Expressions</a>。</p>
+
+<h3>image</h3>
+
+<p>image命令的用法也挺多，首先可以用它来查看工程中使用的库，如下所示：</p>
+
+<pre><code>(lldb) image list
+[  0] 432A6EBF-B9D2-3850-BCB2-821B9E62B1E0 0x0000000100000000 /Users/**/Library/Developer/Xcode/DerivedData/test-byjqwkhxixddxudlnvqhrfughkra/Build/Products/Debug/test 
+[  1] 65DCCB06-339C-3E25-9702-600A28291D0E 0x00007fff5fc00000 /usr/lib/dyld 
+[  2] E3746EDD-DFB1-3ECB-88ED-A91AC0EF3AAA 0x00007fff8d324000 /System/Library/Frameworks/Foundation.framework/Versions/C/Foundation 
+[  3] 759E155D-BC42-3D4E-869B-6F57D477177C 0x00007fff8869f000 /usr/lib/libobjc.A.dylib 
+[  4] 5C161F1A-93BA-3221-A31D-F86222005B1B 0x00007fff8c75c000 /usr/lib/libSystem.B.dylib 
+[  5] CBD1591C-405E-376E-87E9-B264610EBF49 0x00007fff8df0d000 /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation 
+[  6] A260789B-D4D8-316A-9490-254767B8A5F1 0x00007fff8de36000 /usr/lib/libauto.dylib 
+......
+</code></pre>
+
+<p>我们还可以用它来查找可执行文件或共享库的原始地址，这一点还是很有用的，当我们的程序崩溃时，我们可以使用这条命令来查找崩溃所在的具体位置，如下所示：</p>
+
+<pre><code>NSArray *array = @[@1, @2];
+NSLog(@"item 3: %@", array[2]);
+</code></pre>
+
+<p>这段代码在运行后会抛出如下异常：</p>
+
+<pre><code>2015-01-25 14:12:01.007 test[18122:76474] *** Terminating app due to uncaught exception 'NSRangeException', reason: '*** -[__NSArrayI objectAtIndex:]: index 2 beyond bounds [0 .. 1]'
+*** First throw call stack:
+(
+    0   CoreFoundation                      0x00007fff8e06f66c __exceptionPreprocess + 172
+    1   libobjc.A.dylib                     0x00007fff886ad76e objc_exception_throw + 43
+    2   CoreFoundation                      0x00007fff8df487de -[__NSArrayI objectAtIndex:] + 190
+    3   test                                0x0000000100000de0 main + 384
+    4   libdyld.dylib                       0x00007fff8f1b65c9 start + 1
+)
+libc++abi.dylib: terminating with uncaught exception of type NSException
+</code></pre>
+
+<p>根据以上信息，我们可以判断崩溃位置是在main.m文件中，要想知道具体在哪一行，可以使用以下命令：</p>
+
+<pre><code>(lldb) image lookup --address 0x0000000100000de0
+      Address: test[0x0000000100000de0] (test.__TEXT.__text + 384)
+      Summary: test`main + 384 at main.m:23
+</code></pre>
+
+<p>可以看到，最后定位到了main.m文件的第23行，正是我们代码所在的位置。</p>
+
+<p>我们还可以使用image lookup命令来查看具体的类型，如下所示：</p>
+
+<pre><code>(lldb) image lookup --type NSURL
+Best match found in /Users/**/Library/Developer/Xcode/DerivedData/test-byjqwkhxixddxudlnvqhrfughkra/Build/Products/Debug/test:
+id = {0x100000157}, name = "NSURL", byte-size = 40, decl = NSURL.h:17, clang_type = "@interface NSURL : NSObject{
+    NSString * _urlString;
+    NSURL * _baseURL;
+    void * _clients;
+    void * _reserved;
+}
+@property ( readonly,getter = absoluteString,setter = &lt;null selector&gt;,nonatomic ) NSString * absoluteString;
+@property ( readonly,getter = relativeString,setter = &lt;null selector&gt;,nonatomic ) NSString * relativeString;
+@property ( readonly,getter = baseURL,setter = &lt;null selector&gt;,nonatomic ) NSURL * baseURL;
+@property ( readonly,getter = absoluteURL,setter = &lt;null selector&gt;,nonatomic ) NSURL * absoluteURL;
+@property ( readonly,getter = scheme,setter = &lt;null selector&gt;,nonatomic ) NSString * scheme;
+@property ( readonly,getter = resourceSpecifier,setter = &lt;null selector&gt;,nonatomic ) NSString * resourceSpecifier;
+@property ( readonly,getter = host,setter = &lt;null selector&gt;,nonatomic ) NSString * host;
+@property ( readonly,getter = port,setter = &lt;null selector&gt;,nonatomic ) NSNumber * port;
+@property ( readonly,getter = user,setter = &lt;null selector&gt;,nonatomic ) NSString * user;
+@property ( readonly,getter = password,setter = &lt;null selector&gt;,nonatomic ) NSString * password;
+@property ( readonly,getter = path,setter = &lt;null selector&gt;,nonatomic ) NSString * path;
+@property ( readonly,getter = fragment,setter = &lt;null selector&gt;,nonatomic ) NSString * fragment;
+@property ( readonly,getter = parameterString,setter = &lt;null selector&gt;,nonatomic ) NSString * parameterString;
+@property ( readonly,getter = query,setter = &lt;null selector&gt;,nonatomic ) NSString * query;
+@property ( readonly,getter = relativePath,setter = &lt;null selector&gt;,nonatomic ) NSString * relativePath;
+@property ( readonly,getter = fileSystemRepresentation,setter = &lt;null selector&gt; ) const char * fileSystemRepresentation;
+@property ( readonly,getter = isFileURL,setter = &lt;null selector&gt;,readwrite ) BOOL fileURL;
+@property ( readonly,getter = standardizedURL,setter = &lt;null selector&gt;,nonatomic ) NSURL * standardizedURL;
+@property ( readonly,getter = filePathURL,setter = &lt;null selector&gt;,nonatomic ) NSURL * filePathURL;
+@end"
+</code></pre>
+
+<p>可以看到，输出结果中列出了NSURL的一些成员变量及属性信息。</p>
+
+<p>image命令还有许多其它功能，具体可以参考<a href="https://developer.apple.com/library/mac/documentation/IDEs/Conceptual/gdb_to_lldb_transition_guide/document/lldb-command-examples.html#//apple_ref/doc/uid/TP40012917-CH3-SW5">Executable and Shared Library Query Commands</a>。</p>
+
+<h3>流程控制</h3>
+
+<p>流程控制的命令实际上我们在上一小节已经讲过了，在Xcode的控制面板中同样可以使用这些命令，在此不在重复。</p>
+
+<h2>命令别名及帮助系统</h2>
+
+<p>LLDB有两个非常有用的特性，即命令别名及帮助。</p>
+
+<h3>命令别名</h3>
+
+<p>我们可以使用LLDB的别名机制来为常用的命令创建一个别名，以方便我们的使用，如下命令：</p>
+
+<pre><code>(lldb) breakpoint set --file foo.c --line 12
+</code></pre>
+
+<p>如果在我们的调试中需要经常用到这条命令，则每次输入这么一长串的字符一定会很让人抓狂。此时，我们就可以为这条命令创建一个别名，如下所示：</p>
+
+<pre><code>(lldb) command alias bfl breakpoint set -f %1 -l %2
+</code></pre>
+
+<p>这样，我们只需要按如下方式来使用它即可：</p>
+
+<pre><code>(lldb) bfl foo.c 12
+</code></pre>
+
+<p>是不是简单多了？</p>
+
+<p>我们可以自由地创建LLDB命令的别名集合。LLDB在启动时会读取~/.lldbinit文件。这个文件中存储了command alias命令创建的别名。LLDB帮助系统会读取这个初始化文件并会列出这些别名，以让我们了解自己所设置的别名。我们可以使用"help -a"命令并在输出的后面来查看这边别名，其以下面这行开始：</p>
+
+<pre><code>...
+The following is a list of your current command abbreviations (see 'help command alias' for more info): ...
+</code></pre>
+
+<p>如果我们不喜欢已有命令的别名，则可以使用以下命令来取消这个别名：</p>
+
+<pre><code>(lldb) command unalias b
+</code></pre>
+
+<h3>帮助系统</h3>
+
+<p>LLDB帮助系统让我们可以了解LLDB提供了哪些功能，并可以查看LLDB命令结构的详细信息。熟悉帮助系统可以让我们访问帮助系统中中命令文档。</p>
+
+<p>我们可以简单地调用help命令来列出LLDB所有的顶层命令。如下所示：</p>
+
+<pre><code>(lldb) help
+The following is a list of built-in, permanent debugger commands:
+
+_regexp-attach    -- Attach to a process id if in decimal, otherwise treat the
+                     argument as a process name to attach to.
+_regexp-break     -- Set a breakpoint using a regular expression to specify the
+                     location, where &lt;linenum&gt; is in decimal and &lt;address&gt; is
+                     in hex.
+_regexp-bt        -- Show a backtrace.  An optional argument is accepted; if
+                     that argument is a number, it specifies the number of
+                     frames to display.  If that argument is 'all', full
+                     backtraces of all threads are displayed.
+ … and so forth …
+</code></pre>
+
+<p>如果help后面跟着某个特定的命令，则会列出该命令相关的所有信息，我们以breakpoint set为例，输出信息如下：</p>
+
+<pre><code>(lldb) help breakpoint set
+     Sets a breakpoint or set of breakpoints in the executable.
+
+Syntax: breakpoint set &lt;cmd-options&gt;
+
+Command Options Usage:
+  breakpoint set [-Ho] -l &lt;linenum&gt; [-s &lt;shlib-name&gt;] [-i &lt;count&gt;] [-c &lt;expr&gt;] [-x &lt;thread-index&gt;] [-t &lt;thread-id&gt;] [-T &lt;thread-name&gt;] [-q &lt;queue-name&gt;] [-f &lt;filename&gt;] [-K &lt;boolean&gt;]
+  breakpoint set [-Ho] -a &lt;address-expression&gt; [-s &lt;shlib-name&gt;] [-i &lt;count&gt;] [-c &lt;expr&gt;] [-x &lt;thread-index&gt;] [-t &lt;thread-id&gt;] [-T &lt;thread-name&gt;] [-q &lt;queue-name&gt;]
+  breakpoint set [-Ho] -n &lt;function-name&gt; [-s &lt;shlib-name&gt;] [-i &lt;count&gt;] [-c &lt;expr&gt;] [-x &lt;thread-index&gt;] [-t &lt;thread-id&gt;] [-T &lt;thread-name&gt;] [-q &lt;queue-name&gt;] [-f &lt;filename&gt;] [-K &lt;boolean&gt;] [-L &lt;language&gt;]
+  breakpoint set [-Ho] -F &lt;fullname&gt; [-s &lt;shlib-name&gt;] [-i &lt;count&gt;] [-c &lt;expr&gt;] [-x &lt;thread-index&gt;] [-t &lt;thread-id&gt;] [-T &lt;thread-name&gt;] [-q &lt;queue-name&gt;] [-f &lt;filename&gt;] [-K &lt;boolean&gt;]
+
+ … and so forth …
+</code></pre>
+
+<p>还有一种更直接的方式来查看LLDB有哪些功能，即使用apropos命令：它会根据关键字来搜索LLDB帮助文档，并为每个命令选取一个帮助字符串，我们以apropos file为例，其输出如下：</p>
+
+<pre><code>(lldb) apropos file
+The following commands may relate to 'file':
+…
+log enable                     -- Enable logging for a single log channel.
+memory read                    -- Read from the memory of the process being
+                                  debugged.
+memory write                   -- Write to the memory of the process being
+                                  debugged.
+platform process launch        -- Launch a new process on a remote platform.
+platform select                -- Create a platform if needed and select it as
+                                  the current platform.
+plugin load                    -- Import a dylib that implements an LLDB
+                                  plugin.
+process launch                 -- Launch the executable in the debugger.
+process load                   -- Load a shared library into the current
+                                  process.
+source                         -- A set of commands for accessing source file
+                                  information
+… and so forth …
+</code></pre>
+
+<p>我们还可以使用help来了解一个命令别名的构成。如：</p>
+
+<pre><code>(lldb) help b
+…
+'b' is an abbreviation for '_regexp-break'
+</code></pre>
+
+<p>help命令的另一个特性是可以查看某个具体参数的使用，我们以"break command add"命令为例：</p>
+
+<pre><code>(lldb) help break command add
+Add a set of commands to a breakpoint, to be executed whenever the breakpoint is hit.
+
+Syntax: breakpoint command add &lt;cmd-options&gt; &lt;breakpt-id&gt;
+etc...
+</code></pre>
+
+<p>如果想了解以上输出的参数&lt;breakpt-id>的作用，我们可以在help后面直接指定这个参数(将其放在尖括号内)来查询它的详细信息，如下所示：</p>
+
+<pre><code>(lldb) help &lt;breakpt-id&gt;
+
+&lt;breakpt-id&gt; -- Breakpoint IDs consist major and minor numbers; the major
+etc...
+</code></pre>
+
+<p>帮助系统能让我们快速地了解一个LLDB命令的使用方法。经常使用它，可以让我们更快地熟悉LLDB的各项功能，所以建议多使用它。</p>
+
+<h2>总结</h2>
+
+<p>LLDB带给我们强大的调试功能，在调试过程中充分地利用它可以帮助我们极大地提高调试效率。我们可以不用写那么多的NSLog来打印一大堆的日志。所以建议在日常工作中多去使用它。当然，上面的命令只是LLDB的冰山一角，更多的使用还需要大家自己去发掘，在此只是抛砖引玉，做了一些整理。</p>
+
+<h2>参考</h2>
+
+<ol>
+<li><a href="http://lldb.llvm.org/tutorial.html">The LLDB Debugger</a></li>
+<li><a href="https://developer.apple.com/library/mac/documentation/IDEs/Conceptual/gdb_to_lldb_transition_guide/document/Introduction.html">LLDB Quick Start Guide</a></li>
+<li><a href="http://www.cocoachina.com/ios/20141219/10709.html">与调试器共舞 &ndash; LLDB 的华尔兹</a></li>
+<li><a href="http://www.starfelix.com/blog/2014/03/17/lldbdiao-shi-ming-ling-chu-tan/">LLDB调试命令初探</a></li>
+<li><a href="http://www.cocoachina.com/ios/20140530/8619.html">NSLog效率低下的原因及尝试lldb断点打印Log</a></li>
+</ol>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[源码篇：Mantle]]></title>
@@ -1155,369 +1794,6 @@ GHIssue *issue = [MTLJSONAdapter modelOfClass:GHIssue.class fromJSONDictionary:J
 </code></pre>
 
 <p>在此不再翻译对代码的注释，请各位看官查看文档原文<a href="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/dq_layers/dq_layers.html#//apple_ref/doc/uid/TP30001066-CH219-TPXREF101">Core Graphics Layer Drawing</a>。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Quartz 2D编程指南之十一：位图与图像遮罩]]></title>
-    <link href="http://southpeak.github.io/blog/2015/01/05/quartz-2dbian-cheng-zhi-nan-zhi-shi-%5B%3F%5D-:wei-tu-yu-tu-xiang-zhe-zhao/"/>
-    <updated>2015-01-05T23:10:23+08:00</updated>
-    <id>http://southpeak.github.io/blog/2015/01/05/quartz-2dbian-cheng-zhi-nan-zhi-shi-[?]-:wei-tu-yu-tu-xiang-zhe-zhao</id>
-    <content type="html"><![CDATA[<p>位图与图像遮罩和Quartz中的其它绘制元素一样。这两者在Quartz中都是用CGImageRef数据类型来表示。正如在本章后面看到的一样，我们有一系列的方法来创建一个图像。其中一些需要数据提供者或图像源来提供位图数据。另外一些函数则通过拷贝图像或在图像上应用操作来从已存在的图像中创建图像。不管我们是以何种方式来创建图像，我们都可以将图像绘制到任何类型的图形上下文。记住，位图是在指定分辨率下的一个字节数组。如果我们将位图绘制到一个依赖于分辨率的图形上下文中(如PDF图形上下文)，则位图受限于创建它的图形上下文的分辨率。</p>
-
-<p>我们可以通过调用CGImageMaskCreate函数来创建一个Quartz图像遮罩。我们将在“创建图像遮罩”一节中看到如何创建遮罩。使用图像遮罩不是绘制遮罩的唯一方法，具体的我们都会在下面看到。</p>
-
-<h2>位图和图像遮罩</h2>
-
-<p>一个位图是一个像素数组。每一个像素表示图像中的一个点。JPEG, TIFF和PNG图像文件都是位图。应用程序的icon也是位图。位图被限定在一个矩形内。但是通过使用alpha分量，它们可以呈现不同的形式，也可以旋转或被裁剪，如图11-1所示：</p>
-
-<p>Figure 11-1  Bitmap images</p>
-
-<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/images.gif" alt="image" /></p>
-
-<p>位图中的每一个采样包含特定颜色空间下的一个或更多颜色分量，以及一个额外的用于指定alpha值以表示透明度的分量。每一个分量可以是从1-32位。在Mac OS X中，Quartz支持浮点值分量。在Mac OS X和iOS中支持的格式将会在下文中介绍。ColorSync提供了位图支持的颜色空间。</p>
-
-<p>Quartz同样支持图像遮罩(image masks)。一个图像遮罩也是一个位图，它指定了一个绘制区域，而不是颜色。从效果上来说，一个图像遮罩更像一个模块，它指定在page中绘制颜色的位置。Quartz使用当前的填充颜色来绘制一个图像遮罩。一个颜色遮罩可以有1-8位的深度。</p>
-
-<h2>位图信息</h2>
-
-<p>Quartz提供了很多图像格式并内建了多种常用的格式。在iOS中，这些格式包括JPEG, GIF, PNG, TIF, ICO, GMP, XBM, 和CUR。其它的位图格式或专有格式需要我们指定图像格式的详细信息，以便Quartz能正确地解析图像。我们提供给CGImageCreate函数的图像数据必须是以像素为单位的，而不是基于扫描线的。Quartz不支持平面数据。</p>
-
-<p>这一节描述了与位图相关的信息。当我们创建并使用Quartz图像时(使用CGImageRef数据类型)，我们将看到一些Quartz图像创建函数需要我们指定所有的信息，而其它函数只需要部分信息。我们所需要提供的信息依赖于位图数据的编码，以及位图是表示一个图像还是图像遮罩。</p>
-
-<pre><code>注意：当使用原始图像数据时，为了获得更好的性能，我们可以使用vImage框架。我们可以使用vImageBuffer_InitWithCGImage函数从一个CGImageRef引用导入图像数据到vImage中。
-</code></pre>
-
-<p>创建一个位图(CGImageRef)时，Quartz使用以下信息：</p>
-
-<ol>
-<li>位图数据源：可以是一个Quartz数据提供者或者是一个Quartz图像源。</li>
-<li>可选的解码数组。(Decode Array)</li>
-<li>插值设置：这是一个布尔值，指定Quartz在重置图像大小时是否使用插值算法。</li>
-<li>渲染意图：指定如何映射位于图形上下文中的目标颜色空间中的颜色。该值在图像遮罩中不需要。</li>
-<li>图像尺寸</li>
-<li>像素格式，包括每个分量中的位数，每个像素的位数和每行中的字节数。</li>
-<li>对于图像来说，颜色空间和位图布局信息描述了alpha的位置和位置是否使用浮点值。图像遮罩不需要这个信息。</li>
-</ol>
-
-
-<h3>解码数组</h3>
-
-<p>一个解码数组将图像颜色值映射到其它颜色值，这对于诸如对一个图像做去饱和或者反转颜色值非常有用。数组包含每个颜色分量的一个数值对。当Quartz渲染图像时，它利用一个线性转换将原始分量值映射到一个目标颜色空间中的指定范围内一个相关值。例如，在RGB颜色空间中的一个图像的解码数组包含6个输入，分别用于红、绿、蓝颜色分量。</p>
-
-<h3>像素格式</h3>
-
-<p>像素格式包含以下信息：</p>
-
-<ol>
-<li>每个分量的位数，即在一个像素中每个独立颜色分量的位数。对于一个图像遮罩，这个值是源像素中遮罩bit的数目。例如，如果源图片是8-bit的遮罩，则指定每个分量是8位。</li>
-<li>每个像素的位数，即一个源像素所占的总的位数。这个值必须至少是每个分量的位数乘以每个像素中分量的数目。</li>
-<li>每行的字节数，即图像中水平行的字节数。</li>
-</ol>
-
-
-<h3>颜色空间和位图布局</h3>
-
-<p>为了确保Quartz能正确的解析每个像素的位，我们必须指定：</p>
-
-<ol>
-<li>一个位图是否包含alpha通道。Quartz包含RGB,CMYK和灰度颜色空间。它也支持alpha，或者透明度，虽然并不是所有位图图像格式都支持alpha通道。当它可用时，alpha分量可以位于像素最显著的位置，也可以是最不显著的位置。</li>
-<li>对于有alpha分量的位图，指定颜色分量是否已经乘以了alpha值。预乘alpha(Premultiplied alpha)表示一个已将颜色分量乘以了alpha值的源颜色。这种预处理通过消除每个颜色分量的额外的乘法运算来加速图片的渲染。</li>
-<li>采样的数据格式&mdash;是整型还是浮点型。</li>
-</ol>
-
-
-<p>当我们使用CGImageCreate函数来创建一个图像时，我们提供一个类型为CGImageBitmapInfo的bitmapInfo参数，来指定位置布局信息。以下的常量指定了alpha分量的位置及颜色分量是否做预处理：</p>
-
-<ol>
-<li>kCGImageAlphaLast：alpha分量存储在每个像素中最不显著的位置，如RGBA。</li>
-<li>kCGImageAlphaFirst：alpha分量存储在每个像素中最显著的位置，如ARGB。</li>
-<li>kCGImageAlphaPremultipliedLast：alpha分量存储在每个像素中最不显著的位置，但颜色分量已经乘以了alpha值。</li>
-<li>kCGImageAlphaPremultipliedFirst：alpha分量存储在每个像素中最显著的位置，同时颜色分量已经乘以了alpha值。</li>
-<li>kCGImageAlphaNoneSkipLast：没有alpha分量。如果像素的总大小大于颜色空间中颜色分量数目所需要的空间，则最不显著位置的位将被忽略。</li>
-<li>kCGImageAlphaNoneSkipFirst：没有alpha分量。如果像素的总大小大于颜色空间中颜色分量数目所需要的空间，则最显著位置的位将被忽略。</li>
-<li>kCGImageAlphaNone：等于kCGImageAlphaNoneSkipLast。</li>
-</ol>
-
-
-<p>我们使用常量kCGBitmapFloatComponents来标识一个位图格式使用浮点值。对于浮点格式，我们将这个常量与上而描述的合适的常量进行逻辑OR操作。例如，对于每个像素有128位的使用预处理的浮点格式，同时alpha值位于像素中最不显示位置，我们将以下信息提供给Quartz：</p>
-
-<pre><code>kCGImageAlphaPremultipliedLast | kCGBitmapFloatComponents
-</code></pre>
-
-<p>图11-2演示了一个像素在使用16-或32-bit整型像素格式的CMYK和RGB颜色空间中如何表示。32-bit整型像素格式中，每个分量占8位。16-bit整型像素格式中每个分量占5位。Quartz同样支持128-bit浮点像素格式，每个分量占32位。128-bit格式没有显示在下图中。</p>
-
-<p>Figure 11-2  32-bit and 16-bit pixel formats for CMYK and RGB color spaces in Quartz 2D</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/colorformatrgba32.gif" alt="image" /></p>
-
-<h2>创建图像</h2>
-
-<p>表11-1罗列了Quartz提供的用于创建CGImageRef对象的函数。函数的选择依赖于图像的数据源。最常用的函数是CGImageCreate。它可以从任何类型的位图数据来创建一个图像。然而，它是最复杂的函数，因为需要提供所有的位图信息。为了使用这个函数，我们需要熟悉上面讨论的位图图像信息的内容。</p>
-
-<p>如果我们想从一个标准的图像格式，如PNG或JPEG，来创建一个CGImage对象，则最简单的方法是调用函数CGImageSourceCreateWithURL来创建一个图像源，然后调用CGImageSourceCreateImageAtIndex以使用从图像源中索引index指定的图像数据来创建一个图像。如果源图像文件只包含一个图像，则索引为0。如果图像文件格式支持包含多个图像的文件，则需要提供所需要图像的索引值，记住起始值是0。</p>
-
-<p>如果我们已经将内容渲染到一个位图图形上下文，并想要从中获取到CGImage对象，则调用CGBitmapContextCreateImage函数。</p>
-
-<p>有几个函数可以操作已有的图像，如拷贝、创建一个缩略图，或从一个大图像中创建一个图像。不管如何创建一个图像对象，我们都使用函数CGContextDrawImage将图像绘制到一个图形上下文中。记住CGImage是不可变的。当不再需要一个CGImage对象时，调用CGImageRelease函数来释放它。</p>
-
-<p><img src="http://a3.qpic.cn/psb?/V130i6W71atwfr/W9ZJHCPpoB6QElZy*ePoumPixMBNcMaHrVryzqP12b0!/b/dBmKcHUpFAAA&amp;bo=pAaAAgAAAAADBwI!&amp;rf=viewer_4" alt="image" /></p>
-
-<p>接下来将讨论如何创建：</p>
-
-<ol>
-<li>从一个已存在图像中创建一个子图像</li>
-<li>从一个图像图形上下文中创建一个图像</li>
-</ol>
-
-
-<h3>从一个大图片中创建一个图像</h3>
-
-<p>我们可以使用CGImageCreateWithImageInRect函数从一个大图像中创建一个图像。图11-3演示了这一情形。</p>
-
-<p>Figure 11-3  A subimage created from a larger image</p>
-
-<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/subimage.gif" alt="image" /></p>
-
-<p>函数CGImageCreateWithImageInRect返回的图像保留了源图像的一个引用，这意味着我们在调用完这个函数后可以释放源图像。</p>
-
-<p>图11-4是另外一个例子。在这种情况下，公鸡的头部被从大图中提取出来，然后绘制到一个大于子图像的矩形中。</p>
-
-<p>代码清单11-1显示了创建并绘制子图像的过程。CGContextDrawImage函数绘制公鸡头部的矩形区域是所提取的子图像的四倍大小。清单中的只是一个代码片断。我们需要声明合适的变量，创建公鸡头像，并部署公鸡图像及公鸡头部子图像。因为只是代码片断，所以没有演示如何创建一个图形上下文。我们可以使用任何我们所喜欢的图形上下文。创建图形上下文的例子可以查看“图形上下文”一章。</p>
-
-<p>Figure 11-4  An image, a subimage taken from it and drawn so it’s enlarged</p>
-
-<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rooster_image_zoom.gif" alt="image" /></p>
-
-<p>Listing 11-1  Code that creates a subimage and draws it enlarged</p>
-
-<pre><code>myImageArea = CGRectMake (rooster_head_x_origin, rooster_head_y_origin,
-                            myWidth, myHeight);
-mySubimage = CGImageCreateWithImageInRect (myRoosterImage, myImageArea);
-myRect = CGRectMake(0, 0, myWidth*2, myHeight*2);
-CGContextDrawImage(context, myRect, mySubimage);
-</code></pre>
-
-<h3>从一个位图图形上下文创建一个图像</h3>
-
-<p>为了从一个已存在的位图图形上下文创建一个图像，我们可以调用函数CGBitmapContextCreateImage，如以下：</p>
-
-<pre><code>CGImageRef myImage;
-myImage = CGBitmapContextCreateImage (myBitmapContext);
-</code></pre>
-
-<p>这个函数返回的CGImage对象是通过一个拷贝操作创建的。因此我们对位图图形上下文所做的修改都不会影响到已返回的CGImage对象。在一些情况下，这个拷贝操作实际上沿用了copy-on-write语义，即只有当位图图形上下文中的数据被修改时才会去实际拷贝这些数据。我们可能需要在绘制额外数据到位图图形上下文之前使用结果数据或者释放它们，以便我们可以避免实际去拷贝这些数据。</p>
-
-<p>如何创建一个位图图形上下文，可以参考"创建图形上下文"相关的内容。</p>
-
-<h2>创建一个图像遮罩</h2>
-
-<p>一个Quartz位图图像遮罩如同艺术家使用丝网印刷品(silkscreen)一样。一个位图图像遮罩定义了如何转换颜色，而不是使用哪些颜色。图像遮罩中的每个采样值指定了在特定位置中，当前填充颜色值被遮罩的数量。采样值指定了遮罩的不透明度。值越大，表示越不透明，Quartz在指定位置绘制的颜色越少。我们可以将采样值当成alpha值的反转。1表示透明的，而0表示不透明。</p>
-
-<p>图像遮罩的每个分量可能是1，2，4或者8位。对于1-bit的遮罩，采样值1指定遮罩的区域掩盖了当前的填充颜色。值为0表示当绘制遮罩时，显示当前的填充颜色。我们可以将1-bit遮罩当成黑色和白色；要么完全遮挡，要么完全显示。</p>
-
-<p>每个分量中有2，4，8位的图像遮罩代表灰度值。每个分量使用以下的公式将值映射到[0, 1]之间的值：</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/inline_equations.jpg" alt="image" /></p>
-
-<p>例如，一个4-bit的遮罩其值位于[0, 1]之间，且增长的步长为1/15。0和1这两个值分别是最小和最大值&mdash;分别表示完全遮盖或完全透明。0和1之间的值使用(1-MaskSampleValue)这个公式来处理局部绘制。例如，如果一个8-bit遮罩的采样值设置为0.7，则那些alpha值为(1-0.7)，即0.3的颜色将会被绘制。</p>
-
-<p>函数CGImageMaskCreate从我们提供的位图图像信息中创建一个Quartz图像遮罩。我们提供的信息与创建图像所提供的信息是一样的，只是不需要提供颜色空间信息，位图信息常量或渲染意图，我们可以从代码清单11-2中看到这个函数原型：</p>
-
-<p>Listing 11-2  The prototype for the function CGImageMaskCreate</p>
-
-<pre><code>CGImageRef CGImageMaskCreate (
-        size_t width,
-        size_t height,
-        size_t bitsPerComponent,
-        size_t bitsPerPixel,
-        size_t bytesPerRow,
-        CGDataProviderRef provider,
-        const CGFloat decode[],
-        bool shouldInterpolate
-);
-</code></pre>
-
-<h2>遮罩图像</h2>
-
-<p>遮罩技术可以让我们通过控制图片的哪一部分被绘制，以生成很多有趣的效果，我们可以：</p>
-
-<ol>
-<li>在一个图像上使用图像遮罩。我们也可以把一个图像作为遮罩图，以获取同使用图像遮罩相反的效果。</li>
-<li>使用颜色来遮罩图像的一部分，其中包含被称为颜色遮罩的技术</li>
-<li>将图形上下文剪切到一个图像或图像遮罩，当Quartz绘制内容到剪切的图形上下文时来遮罩一个图像。</li>
-</ol>
-
-
-<h3>使用一个图像遮罩来遮罩图像</h3>
-
-<p>函数CGImageCreateWithMask通过将图像遮罩使用到一个图像上的方式来创建一个图像。这个函数带有两个参数：</p>
-
-<ol>
-<li>原始图像，遮罩将用于其上。这个图像不能是图像遮罩，也不能有与之相关的遮罩颜色。</li>
-<li>一个图像遮罩，通过调用CGImageMaskCreate函数创建的。也可以提供一个图像来替代图像遮罩，但这将给出非常不同的结果。这将在下面描述。</li>
-</ol>
-
-
-<p>一个图像遮罩的采样如同一个反转的alpha值。一个图像遮罩采样值(S)：</p>
-
-<ol>
-<li>为1时，则不会绘制对应的图像样本。</li>
-<li>为0时，则允许完全绘制对应的图像样本。</li>
-<li>0和1之间的值，则让对应的图像样本的alpha的值为(1-S)。</li>
-</ol>
-
-
-<p>图11-5显示了一个由Quartz图像创建函数创建的图像，而图11-6显示了一个使用CGImageMaskCreate函数创建的图像遮罩。图11-7则显示了一个使用CGImageCreateWithMask函数将图像遮罩应用于一个图像的效果。</p>
-
-<p>Figure 11-5  The original image</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/two_tigers.gif" alt="image" /></p>
-
-<p>Figure 11-6  An image mask</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/two_tiger_mask.gif" alt="image" /></p>
-
-<p>注意，源图像中与遮罩黑色区域对应的区域绘制出来，而与白色区域对应的部分则没有绘制出来。而与遮罩灰色区域对应的区域则使用一个与(1-图像遮罩采样值)相同的alpha值来绘制。</p>
-
-<p>Figure 11-7  The image that results from applying the image mask to the original image</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/image_create_w_mask.gif" alt="image" /></p>
-
-<h3>使用一个图像来遮罩一个图像</h3>
-
-<p>我们可以使用函数CGImageCreateWithMask来用一个图像遮罩另一个图像，而不是使用一个图像遮罩。我们可以使用这种方式来达到与使用图像遮罩相反的效果。那此时我们传递给CGImageCreateWithMask函数的就不是一个图像遮罩了，而是传递一个通过Quartz图像创建函数创建的图像。</p>
-
-<p>用于遮罩的图像的采样也是操作alpha值。一个图像采样值(S)：</p>
-
-<ol>
-<li>为1时，则允许完全绘制对应的图像样本。</li>
-<li>为0时，则不会绘制对应的图像样本。</li>
-<li>0和1之间的值，则让对应的图像样本的alpha的值为S。</li>
-</ol>
-
-
-<p>图11-8显示了调用CGImageCreateWithMask函数将图11-6中的图像作为遮罩应用于图11-5中的图像上的效果。在这个例子中，我们假定图11-6中的图像是使用Quartz图像创建函数(如CGImageCreate)创建的。比较图11-8与图11-7，可以看出使用图像采样时，可以获取与使用图像遮罩采样相反的效果。</p>
-
-<p>在图11-8的结果图像中，源图像中与图像的黑色区域对应的区域没有绘制出来。与白色区域对应的区域则绘制出来了。在遮罩中与灰色区域对应的区域则使用与遮罩图像采样值相同的alpha值来绘制。</p>
-
-<p>Figure 11-8  The image that results from masking the original image with an image</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/image_mask_image.gif" alt="image" /></p>
-
-<h3>使用颜色来遮罩图像</h3>
-
-<p>函数CGImageCreateWithMaskingColors通过遮罩一种颜色或一个颜色范围内的颜色来创建一个图像。使用这个函数，我们可以执行如图11-9所示的颜色遮罩，当然也可以遮罩一个范围内的颜色，如图11-11、11-12和11-13所示的效果。</p>
-
-<p>函数CGImageCreateWithMaskingColors有两个参数：</p>
-
-<ol>
-<li>一个图像，它不能是遮罩图像，也不能是使用过图像遮罩或颜色遮罩的图像。</li>
-<li>一个颜色分量数组，指定了一个颜色或一组颜色值，以用于遮罩图像。</li>
-</ol>
-
-
-<p>Figure 11-9  Chroma key masking</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/chroma_key.gif" alt="image" /></p>
-
-<p>颜色分量数组中元素的个数必须等于图像所在颜色空间的颜色分量数目的两倍。对于颜色空间中的每一个颜色分量，提供一个最小值和一个最大值来限定遮罩颜色的范围。如果只使用一个颜色，则设置最大值等于最小值即可。颜色分量数组中的值按以下顺序来提供：</p>
-
-<pre><code>{min[1], max[1], ... min[N], max[N]}，其中N是分量的数目
-</code></pre>
-
-<p>如果图像使用整型像素分量，则颜色分量数组中的每个值必须在[0 .. 2<sup>bitsPerComponent</sup> &ndash; 1]范围之内。如果图像使用浮点像素分量，则值可以是表示任何有效的颜色分量值的浮点数。</p>
-
-<p>一个图像采样如果其颜色值在以下范围内，则不会被绘制：</p>
-
-<pre><code>{c[1], ... c[N]}，其中min[i] &lt;= c[i] &lt;= max[i] for 1 &lt;= i &lt;= N
-</code></pre>
-
-<p>图11-10中两只老虎的图像使用了每个分量有8位的RGB颜色空间。为了在这个图像上屏蔽一组颜色，我们提供一组在[0, 255]区间内的最小和最大颜色分量值。</p>
-
-<p>Figure 11-10  The original image</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/two_tigers1.gif" alt="image" /></p>
-
-<p>代码清单11-3演示了如何设置颜色分量数组，并将其提供给CGImageCreateWithMaskingColors函数以达到图11-11的效果。</p>
-
-<p>Listing 11-3  Masking light to mid-range brown colors in an image</p>
-
-<pre><code>CGImageRef myColorMaskedImage;
-const CGFloat myMaskingColors[6] = {124, 255,  68, 222, 0, 165};
-myColorMaskedImage = CGImageCreateWithMaskingColors (image,
-                                        myMaskingColors);
-CGContextDrawImage (context, myContextRect, myColorMaskedImage);
-</code></pre>
-
-<p>Figure 11-11  An image with light to midrange brown colors masked out</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/beige_brown_masking.gif" alt="image" /></p>
-
-<p>代码清单11-14同样操作图11-10并得到图11-12的效果。这个例子遮罩了一组暗色。</p>
-
-<p>Listing 11-4  Masking shades of brown to black</p>
-
-<pre><code>CGImageRef myMaskedImage;
-const CGFloat myMaskingColors[6] = { 0, 124, 0, 68, 0, 0 };
-myColorMaskedImage = CGImageCreateWithMaskingColors (image,
-                                        myMaskingColors);
-CGContextDrawImage (context, myContextRect, myColorMaskedImage);
-</code></pre>
-
-<p>Figure 11-12  A image after masking colors from dark brown to black</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/brown_black_masking_colors.gif" alt="image" /></p>
-
-<p>我们同样可以设置一个填充颜色来作为图像的遮罩颜色，以达到图11-13的效果，其中被遮罩区域使用了填充颜色。代码清单11-15演示了这一过程</p>
-
-<p>Listing 11-5  Masking a range of colors and setting a fill color and</p>
-
-<pre><code>CGImageRef myMaskedImage;
-const CGFloat myMaskingColors[6] = { 0, 124, 0, 68, 0, 0 };
-myColorMaskedImage = CGImageCreateWithMaskingColors (image,
-                                        myMaskingColors);
-CGContextSetRGBFillColor (myContext, 0.6373,0.6373, 0, 1);
-CGContextFillRect(context, rect);
-CGContextDrawImage(context, rect, myColorMaskedImage);
-</code></pre>
-
-<p>Figure 11-13  An image drawn after masking a range of colors and setting a fill color</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/fill_color_with_mask.gif" alt="image" /></p>
-
-<h3>通过裁减上下文来遮罩一个图片</h3>
-
-<p>函数CGContextClipToMask将遮罩映射为一个矩形并将其与图形上下文的当前裁减区域求个交集。我们提供以下参数：</p>
-
-<ol>
-<li>需要裁减的图形上下文</li>
-<li>要使用遮罩的矩形区域</li>
-<li>一个图像遮罩，其通过CGImageMaskCreate函数创建。我们可以使用图像来替代图像遮罩以达到相反的效果。但图像必须使用Quartz图像创建函数来创建，但不能是使用过图像遮罩或颜色遮罩的图像。</li>
-</ol>
-
-
-<p>裁减区域的结果依赖于是否提供了一个图像遮罩或图像给CGContextClipToMask函数。</p>
-
-<p>我们看看图11-14.假设它是通过调用CGImageMaskCreate函数创建的一个图像遮罩，然后将其作为CGContextClipToMask函数的参数。结果上下文允许绘制黑色区域，而不绘制白色区域，并使用(1-S)的alpha值来绘制灰色区域，其中S是图像遮罩的采样值。如果使用CGContextDrawImage函数来将一个图像绘制到裁减上下文，则可以获得图11-15所示的结果。</p>
-
-<p>Figure 11-14  A masking image</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/the_mask.gif" alt="image" /></p>
-
-<p>Figure 11-15  An image drawn to a context after clipping the content with an image mask</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/mask_as_mask.gif" alt="image" /></p>
-
-<p>当遮罩图像被当成一个图像时，可以获得相反的结果，如图11-16所示：</p>
-
-<p>Figure 11-16  An image drawn to a context after clipping the content with an image</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/inverse_mask_clip.gif" alt="image" /></p>
-
-<h2>在图像中使用混合模式</h2>
-
-<p>此处略，类似于在颜色中使用混合模式。</p>
 ]]></content>
   </entry>
   

@@ -11,7 +11,7 @@
   <meta name="baidu-site-verification" content="HoscFhWICI" />
 
   
-  <meta name="description" content="管理数据是每一个图形应用程序所需要处理的工作。对于Quartz来说，数据管理涉及为Quartz 2D程序提供数据，及从中获取数据。一些Quartz 2D程序将数据传输到Quartz中，如从文件或程序其它部分获取图片或PDF数据。另一些程序则获取Quartz数据，如将图像或PDF数据写入到文件， &hellip;">
+  <meta name="description" content="位图与图像遮罩和Quartz中的其它绘制元素一样。这两者在Quartz中都是用CGImageRef数据类型来表示。正如在本章后面看到的一样，我们有一系列的方法来创建一个图像。其中一些需要数据提供者或图像源来提供位图数据。另外一些函数则通过拷贝图像或在图像上应用操作来从已存在的图像中创建图像。 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -68,6 +68,399 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/01/05/quartz-2dbian-cheng-zhi-nan-zhi-shi-%5B%3F%5D-:wei-tu-yu-tu-xiang-zhe-zhao/">Quartz 2D编程指南之十一：位图与图像遮罩</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-01-05T23:10:23+08:00" pubdate data-updated="true">Jan 5<sup>th</sup>, 2015</time>
+        
+        
+           | <a href="/blog/2015/01/05/quartz-2dbian-cheng-zhi-nan-zhi-shi-%5B%3F%5D-:wei-tu-yu-tu-xiang-zhe-zhao/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>位图与图像遮罩和Quartz中的其它绘制元素一样。这两者在Quartz中都是用CGImageRef数据类型来表示。正如在本章后面看到的一样，我们有一系列的方法来创建一个图像。其中一些需要数据提供者或图像源来提供位图数据。另外一些函数则通过拷贝图像或在图像上应用操作来从已存在的图像中创建图像。不管我们是以何种方式来创建图像，我们都可以将图像绘制到任何类型的图形上下文。记住，位图是在指定分辨率下的一个字节数组。如果我们将位图绘制到一个依赖于分辨率的图形上下文中(如PDF图形上下文)，则位图受限于创建它的图形上下文的分辨率。</p>
+
+<p>我们可以通过调用CGImageMaskCreate函数来创建一个Quartz图像遮罩。我们将在“创建图像遮罩”一节中看到如何创建遮罩。使用图像遮罩不是绘制遮罩的唯一方法，具体的我们都会在下面看到。</p>
+
+<h2>位图和图像遮罩</h2>
+
+<p>一个位图是一个像素数组。每一个像素表示图像中的一个点。JPEG, TIFF和PNG图像文件都是位图。应用程序的icon也是位图。位图被限定在一个矩形内。但是通过使用alpha分量，它们可以呈现不同的形式，也可以旋转或被裁剪，如图11-1所示：</p>
+
+<p>Figure 11-1  Bitmap images</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/images.gif" alt="image" /></p>
+
+<p>位图中的每一个采样包含特定颜色空间下的一个或更多颜色分量，以及一个额外的用于指定alpha值以表示透明度的分量。每一个分量可以是从1-32位。在Mac OS X中，Quartz支持浮点值分量。在Mac OS X和iOS中支持的格式将会在下文中介绍。ColorSync提供了位图支持的颜色空间。</p>
+
+<p>Quartz同样支持图像遮罩(image masks)。一个图像遮罩也是一个位图，它指定了一个绘制区域，而不是颜色。从效果上来说，一个图像遮罩更像一个模块，它指定在page中绘制颜色的位置。Quartz使用当前的填充颜色来绘制一个图像遮罩。一个颜色遮罩可以有1-8位的深度。</p>
+
+<h2>位图信息</h2>
+
+<p>Quartz提供了很多图像格式并内建了多种常用的格式。在iOS中，这些格式包括JPEG, GIF, PNG, TIF, ICO, GMP, XBM, 和CUR。其它的位图格式或专有格式需要我们指定图像格式的详细信息，以便Quartz能正确地解析图像。我们提供给CGImageCreate函数的图像数据必须是以像素为单位的，而不是基于扫描线的。Quartz不支持平面数据。</p>
+
+<p>这一节描述了与位图相关的信息。当我们创建并使用Quartz图像时(使用CGImageRef数据类型)，我们将看到一些Quartz图像创建函数需要我们指定所有的信息，而其它函数只需要部分信息。我们所需要提供的信息依赖于位图数据的编码，以及位图是表示一个图像还是图像遮罩。</p>
+
+<pre><code>注意：当使用原始图像数据时，为了获得更好的性能，我们可以使用vImage框架。我们可以使用vImageBuffer_InitWithCGImage函数从一个CGImageRef引用导入图像数据到vImage中。
+</code></pre>
+
+<p>创建一个位图(CGImageRef)时，Quartz使用以下信息：</p>
+
+<ol>
+<li>位图数据源：可以是一个Quartz数据提供者或者是一个Quartz图像源。</li>
+<li>可选的解码数组。(Decode Array)</li>
+<li>插值设置：这是一个布尔值，指定Quartz在重置图像大小时是否使用插值算法。</li>
+<li>渲染意图：指定如何映射位于图形上下文中的目标颜色空间中的颜色。该值在图像遮罩中不需要。</li>
+<li>图像尺寸</li>
+<li>像素格式，包括每个分量中的位数，每个像素的位数和每行中的字节数。</li>
+<li>对于图像来说，颜色空间和位图布局信息描述了alpha的位置和位置是否使用浮点值。图像遮罩不需要这个信息。</li>
+</ol>
+
+
+<h3>解码数组</h3>
+
+<p>一个解码数组将图像颜色值映射到其它颜色值，这对于诸如对一个图像做去饱和或者反转颜色值非常有用。数组包含每个颜色分量的一个数值对。当Quartz渲染图像时，它利用一个线性转换将原始分量值映射到一个目标颜色空间中的指定范围内一个相关值。例如，在RGB颜色空间中的一个图像的解码数组包含6个输入，分别用于红、绿、蓝颜色分量。</p>
+
+<h3>像素格式</h3>
+
+<p>像素格式包含以下信息：</p>
+
+<ol>
+<li>每个分量的位数，即在一个像素中每个独立颜色分量的位数。对于一个图像遮罩，这个值是源像素中遮罩bit的数目。例如，如果源图片是8-bit的遮罩，则指定每个分量是8位。</li>
+<li>每个像素的位数，即一个源像素所占的总的位数。这个值必须至少是每个分量的位数乘以每个像素中分量的数目。</li>
+<li>每行的字节数，即图像中水平行的字节数。</li>
+</ol>
+
+
+<h3>颜色空间和位图布局</h3>
+
+<p>为了确保Quartz能正确的解析每个像素的位，我们必须指定：</p>
+
+<ol>
+<li>一个位图是否包含alpha通道。Quartz包含RGB,CMYK和灰度颜色空间。它也支持alpha，或者透明度，虽然并不是所有位图图像格式都支持alpha通道。当它可用时，alpha分量可以位于像素最显著的位置，也可以是最不显著的位置。</li>
+<li>对于有alpha分量的位图，指定颜色分量是否已经乘以了alpha值。预乘alpha(Premultiplied alpha)表示一个已将颜色分量乘以了alpha值的源颜色。这种预处理通过消除每个颜色分量的额外的乘法运算来加速图片的渲染。</li>
+<li>采样的数据格式&mdash;是整型还是浮点型。</li>
+</ol>
+
+
+<p>当我们使用CGImageCreate函数来创建一个图像时，我们提供一个类型为CGImageBitmapInfo的bitmapInfo参数，来指定位置布局信息。以下的常量指定了alpha分量的位置及颜色分量是否做预处理：</p>
+
+<ol>
+<li>kCGImageAlphaLast：alpha分量存储在每个像素中最不显著的位置，如RGBA。</li>
+<li>kCGImageAlphaFirst：alpha分量存储在每个像素中最显著的位置，如ARGB。</li>
+<li>kCGImageAlphaPremultipliedLast：alpha分量存储在每个像素中最不显著的位置，但颜色分量已经乘以了alpha值。</li>
+<li>kCGImageAlphaPremultipliedFirst：alpha分量存储在每个像素中最显著的位置，同时颜色分量已经乘以了alpha值。</li>
+<li>kCGImageAlphaNoneSkipLast：没有alpha分量。如果像素的总大小大于颜色空间中颜色分量数目所需要的空间，则最不显著位置的位将被忽略。</li>
+<li>kCGImageAlphaNoneSkipFirst：没有alpha分量。如果像素的总大小大于颜色空间中颜色分量数目所需要的空间，则最显著位置的位将被忽略。</li>
+<li>kCGImageAlphaNone：等于kCGImageAlphaNoneSkipLast。</li>
+</ol>
+
+
+<p>我们使用常量kCGBitmapFloatComponents来标识一个位图格式使用浮点值。对于浮点格式，我们将这个常量与上而描述的合适的常量进行逻辑OR操作。例如，对于每个像素有128位的使用预处理的浮点格式，同时alpha值位于像素中最不显示位置，我们将以下信息提供给Quartz：</p>
+
+<pre><code>kCGImageAlphaPremultipliedLast | kCGBitmapFloatComponents
+</code></pre>
+
+<p>图11-2演示了一个像素在使用16-或32-bit整型像素格式的CMYK和RGB颜色空间中如何表示。32-bit整型像素格式中，每个分量占8位。16-bit整型像素格式中每个分量占5位。Quartz同样支持128-bit浮点像素格式，每个分量占32位。128-bit格式没有显示在下图中。</p>
+
+<p>Figure 11-2  32-bit and 16-bit pixel formats for CMYK and RGB color spaces in Quartz 2D</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/colorformatrgba32.gif" alt="image" /></p>
+
+<h2>创建图像</h2>
+
+<p>表11-1罗列了Quartz提供的用于创建CGImageRef对象的函数。函数的选择依赖于图像的数据源。最常用的函数是CGImageCreate。它可以从任何类型的位图数据来创建一个图像。然而，它是最复杂的函数，因为需要提供所有的位图信息。为了使用这个函数，我们需要熟悉上面讨论的位图图像信息的内容。</p>
+
+<p>如果我们想从一个标准的图像格式，如PNG或JPEG，来创建一个CGImage对象，则最简单的方法是调用函数CGImageSourceCreateWithURL来创建一个图像源，然后调用CGImageSourceCreateImageAtIndex以使用从图像源中索引index指定的图像数据来创建一个图像。如果源图像文件只包含一个图像，则索引为0。如果图像文件格式支持包含多个图像的文件，则需要提供所需要图像的索引值，记住起始值是0。</p>
+
+<p>如果我们已经将内容渲染到一个位图图形上下文，并想要从中获取到CGImage对象，则调用CGBitmapContextCreateImage函数。</p>
+
+<p>有几个函数可以操作已有的图像，如拷贝、创建一个缩略图，或从一个大图像中创建一个图像。不管如何创建一个图像对象，我们都使用函数CGContextDrawImage将图像绘制到一个图形上下文中。记住CGImage是不可变的。当不再需要一个CGImage对象时，调用CGImageRelease函数来释放它。</p>
+
+<p><img src="http://a3.qpic.cn/psb?/V130i6W71atwfr/W9ZJHCPpoB6QElZy*ePoumPixMBNcMaHrVryzqP12b0!/b/dBmKcHUpFAAA&amp;bo=pAaAAgAAAAADBwI!&amp;rf=viewer_4" alt="image" /></p>
+
+<p>接下来将讨论如何创建：</p>
+
+<ol>
+<li>从一个已存在图像中创建一个子图像</li>
+<li>从一个图像图形上下文中创建一个图像</li>
+</ol>
+
+
+<h3>从一个大图片中创建一个图像</h3>
+
+<p>我们可以使用CGImageCreateWithImageInRect函数从一个大图像中创建一个图像。图11-3演示了这一情形。</p>
+
+<p>Figure 11-3  A subimage created from a larger image</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/subimage.gif" alt="image" /></p>
+
+<p>函数CGImageCreateWithImageInRect返回的图像保留了源图像的一个引用，这意味着我们在调用完这个函数后可以释放源图像。</p>
+
+<p>图11-4是另外一个例子。在这种情况下，公鸡的头部被从大图中提取出来，然后绘制到一个大于子图像的矩形中。</p>
+
+<p>代码清单11-1显示了创建并绘制子图像的过程。CGContextDrawImage函数绘制公鸡头部的矩形区域是所提取的子图像的四倍大小。清单中的只是一个代码片断。我们需要声明合适的变量，创建公鸡头像，并部署公鸡图像及公鸡头部子图像。因为只是代码片断，所以没有演示如何创建一个图形上下文。我们可以使用任何我们所喜欢的图形上下文。创建图形上下文的例子可以查看“图形上下文”一章。</p>
+
+<p>Figure 11-4  An image, a subimage taken from it and drawn so it’s enlarged</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rooster_image_zoom.gif" alt="image" /></p>
+
+<p>Listing 11-1  Code that creates a subimage and draws it enlarged</p>
+
+<pre><code>myImageArea = CGRectMake (rooster_head_x_origin, rooster_head_y_origin,
+                            myWidth, myHeight);
+mySubimage = CGImageCreateWithImageInRect (myRoosterImage, myImageArea);
+myRect = CGRectMake(0, 0, myWidth*2, myHeight*2);
+CGContextDrawImage(context, myRect, mySubimage);
+</code></pre>
+
+<h3>从一个位图图形上下文创建一个图像</h3>
+
+<p>为了从一个已存在的位图图形上下文创建一个图像，我们可以调用函数CGBitmapContextCreateImage，如以下：</p>
+
+<pre><code>CGImageRef myImage;
+myImage = CGBitmapContextCreateImage (myBitmapContext);
+</code></pre>
+
+<p>这个函数返回的CGImage对象是通过一个拷贝操作创建的。因此我们对位图图形上下文所做的修改都不会影响到已返回的CGImage对象。在一些情况下，这个拷贝操作实际上沿用了copy-on-write语义，即只有当位图图形上下文中的数据被修改时才会去实际拷贝这些数据。我们可能需要在绘制额外数据到位图图形上下文之前使用结果数据或者释放它们，以便我们可以避免实际去拷贝这些数据。</p>
+
+<p>如何创建一个位图图形上下文，可以参考&#8221;创建图形上下文&#8221;相关的内容。</p>
+
+<h2>创建一个图像遮罩</h2>
+
+<p>一个Quartz位图图像遮罩如同艺术家使用丝网印刷品(silkscreen)一样。一个位图图像遮罩定义了如何转换颜色，而不是使用哪些颜色。图像遮罩中的每个采样值指定了在特定位置中，当前填充颜色值被遮罩的数量。采样值指定了遮罩的不透明度。值越大，表示越不透明，Quartz在指定位置绘制的颜色越少。我们可以将采样值当成alpha值的反转。1表示透明的，而0表示不透明。</p>
+
+<p>图像遮罩的每个分量可能是1，2，4或者8位。对于1-bit的遮罩，采样值1指定遮罩的区域掩盖了当前的填充颜色。值为0表示当绘制遮罩时，显示当前的填充颜色。我们可以将1-bit遮罩当成黑色和白色；要么完全遮挡，要么完全显示。</p>
+
+<p>每个分量中有2，4，8位的图像遮罩代表灰度值。每个分量使用以下的公式将值映射到[0, 1]之间的值：</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/inline_equations.jpg" alt="image" /></p>
+
+<p>例如，一个4-bit的遮罩其值位于[0, 1]之间，且增长的步长为1/15。0和1这两个值分别是最小和最大值&mdash;分别表示完全遮盖或完全透明。0和1之间的值使用(1-MaskSampleValue)这个公式来处理局部绘制。例如，如果一个8-bit遮罩的采样值设置为0.7，则那些alpha值为(1-0.7)，即0.3的颜色将会被绘制。</p>
+
+<p>函数CGImageMaskCreate从我们提供的位图图像信息中创建一个Quartz图像遮罩。我们提供的信息与创建图像所提供的信息是一样的，只是不需要提供颜色空间信息，位图信息常量或渲染意图，我们可以从代码清单11-2中看到这个函数原型：</p>
+
+<p>Listing 11-2  The prototype for the function CGImageMaskCreate</p>
+
+<pre><code>CGImageRef CGImageMaskCreate (
+        size_t width,
+        size_t height,
+        size_t bitsPerComponent,
+        size_t bitsPerPixel,
+        size_t bytesPerRow,
+        CGDataProviderRef provider,
+        const CGFloat decode[],
+        bool shouldInterpolate
+);
+</code></pre>
+
+<h2>遮罩图像</h2>
+
+<p>遮罩技术可以让我们通过控制图片的哪一部分被绘制，以生成很多有趣的效果，我们可以：</p>
+
+<ol>
+<li>在一个图像上使用图像遮罩。我们也可以把一个图像作为遮罩图，以获取同使用图像遮罩相反的效果。</li>
+<li>使用颜色来遮罩图像的一部分，其中包含被称为颜色遮罩的技术</li>
+<li>将图形上下文剪切到一个图像或图像遮罩，当Quartz绘制内容到剪切的图形上下文时来遮罩一个图像。</li>
+</ol>
+
+
+<h3>使用一个图像遮罩来遮罩图像</h3>
+
+<p>函数CGImageCreateWithMask通过将图像遮罩使用到一个图像上的方式来创建一个图像。这个函数带有两个参数：</p>
+
+<ol>
+<li>原始图像，遮罩将用于其上。这个图像不能是图像遮罩，也不能有与之相关的遮罩颜色。</li>
+<li>一个图像遮罩，通过调用CGImageMaskCreate函数创建的。也可以提供一个图像来替代图像遮罩，但这将给出非常不同的结果。这将在下面描述。</li>
+</ol>
+
+
+<p>一个图像遮罩的采样如同一个反转的alpha值。一个图像遮罩采样值(S)：</p>
+
+<ol>
+<li>为1时，则不会绘制对应的图像样本。</li>
+<li>为0时，则允许完全绘制对应的图像样本。</li>
+<li>0和1之间的值，则让对应的图像样本的alpha的值为(1-S)。</li>
+</ol>
+
+
+<p>图11-5显示了一个由Quartz图像创建函数创建的图像，而图11-6显示了一个使用CGImageMaskCreate函数创建的图像遮罩。图11-7则显示了一个使用CGImageCreateWithMask函数将图像遮罩应用于一个图像的效果。</p>
+
+<p>Figure 11-5  The original image</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/two_tigers.gif" alt="image" /></p>
+
+<p>Figure 11-6  An image mask</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/two_tiger_mask.gif" alt="image" /></p>
+
+<p>注意，源图像中与遮罩黑色区域对应的区域绘制出来，而与白色区域对应的部分则没有绘制出来。而与遮罩灰色区域对应的区域则使用一个与(1-图像遮罩采样值)相同的alpha值来绘制。</p>
+
+<p>Figure 11-7  The image that results from applying the image mask to the original image</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/image_create_w_mask.gif" alt="image" /></p>
+
+<h3>使用一个图像来遮罩一个图像</h3>
+
+<p>我们可以使用函数CGImageCreateWithMask来用一个图像遮罩另一个图像，而不是使用一个图像遮罩。我们可以使用这种方式来达到与使用图像遮罩相反的效果。那此时我们传递给CGImageCreateWithMask函数的就不是一个图像遮罩了，而是传递一个通过Quartz图像创建函数创建的图像。</p>
+
+<p>用于遮罩的图像的采样也是操作alpha值。一个图像采样值(S)：</p>
+
+<ol>
+<li>为1时，则允许完全绘制对应的图像样本。</li>
+<li>为0时，则不会绘制对应的图像样本。</li>
+<li>0和1之间的值，则让对应的图像样本的alpha的值为S。</li>
+</ol>
+
+
+<p>图11-8显示了调用CGImageCreateWithMask函数将图11-6中的图像作为遮罩应用于图11-5中的图像上的效果。在这个例子中，我们假定图11-6中的图像是使用Quartz图像创建函数(如CGImageCreate)创建的。比较图11-8与图11-7，可以看出使用图像采样时，可以获取与使用图像遮罩采样相反的效果。</p>
+
+<p>在图11-8的结果图像中，源图像中与图像的黑色区域对应的区域没有绘制出来。与白色区域对应的区域则绘制出来了。在遮罩中与灰色区域对应的区域则使用与遮罩图像采样值相同的alpha值来绘制。</p>
+
+<p>Figure 11-8  The image that results from masking the original image with an image</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/image_mask_image.gif" alt="image" /></p>
+
+<h3>使用颜色来遮罩图像</h3>
+
+<p>函数CGImageCreateWithMaskingColors通过遮罩一种颜色或一个颜色范围内的颜色来创建一个图像。使用这个函数，我们可以执行如图11-9所示的颜色遮罩，当然也可以遮罩一个范围内的颜色，如图11-11、11-12和11-13所示的效果。</p>
+
+<p>函数CGImageCreateWithMaskingColors有两个参数：</p>
+
+<ol>
+<li>一个图像，它不能是遮罩图像，也不能是使用过图像遮罩或颜色遮罩的图像。</li>
+<li>一个颜色分量数组，指定了一个颜色或一组颜色值，以用于遮罩图像。</li>
+</ol>
+
+
+<p>Figure 11-9  Chroma key masking</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/chroma_key.gif" alt="image" /></p>
+
+<p>颜色分量数组中元素的个数必须等于图像所在颜色空间的颜色分量数目的两倍。对于颜色空间中的每一个颜色分量，提供一个最小值和一个最大值来限定遮罩颜色的范围。如果只使用一个颜色，则设置最大值等于最小值即可。颜色分量数组中的值按以下顺序来提供：</p>
+
+<pre><code>{min[1], max[1], ... min[N], max[N]}，其中N是分量的数目
+</code></pre>
+
+<p>如果图像使用整型像素分量，则颜色分量数组中的每个值必须在[0 .. 2<sup>bitsPerComponent</sup> &ndash; 1]范围之内。如果图像使用浮点像素分量，则值可以是表示任何有效的颜色分量值的浮点数。</p>
+
+<p>一个图像采样如果其颜色值在以下范围内，则不会被绘制：</p>
+
+<pre><code>{c[1], ... c[N]}，其中min[i] &lt;= c[i] &lt;= max[i] for 1 &lt;= i &lt;= N
+</code></pre>
+
+<p>图11-10中两只老虎的图像使用了每个分量有8位的RGB颜色空间。为了在这个图像上屏蔽一组颜色，我们提供一组在[0, 255]区间内的最小和最大颜色分量值。</p>
+
+<p>Figure 11-10  The original image</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/two_tigers1.gif" alt="image" /></p>
+
+<p>代码清单11-3演示了如何设置颜色分量数组，并将其提供给CGImageCreateWithMaskingColors函数以达到图11-11的效果。</p>
+
+<p>Listing 11-3  Masking light to mid-range brown colors in an image</p>
+
+<pre><code>CGImageRef myColorMaskedImage;
+const CGFloat myMaskingColors[6] = {124, 255,  68, 222, 0, 165};
+myColorMaskedImage = CGImageCreateWithMaskingColors (image,
+                                        myMaskingColors);
+CGContextDrawImage (context, myContextRect, myColorMaskedImage);
+</code></pre>
+
+<p>Figure 11-11  An image with light to midrange brown colors masked out</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/beige_brown_masking.gif" alt="image" /></p>
+
+<p>代码清单11-14同样操作图11-10并得到图11-12的效果。这个例子遮罩了一组暗色。</p>
+
+<p>Listing 11-4  Masking shades of brown to black</p>
+
+<pre><code>CGImageRef myMaskedImage;
+const CGFloat myMaskingColors[6] = { 0, 124, 0, 68, 0, 0 };
+myColorMaskedImage = CGImageCreateWithMaskingColors (image,
+                                        myMaskingColors);
+CGContextDrawImage (context, myContextRect, myColorMaskedImage);
+</code></pre>
+
+<p>Figure 11-12  A image after masking colors from dark brown to black</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/brown_black_masking_colors.gif" alt="image" /></p>
+
+<p>我们同样可以设置一个填充颜色来作为图像的遮罩颜色，以达到图11-13的效果，其中被遮罩区域使用了填充颜色。代码清单11-15演示了这一过程</p>
+
+<p>Listing 11-5  Masking a range of colors and setting a fill color and</p>
+
+<pre><code>CGImageRef myMaskedImage;
+const CGFloat myMaskingColors[6] = { 0, 124, 0, 68, 0, 0 };
+myColorMaskedImage = CGImageCreateWithMaskingColors (image,
+                                        myMaskingColors);
+CGContextSetRGBFillColor (myContext, 0.6373,0.6373, 0, 1);
+CGContextFillRect(context, rect);
+CGContextDrawImage(context, rect, myColorMaskedImage);
+</code></pre>
+
+<p>Figure 11-13  An image drawn after masking a range of colors and setting a fill color</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/fill_color_with_mask.gif" alt="image" /></p>
+
+<h3>通过裁减上下文来遮罩一个图片</h3>
+
+<p>函数CGContextClipToMask将遮罩映射为一个矩形并将其与图形上下文的当前裁减区域求个交集。我们提供以下参数：</p>
+
+<ol>
+<li>需要裁减的图形上下文</li>
+<li>要使用遮罩的矩形区域</li>
+<li>一个图像遮罩，其通过CGImageMaskCreate函数创建。我们可以使用图像来替代图像遮罩以达到相反的效果。但图像必须使用Quartz图像创建函数来创建，但不能是使用过图像遮罩或颜色遮罩的图像。</li>
+</ol>
+
+
+<p>裁减区域的结果依赖于是否提供了一个图像遮罩或图像给CGContextClipToMask函数。</p>
+
+<p>我们看看图11-14.假设它是通过调用CGImageMaskCreate函数创建的一个图像遮罩，然后将其作为CGContextClipToMask函数的参数。结果上下文允许绘制黑色区域，而不绘制白色区域，并使用(1-S)的alpha值来绘制灰色区域，其中S是图像遮罩的采样值。如果使用CGContextDrawImage函数来将一个图像绘制到裁减上下文，则可以获得图11-15所示的结果。</p>
+
+<p>Figure 11-14  A masking image</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/the_mask.gif" alt="image" /></p>
+
+<p>Figure 11-15  An image drawn to a context after clipping the content with an image mask</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/mask_as_mask.gif" alt="image" /></p>
+
+<p>当遮罩图像被当成一个图像时，可以获得相反的结果，如图11-16所示：</p>
+
+<p>Figure 11-16  An image drawn to a context after clipping the content with an image</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/inverse_mask_clip.gif" alt="image" /></p>
+
+<h2>在图像中使用混合模式</h2>
+
+<p>此处略，类似于在颜色中使用混合模式。</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -989,455 +1382,6 @@ CGFunctionRelease (myFunctionObject);
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/12/05/quartz-2dbian-cheng-zhi-nan-zhi-liu-:mo-shi-pattern/">Quartz 2D编程指南之六：模式(Pattern)</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-12-05T16:35:04+08:00" pubdate data-updated="true">Dec 5<sup>th</sup>, 2014</time>
-        
-        
-           | <a href="/blog/2014/12/05/quartz-2dbian-cheng-zhi-nan-zhi-liu-:mo-shi-pattern/#comments">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>模式(Pattern)是绘制操作的一个序列，这些绘制操作可以重复地绘制到一个图形上下文上。我们可以像使用颜色一样使用这些模式。当我们使用pattern来绘制时，Quartz将Page分割成模式单元格的集合，其中每个单元格的大小不是模式图片的大小，并使用我们提供的回调函数来绘制这些单元格。图6-1演示了一个绘制到window图形上下文的模式。</p>
-
-<p>Figure 6-1  A pattern drawn to a window</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/patterned_window.gif" alt="image" /></p>
-
-<h2>模式的骨架(Anatomy)</h2>
-
-<p>模式单元格是模式的基础组件。图6-1中的模式的单元格如图6-2所示。其中黑色边框不是模式单元格的一部分；之所以画出来是为了显示模式单元格的边界。</p>
-
-<p>Figure 6-2  A pattern cell</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_cell_wborder.gif" alt="image" /></p>
-
-<p>该模式单元格的大小包含四个带颜色的矩形以及这些矩形上部及右侧的白色区域，如图6-3所示。每个模式单元格的黑色边框不是单元格的一部分；画出来只是为是标明单元格的边界。当我们创建一个模式单元格时，我们需要定义单元格的边界并在这个范围内进行绘制。</p>
-
-<p>Figure 6-3  Pattern cells with black rectangles drawn to show the bounds of each cell</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_parts_1.gif" alt="image" /></p>
-
-<p>我们可以指定水平和竖直方向上两个单元格之间的间距。图6-3所绘制的单元格是相互紧挨着的。而图6-4在两个方向上都指定了单元格之间的间距。我们可以为两个方向指定不同的间距。我们亦可以指定间距为负数，这样单元格便会重叠。</p>
-
-<p>Figure 6-4  Spacing between pattern cells</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_part_2.gif" alt="image" /></p>
-
-<p>当我们绘制一个模式单元格时，Quartz使用<strong>模式空间(pattern space)</strong>作为坐标系统。模式空间是一个抽象空间，它会使用我们创建模式时指定的变换矩阵(pattern matrix)来映射到默认用户空间。</p>
-
-<pre><code>注意：模式空间与用户空间是分开的。未转换的模式空间映射到基础的用户空间(未转换的)，而不管当前转换矩阵(CTM)。当我们在模式空间上应用转换时，Quartz只将转换应用于模式空间。
-</code></pre>
-
-<p>如果我们不想要Quartz来转换模式单元格，我们可以指定单位矩阵。然而，我们可以使用转换矩阵来达到有趣的效果。图6-5显示了缩放6-2中的模式单元格的效果。图6-6旋转了这些单元格。图6-7则平移了这些单元格。
-Figure 6-5  A scaled pattern cell</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_halfbyonehalf.gif" alt="image" /></p>
-
-<p>Figure 6-6  A rotated pattern cell</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_2PIdiv6.gif" alt="image" /><br/>
-Figure 6-7  A translated pattern cell</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_5_5_translate.gif" alt="image" /></p>
-
-<h2>着色模式(Colored Patterns)和模板模式(Stencil Patterns)</h2>
-
-<p>着色模式有与其相关的固有颜色。如果修改了创建模式单元格的颜色，则模式也便失去了意义。图6-8中显示的苏格兰格子就是着色模式的一个例子。着色模式中的颜色是模式单元格创建流程的一部分，而不是绘制流程的一部分。</p>
-
-<p>Figure 6-8  A colored pattern has inherent color</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/tartan.gif" alt="image" /></p>
-
-<p>而其它模式只限定了形状，因此可以认为是模板模式(或者是非着色模式、甚至可以作为图像蒙板)。图6-9中展示的红色和黑色星星就是使用相同的模式单元格。单元格由一个五角星组成。当定义模式单元格时，没有与之相关的颜色。颜色值是在绘制过程中指定的，而不是创建过程的一部分。</p>
-
-<p>Figure 6-9  A stencil pattern does not have inherent color</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/star_patterns.gif" alt="image" /></p>
-
-<p>在Quartz 2D中，我们可以创建这两种模式。</p>
-
-<h2>平铺(Tiling)</h2>
-
-<p>平铺(Tiling)是将模式单元格绘制到页面(Page)的某个部分的过程。当Quartz将模式渲染到一个设备时，Quartz可能需要调整模式以适应设备空间。即，在用户空间定义的模式单元格在渲染到设备时可能无法精确匹配，这是由用户空间单元和设备像素之间的差异导致的。</p>
-
-<p>Quartz有三个平铺选项，以在必要时调整模式：</p>
-
-<ol>
-<li>没有失真(no distortion): 以细微调整模式单元格之间的间距为代价，但通常不超过一个设备像素。</li>
-<li>最小的失真的恒定间距：设定单元格之间的间距，以细微调整单元大小为代价，但通常不超过一个设备像素。</li>
-<li>恒定间距：设定单元格之间间距，以调整单元格大小为代价，以求尽快的平铺</li>
-</ol>
-
-
-<h2>模式如何工作</h2>
-
-<p>模式操作类似于颜色，我们设置一个填充或描边(stroke)模式，然后调用绘制函数。Quartz使用我们设置的模式作为“涂料”。例如，如果我们要使用纯色绘制一个填充的的矩形，我们首先调用函数(如CGContextSetFillColor)来设置填充颜色。然后调用函数CGContextFillRect以使用我们指定的颜色来填充矩形。为了绘制一个模式，颜色调用函数CGContextSetFillPattern来设置指定的模式。绘制颜色和绘制模式的不同之处在于我们必须先定义一个模式。我们为函数CGContextSetFillPattern提供模式和颜色信息。我们将在下面的绘制着色模式和绘制模板模式章节看到如何创建、设置和绘制模式。</p>
-
-<p>这里有个例子说明Quartz在幕后是如何绘制一个模式的。当我们填充或描边一个模式时，Quartz会按照以下指令来绘制每一个模式单元格：</p>
-
-<ol>
-<li>保存图形状态</li>
-<li>将当前转换矩阵应用到原始的模式单元格上</li>
-<li>连接CTM与模式矩阵</li>
-<li>裁剪模式单元格的边界矩形</li>
-<li>调用绘制回调函数来绘制单元格</li>
-<li>恢复图形状态</li>
-</ol>
-
-
-<p>Quartz会执行所有平铺操作，重复绘制模式单元格到绘制空间，直到渲染满整个空间。我们可以填充和描边一个模式。模式单元格可以是指定的任何大小。如果我们想要看到模式，我们需要确保模式单元格与绘制空间匹配。例如，如果我们的模式单元格是8*10个单位的，而我们用这个模式来描边一个只有2个单位的直线，则这个模式单元格将会被裁剪。这种情况下，我们可能无法辨认出我们的模式。</p>
-
-<h2>绘制着色模式</h2>
-
-<p>绘制着色模式需要执行以下五步操作：</p>
-
-<ol>
-<li>写一个绘制着色模式单元格的回调函数</li>
-<li>设置着色模式的颜色空间</li>
-<li>设置着色模式的骨架(Anatomy)</li>
-<li>指定着色模式作为填充或描边模式</li>
-<li>使用着色模式绘制</li>
-</ol>
-
-
-<p>绘制模板模式也是类似这几步。两者之间的区别在于如何设置颜色信息。</p>
-
-<h3>写一个绘制着色模式单元格的回调函数</h3>
-
-<p>一个模式单元格看起来是什么样的完全取决于我们。在这个例子中，代码清单6-1绘制了图6-2所示的模式单元格。</p>
-
-<p>Listing 6-1  A drawing callback that draws a colored pattern cell</p>
-
-<pre><code>#define H_PATTERN_SIZE 16
-#define V_PATTERN_SIZE 18
-
-void MyDrawColoredPattern (void *info, CGContextRef myContext)
-{
-    CGFloat subunit = 5; 
-
-    CGSize size = {subunit, subunit};
-    CGPoint point1 = {0,0}, point2 = {subunit, subunit}, point3 = {0,subunit}, point4 = {subunit,0};
-    CGRect myRect1 = {point1, size}, myRect2 = {point2, size}, myRect3 = {point3, size}, myRect4 = {point4, size};
-
-    CGContextSetRGBFillColor (myContext, 0, 0, 1, 0.5);
-    CGContextFillRect (myContext, myRect1);
-    CGContextSetRGBFillColor (myContext, 1, 0, 0, 0.5);
-    CGContextFillRect (myContext, myRect2);
-    CGContextSetRGBFillColor (myContext, 0, 1, 0, 0.5);
-    CGContextFillRect (myContext, myRect3);
-    CGContextSetRGBFillColor (myContext, .5, 0, .5, 0.5);
-    CGContextFillRect (myContext, myRect4);
-}
-</code></pre>
-
-<p>模式单元格绘制函数是类似于下面这种格式的一个回调函数</p>
-
-<pre><code>typedef void (*CGPatternDrawPatternCallback) (
-                        void *info,
-                        CGContextRef context
-    );
-</code></pre>
-
-<p>我们可以随意命名我们的回调函数。代码清单6-1中命名为MyDrawColoredPattern。这个回调函数带有两个参数：</p>
-
-<ol>
-<li>info: 一个指向模式相关数据的指针。这个参数是可选的，可以传递NULL。传递给回调的数据与后面创建模式的数据是一样的。</li>
-<li>context: 绘制模式单元格的图形上下文</li>
-</ol>
-
-
-<p>代码清单6-1中绘制的模式单元格是随意的。以下是一些关于绘制代码的重要信息：</p>
-
-<ol>
-<li>需要声明模式大小。在绘制时我们需要记住模式大小。在这个例子中，大小是全局声明的，绘制函数没有具体提到大小，除了在注释中。然后，我们将模式大小指定给Quartz 2D。</li>
-<li>绘制函数后面是由CGPatternDrawPatternCallback回调函数类型定义定义的原型</li>
-<li>代码中执行的绘制设置了颜色，让其成为一个着色模式。</li>
-</ol>
-
-
-<h3>设置着色模式的颜色空间</h3>
-
-<p>代码清单6-1中的代码使用颜色来绘制模式单元格。我们必须设置基本的模式颜色空间为NULL，以确保Quartz使用绘制路径指定的颜色来绘制，如代码清单6-2所示。</p>
-
-<p>Listing 6-2  Creating a base pattern color space</p>
-
-<pre><code>CGColorSpaceRef patternSpace;
-
-// 创建模式颜色空间，并传递NULL作为参数
-patternSpace = CGColorSpaceCreatePattern (NULL);
-
-// 在模式颜色空间中设置填充颜色
-CGContextSetFillColorSpace (myContext, patternSpace);
-
-// 释放模式颜色空间
-CGColorSpaceRelease (patternSpace);
-</code></pre>
-
-<h3>设置着色模式的骨架</h3>
-
-<p>一个模式的骨架基本信息保存在CGPattern对象中。我们调用CGPatternCreate函数来创建一个CGPattern对象，其原型如代码清单6-3所示：</p>
-
-<p>Listing 6-3  The CGPatternCreate function prototype</p>
-
-<pre><code>CGPatternRef CGPatternCreate (  void *info,
-                                CGRect bounds,
-                                CGAffineTransform matrix,
-                                CGFloat xStep,
-                                CGFloat yStep,
-                                CGPatternTiling tiling,
-                                bool isColored,
-                                const CGPatternCallbacks *callbacks );
-</code></pre>
-
-<p>其中，</p>
-
-<ol>
-<li>info：是一个指针，指向我们要传递给绘制回调函数的数据</li>
-<li>bound：指定模式单元格的大小</li>
-<li>matrix：指定模式矩阵，它将模式坐标系统映射到图形上下文的默认坐标系统。如果希望两个坐标系统是一样的，则可以使用单位矩阵。</li>
-<li>xStep, yStep：指定单元格之间的水平和竖直间距。</li>
-<li>tiling：平铺模式，可以是kCGPatternTilingNoDistortion、kCGPatternTilingConstantSpacingMinimalDistortion、kCGPatternTilingConstantSpacing</li>
-<li>isColored：指定模式单元格是着色模式(true)还是模板模式(false)</li>
-<li><p>callbacks：是一个指向CGPatternCallbacks结构体的指针，则定义如下：</p>
-
-<p> struct CGPatternCallbacks
- {
-     unsigned int version;
-     CGPatternDrawPatternCallback drawPattern;
-     CGPatternReleaseInfoCallback releaseInfo;
- };</p></li>
-</ol>
-
-
-<p>我们可以设置version为0。drawPattern是指向绘制回调的指针。releaseInfo是指向一个回调函数，该回调在释放CGPattern对象时被调用，以释放存储在我们传递给绘制回调的info参数中的数据。如果在这个参数中没有传递任何数据，则设置该域为NULL。</p>
-
-<h3>指定着色模式作为填充或描边模式</h3>
-
-<p>我们可以调用CGContextSetFillPattern或者CGContextSetStrokePattern函数来使用模式进行填充或描边。Quartz可以将模式用于任何填充或描边流程。</p>
-
-<p>这两个函数包含以下几个参数：</p>
-
-<ol>
-<li>图形上下文</li>
-<li>先前创建的CGPattern对象</li>
-<li>颜色组件的数组</li>
-</ol>
-
-
-<p>虽然着色模式提供了自己的颜色，我们仍然需要传递一个单一的alpha值来告诉Quartz在绘制时着色模式的透明度。alpha值的范围在0到1中。可以如以下代码来设置着色模式的透明度：</p>
-
-<pre><code>CGFloat alpha = 1;
-
-CGContextSetFillPattern (myContext, myPattern, &amp;alpha);
-</code></pre>
-
-<h3>使用颜色模式绘制</h3>
-
-<p>在完成前面的步骤之后，我们就可以调用Quartz 2D函数来绘制了。我们的模式被当作“涂料”。例如，可以调用CGContextStrokePath, CGContextFillPath, CGContextFillRect或其它函数来绘制。</p>
-
-<h3>完整示例</h3>
-
-<p>代码清单6-4包含一个绘制着色模式的函数。这个函数包含了前面讨论的所有步骤。</p>
-
-<p>Listing 6-4  A function that paints a colored pattern</p>
-
-<pre><code>void MyColoredPatternPainting (CGContextRef myContext,
-                 CGRect rect)
-{
-    CGPatternRef    pattern;
-    CGColorSpaceRef patternSpace;
-    CGFloat         alpha = 1,
-                    width, height;
-    static const    CGPatternCallbacks callbacks = {0, 
-                                        &amp;MyDrawPattern,
-                                        NULL};
-
-    CGContextSaveGState (myContext);
-    patternSpace = CGColorSpaceCreatePattern (NULL);
-    CGContextSetFillColorSpace (myContext, patternSpace);
-    CGColorSpaceRelease (patternSpace);
-
-    pattern = CGPatternCreate (NULL, 
-                    CGRectMake (0, 0, H_PSIZE, V_PSIZE),
-                    CGAffineTransformMake (1, 0, 0, 1, 0, 0),
-                    H_PATTERN_SIZE, 
-                    V_PATTERN_SIZE, 
-                    kCGPatternTilingConstantSpacing,
-                    true, 
-                    &amp;callbacks);
-
-    CGContextSetFillPattern (myContext, pattern, &amp;alpha);
-    CGPatternRelease (pattern);
-    CGContextFillRect (myContext, rect);
-    CGContextRestoreGState (myContext);
-}
-</code></pre>
-
-<h2>绘制模板模式</h2>
-
-<p>与绘制着色模式类似，绘制模板模式也有5个步骤：</p>
-
-<ol>
-<li>写一个绘制模板模式单元格的回调函数</li>
-<li>设置模板模式的颜色空间</li>
-<li>设置模板模式的骨架(Anatomy)</li>
-<li>指定模板模式作为填充或描边模式</li>
-<li>使用模板模式绘制</li>
-</ol>
-
-
-<p>绘制模板模式与绘制着色模式的区别在于设置颜色信息。</p>
-
-<h3>写一个绘制模板模式单元格的回调函数</h3>
-
-<p>绘制模板模式单元格的回调与前面描述的绘制颜色模式单元格类似。不同的是绘制模式单元格回调不需要指定颜色值。图6-10中显示的模式单元格即没有从绘制回调中获取颜色。</p>
-
-<p>Figure 6-10  A stencil pattern cell</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/star_stencil.gif" alt="image" /></p>
-
-<p>代码清单6-5绘制了图6-10中的模式单元格。可以看到代码只是简单地创建并填充了一个路径，而没有设置颜色。</p>
-
-<p>Listing 6-5  A drawing callback that draws a stencil pattern cell</p>
-
-<pre><code>#define PSIZE 16    // size of the pattern cell
-
-static void MyDrawStencilStar (void *info, CGContextRef myContext)
-{
-    int k;
-    double r, theta;
-
-    r = 0.8 * PSIZE / 2;
-    theta = 2 * M_PI * (2.0 / 5.0); // 144 degrees
-
-    CGContextTranslateCTM (myContext, PSIZE/2, PSIZE/2);
-
-    CGContextMoveToPoint(myContext, 0, r);
-    for (k = 1; k &lt; 5; k++) {
-        CGContextAddLineToPoint (myContext,
-                    r * sin(k * theta),
-                    r * cos(k * theta));
-    }
-    CGContextClosePath(myContext);
-    CGContextFillPath(myContext);
-}
-</code></pre>
-
-<h3>设置模板模式的颜色空间</h3>
-
-<p>模板模式要求我们设置一个模式颜色空间用于Quartz的绘制，如代码清单6-6所示。</p>
-
-<p>Listing 6-6  Code that creates a pattern color space for a stencil pattern</p>
-
-<pre><code>CGPatternRef pattern;
-CGColorSpaceRef baseSpace;
-CGColorSpaceRef patternSpace;
-
-// 创建一个通用RGB颜色空间。 
-baseSpace = CGColorSpaceCreateWithName (kCGColorSpaceGenericRGB);
-
-// 创建一个模式颜色空间。该颜色空间指定如何表示模式的颜色。后面要设置模式的颜色时，必须使用这个颜色空间来进行设置
-patternSpace = CGColorSpaceCreatePattern (baseSpace);
-
-// 设置颜色空间来在填充模式时使用
-CGContextSetFillColorSpace (myContext, patternSpace);
-
-// 释放模式颜色空间
-CGColorSpaceRelease(patternSpace);
-
-// 释放基础颜色空间
-CGColorSpaceRelease(baseSpace);
-</code></pre>
-
-<h3>设置模板模式的骨架(Anatomy)</h3>
-
-<p>这一步与上面设置着色模式是一样的，不同的是isColored参数需要传递false。</p>
-
-<h3>指定模板模式作为填充或描边模式</h3>
-
-<p>我们可以调用CGContextSetFillPattern或者CGContextSetStrokePattern函数来使用模式进行填充或描边。Quartz可以将模式用于任何填充或描边流程。</p>
-
-<p>这两个函数包含以下几个参数：</p>
-
-<ol>
-<li>图形上下文</li>
-<li>先前创建的CGPattern对象</li>
-<li>颜色组件的数组</li>
-</ol>
-
-
-<p>由于模板模式在绘制回调中不提供颜色值，所以我们必须传递一个颜色给填充或描边函数来告诉Quartz使用什么颜色。代码清单6-7显示了为模板模式设置颜色的例子。</p>
-
-<p>Listing 6-7  Code that sets opacity for a colored pattern</p>
-
-<pre><code>static const CGFloat color[4] = { 0, 1, 1, 0.5 }; //cyan, 50% transparent
-
-CGContextSetFillPattern (myContext, myPattern, color);
-</code></pre>
-
-<h3>使用模板模式绘制</h3>
-
-<p>在完成前面的步骤之后，我们就可以调用Quartz 2D函数来绘制了。我们的模式被当作“涂料”。例如，可以调用CGContextStrokePath, CGContextFillPath, CGContextFillRect或其它函数来绘制。</p>
-
-<h3>完整示例</h3>
-
-<p>代码清单6-8包含一个绘制模板模式的函数。这个函数包含了前面讨论的所有步骤。</p>
-
-<pre><code>#define PSIZE 16
-
-void MyStencilPatternPainting (CGContextRef myContext,
-                                const Rect *windowRect)
-{
-    CGPatternRef pattern;
-    CGColorSpaceRef baseSpace;
-    CGColorSpaceRef patternSpace;
-    static const CGFloat color[4] = { 0, 1, 0, 1 };
-    static const CGPatternCallbacks callbacks = {0, &amp;drawStar, NULL};
-
-    baseSpace = CGColorSpaceCreateDeviceRGB ();
-    patternSpace = CGColorSpaceCreatePattern (baseSpace);
-    CGContextSetFillColorSpace (myContext, patternSpace);
-    CGColorSpaceRelease (patternSpace);
-    CGColorSpaceRelease (baseSpace);
-    pattern = CGPatternCreate(NULL, CGRectMake(0, 0, PSIZE, PSIZE),
-                  CGAffineTransformIdentity, PSIZE, PSIZE,
-                  kCGPatternTilingConstantSpacing,
-                  false, &amp;callbacks);
-    CGContextSetFillPattern (myContext, pattern, color);
-    CGPatternRelease (pattern);
-    CGContextFillRect (myContext,CGRectMake (0,0,PSIZE*20,PSIZE*20));
-}
-</code></pre>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/3">&larr; Older</a>
@@ -1454,7 +1398,7 @@ void MyStencilPatternPainting (CGContextRef myContext,
 <section>
 <h1>分类</h1>
 <ul>
-  <li><a href='/blog/categories/ios'>ios (52)</a></li>
+  <li><a href='/blog/categories/ios'>ios (53)</a></li>
   <li><a href='/blog/categories/network'>network (3)</a></li>
   <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
   <li><a href='/blog/categories/swift'>swift (7)</a></li>
@@ -1466,6 +1410,10 @@ void MyStencilPatternPainting (CGContextRef myContext,
 <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/01/25/at-gong-ju-pian-:lldbdiao-shi-qi/">@工具篇：LLDB调试器</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2015/01/11/yuan-ma-pian-:mantle/">源码篇：Mantle</a>
@@ -1501,10 +1449,6 @@ void MyStencilPatternPainting (CGContextRef myContext,
     
       <li class="post">
         <a href="/blog/2014/12/05/quartz-2dbian-cheng-zhi-nan-zhi-qi-:yin-ying/">Quartz 2D编程指南之七：阴影</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/12/05/quartz-2dbian-cheng-zhi-nan-zhi-liu-:mo-shi-pattern/">Quartz 2D编程指南之六：模式(Pattern)</a>
       </li>
     
   </ul>
