@@ -4,7 +4,7 @@
   <title><![CDATA[南峰子的技术博客]]></title>
   <link href="http://southpeak.github.io/atom.xml" rel="self"/>
   <link href="http://southpeak.github.io/"/>
-  <updated>2015-01-25T21:34:55+08:00</updated>
+  <updated>2015-01-25T21:53:11+08:00</updated>
   <id>http://southpeak.github.io/</id>
   <author>
     <name><![CDATA[南峰子]]></name>
@@ -14,10 +14,10 @@
 
   
   <entry>
-    <title type="html"><![CDATA[@工具篇：LLDB调试器]]></title>
-    <link href="http://southpeak.github.io/blog/2015/01/25/at-gong-ju-pian-:lldbdiao-shi-qi/"/>
+    <title type="html"><![CDATA[工具篇：LLDB调试器]]></title>
+    <link href="http://southpeak.github.io/blog/2015/01/25/gong-ju-pian-:lldbdiao-shi-qi/"/>
     <updated>2015-01-25T21:33:25+08:00</updated>
-    <id>http://southpeak.github.io/blog/2015/01/25/at-gong-ju-pian-:lldbdiao-shi-qi</id>
+    <id>http://southpeak.github.io/blog/2015/01/25/gong-ju-pian-:lldbdiao-shi-qi</id>
     <content type="html"><![CDATA[<p>随着Xcode 5的发布，LLDB调试器已经取代了GDB，成为了Xcode工程中默认的调试器。它与LLVM编译器一起，带给我们更丰富的流程控制和数据检测的调试功能。LLDB为Xcode提供了底层调试环境，其中包括内嵌在Xcode IDE中的位于调试区域的控制面板，在这里我们可以直接调用LLDB命令。如图1所示：</p>
 
 <p>图1：位于Xcode调试区域的控制台</p>
