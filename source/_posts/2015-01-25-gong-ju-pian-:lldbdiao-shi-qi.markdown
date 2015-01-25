@@ -2,7 +2,7 @@
 
 layout: post
 
-title: "@工具篇：LLDB调试器"
+title: "工具篇：LLDB调试器"
 
 date: 2015-01-25 21:33:25 +0800
 
