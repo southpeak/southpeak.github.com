@@ -226,9 +226,8 @@ NSObject类提供了methodForSelector:方法，让我们可以获取到方法的
 	void (*setter)(id, SEL, BOOL);
 	int i;
 	 
-	setter = (void (*)(id, SEL, BOOL))[target
-	    methodForSelector:@selector(setFilled:)];
-	for ( i = 0 ; i < 1000 ; i++ )
+	setter = (void (*)(id, SEL, BOOL))[target methodForSelector:@selector(setFilled:)];
+	for (i = 0 ; i < 1000 ; i++)
 	    setter(targetList[i], @selector(setFilled:), YES);
 	    
 这里需要注意的就是函数指针的前两个参数必须是id和SEL。
@@ -403,8 +402,17 @@ NSObject的forwardInvocation:方法实现只是简单调用了doesNotRecognizeSe
 
 不过消息转发虽然类似于继承，但NSObject的一些方法还是能区分两者。如respondsToSelector:和isKindOfClass:只能用于继承体系，而不能用于转发链。便如果我们想让这种消息转发看起来像是继承，则可以重写这些方法，如以下代码所示：
 
-	- (BOOL)respondsToSelector:(SEL)aSelector	{	    if ( [super respondsToSelector:aSelector] )	        return YES;	    else {	        /* Here, test whether the aSelector message can     *	         * be forwarded to another object and whether that  *	         * object can respond to it. Return YES if it can.  */	    }
-			return NO; 	}
+	- (BOOL)respondsToSelector:(SEL)aSelector
+	{
+		if ( [super respondsToSelector:aSelector])
+			return YES;
+		else {
+			/* Here, test whether the aSelector message can     *
+			 * be forwarded to another object and whether that  *
+			 * object can respond to it. Return YES if it can.  */
+		}
+		
+		return NO; 	}
 
 ## 小结
 
