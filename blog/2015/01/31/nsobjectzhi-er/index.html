@@ -1,0 +1,420 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>NSObject之二 - 南峰子的技术博客</title>
+  <meta name="author" content="南峰子">
+      
+  <meta name="baidu-site-verification" content="HoscFhWICI" />
+
+  
+  <meta name="description" content="前面一章我们整理了NSObject类，这一章我们来看看NSObject协议的内容。 NSObject协议提供了一组方法作为Objective-C对象的基础。其实我们对照一个NSObject类和NSObject协议，可以看到很多方法的方法名都是一样的，只不过NSObject类提供的是类方法， &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://southpeak.github.io/blog/2015/01/31/nsobjectzhi-er">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="南峰子的技术博客" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<!--<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">-->
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">南峰子的技术博客</a></h1>
+  
+    <h2>攀登，一步一个脚印，方能知其乐</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:southpeak.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/categories/ios">iOS开发</a></li>
+  <li><a href="/blog/archives">所有文章</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">NSObject之二</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-01-31T22:41:09+08:00" pubdate data-updated="true">Jan 31<sup>st</sup>, 2015</time>
+        
+        
+           | <a href="#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>前面一章我们整理了NSObject类，这一章我们来看看NSObject协议的内容。</p>
+
+<p>NSObject协议提供了一组方法作为Objective-C对象的基础。其实我们对照一个NSObject类和NSObject协议，可以看到很多方法的方法名都是一样的，只不过NSObject类提供的是类方法，是基于类级别的操作；而NSObject协议提供的是实例方法，是基于实例对象级别的操作。</p>
+
+<p>如果一个对象如果采用了这个协议，则可以被看作是一级对象。我们可以从这个对象获取以下信息：</p>
+
+<ol>
+<li>类信息，以及类所在的继承体系。</li>
+<li>协议信息</li>
+<li>响应特定消息的能力</li>
+</ol>
+
+
+<p>实际上，Cocoa的根类NSObject就采用了这个类，所以所有继承自NSObject类的对象都具备NSObject协议中描述的功能。接下来，我们参照NSObject类，整理一下这些功能。</p>
+
+<h2>识别对象</h2>
+
+<p>类似于NSObject类，NSObject协议提供了一些方法来识别类。</p>
+
+<p>如果想获取对象的类对象，则可以使用如下方法：</p>
+
+<pre><code>- (Class)class
+</code></pre>
+
+<p>如果想获取对象父类的类对象，则可以使用以下只读属性：</p>
+
+<pre><code>@property(readonly) Class superclass
+</code></pre>
+
+<p>如果想查看某个对象是否是给定类的实例或者是给定类子类的实例，则可以使用以下方法：</p>
+
+<pre><code>- (BOOL)isKindOfClass:(Class)aClass
+</code></pre>
+
+<p>这个方法应该是大家常用的方法。需要注意的是在类簇中使用这个方法。在类簇中，我们获取到的对象类型可能并不是我们期望的类型。如果我们调用一个返回类簇的方法，则这个方法返回的实际类型会是最能标识这个类能做些什么的类型。例如，如果一个方法返回一个指向NSArray对象的指针，则不能使用isKindOfClass:方法查看经是否是一个可变数组，如以下代码：</p>
+
+<pre><code>if ([myArray isKindOfClass:[NSMutableArray class]])
+{
+    // Modify the object
+}
+</code></pre>
+
+<p>如果我们使用这样的代码，我们可能会认为修改一个实际上不应该被修改的对象是没问题的。这样做可能会对那些期望对象保持不要变的代码产生影响。</p>
+
+<p>另外，查看对象是否是指定类的一个实例还可以使用以下方法：</p>
+
+<pre><code>- (BOOL)isMemberOfClass:(Class)aClass
+</code></pre>
+
+<p>注意，这个方法无法确定对象是否是指定类子类的实例。另外，类对象可能是编译器创建的对象，但它仍然支持这一概念。</p>
+
+<h2>测试对象</h2>
+
+<p>对于对象的测试，NSObject协议也定义了两个方法，其中respondsToSelector:方法用于测试对象是否能响应指定的消息，这个方法可以是类自定义的实例方法，也可以是继承而来的实例方法。其声明如下：</p>
+
+<pre><code>- (BOOL)respondsToSelector:(SEL)aSelector
+</code></pre>
+
+<p>不过我们不能使用super关键字来调用respondsToSelector:，以查看对象是否是从其父类继承了某个方法。因为我们可以从super的定义可知，消息的最终实际接收者还是self本身，因此测试的还是对象的整个体系(包括对象所在类本身)，而不仅仅是父类。不过，我们可以使用父类来调用NSObject类的类方法instancesRespondToSelector:来达到这个目的，如下所示：</p>
+
+<pre><code>if( [MySuperclass instancesRespondToSelector:@selector(aMethod)] ) {
+    // invoke the inherited method
+    [super aMethod];
+}
+</code></pre>
+
+<p>我们不能简单地使用[[self superclass] instancesRespondToSelector:@selector(aMethod)]，因为如果由一个子类来调用，则可能导致方法的失败。</p>
+
+<p>还需要注意的是，如果对象能够转发消息，则也可以响应这个消息，不过这个方法会返回NO。</p>
+
+<p>如果想查看对象是否实现了某个类，则可以使用如下方法：</p>
+
+<pre><code>- (BOOL)conformsToProtocol:(Protocol *)aProtocol
+</code></pre>
+
+<p>这个方法与NSObject类的类方法conformsToProtocol:是一样的。它只是提供了一个便捷方法，我们不需要先去取对象的类，再调用类方法conformsToProtocol:。</p>
+
+<h2>标识和比较对象</h2>
+
+<p>如果我们想获取对象本身，则可以使用以下方法：</p>
+
+<pre><code>- (instancetype)self
+</code></pre>
+
+<p>比较两个对象是否相同，则可以使用以下方法：</p>
+
+<pre><code>- (BOOL)isEqual:(id)anObject
+</code></pre>
+
+<p>这个方法定义了对象相同的意义。例如，一个容器对象可能会按照特定规则来定义两个对象是否相等，如其所有元素的isEqual:请求都返回YES。我们在自定义子类时，可以重写这个方法，以使用我们自己的规则来评判两个对象相等。</p>
+
+<p>如果两个对象相等，则它们必须拥有相同的hash值。在子类中定义isEqual:方法并打算把子类的实例放入集合中时，这一点非常重要。因此在子类中必须同时定义hash。</p>
+
+<p>hash值是一个整数值，它可以用于在hash表结构中作为一个表地址。其声明如下：</p>
+
+<pre><code>@property(readonly) NSUInteger hash
+</code></pre>
+
+<p>如果一个可变对象被添加到一个以hash值来确定对象位置的集合中，则当对象还在集合中时，其由hash方法返回的值不能改变。因此，hash方法不能依赖于对象内部的任何状态信息，或许我们必须确保对象在集合中时，不能改变其内部状态信息。比如，一个可变字典可以放到一个hash表中，但当它还在表中时，不能改变它。</p>
+
+<h2>发送消息</h2>
+
+<p>在NSObject类中，定义了一系列的发送消息的方法，用于在目标线程中执行方法。NSObject协议也定义了如下几个方法，来执行发送消息的任务：</p>
+
+<pre><code>- (id)performSelector:(SEL)aSelector
+
+- (id)performSelector:(SEL)aSelector withObject:(id)anObject
+
+- (id)performSelector:(SEL)aSelector withObject:(id)anObject withObject:(id)anotherObject
+</code></pre>
+
+<p>这三个方法基本相同，只不过后面两个方法能为selector指定的方法携带参数。因此我们以performSelector:为例。</p>
+
+<p>performSelector:方法的使用与直接将消息发送给对象的效果是一样的，如下面几个操作，做的事情是一样的：</p>
+
+<pre><code>id myClone = [anObject copy];
+id myClone = [anObject performSelector:@selector(copy)];
+id myClone = [anObject performSelector:sel_getUid("copy")];
+</code></pre>
+
+<p>区别在于，performSelector:允许在运行时再去确定对象是否能处理消息。而[anObject copy]中，如果anObject不能处理copy，编译器就直接会报错。</p>
+
+<p>如果方法的参数过多，以至于上面几个方法都无法处理，则可以考虑使用NSInvocation对象。</p>
+
+<h2>描述对象</h2>
+
+<p>描述对象的方法与NSObject类中描述类的方法其方法名相同，都是description，其声明如下：</p>
+
+<pre><code>@property(readonly, copy) NSString *description
+</code></pre>
+
+<p>这个方法用于创建一个对象的文本表达方式，例如：</p>
+
+<pre><code>ClassName *anObject = &lt;#An object#&gt;;
+NSString *string = [NSString stringWithFormat:@"anObject is %@", anObject];
+</code></pre>
+
+<p>为了便于调试，NSObject协议还定义debugDescription方法，该方法声明如下：</p>
+
+<pre><code>@property(readonly, copy) NSString *debugDescription
+</code></pre>
+
+<p>该方法返回一个在调试器中显示的用于描述对象内容的字符串。在调试器中打印一个对象时，会调用这个方法。NSObject类实现这个方法时只是调用了description方法，所以默认情况下，这两个方法的输出都是一样的。我们在子类中可以重写这个方法的实现。</p>
+
+<h2>总结</h2>
+
+<p>NSObject协议的定义的很多方法都是我们平常经常使用的。我们在创建NSObject类的子类时，默认都继承了NSObject类对于NSObject协议的实现。如果有特殊的需求，我们可以重写这些方法。</p>
+
+<p>当然，NSObject协议还定义了一些方法，如我们非常熟悉的retain, release, autorelease, retainCount方法，不过这些方法在ARC时代已经过时了，我们在此不过多说明。</p>
+
+<h2>参考</h2>
+
+<ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/Foundation/Protocols/NSObject_Protocol/index.html">NSObject Protocol Reference</a></li>
+</ol>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">南峰子</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-01-31T22:41:09+08:00" pubdate data-updated="true">Jan 31<sup>st</sup>, 2015</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/ios/'>ios</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/01/31/nsobjectzhi-%5B%3F%5D/" title="Previous Post: NSObject之一">&laquo; NSObject之一</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+
+
+<section>
+    <h1>Comments</h1>
+    <div id="comments" aria-live="polite"><!-- Duoshuo Comment BEGIN -->
+<div class="ds-thread" data-title="NSObject之二"></div>
+<script type="text/javascript">
+    var duoshuoQuery = {short_name:"southpeak"};
+    (function() {
+     var ds = document.createElement('script');
+     ds.type = 'text/javascript';ds.async = true;
+     ds.src = 'http://static.duoshuo.com/embed.js';
+     ds.charset = 'UTF-8';
+     (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+     })();
+</script>
+<!-- Duoshuo Comment END --></div>
+</section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+<section>
+<h1>分类</h1>
+<ul>
+  <li><a href='/blog/categories/ios'>ios (55)</a></li>
+  <li><a href='/blog/categories/network'>network (3)</a></li>
+  <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
+  <li><a href='/blog/categories/swift'>swift (7)</a></li>
+  <li><a href='/blog/categories/system'>system (1)</a></li>
+  <li><a href='/blog/categories/网络'>网络 (8)</a></li>
+</ul>
+</section>
+
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/01/31/nsobjectzhi-er/">NSObject之二</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/31/nsobjectzhi-%5B%3F%5D/">NSObject之一</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/25/gong-ju-pian-:lldbdiao-shi-qi/">工具篇：LLDB调试器</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/11/yuan-ma-pian-:mantle/">源码篇：Mantle</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/11/gong-ju-pian-:mantle/">工具篇：Mantle</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/08/quartz-2dbian-cheng-zhi-nan-zhi-shi-san-:pdfwen-dang-de-chuang-jian-,-xian-shi-ji-zhuan-huan/">Quartz 2D编程指南之十三：PDF文档的创建、显示及转换</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/08/quartz-2dbian-cheng-zhi-nan-zhi-shi-er-:core-graphicsceng-hui-zhi/">Quartz 2D编程指南之十二：Core Graphics层绘制</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/05/quartz-2dbian-cheng-zhi-nan-zhi-shi-%5B%3F%5D-:wei-tu-yu-tu-xiang-zhe-zhao/">Quartz 2D编程指南之十一：位图与图像遮罩</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/12/11/quartz-2dbian-cheng-zhi-nan-zhi-shi-:quartz-2dzhong-de-shu-ju-guan-li/">Quartz 2D编程指南之十：Quartz 2D中的数据管理</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/12/10/quartz-2dbian-cheng-zhi-nan-zhi-jiu-:tou-ming-ceng/">Quartz 2D编程指南之九：透明层</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2015 - 南峰子 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

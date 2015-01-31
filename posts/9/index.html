@@ -11,7 +11,7 @@
   <meta name="baidu-site-verification" content="HoscFhWICI" />
 
   
-  <meta name="description" content="原文发表在cocoachina上，现在把它整理过来。 Cover Flow介绍 Cover flow是苹果首创的将多首歌曲的封面以3D界面的形式显示出来的方式。 随处可见的Cover Flow特效 iTunes:在iTunes音乐中点击搜索框左边“查看”项第三个，即以cover &hellip;">
+  <meta name="description" content="域命名约定 服务实例与服务类型的Bonjour名称与DNS域名相关。这里我们将介绍DNS域名，Bonjour本地“域”，和Bonjour服务实例与服务类型的命名规则。 域名与DNS DNS使用specific-to-general命名方案来为域名命名。最能用的域是&#8221;.&ldquo;, &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -68,6 +68,372 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/07/20/bonjourde-yu-ming-ming-yue-ding-,-apiji-qi-cao-zuo/">Bonjour理论2：域命名约定、API及其操作</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-07-20T15:52:22+08:00" pubdate data-updated="true">Jul 20<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/07/20/bonjourde-yu-ming-ming-yue-ding-,-apiji-qi-cao-zuo/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h2>域命名约定</h2>
+
+<p>服务实例与服务类型的Bonjour名称与DNS域名相关。这里我们将介绍DNS域名，Bonjour本地“域”，和Bonjour服务实例与服务类型的命名规则。</p>
+
+<h4>域名与DNS</h4>
+
+<p>DNS使用specific-to-general命名方案来为域名命名。最能用的域是&#8221;.&ldquo;,称为根域名，这是类似于UNIX文件系统中的根目录&rdquo;/&ldquo;。所有其它域都在根域名的层次结构中。例如，域名www.apple.com.可以解析为根域&rdquo;.&ldquo;，其下包含顶级域名&#8221;com.&rdquo;,再下面是二级域&#8221;apple.com.&ldquo;, 其下就是&#8221;www.apple.com.&#8221;。下图显示了这种层次结构：</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/NetServices/Art/names_01dns_2x.png" alt="image" /></p>
+
+<p>在这棵倒树的顶部是根域。在其下面是一些顶级域：com., edu., org.等。在顶级域下面是一些二级域，如apple, darwin, zeroconf。这棵树可以无限延伸下去。</p>
+
+<h4>Bonjour和本地链路</h4>
+
+<p>Bonjour协议很大程度上都是在处理本地链路(网络的一部分)。一个主机的本地链路或才链路本地网络(link-lock network)包括主机本身及其它可以不修改IP分组数据就是交换包的主机。在实践中，这包含所有没被路由器分开的主机。</p>
+
+<p>在Bonjour系统中，&#8221;local.&ldquo;用于标识在本地IP网络中应该使用IP多播查询来进行查找的名称。</p>
+
+<p>注意：&#8221;local.&ldquo;不是一个真实的域。我们可以将&#8221;local.&#8221;当成一个伪域。它与传统的DNS域有一个根本的区别：其它域的名称是全局唯一的，而链路本地域名不是。www.apple.com在全球只有唯一的一个DNS入口。而以local.结尾的主机名是本地网络中由多播DNS响应者的集合管理的，所以命名范围就是&#8221;local.&rdquo;(本地)。所以只要不在同一个本地网络中，就可以有两台命名相同的主机，即使是在同一栋楼中。而在同一个本地网络中，也需要确保名称的唯一性。如果在本地网络中发生名称冲突，一个Bonjour主机会自动查找一个新的名称或让用户输入一个新的。</p>
+
+<h4>现有服务类型的Bonjour名称</h4>
+
+<p>Bonjour服务根据IP服务的现有网络标准(RFC 2782)来命名。Bonjour服务名结合服务类型和传输协议绑定以形成一个注册类型。注册类型用于注册一个服务并创建DNS资源记录。如果要在DNS资源记录中区分注册类型和域名，可以要注册类型每个组件前使用下划线。其格式如下</p>
+
+<p><strong>_ServiceType._TransportProtocolName</strong></p>
+
+<p>服务类型是该服务的官方IANA注册名称，如ftp,http或打印机。传输协议的名称是tcp或udp，取决于服务使用的传输协议。一个运行在TCP上的FTP服务注册类型应该是<em>ftp.</em>tcp，并将注册一个名称为<em>ftp.</em>tcp.local.的DNS PTR记录，以作为服务所在主机的多播DNS响应者。</p>
+
+<h4>新服务的Bonjour名称</h4>
+
+<p>如果我们正在设计一个新的协议以作为Bonjour网络服务来推广，则应该在IANA中注册它。</p>
+
+<p>IANA目前要求每个每个注册的服务都与一个&#8221;众所周知的端口&#8221;或众所周知的端口范围相关联。例如，http的端口是80，所以我们在浏览器中访问一个站点时，程序都假设HTTP服务运行在80端口上，除非我们另行指定。</p>
+
+<p>但在Bonjour中，我们不需要知道端口号。因为客户端程序通过对服务类型进行简单查询，就能发现我们的服务，因此不需要端口。</p>
+
+<h4>服务实例的Bonjour名称</h4>
+
+<p>服务实例名称是一种可读的字符串，因此，它们的名称具有描述性，并可以让用户重写我们提供的默认名称。由于它们是可浏览的，而不是类型化的，服务实例名可以是编码为UTF8的任何Unicode字符串，最多63个字节长度。</p>
+
+<p>例如，一个在网络中分享音乐的程序可能使用本地用户名来分享服务(如Emille的曲库)。用户可以重写默认服务名，并将服务命名为Zealous Lizard&rsquo;s Tune Studio._music._tcp.local.</p>
+
+<p>下图说明了一个Bonjour服务实例的名称结构。在树的顶部是域，如本地网络的local.。下一级是注册类型，它由前面加下划线的服务类型(_music)和传输协议(同样前面有开线)组成。在树的底部是可读的服务实例名，如Zealous Lizard&rsquo;s Tune Studio。完整的名称由底至顶，每个组件由&#8221;.&ldquo;分割。</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/NetServices/Art/names_02services_2x.png" alt="image" /></p>
+
+<h2>Bonjour的API架构</h2>
+
+<p>Bonjour网络服务的API结构如下图所示：</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/NetServices/Art/rendarch_04apilayers_2x.png" alt="image" /></p>
+
+<p>其主要有这么几部分：
+1. NSNetService和NSNetServiceBrowser类：在Foundation框架中
+2. CFNetServices：Core Services中CFNetwork框架的一部分；
+3. DNS Service Discovery for Java(OS X)
+4. 底层DNS Service Discovery API：构建在BSD socket</p>
+
+<p>所有这些API集合提供了发布、搜索和网络服务解析的基础方法。下面我们简单介绍一下这几个部分</p>
+
+<h4>NSNetService和NSNetServiceBrowser</h4>
+
+<p>NSNetService和NSNetServiceBrowser提供了服务搜索和发布的面向对象接口。NSNetService对象表示Bonjour服务的实例，用于客户端发布和服务搜索；NSNetServiceBrowser表示特定类型服务的浏览器。大多数Cocoa程序员应该使用这些类来处理需求。如果需要更多详细的控制，可以使用DNS Service Discovery API。</p>
+
+<p>NSNetService和NSNetServiceBrowser被安排到默认的NSRunLoop对象中来异步执行发布、搜索和解析操作。所以NSNetService和NSNetServiceBrowser返回的结果都由代理对象来处理。这些对象必须与一个run loop相关联，但不必是默认的run loop。</p>
+
+<h4>CFNetServices</h4>
+
+<p>CFNetServices API位于Core Services框架中，提供Core Foundation样式的类型和函数来管理服务和服务搜索。CFNetServices定义了三个Core Foundation对象类型:</p>
+
+<ol>
+<li>CFNetService：服务实例的抽象表示，用于发布或其它用途。相关的函数提供了发布和解析服务的支持</li>
+<li>CFNetServiceBrowser：表示特定域中特定类型服务的浏览者。通常只在基于Core Foundation编码时使用这个类型</li>
+<li>CFNetServiceMonitor</li>
+</ol>
+
+
+<p>CFNetService和CFNetServiceBrowser对象通常在CFRunLoop中使用。为了获取结果，程序需要实现处理事件的回调函数，如新的服务产生和消失等。与NSNetService和NSNetServiceBrowser不同的是，CFNetServices类型可以不需要一个run loop，可以在需要的时候同步运行。但通常不建议同步使用。</p>
+
+<h4>DNS Service Discovery</h4>
+
+<p>DNS Service Discovery API声明在/usr/include/dns_sd.h中，它为Bonjour服务提供了低级别BSD socket通信。DNS Service Discovery作为软件与多播DNS响应者或DNS服务器之间的中介层。它为我们管理DNS响应者，让我们编写程序时专注于服务和服务浏览者而不是DNS资源记录。</p>
+
+<p>由于DNS Service Discovery API是Darwin开源工程的一部分，我们应该在写跨平台代码使用它，或者在诸如在NSNetService这样的高级别API无法获取低级特性时使用它。</p>
+
+<h2>Bonjour操作</h2>
+
+<p>Bonjour的网络服务结构包含一个简单易用的机制来发布、搜索和使用基于IP的服务。Bonjour支持三种基础操作，每一种都是零配置网络服务所必须的：</p>
+
+<ol>
+<li>发布(Publication): 广告一个服务</li>
+<li>搜索(Discovery): 浏览可用的服务</li>
+<li>解析(Resolution): 将服务实例名转化为地址和端口</li>
+</ol>
+
+
+<p>下面将分别介绍这三个部分。</p>
+
+<h4>Publication</h4>
+
+<p>为了发布一个服务，程序或设备必须使用一个多播DNS响应者来注册服务，或者通过高级API，或者直接与响应者(mDNSResponser)通信。Bonjour同样支持在传统的DNS服务中存储记录。当注册服务后，会创建三个相关的DNS记录：服务记录(SRV), 指针记录(PTR)和文本记录(TXT)。其中TXT记录会包含额外的数据用于解析或使用服务，虽然这些数据通常是空的。</p>
+
+<h5>服务记录</h5>
+
+<p>服务记录将服务实例名称映射到实际使用服务所需要的信息。客户端通过持久化方式存储服务实例名以访问这些服务，并在连接的时候执行针对主机名和端口号的DNS查询。这个额外的indirection级提供了两个重要的特性</p>
+
+<ol>
+<li>服务由一个可读的名称标识，而不是域名和端口号</li>
+<li>客户端可以在服务的端口号和IP地址变化时访问服务，只要服务名不变即可。</li>
+</ol>
+
+
+<p>SRV记录包含两部分信息来标识一个服务</p>
+
+<ol>
+<li>主机名</li>
+<li>端口号</li>
+</ol>
+
+
+<p>主机名是服务可被发现的域名。用主机名代替IP地址的原因是一个主机可能对应多个IP地址，或者可以同时有IPv4地址和IPv6地址。使用主机名可以让所有这些情况被正确的处理。</p>
+
+<p>端口号标识的服务的TCP或UDP端口号。</p>
+
+<p>SRV记录以下面的规则来命名：</p>
+
+<p><strong>&lt;Instance Name>.&lt;Service Type>.&lt;Domain></strong></p>
+
+<p>&lt;Instance Name>是服务实例名称，可以是任何UTF-8编码的字符串，通常是可读的有意义的字符串</p>
+
+<p>&lt;Service Type>是标准的IP协议名称，前面带有下划线，后面跟着传输协议(TCP/UDP，前缀也是下划线)。</p>
+
+<p>&lt;Domain>是标准的DNS域名。这可能是一个特定的域名，如apple.com.，也可以是通用的以local.为后缀的域名(用于本地链路的服务)</p>
+
+<p>下面是SRV记录的例子，它是一个运行在TCP上端口号为515上，名称为PrintsAlot的打印后台处理程序：</p>
+
+<p><strong>PrintsAlot._printer._tcp.local. 120 IN src 0 0 515 blackhawk.local.</strong></p>
+
+<p>这条记录将在本地链路的叫做blackhawk.local.的打印机的多播DNS响应者设备上被创建。初始的120是用于缓存的TTL值。两个0是分别表示权重和优先级，在传统DNS上选择多个与给定名匹配的记录时需要使用这两个值，而对于多播DNS，将忽略这两个值。</p>
+
+<h5>指针记录</h5>
+
+<p>PTR记录可以通过将实例的类型映射到服务的特定类型的实例的名字来开启服务搜索。这个记录添加了另一个indirection层，以便服务可以只通过查询使用服务类型标定的PTR记录就被找到。</p>
+
+<p>这个记录只包含信息的一小块&mdash;服务实例的名称。PTR记录的命名与SRV记录类似，不过没有实例名，如下所示：</p>
+
+<p><strong>&lt;Service Type>.&lt;Domain></strong></p>
+
+<h5>文本记录</h5>
+
+<p>TXT记录与相应的SRV记录有相同的名称，并且可以包含少量的关于服务实例的额外的信息，一般不超过100-200个字节。记录也可以是空的。例如，一个网络游戏可以在多人游戏中广告所使用的地图名称。如果需要传输大量的数据，主机需要与客户端建立一个连接并直接发送数据。</p>
+
+<p>通常，这个记录用于运行在同一地址同一端口的多个服务上，例如在同一个打印服务器上运行的多个打印队列，在这种情况下，TXT记录中额外的信息可用于标识预期的打印队列。如下表所示：</p>
+
+<p><img src="http://b140.photo.store.qq.com/psb?/V130i6W71atwfr/AFtWnv5ko6gDjydKCfEChHIKr1la*sMWMqfKcG8VTXg!/b/dCtmdVP4JAAA&amp;bo=TATAAAAAAAADAK0!&amp;rf=viewer_4" alt="image" /></p>
+
+<p>这么做是必要的，因为服务类型曾经与众所周知的端口相关联。建议新的Bonjour协议的设计者在不同的动态分配的端口上来运行每一个服务的实例，而不是在相同的众所周知的端口号上运行它们(这种情况下还需要额外的信息来指定客户端试图通信的服务实例)。</p>
+
+<p>TXT记录中的数据的特性和格式特定于每种服务的类型，所有每个新的服务类型需要为自己相关的TXT记录定义数据的格式，并将其作为协议规范的一部分发布。</p>
+
+<h4>搜索</h4>
+
+<p>服务搜索使用服务发布期间注册的DNS记录来查找特定类型的服务的所有实例。为了做到这一点，所有的应用执行一个匹配服务类型的PTR记录的查询。如_http._tcp，通常使用高级接口。运行于每个设备上的多播DNS响应者将使用服务实例名来返回PTR记录。以音乐共享服务为例，下图显示了搜索的过程</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/NetServices/Art/rendarch_02discover_2x.png" alt="image" /></p>
+
+<p>在搜索音乐共享服务的过程，主要有两步：</p>
+
+<ol>
+<li>客户端程序向标准多播地址224.0.0.251发出一个在local.域中服务类型为_music._tcp的查询。</li>
+<li>网络中的每一个多播DNS响应者都将接收到这个请求，但只有音乐共享设备会使用一个PTR记录来作出响应。在这种情况下，PTR记录保存一个服务实例名Ed&rsquo;s Party Mix.<em>music.</em>tcp.local.，客户端程序可以从PTR记录中提取服务实例名然后将其添加到一个音乐服务器的离线列表中。</li>
+</ol>
+
+
+<h4>解析</h4>
+
+<p>服务搜索通常只会发生一次，例如，当用户第一次选择打印机时。这个操作保存了服务实例名，和一个服务的任何给定实例的稳定的标识符。端口号，IP地址，主机名可能经常改变，但用户在每次连接服务时不需要再次选择一个打印机。因此，将一个服务名解析为socket信息只有在服务真正使用时才发生。</p>
+
+<p>为了解析一个服务，程序使用服务名来执行SRV记录的DNS查询。多播DNS响应者使用包含当前信息的SRV记录来作出响应。下图演示了音乐共享实例中服务解析的这样一个过程：</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/NetServices/Art/rendarch_03resolve_2x.png" alt="image" /></p>
+
+<p>这个过程主要分为几步：</p>
+
+<ol>
+<li>解析进程发送一个DNS查询到多播地址224.0.0.251，查询Ed’s Party Mix._music._tcp.local.的SRV记录。</li>
+<li>查询返回服务的主机名和端口号(eds-musicbox.local., 1010)</li>
+<li>客户端发送一个IP地址的多播请求</li>
+<li>请求解析为IP地址169.254.150.84.然后客户端使用这个IP地址和端口号来连接服务器。这个过程发生在服务被使用时，从而总是查找服务的最新地址和端口号。</li>
+</ol>
+
+
+<p>参考</p>
+
+<p><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/NetServices/Introduction.html">Bonjour Overview</a></p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/07/19/bonjourji-ben-li-lun/">Bonjour理论1：基本概念</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-07-19T11:38:39+08:00" pubdate data-updated="true">Jul 19<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/07/19/bonjourji-ben-li-lun/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>在过去的二十年里，IP协议已经成为计算机等硬件设备之间通信的基本协议。大部分计算机和其它网络设备都是基于TCP/IP进行通信的。在这种网络中，每个设备都需要一个唯一的IP地址，不管是手动设定的还是由DHCP服务器动态分配的。动态指定的地址是可以改变的，但是像打印机等设备是必须手动设定一个静态地址的，这样网络中的计算机才能连接到它们。然后网络管理员需要配置一个DNS服务器，这样计算机用户就不需要通过IP地址来连接打印机了。这样，一个看起来很小的工作需要比较复杂的配置。但是如果我们需要在自己家中搭建一个局域网，而我们对此一无所知的话，这就是个大问题了。即使对于专业的网络管理员，也需要去手动配置打印机。但我们很多时候并不希望去做这些配置，就可以直接连入局域网内去获取打印机、或在文件服务器、甚至游戏服务器去获取我们想要的东西。</p>
+
+<p>我们希望找到可用的设备并从一个列表中选择它们，而不是必须知道每个服务名或IP地址。这便是Bonjour所需要解决的问题。它是基于IP的一组零配置网络的协议。零配置网络有很大的潜力。</p>
+
+<p>假设我们带着笔记本电脑去客户的公司，这时我们需要打印一些东西。如果这家公司有一台支持Bonjour协议的打印机，那么只要两台设备在同一个局域网内，就可以直接打印。此时，我们的每户本会搜索到任何可用的设备。我们只需要打开文档，选择设备列表中的打印机，点击打印就可完成打印操作。图1演示了这样一个过程：</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/NetServices/Art/about_01example_2x.png" alt="image" /></p>
+
+<p>这种零配置网络能够满足手机游戏、家庭网络、分布式计算和其它很多网络应用的需求。</p>
+
+<p>那么Bonjour到底是什么呢？</p>
+
+<h2>Bonjour三要素</h2>
+
+<p>Bonjour是由苹果提出的基于IP的无配置网络建议。它产生于ZEROCONF工作组的工作，是IETF的一部分。ZEROCONF工作组对于基于IP的零配置网络的需要主要有三个要求</p>
+
+<ol>
+<li>寻址(分配IP地址给主机)</li>
+<li>命名(使用名字而非IP地址来表示主机)</li>
+<li>服务搜索(自动搜索网络服务)</li>
+</ol>
+
+
+<p>Bonjour即是这些需求的一个解决方案。它允许服务提供商、硬件制造商和程序开发者在使用新的技术时只使用单一的网络协议&mdash;IP。网络用户不再需要指定IP地址和主机名，甚至不需要指定网络中访问设备的类型。用户只需要简单的查看有哪些网络服务可用，然后从列表中选择。程序能自动检测到所需要的服务或它们需要进行交互的其它程序，允许自动连接、通信和进行数据传输，而不需要用户的介入。</p>
+
+<p>下面我们来分别看看Bonjour如何解决零配置网络的三个要素</p>
+
+<h4>寻址</h4>
+
+<p>寻址问题通过自分配链路本地寻址方法来解决。链路本地寻址(Link-local addressing)使用为本地网络保留的地址范围，特别是一个小的LAN或单独的LAN片断。IPv6标准将自分配链路本地寻址作为协议的一部分。而IPv4本身不包含链路本地寻址，因此零配置网络寻址的主要挑战是如何在IPv4中改进此功能。</p>
+
+<p>在IPv4中，自分配寻址通过在链路本地范围内挑选一个随机的IP地址并对其进行测试。如果地址没有使用，则作为本地地址。如果已经使用了，计算机或其它设备将选择另一个随机地址并测试。</p>
+
+<p>目前大多数主流操作系统都支持IPv4和IPv6的链路本地寻址。</p>
+
+<h4>命名</h4>
+
+<p>在本地网络中进行name-to-address转换操作建议的方案是使用多播DNS，其中DNS格式查询使用IP多播传送到本地网络中。因为这些DNS查询被发送到多播地址中，因此没有一个全局的DNS服务器来回答这个查询。每个服务或设备都可以提供自己的DNS功能，当前发现一个针对自己名称的查询时，它使用自己的地址来响应这个DNS查询。</p>
+
+<p>Bonjour更进了一步。它在主机或iOS设备上包含一个响应来处理任何网络服务的多播DNS查询。这降低了中断应用来响应多播消息的压力。通过注册服务，Bonjour的mDNSResponder守护进程自动广告我们的服务是否可用，以便把我们名字的查询自动被引导到正确的IP地址和端口号上。</p>
+
+<p>为了让name-to-address转换能正确的工作，需要一个本地网络的唯一的名字。与转换DNS主机名不同的是，这个本地名称只在本地网络或LAN段上有效。我们可以像自分配一个本地地址一样自分配一个本地名称，选中其中一个；如果这个名称没有使用，则：</p>
+
+<ol>
+<li>硬件制造商通过设备发送一个多播DNS查询并查看响应来确定其选中的名字是否已使用。如果有响应，则设备应该选择另外一个名字。没有用户界面的设备可以在默认名字后面添加一下大数直到这个名字是唯一的。例如，如果在网络中的默认名字是XYZ-LaserPrinter.local，则可以使用XYZ-LaserPrinter.local，XYZ-LaserPrinter-2.local，XYZ-LaserPrinter-3.local进行测试，直到名字唯一。</li>
+<li>软件服务在注册Bonjour时提供一个名字，如果提供的名字已使用，则Bonjour会自动重命名我们的服务。</li>
+</ol>
+
+
+<p>在OS X中，用户可以在系统偏好设置的共享面板中设置本地主机名来为计算机设置一个主机名，在iOS中，主机名是自动产生的且不能配置。这个主机名可用于任何DNS主机名常规使用的地方，如Web浏览器、命令行工具等等。为了向系统表明名字是一个本地主机名，可在主机名后添加.local.，如Setve.local.即为一个本地主机名。</p>
+
+<p>如果用户在浏览器中输入steve.local.，这将告诉系统多播一个请求以在本地网络中查询steve，而不是将其发送到常规DNS服务器。如果在本地网络中有一台支持Bonjour的计算机名字为steve，则用户的浏览器将发送正确的IP地址给它。这允许用户访问本地主机和服务崦不需要常规DNS服务。</p>
+
+<h4>服务搜索</h4>
+
+<p>Bonjour最后一个要素是服务搜索。服务搜索允许程序查找所有可用的特定类型的服务并维护一个命名服务及端口的列表。应用可以将服务主机名解析为IPv4和IPv6地址列表。</p>
+
+<p>命名服务的列表在服务与其当前DNS名和端口中提供了一个indirection层。indirection允许程序保存一个可用服务的持久化列表并在使用服务前解析一个实际的网络地址。该列表允许服务被动态迁移，而不会产生大量的网络流量来宣告这个改变。</p>
+
+<p>在Bonjour中服务搜索是通过&#8221;browsing&#8221;来实现的。一个多播DNS查询发送一个指定的服务类型和域，任何匹配的服务都会回复他们的名字。其结果就是一个可用服务的列表。这与传统的网络服务以设备为中心的思考很不一样。对于处理服务、网络设备和网络编程的的个人来讲，很容易习惯性认为服务基于物理硬件(services in terms of physical hardware)。
+从设备为中心的角度来看，网络由许多设备或主机组成，每个包含一组服务。例如，网络可能由服务器和客户机组成。在一个设备为中心的浏览架构中，一个客户端向服务器查询哪些服务正在运行，获取一个列表(FTP, HTTP等)，并决定使用哪个服务。这个接口反映了物理系统组织的方式。但这不一定是用户在逻辑上希望的或想要的。</p>
+
+<p>用户通常想要完成特定的任务，而不是查找设备列表来找出什么服务正在运行。让客户端只询问一次“什么打印服务可用？”比查询每个可用的设备来问“你正在运行什么服务”然后筛选结果查找打印服务来得更有意义。以设备为中心的方法不但耗时，而且需要大量的网络流量，且其中大部分是无用的。而以服务为中心的方法发送单个查询，只生成相关的回复。</p>
+
+<p>此外，服务不与指定的IP或主机名绑定。例如，一个站点可能被多个有不同地址的服务器托管。在一个组织中，网络管理员可能需要将一个服务从一个服务器移到另一个服务器来做负载均衡。如果客户端存储了主机名，如果服务移到另一个不同的主机，则无法再连接。</p>
+
+<p>Bonjour从面向服务的角度来看问题。它通过所需要的服务类型来查找，而不是主机名。应用存储的是服务实例名，而不是地址，所以如果IP地址、端口号，甚至主机名改变了，应用仍然可以连接。通过专注于服务而不是设备，用户的浏览体验将更有用且无故障。</p>
+
+<h2>降低消耗</h2>
+
+<p>服务器的寻址、命名和服务搜索可能会产生大量的网络流量，但Bonjour采取了一些措施来将流量降低到最少。这允许Bonjour达到AppleTalk的易用性，同时又避免了不必要的“繁琐”。Bonjour采用了多种机制来降低零配置的开销，包括缓存、禁止重复响应，指数回退和服务公告。下面我们将简单介绍下这几种机制。</p>
+
+<h4>缓存</h4>
+
+<p>Bonjour采用了多播DNS记录缓存来防止主机请求那些已请求过的信息。例如，当一个主机请求一个LPR打印后台的处理程序列表时，列表通过多播传回来，所有本地主机都将看到这个列表。下次本地网络中的一个主机需要一个打印后台处理程序的列表时，因为它已经缓存了这个列表，所以不需要再次发起请求。多播DNS响应者负责维护这个缓存；程序开发者不需要做任何事情来维护它</p>
+
+<h4>禁止重复响应</h4>
+
+<p>为了阻止重复响应相同的请求，Bonjour服务查询包含一个已知答案的列表。例如，如果主机正在浏览打印机，第一个查询不包含打印服务，但从可用打印服务器得到12个回复。下一次该主机查询打印服务时，查询包含已知服务器的列表。已经在列表中的打倒服务器将不做响应。</p>
+
+<p>Bonjour以另一种方式来抑制重复响应。如果一个主机将要响应，但发现另一个主机已经响应了相同的信息，则主机会抑制它的响应。</p>
+
+<p>程序开发者不需要采取任何措施来抑制重复发送，Bonjour会处理。</p>
+
+<h4>指数回退和服务公告</h4>
+
+<p>当主机浏览服务时，它不会不间断地发送查询来查看是否有新的服务。相反，主机会初始一个查询，后续会不断增加查询时间的间隔，如1s, 3s, 9s, 27s这样一个时长间隔，最后可能会长达1小时的间隔。</p>
+
+<p>但这不意味着花费一个小时的时间间隔再来查看新的服务。当在网络中启动一个服务时，它会使用几次回退算法来通知它的存在。这样就将服务公告和搜索的网络流量保持在最小，而新的服务也会很快就知晓。</p>
+
+<p>在一个Bonjour配置主机上运行的服务在注册到mDNSResponder守护程序时会自动发出公告。在其它硬件上的服务，如打印机，将使用指数回退算法来公告其存在，这样充分利用了Bonjour的优势。</p>
+
+<p>参考</p>
+
+<p><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/NetServices/Introduction.html">Bonjour Overview</a></p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -772,451 +1138,6 @@ TKCoverflowViewDelegate协议的</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/07/15/urljia-zai-xi-tong-zhi-san-:nsurlconnection/">URL加载系统之三：NSURLConnection</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-07-15T18:37:44+08:00" pubdate data-updated="true">Jul 15<sup>th</sup>, 2014</time>
-        
-        
-           | <a href="/blog/2014/07/15/urljia-zai-xi-tong-zhi-san-:nsurlconnection/#comments">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>NSURLConnection提供了简单的接口来创建和取消一个连接，并支持一个代理方法的集合来提供连接的响应，并对连接进行多方面的控制。这个类的方法可以分为5大类：URL加载、缓存管理、认证与证书、cookie存储、协议支持。</p>
-
-<h2>创建一个连接</h2>
-
-<p>NSURLConnection提供了三种方式来获取URL的内容：同步、异步使用完成处理器block、异步使用自定义的代理对象。</p>
-
-<ol>
-<li>使用同步请求时，一般是在后台线程中独占线程运行，我们可以调用sendSynchronousRequest:returningResponse:error: 方法来执行HTTP请求。当请求完成或返回错误时，该方法会返回。</li>
-<li>如果我们不需要监听请求的状态，而只是在数据完成返回时执行一些操作，则可以调用sendAsynchronousRequest:queue:completionHandler:方法来执行一个异步操作，其中需要传递一个block来处理结果。</li>
-<li>我们也可以创建一个代理对象来处理异步请求，此时我们需要实现以下方法：connection:didReceiveResponse:、connection:didReceiveData:、connection:didFailWithError:和connectionDidFinishLoading: 。这些方法在NSURLConnectionDelegate、NSURLConnectionDownloadDelegate和 NSURLConnectionDataDelegate协议中定义。</li>
-</ol>
-
-
-<p>代码清单1以代理对象异步请求为例，初始化了一个URL连接并实现代理方法来处理连接响应</p>
-
-<pre><code>@interface Conn : NSObject
-{
-    NSURLConnection *theConnection;
-    NSMutableData *receivedData;
-}
-
-@end
-
-@implementation Conn
-
-- (void)createConnection
-{
-    // 创建一个请求
-    NSURLRequest *theRequest=[NSURLRequest requestWithURL:[NSURL URLWithString:@"http://www.apple.com/"]
-                                              cachePolicy:NSURLRequestUseProtocolCachePolicy
-                                          timeoutInterval:60.0];
-    
-    // 创建NSMutableData来保存接收到的数据
-    receivedData = [NSMutableData dataWithCapacity: 0];
-    
-    // 使用theRequest创建一个连接并开始加载数据
-    // 调用initWithRequest:delegate后会立即开始传输
-    // 请求可以在connectionDidFinishLoading:或connection:didFailWithError:消息被发送前通过调用cancel来取消
-    theConnection = [[NSURLConnection alloc] initWithRequest:theRequest delegate:self];
-    
-    if (!theConnection) {
-        // 释放receivedData对象
-        receivedData = nil;
-        // 通知用户连接失败
-    }
-}
-
-// 当服务端提供了有效的数据来创建NSURLResponse对象时，代理会收到connection:didReceiveResponse:消息。
-// 这个代理方法会检查NSURLResponse对象并确认数据的content-type，MIME类型，文件 名和其它元数据。
-// 需要注意的是，对于单个连接，我们可能会接多次收到connection:didReceiveResponse:消息；这咱情况发生在
-// 响应是多重MIME编码的情况下。每次代理接收到connection:didReceiveResponse:时，应该重设进度标识
-// 并丢弃之前接收到的数据。
-- (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response
-{
-    [receivedData setLength:0];
-}
-
-// 代理会定期接收到connection:didReceiveData:消息，该消息用于接收服务端返回的数据实体。该方法负责存储数据。
-// 我们也可以用这个方法提供进度信息，这种情况下，我们需要在connection:didReceiveResponse:方法中
-// 调用响应对象的expectedContentLength方法来获取数据的总长度。
-- (void)connection:(NSURLConnection *)connection didReceiveData:(NSData *)data
-{
-    [receivedData appendData:data];
-}
-
-// 如果数据传输的过程中出现了错误，代理会接收到connection:didFailWithError:消息。其中error参数给出了错误信息。
-// 在代理收到connection:didFailWithError:消息后，它不会再接收指定连接的代理消息。
-- (void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error
-{
-    theConnection = nil;
-    receivedData = nil;
-
-    NSLog(@"Connection failed! Error - %@ %@", [error localizedDescription], [[error userInfo] objectForKey:NSURLErrorFailingURLStringErrorKey]);
-}
-
-// 如果成功获取服务端返回的所有数据，则代理会收到connectionDidFinishLoading:消息。
-- (void)connectionDidFinishLoading:(NSURLConnection *)connection
-{
-    NSLog(@"Succeeded! Receive %lu bytes of data(unsigned long)",[receivedData length]);
-
-    theConnection = nil;
-    receivedData = nil;
-}
-
-@end
-</code></pre>
-
-<h2>发起一个POST请求</h2>
-
-<p>我们可以像发起其它URL请求一样，发起一个HTTP或HTTPS POST请求。主要的区别在于我们必须先配置好NSMutableURLRequest对象，并将其作为参数传递给initWithRequest:delegate:方法。</p>
-
-<p>另外，我们还需要构造请求的body数据。可以以下面三种方式来处理</p>
-
-<ol>
-<li>对于上传短小的内存数据，我们需要对已存在的数据块进行URL编码</li>
-<li>如果是从磁盘中上传文件，则调用setHTTPBodyStream:方法来告诉NSMutableURLRequest从一个NSInputStream中读取并使用结果数据作为body的内容</li>
-<li>对于大块的数据，调用CFStreamCreateBoundPair来创建流对象对，然后调用setHTTPBodyStream:方法来告诉NSMutableURLRequest使用这些流对象中的一个作为body内容的源。通过将数据写入其它流，可以一次发送一小块数据。</li>
-</ol>
-
-
-<p>如果要上传数据到一个兼容的服务器中，URL加载系统同样支持100（继续）状态码，这样允许一个上传操作在发生认证错误或其它失败时仍能继续。为了开启这个操作，可以设置请求对象的expect头为100-continue。</p>
-
-<p>代码清单2展示了如何配置一个POST请求的NSMutableURLRequest对象</p>
-
-<pre><code>- (void)setRequestForPost
-{
-    // 对于application/x-www-form-urlencoded类型的body数据，form域的参数由&amp;号分开，
-    NSString *bodyData = @"name=Jane+Doe&amp;address=123+Main+St";
-    NSMutableURLRequest *postRequest = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:@"https://www.apple.com"]];
-    
-    // 设置content-type为application/x-www-form-urlencoded
-    [postRequest setValue:@"application/x-www-form-urlencoded" forHTTPHeaderField:@"Content-Type"];
-    
-    // 指定请求方法为POST
-    [postRequest setHTTPMethod:@"POST"];
-    [postRequest setHTTPBody:[NSData dataWithBytes:[bodyData UTF8String] length:strlen([bodyData UTF8String])]];
-    
-    // Initialize the NSURLConnection and proceed as described in
-    // Retrieving the Contents of a URL
-    
-}
-</code></pre>
-
-<h2>使用Block来接收数据</h2>
-
-<p>NSURLConnection类提供了类方法sendAsynchronousRequest:queue:completionHandler:，该方法可以以异常的方式向服务端发起请求，并在数据返回或发生错误/超时时调用block来处理。该方法需要一个请求对象，一个完成处理block，及block运行的队列。当请求完成或错误发生时，URL加载系统调用该block来处理结果数据或错误信息。</p>
-
-<p>如果请求成功，则会传递一个NSData对象和一个NSURLResponse对象给block。如果失败，则传递一个NSError对象。</p>
-
-<p>这个方法有两个限制</p>
-
-<ol>
-<li>对于需要认证的请求，只提供最小的支持。</li>
-<li>没有办法来修改响应缓存和服务端重定向的默认行为。</li>
-</ol>
-
-
-<p>参考：
-<a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/URLLoadingSystem/URLLoadingSystem.html">URL Loading System Programming Guide</a></p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/07/11/urljia-zai-xi-tong-zhi-er-:nsurlsession/">URL加载系统之二：NSURLSession</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-07-11T22:48:27+08:00" pubdate data-updated="true">Jul 11<sup>th</sup>, 2014</time>
-        
-        
-           | <a href="/blog/2014/07/11/urljia-zai-xi-tong-zhi-er-:nsurlsession/#comments">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>NSURLSession及相关的类提供通过HTTP协议下载数据的API。该类提供了大量代理方法来支持认证和后台下载(程序未运行或挂起时)功能。</p>
-
-<p>为了使用NSURLSession，我们的应用会创建一系列的会话，每个会话负责协调一组相关数据的传输任务。在每个会话中，我们的应用添加一系列的任务，每个任务都表示一个对指定URL的请求。与大多数网络API一样，NSURLSession  API是异步的。如果我们使用系统提供的代理，我们必须提供一个请求完成处理block，以便在请求成功或失败时返回数据给我们的应用。如果我们提供自定义的代理对象，则任务对象调用这些代理方法，并回传从服务端获取的数据（如果是文件下载，则当传输完成时调用）。</p>
-
-<p>NSURLSession提供了status和progress属性，并作为额外的信息传递给代理。同时它支持取消、恢复、挂起操作，并支持断点续传功能。</p>
-
-<p>要掌握NSURLSession的使用，我们需要了解下URL会话的一些内容</p>
-
-<h2>URL会话</h2>
-
-<p>在一个会话中的任务的行为取决于三个方面：</p>
-
-<ol>
-<li>session的类型（由创建会话时的配置对象确定）</li>
-<li>任务的类型</li>
-<li>当任务创建时应用是否在前台</li>
-</ol>
-
-
-<p>NSURLSession支持以下三种会话类型：</p>
-
-<ol>
-<li>默认会话：行为与其它下载URL的Foundation方法类似。使用基于磁盘的缓存策略，并在用户keychain中存储证书。</li>
-<li>短暂会话(Ephemeral sessions)：不存储任何数据在磁盘中；所有的缓存，证书存储等都保存在RAM中并与会话绑定。这样，当应用结束会话时，它们被自动释放。</li>
-<li>后台会话(Background sessions)：类似于默认会话，除了有一个独立的进程来处理所有的数据传输。</li>
-</ol>
-
-
-<p>在一个会话中，NSURLSession支持三种任务类型</p>
-
-<ol>
-<li>数据任务：使用NSData对象来发送和接收数据。数据任务可以分片返回数据，也可以通过完成处理器一次性返回数据。由于数据任务不存储数据到文件，所以不支持后台会话.</li>
-<li>下载任务：以文件的形式接收数据，当程序不运行时支持后台下载</li>
-<li>上传任务：通常以文件的形式发送数据，支持后台上传。</li>
-</ol>
-
-
-<p>NSURLSession支持在程序挂起时在后台传输数据。后台传输只由使用后台会话配置对象创建的会话提供。使用后台会话时，由于实际传输是在一个独立的进程中传输，且重启应用进程相当损耗资源，只有少量特性可以使用，所以有以下限制：</p>
-
-<ol>
-<li>会话必须提供事件分发的代理。</li>
-<li>只支持HTTP和HTTPS协议</li>
-<li>只支持上传和下载任务</li>
-<li>总是伴随着重定义操作</li>
-<li>如果当应用在后台时初始化的后台传输，则配置对象的discretionary属性为true</li>
-</ol>
-
-
-<p>在iOS中，当我们的应用不再运行时，如果后台下载任务完成或者需要证书，则系统会在后台自动重启我们的应用，同时调用UIApplicationDelegate对象的application:handlerEventsForBackgroundURLSession:completionHandler:方法。这个调用会提供启动的应用的session的标识。我们的应用应该存储完成处理器，使用相同的标识来创建后台配置对象，然后使用配置对象来创建会话。新的会话会与运行的后台activity关联。当会话完成后台下载任务时，会给会话代理发送一个URLSessioinDidFinishEventsForBackgroundURLSession:消息。我们的代理对象然后调用存储的完成处理器。</p>
-
-<p>如果在程序挂起时有任何任务完成，则会调用URLSession:downloadTask:didFinishDownloadingToURL:方法。同样的，如果任务需要证书，则NSURLSession对象会在适当的时候调用URLSession:task:didReceiveChallenge:completionHandler: 和URLSession:didReceiveChallenge:completionHandler:方法。</p>
-
-<p>这里需要注意的是必须为每个标识创建一个会话，共享相同标识的多个会话的行为是未定义的。</p>
-
-<p>会话和任务对象实现了NSCopying协议：</p>
-
-<ol>
-<li>当应用拷贝一个会话或任务对象时，会获取相同对象的指针</li>
-<li>当应用拷贝一个配置对象时，会获取一个可单独修改的新的对象</li>
-</ol>
-
-
-<h2>创建并配置NSURLSession</h2>
-
-<p>我们下面举个简单的实例来说明一个NSURLSession与服务端的数据交互。</p>
-
-<h6>代码清单1：声明三种类型会话对象</h6>
-
-<pre><code>@interface URLSession : NSObject &lt;NSURLSessionDelegate, NSURLSessionTaskDelegate, NSURLSessionDataDelegate, NSURLSessionDownloadDelegate&gt;
-
-@property (nonatomic, strong) NSURLSession *backgroundSession;
-@property (nonatomic, strong) NSURLSession *defaultSession;
-@property (nonatomic, strong) NSURLSession *ephemeralSession;
-@property (nonatomic, strong) NSMutableDictionary *completionHandlerDictionary;
-
-- (void)addCompletionHandler:(CompletionHandlerType)handler forSession:(NSString *)identifier;
-
-- (void)callCompletionHandlerForSession:(NSString *)identifier;
-
-@end
-</code></pre>
-
-<p>NSURLSession提供了大量的配置选项，包括：</p>
-
-<ol>
-<li>支持缓存、cookie，认证及协议的私有存储</li>
-<li>认证</li>
-<li>上传下载文件</li>
-<li>每个主机的配置最大数</li>
-<li>超时时间</li>
-<li>支持的TLS最小最小版本</li>
-<li>自定义代理字典</li>
-<li>控制cookie策略</li>
-<li>控制HTTP管道行为</li>
-</ol>
-
-
-<p>由于大部分设置都包含在一个独立的配置对象中，所以我们可以重用这些配置。当我们初始一个会话对象时，我们指定了如下内容</p>
-
-<ol>
-<li>一个配置对象，用于管理其中的会话和任务的行为</li>
-<li>一个代理对象，用于在收到数据时处理输入数据，及会话和任务中的其它事件，如服务端认证、确定一个资源加载请求是否应该转换成下载等。这个对象是可选的。但如果我们需要执行后台传输，则必须提供自定义代理。</li>
-</ol>
-
-
-<p>在实例一个会话对象后，我们不能改变改变配置或代理。</p>
-
-<h6>代码清单2演示了如何创建一个会话</h6>
-
-<pre><code>NSURLSessionConfiguration *defaultConfigObject = [NSURLSessionConfiguration defaultSessionConfiguration];
-        
-// 配置会话的缓存
-NSString *cachePath = @"/MyCacheDirectory";
-        
-NSArray *pathList = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
-NSString *path = [pathList objectAtIndex:0];
-        
-NSString *bundleIdentifier = [[NSBundle mainBundle] bundleIdentifier];
-        
-NSString *fullCachePath = [[path stringByAppendingPathComponent:bundleIdentifier] stringByAppendingPathComponent:cachePath];
-        
-NSLog(@"Cache path: %@", fullCachePath);
-        
-NSURLCache *cache = [[NSURLCache alloc] initWithMemoryCapacity:16384 diskCapacity:268435456 diskPath:cachePath];
-defaultConfigObject.URLCache = cache;
-defaultConfigObject.requestCachePolicy = NSURLRequestUseProtocolCachePolicy;
-        
-self.defaultSession = [NSURLSession sessionWithConfiguration:defaultConfigObject delegate:self delegateQueue:[NSOperationQueue mainQueue]];
-</code></pre>
-
-<p>除了后台配置对象外，我们可以重用会话的配置对象来创建新的会话，正如上面所讲的，拷贝一个配置对象会生成一个新的独立的配置对象。我们可以在任何时候安全的修改配置对象。当创建一个会话时，会话会对配置对象进行深拷贝，所以修改只会影响到新的会话。代理清单3演示了创建一个新的会话，这个会话使用重用的配置对象。</p>
-
-<h6>代码清单3：重用会话对象</h6>
-
-<pre><code>self.ephemeralSession = [NSURLSession sessionWithConfiguration:ephemeralConfigObject delegate:self delegateQueue:[NSOperationQueue mainQueue]];
-        
-ephemeralConfigObject.allowsCellularAccess = YES;
-        
-// ...
-NSURLSession *ephemeralSessionWifiOnly = [NSURLSession sessionWithConfiguration:ephemeralConfigObject delegate:self delegateQueue:[NSOperationQueue mainQueue]];
-</code></pre>
-
-<p>使用NSURLSession获取数据基本就是两步：</p>
-
-<ol>
-<li>创建一个配置对象及基于这个对象的会话</li>
-<li>定义一个请求完成处理器来处理获取到的数据。</li>
-</ol>
-
-
-<p>如果使用系统提供的代理，只需要代码清单4这几行代码即可搞定</p>
-
-<h6>代码清单4：使用系统提供代理</h6>
-
-<pre><code>NSURLSession *delegateFreeSession = [NSURLSession sessionWithConfiguration:defaultConfigObject delegate:self delegateQueue:[NSOperationQueue mainQueue]];
-[delegateFreeSession dataTaskWithRequest:@"http://www.sina.com"
-                               completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {    
-                                   NSLog(@"Got response %@", response);
-                               }];
-</code></pre>
-
-<p>只是系统提供的代理只提供有限的网络行为。如果应用需要更多的处理，如自定义认证或后台下载等，则需要使用自定义的代理。使用自定义代理来获取数据时，代理必须实现以下方法：</p>
-
-<ol>
-<li>URLSession:dataTask:didReceiveData: 从请求提供数据给我们的任务，一次一个数据块</li>
-<li>URLSession:task:didCompleteWithError: 表示任务已经接受了所有的数据。</li>
-</ol>
-
-
-<p>如果我们在URLSession:dataTask:didReceiveData:方法返回后使用数据，则需要将数据存储在某个地方。</p>
-
-<h6>代码清单5：演示了一个数据访问实例：</h6>
-
-<pre><code>NSURL *url = [NSURL URLWithString:@"http://www.sina.com"];
-NSURLSessionDataTask *dataTask = [self.defaultSession dataTaskWithURL:url];
-[dataTask resume];
-</code></pre>
-
-<p>如果远程服务器返回的状态表示需要一个认证，且认证需要连接级别的处理时，NSURLSession将调用认证相关代理方法。这个具体我们后面文章将详细讨论。</p>
-
-<h2>处理iOS后台Activity</h2>
-
-<p>在iOS中使用NSURLSession时，当一个下载完成时，会自动启动我们的应用。应用的代理方法application:handleEventsForBackgroundURLSession:completionHandler: 负责创建一个合适的会话，存储请求完成处理器，并在会话调用会话代理的URLSessionDidFinishEventsForBackgroundURLSession: 方法时调用这个处理器。代码清单6与代码清单7演示了这个处理流程</p>
-
-<h6>代码清单6：iOS后台下载的会话代理方法</h6>
-
-<pre><code>- (void)URLSessionDidFinishEventsForBackgroundURLSession:(NSURLSession *)session
-{
-    NSLog(@"background url session %@", session);
-    
-    if (session.configuration.identifier)
-    {
-        [self callCompletionHandlerForSession:session.configuration.identifier];
-    }
-}
-
-- (void)callCompletionHandlerForSession:(NSString *)identifier
-{
-    CompletionHandlerType handler = [self.completionHandlerDictionary objectForKey:identifier];
-    
-    if (handler) {
-        [self.completionHandlerDictionary removeObjectForKey:identifier];
-        
-        handler();
-    }
-}
-</code></pre>
-
-<h6>代码清单7：iOS后台下载的App 代理方法</h6>
-
-<pre><code>- (void)application:(UIApplication *)application handleEventsForBackgroundURLSession:(NSString *)identifier completionHandler:(void (^)())completionHandler
-{
-    NSURLSessionConfiguration *backgroundConfigObject = [NSURLSessionConfiguration backgroundSessionConfiguration:identifier];
-    
-    URLSession *sessionDelegate = [[URLSession alloc] init];
-    
-    NSURLSession *backgroundSession = [NSURLSession sessionWithConfiguration:backgroundConfigObject
-                                                                    delegate:sessionDelegate
-                                                               delegateQueue:[NSOperationQueue mainQueue]];
-    
-    [sessionDelegate addCompletionHandler:completionHandler forSession:identifier];
-}
-</code></pre>
-
-<p>参考：</p>
-
-<ol>
-<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/URLLoadingSystem/URLLoadingSystem.html">URL Loading System Programming Guide</a></li>
-</ol>
-
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/10">&larr; Older</a>
@@ -1233,7 +1154,7 @@ NSURLSessionDataTask *dataTask = [self.defaultSession dataTaskWithURL:url];
 <section>
 <h1>分类</h1>
 <ul>
-  <li><a href='/blog/categories/ios'>ios (53)</a></li>
+  <li><a href='/blog/categories/ios'>ios (55)</a></li>
   <li><a href='/blog/categories/network'>network (3)</a></li>
   <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
   <li><a href='/blog/categories/swift'>swift (7)</a></li>
@@ -1245,6 +1166,14 @@ NSURLSessionDataTask *dataTask = [self.defaultSession dataTaskWithURL:url];
 <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/01/31/nsobjectzhi-er/">NSObject之二</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/31/nsobjectzhi-%5B%3F%5D/">NSObject之一</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2015/01/25/gong-ju-pian-:lldbdiao-shi-qi/">工具篇：LLDB调试器</a>
@@ -1276,14 +1205,6 @@ NSURLSessionDataTask *dataTask = [self.defaultSession dataTaskWithURL:url];
     
       <li class="post">
         <a href="/blog/2014/12/10/quartz-2dbian-cheng-zhi-nan-zhi-jiu-:tou-ming-ceng/">Quartz 2D编程指南之九：透明层</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/12/10/quartz-2dbian-cheng-zhi-nan-zhi-ba-:jian-bian/">Quartz 2D编程指南之八：渐变</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/12/05/quartz-2dbian-cheng-zhi-nan-zhi-qi-:yin-ying/">Quartz 2D编程指南之七：阴影</a>
       </li>
     
   </ul>

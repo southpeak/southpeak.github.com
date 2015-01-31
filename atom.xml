@@ -4,7 +4,7 @@
   <title><![CDATA[南峰子的技术博客]]></title>
   <link href="http://southpeak.github.io/atom.xml" rel="self"/>
   <link href="http://southpeak.github.io/"/>
-  <updated>2015-01-25T21:53:11+08:00</updated>
+  <updated>2015-01-31T22:43:02+08:00</updated>
   <id>http://southpeak.github.io/</id>
   <author>
     <name><![CDATA[南峰子]]></name>
@@ -12,6 +12,641 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[NSObject之二]]></title>
+    <link href="http://southpeak.github.io/blog/2015/01/31/nsobjectzhi-er/"/>
+    <updated>2015-01-31T22:41:09+08:00</updated>
+    <id>http://southpeak.github.io/blog/2015/01/31/nsobjectzhi-er</id>
+    <content type="html"><![CDATA[<p>前面一章我们整理了NSObject类，这一章我们来看看NSObject协议的内容。</p>
+
+<p>NSObject协议提供了一组方法作为Objective-C对象的基础。其实我们对照一个NSObject类和NSObject协议，可以看到很多方法的方法名都是一样的，只不过NSObject类提供的是类方法，是基于类级别的操作；而NSObject协议提供的是实例方法，是基于实例对象级别的操作。</p>
+
+<p>如果一个对象如果采用了这个协议，则可以被看作是一级对象。我们可以从这个对象获取以下信息：</p>
+
+<ol>
+<li>类信息，以及类所在的继承体系。</li>
+<li>协议信息</li>
+<li>响应特定消息的能力</li>
+</ol>
+
+
+<p>实际上，Cocoa的根类NSObject就采用了这个类，所以所有继承自NSObject类的对象都具备NSObject协议中描述的功能。接下来，我们参照NSObject类，整理一下这些功能。</p>
+
+<h2>识别对象</h2>
+
+<p>类似于NSObject类，NSObject协议提供了一些方法来识别类。</p>
+
+<p>如果想获取对象的类对象，则可以使用如下方法：</p>
+
+<pre><code>- (Class)class
+</code></pre>
+
+<p>如果想获取对象父类的类对象，则可以使用以下只读属性：</p>
+
+<pre><code>@property(readonly) Class superclass
+</code></pre>
+
+<p>如果想查看某个对象是否是给定类的实例或者是给定类子类的实例，则可以使用以下方法：</p>
+
+<pre><code>- (BOOL)isKindOfClass:(Class)aClass
+</code></pre>
+
+<p>这个方法应该是大家常用的方法。需要注意的是在类簇中使用这个方法。在类簇中，我们获取到的对象类型可能并不是我们期望的类型。如果我们调用一个返回类簇的方法，则这个方法返回的实际类型会是最能标识这个类能做些什么的类型。例如，如果一个方法返回一个指向NSArray对象的指针，则不能使用isKindOfClass:方法查看经是否是一个可变数组，如以下代码：</p>
+
+<pre><code>if ([myArray isKindOfClass:[NSMutableArray class]])
+{
+    // Modify the object
+}
+</code></pre>
+
+<p>如果我们使用这样的代码，我们可能会认为修改一个实际上不应该被修改的对象是没问题的。这样做可能会对那些期望对象保持不要变的代码产生影响。</p>
+
+<p>另外，查看对象是否是指定类的一个实例还可以使用以下方法：</p>
+
+<pre><code>- (BOOL)isMemberOfClass:(Class)aClass
+</code></pre>
+
+<p>注意，这个方法无法确定对象是否是指定类子类的实例。另外，类对象可能是编译器创建的对象，但它仍然支持这一概念。</p>
+
+<h2>测试对象</h2>
+
+<p>对于对象的测试，NSObject协议也定义了两个方法，其中respondsToSelector:方法用于测试对象是否能响应指定的消息，这个方法可以是类自定义的实例方法，也可以是继承而来的实例方法。其声明如下：</p>
+
+<pre><code>- (BOOL)respondsToSelector:(SEL)aSelector
+</code></pre>
+
+<p>不过我们不能使用super关键字来调用respondsToSelector:，以查看对象是否是从其父类继承了某个方法。因为我们可以从super的定义可知，消息的最终实际接收者还是self本身，因此测试的还是对象的整个体系(包括对象所在类本身)，而不仅仅是父类。不过，我们可以使用父类来调用NSObject类的类方法instancesRespondToSelector:来达到这个目的，如下所示：</p>
+
+<pre><code>if( [MySuperclass instancesRespondToSelector:@selector(aMethod)] ) {
+    // invoke the inherited method
+    [super aMethod];
+}
+</code></pre>
+
+<p>我们不能简单地使用[[self superclass] instancesRespondToSelector:@selector(aMethod)]，因为如果由一个子类来调用，则可能导致方法的失败。</p>
+
+<p>还需要注意的是，如果对象能够转发消息，则也可以响应这个消息，不过这个方法会返回NO。</p>
+
+<p>如果想查看对象是否实现了某个类，则可以使用如下方法：</p>
+
+<pre><code>- (BOOL)conformsToProtocol:(Protocol *)aProtocol
+</code></pre>
+
+<p>这个方法与NSObject类的类方法conformsToProtocol:是一样的。它只是提供了一个便捷方法，我们不需要先去取对象的类，再调用类方法conformsToProtocol:。</p>
+
+<h2>标识和比较对象</h2>
+
+<p>如果我们想获取对象本身，则可以使用以下方法：</p>
+
+<pre><code>- (instancetype)self
+</code></pre>
+
+<p>比较两个对象是否相同，则可以使用以下方法：</p>
+
+<pre><code>- (BOOL)isEqual:(id)anObject
+</code></pre>
+
+<p>这个方法定义了对象相同的意义。例如，一个容器对象可能会按照特定规则来定义两个对象是否相等，如其所有元素的isEqual:请求都返回YES。我们在自定义子类时，可以重写这个方法，以使用我们自己的规则来评判两个对象相等。</p>
+
+<p>如果两个对象相等，则它们必须拥有相同的hash值。在子类中定义isEqual:方法并打算把子类的实例放入集合中时，这一点非常重要。因此在子类中必须同时定义hash。</p>
+
+<p>hash值是一个整数值，它可以用于在hash表结构中作为一个表地址。其声明如下：</p>
+
+<pre><code>@property(readonly) NSUInteger hash
+</code></pre>
+
+<p>如果一个可变对象被添加到一个以hash值来确定对象位置的集合中，则当对象还在集合中时，其由hash方法返回的值不能改变。因此，hash方法不能依赖于对象内部的任何状态信息，或许我们必须确保对象在集合中时，不能改变其内部状态信息。比如，一个可变字典可以放到一个hash表中，但当它还在表中时，不能改变它。</p>
+
+<h2>发送消息</h2>
+
+<p>在NSObject类中，定义了一系列的发送消息的方法，用于在目标线程中执行方法。NSObject协议也定义了如下几个方法，来执行发送消息的任务：</p>
+
+<pre><code>- (id)performSelector:(SEL)aSelector
+
+- (id)performSelector:(SEL)aSelector withObject:(id)anObject
+
+- (id)performSelector:(SEL)aSelector withObject:(id)anObject withObject:(id)anotherObject
+</code></pre>
+
+<p>这三个方法基本相同，只不过后面两个方法能为selector指定的方法携带参数。因此我们以performSelector:为例。</p>
+
+<p>performSelector:方法的使用与直接将消息发送给对象的效果是一样的，如下面几个操作，做的事情是一样的：</p>
+
+<pre><code>id myClone = [anObject copy];
+id myClone = [anObject performSelector:@selector(copy)];
+id myClone = [anObject performSelector:sel_getUid("copy")];
+</code></pre>
+
+<p>区别在于，performSelector:允许在运行时再去确定对象是否能处理消息。而[anObject copy]中，如果anObject不能处理copy，编译器就直接会报错。</p>
+
+<p>如果方法的参数过多，以至于上面几个方法都无法处理，则可以考虑使用NSInvocation对象。</p>
+
+<h2>描述对象</h2>
+
+<p>描述对象的方法与NSObject类中描述类的方法其方法名相同，都是description，其声明如下：</p>
+
+<pre><code>@property(readonly, copy) NSString *description
+</code></pre>
+
+<p>这个方法用于创建一个对象的文本表达方式，例如：</p>
+
+<pre><code>ClassName *anObject = &lt;#An object#&gt;;
+NSString *string = [NSString stringWithFormat:@"anObject is %@", anObject];
+</code></pre>
+
+<p>为了便于调试，NSObject协议还定义debugDescription方法，该方法声明如下：</p>
+
+<pre><code>@property(readonly, copy) NSString *debugDescription
+</code></pre>
+
+<p>该方法返回一个在调试器中显示的用于描述对象内容的字符串。在调试器中打印一个对象时，会调用这个方法。NSObject类实现这个方法时只是调用了description方法，所以默认情况下，这两个方法的输出都是一样的。我们在子类中可以重写这个方法的实现。</p>
+
+<h2>总结</h2>
+
+<p>NSObject协议的定义的很多方法都是我们平常经常使用的。我们在创建NSObject类的子类时，默认都继承了NSObject类对于NSObject协议的实现。如果有特殊的需求，我们可以重写这些方法。</p>
+
+<p>当然，NSObject协议还定义了一些方法，如我们非常熟悉的retain, release, autorelease, retainCount方法，不过这些方法在ARC时代已经过时了，我们在此不过多说明。</p>
+
+<h2>参考</h2>
+
+<ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/Foundation/Protocols/NSObject_Protocol/index.html">NSObject Protocol Reference</a></li>
+</ol>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[NSObject之一]]></title>
+    <link href="http://southpeak.github.io/blog/2015/01/31/nsobjectzhi-%5B%3F%5D/"/>
+    <updated>2015-01-31T22:37:32+08:00</updated>
+    <id>http://southpeak.github.io/blog/2015/01/31/nsobjectzhi-[?]</id>
+    <content type="html"><![CDATA[<p><em>Objective-C中有两个NSObject，一个是NSObject类，另一个是NSObject协议。而其中NSObject类采用了NSObject协议。在本文中，我们主要整理一下NSObject类的使用。</em></p>
+
+<p>说到NSObject类，写Objective-C的人都应该知道它。它是大部分Objective-C类继承体系的根类。这个类提供了一些通用的方法，对象通过继承NSObject，可以从其中继承访问运行时的接口，并让对象具备Objective-C对象的基本能力。以下我们就来看看NSObejct提供给我们的一些基础功能。</p>
+
+<h2>+load与+initialize</h2>
+
+<p>这两个方法可能平时用得比较少，但很有用。在我们的程序编译后，类相关的数据结构会保留在目标文件中，在程序运行后会被解析和使用，此时类的信息会经历加载和初始化两个过程。在这两个过程中，会分别调用类的load方法和initialize方法，在这两个方法中，我们可以适当地做一些定制处理。不当是类本身，类的分类也会经历这两个过程。对于一个类，我们可以在类的定义中重写这两个方法，也可以在分类中重写它们，或者同时重写。</p>
+
+<h3>load方法</h3>
+
+<p>对于load方法，当Objective-C运行时加载类或分类时，会调用这个方法；通常如果我们有一些类级别的操作需要在加载类时处理，就可以放在这里面，如为一个类执行Swizzling Method操作。</p>
+
+<p>load消息会被发送到动态加载和静态链接的类和分类里面。不过，只有当我们在类或分类里面实现这个方法时，类/分类才会去调用这个方法。</p>
+
+<p>在类继承体系中，load方法的调用顺序如下：</p>
+
+<ol>
+<li>一个类的load方法会在其所有父类的load方法之后调用</li>
+<li>分类的load方法会在对应类的load方法之后调用</li>
+</ol>
+
+
+<p>在load的实现中，如果使用同一库中的另外一个类，则可能是不安全的，因为可能存在的情况是另外一个类的load方法还没有运行，即另一个类可能尚未被加载。另外，在load方法里面，我们不需要显示地去调用[super load]，因为父类的load方法会自动被调用，且在子类之前。</p>
+
+<p>在有依赖关系的两个库中，被依赖的库中的类其load方法会优先调用。但在库内部，各个类的load方法的调用顺序是不确定的。</p>
+
+<h3>initialize方法</h3>
+
+<p>当我们在程序中向类或其任何子类发送第一条消息前，runtime会向该类发送initialize消息。runtime会以线程安全的方式来向类发起initialize消息。父类会在子类之前收到这条消息。父类的initialize实现可能在下面两种情况下被调用：</p>
+
+<ol>
+<li>子类没有实现initialize方法，runtime将会调用继承而来的实现</li>
+<li>子类的实现中显示的调用了[super initialize]</li>
+</ol>
+
+
+<p>如果我们不想让某个类中的initialize被调用多次，则可以像如下处理：</p>
+
+<pre><code>+ (void)initialize {
+  if (self == [ClassName self]) {
+    // ... do the initialization ...
+  }
+}
+</code></pre>
+
+<p>因为initialize是以线程安全的方式调用的，且在不同的类中initialize被调用的顺序是不确定的，所以在initialize方法中，我们应该做少量的必须的工作。特别需要注意是，如果我们initialize方法中的代码使用了锁，则可能会导致死锁。因此，我们不应该在initialize方法中实现复杂的初始化工作，而应该在类的初始化方法(如-init)中来初始化。</p>
+
+<p>另外，每个类的initialize只会被调用一次。所以，如果我们想要为类和类的分类实现单独的初始化操作，则应该实现load方法。</p>
+
+<p>如果想详细地了解这两个方法的使用，可以查看《Effective Objective-C 2.0》的第51条，里面有非常详细的说明。如果想更深入地了解这两个方法的调用，则可以参考objc库的源码，另外，<a href="http://www.cocoachina.com/ios/20150104/10826.html">NSObject的load和initialize方法</a>一文从源码层面为我们简单介绍了这两个方法。</p>
+
+<h2>对象的生命周期</h2>
+
+<p>一说到对象的创建，我们会立即想到[[NSObject alloc] init]这种经典的两段式构造。对于这种两段式构造，唐巧大神在他的&#8221;<a href="http://blog.devtang.com/blog/2013/01/13/two-stage-creation-on-cocoa/">谈ObjC对象的两段构造模式</a>&ldquo;一文中作了详细描述，大家可以参考一下。</p>
+
+<p>本小节我们主要介绍一下与对象生命周期相关的一些方法。</p>
+
+<h3>对象分配</h3>
+
+<p>NSObject提供的对象分配的方法有alloc和allocWithZone:，它们都是类方法。这两个方法负责创建对象并为其分配内存空间，返回一个新的对象实例。新的对象的isa实例变量使用一个数据结构来初始化，这个数据结构描述了对象的信息；创建完成后，对象的其它实例变量被初始化为0。</p>
+
+<p>alloc方法的定义如下：</p>
+
+<pre><code>+ (instancetype)alloc
+</code></pre>
+
+<p>而allocWithZone:方法的存在是由历史原因造成的，它的调用基本上和alloc是一样的。既然是历史原因，我们就不说了，官方文档只给了一句话：</p>
+
+<pre><code>This method exists for historical reasons; memory zones are no longer used by Objective-C.
+</code></pre>
+
+<p>我们只需要知道alloc方法的实现调用了allocWithZone:方法。</p>
+
+<h3>对象初始化</h3>
+
+<p>我们一般不去自己重写alloc或allocWithZone:方法，不用去关心对象是如何创建、如何为其分配内存空间的；我们更关心的是如何去初始化这个对象。上面提到了，对象创建后，isa以外的实例变量都默认初始化为0。通常，我们希望将这些实例变量初始化为我们期望的值，这就是init方法的工作了。</p>
+
+<p>NSObject类默认提供了一个init方法，其定义如下：</p>
+
+<pre><code>- (instancetype)init
+</code></pre>
+
+<p>正常情况下，它会初始化对象，如果由于某些原因无法完成对象的创建，则会返回nil。注意，对象在使用之前必须被初始化，否则无法使用。不过，NSObject中定义的init方法不做任何初始化操作，只是简单地返回self。</p>
+
+<p>当然，我们定义自己的类时，可以提供自定义的初始化方法，以满足我们自己的初始化需求。需要注意的就是子类的初始化方法需要去调用父类的相应的初始化方法，以保证初始化的正确性。</p>
+
+<p>讲完两段式构造的两个部分，有必要来讲讲NSObject类的new方法了。</p>
+
+<p>new方法实际上是集alloc和init于一身，它创建了对象并初始化了对象。它的实现如下：</p>
+
+<pre><code>+ (instancetype)new {
+    return [[self alloc] init];
+}
+</code></pre>
+
+<p>new方法更多的是一个历史遗留产物，它源于NeXT时代。如果我们的初始化操作只是调用[[self alloc] init]时，就可以直接用new来代替。不过如果我们需要使用自定义的初始化方法时，通常就使用两段式构造方式。</p>
+
+<h3>拷贝</h3>
+
+<p>说到拷贝，相信大家都很熟悉。拷贝可以分为“深拷贝”和“浅拷贝”。深拷贝拷贝的是对象的值，两个对象相互不影响，而浅拷贝拷贝的是对象的引用，修改一个对象时会影响到另一个对象。</p>
+
+<p>在Objective-C中，如果一个类想要支持拷贝操作，则需要实现NSCopying协议，并实现copyWithZone:【注意：NSObject类本身并没有实现这个协议】。如果一个类不是直接继承自NSObject，则在实现copyWithZone:方法时需要调用父类的实现。</p>
+
+<p>虽然NSObject自身没有实现拷贝协议，不过它提供了两个拷贝方法，如下：</p>
+
+<pre><code>- (id)copy
+</code></pre>
+
+<p>这个是拷贝操作的便捷方法。它的返回值是NSCopying协议的copyWithZone:方法的返回值。如果我们的类没有实现这个方法，则会抛出一个异常。</p>
+
+<p>与copy对应的还有一个方法，即：</p>
+
+<pre><code>- (id)mutableCopy
+</code></pre>
+
+<p>从字面意义来讲，copy可以理解为不可变拷贝操作，而mutableCopy可以理解为可变操作。这便引出了拷贝的另一个特性，即可变性。</p>
+
+<p>顾名思义，不可变拷贝即拷贝后的对象具有不可变属性，可变拷贝后的对象具有可变属性。这对于数组、字典、字符串、URL这种分可变和不可变的对象来说是很有意义的。我们来看如下示例：</p>
+
+<pre><code>NSMutableArray *mutableArray = [NSMutableArray array];
+NSMutableArray *array = [mutableArray copy];
+[array addObject:@"test1"];
+</code></pre>
+
+<p>实际上，这段代码是会崩溃的，我们来看看崩溃日志：</p>
+
+<pre><code>-[__NSArrayI addObject:]: unrecognized selector sent to instance 0x100107070
+*** Terminating app due to uncaught exception 'NSInvalidArgumentException', reason: '-[__NSArrayI addObject:]: unrecognized selector sent to instance 0x100107070'
+</code></pre>
+
+<p>从中可以看出，经过copy操作，我们的array实际上已经变成不可变的了，其底层元类是__NSArrayI。这个类是不支持addObject:方法的。</p>
+
+<p>偶尔在代码中，也会看到类似于下面的情况：</p>
+
+<pre><code>@property (copy) NSMutableArray *array;
+</code></pre>
+
+<p>这种属性的声明方式是有问题的，即上面提到的可变性问题。使用self.array = **赋值后，数组其实是不可变的，所以需要特别注意。</p>
+
+<p>mutableCopy的使用也挺有意思的，具体的还请大家自己去试验一下。</p>
+
+<h3>释放</h3>
+
+<p>当一个对象的引用计数为0时，系统就会将这个对象释放。此时run time会自动调用对象的dealloc方法。在ARC环境下，我们不再需要在此方法中去调用[super dealloc]了。我们重写这个方法主要是为了释放对象中用到的一些资源，如我们通过C方法分配的内存空间。dealloc方法的定义如下：</p>
+
+<pre><code>- (void)dealloc
+</code></pre>
+
+<p>需要注意的是，我们不应该直接去调用这个方法。这些事都让run time去做吧。</p>
+
+<h2>消息发送</h2>
+
+<p>Objective-C中对方法的调用并不是像C++里面那样直接调用，而是通过消息分发机制来实现的。这个机制核心的方法是objc_msgSend函数。消息机制的具体实现我们在此不做讨论，可以参考<a href="http://southpeak.github.io/blog/2014/11/03/objective-c-runtime-yun-xing-shi-zhi-san-:fang-fa-yu-xiao-xi-zhuan-fa/">Objective-C Runtime 运行时之三：方法与消息</a>。</p>
+
+<p>对于消息的发送，除了使用[obj method]这种机制之外，NSObject类还提供了一系列的performSelector**方法。这些方法可以让我们更加灵活地控制方法的调用。接下来我们就来看看这些方法的使用。</p>
+
+<h3>在线程中调用方法</h3>
+
+<p>如果我们想在当前线程中调用一个方法，则可以使用以下两个方法：</p>
+
+<pre><code>- (void)performSelector:(SEL)aSelector withObject:(id)anArgument afterDelay:(NSTimeInterval)delay
+
+- (void)performSelector:(SEL)aSelector withObject:(id)anArgument afterDelay:(NSTimeInterval)delay inModes:(NSArray *)modes
+</code></pre>
+
+<p>这两个方法会在当前线程的Run loop中设置一个定时器，以在delay指定的时间之后执行aSelector。如果我们希望定时器运行在默认模式(NSDefaultRunLoopMode)下，可以使用前一个方法；如果想自己指定Run loop模式，则可以使用后一个方法。</p>
+
+<p>当定时器启动时，线程会从Run loop的队列中获取到消息，并执行相应的selector。如果Run loop运行在指定的模式下，则方法会成功调用；否则，定时器会处于等待状态，直到Run loop运行在指定模式下。</p>
+
+<p>需要注意的是，调用这些方法时，Run loop会保留方法接收者及相关的参数的引用(即对这些对象做retain操作)，这样在执行时才不至于丢失这些对象。当方法调用完成后，Run loop会调用这些对象的release方法，减少对象的引用计数。</p>
+
+<p>如果我们想在主线程上执行某个对象的方法，则可以使用以下两个方法：</p>
+
+<pre><code>- (void)performSelectorOnMainThread:(SEL)aSelector withObject:(id)arg waitUntilDone:(BOOL)wait
+
+- (void)performSelectorOnMainThread:(SEL)aSelector withObject:(id)arg waitUntilDone:(BOOL)wait modes:(NSArray *)array
+</code></pre>
+
+<p>我们都知道，iOS中所有的UI操作都需要在主线程中处理。如果想在某个二级线程的操作完成之后做UI操作，就可以使用这两个方法。</p>
+
+<p>这两个方法会将消息放到主线程Run loop的队列中，前一个方法使用的是NSRunLoopCommonModes运行时模式；如果想自己指定运行模式，则使用后一个方法。方法的执行与之前的两个performSelector方法是类似的。当在一个线程中多次调用这个方法将不同的消息放入队列时，消息的分发顺序与入队顺序是一致的。</p>
+
+<p>方法中的wait参数指定当前线程在指定的selector在主线程执行完成之后，是否被阻塞住。如果设置为YES，则当前线程被阻塞。如果当前线程是主线程，而该参数也被设置为YES，则消息会被立即发送并处理。</p>
+
+<p>另外，这两个方法分发的消息不能被取消。</p>
+
+<p>如果我们想在指定的线程中分发某个消息，则可以使用以下两个方法：</p>
+
+<pre><code>- (void)performSelector:(SEL)aSelector onThread:(NSThread *)thread withObject:(id)arg waitUntilDone:(BOOL)wait
+
+- (void)performSelector:(SEL)aSelector onThread:(NSThread *)thread withObject:(id)arg waitUntilDone:(BOOL)wait modes:(NSArray *)array
+</code></pre>
+
+<p>这两个方法基本上与在主线程的方法差不多。在此就不再讨论。</p>
+
+<p>如果想在后台线程中调用接收者的方法，可以使用以下方法：</p>
+
+<pre><code>- (void)performSelectorInBackground:(SEL)aSelector withObject:(id)arg
+</code></pre>
+
+<p>这个方法会在程序中创建一个新的线程。由aSelector表示的方法必须像程序中的其它新线程一样去设置它的线程环境。</p>
+
+<p>当然，我们经常看到的performSelector系列方法中还有几个方法，即：</p>
+
+<pre><code>- (id)performSelector:(SEL)aSelector
+- (id)performSelector:(SEL)aSelector withObject:(id)anObject
+- (id)performSelector:(SEL)aSelector withObject:(id)anObject withObject:(id)anotherObject
+</code></pre>
+
+<p>不过这几个方法是在NSObject协议中定义的，NSObject类实现了这个协议，也就定义了相应的实现。这个我们将在NSObject协议中来介绍。</p>
+
+<h3>取消方法调用请求</h3>
+
+<p>对于使用performSelector:withObject:afterDelay:方法(仅限于此方法)注册的执行请求，在调用发生前，我们可以使用以下两个方法来取消：</p>
+
+<pre><code>+ (void)cancelPreviousPerformRequestsWithTarget:(id)aTarget
+
++ (void)cancelPreviousPerformRequestsWithTarget:(id)aTarget selector:(SEL)aSelector object:(id)anArgument
+</code></pre>
+
+<p>前一个方法会取消所以接收者为aTarget的执行请求，不过仅限于当前run loop，而不是所有的。</p>
+
+<p>后一个方法则会取消由aTarget、aSelector和anArgument三个参数指定的执行请求。同样仅限于当前run loop。</p>
+
+<h2>消息转发及动态解析方法</h2>
+
+<p>当一个对象能接收一个消息时，会走正常的方法调用流程。但如果一个对象无法接收一个消息时，就会走消息转发机制。</p>
+
+<p>消息转发机制基本上分为三个步骤：</p>
+
+<ol>
+<li>动态方法解析</li>
+<li>备用接收者</li>
+<li>完整转发</li>
+</ol>
+
+
+<p>具体流程可参考<a href="http://southpeak.github.io/blog/2014/11/03/objective-c-runtime-yun-xing-shi-zhi-san-:fang-fa-yu-xiao-xi-zhuan-fa/">Objective-C Runtime 运行时之三：方法与消息</a>，《Effective Objective-C 2.0》一书的第12小节也有详细描述。在此我们只介绍一下NSObject类为实现消息转发提供的方法。</p>
+
+<p>首先，对于动态方法解析，NSObject提供了以下两个方法来处理：</p>
+
+<pre><code>+ (BOOL)resolveClassMethod:(SEL)name
++ (BOOL)resolveInstanceMethod:(SEL)name
+</code></pre>
+
+<p>从方法名我们可以看出，resolveClassMethod:是用于动态解析一个类方法；而resolveInstanceMethod:是用于动态解析一个实例方法。</p>
+
+<p>我们知道，一个Objective-C方法是其实是一个C函数，它至少带有两个参数，即self和_cmd。我们使用class_addMethod函数，可以给类添加一个方法。我们以resolveInstanceMethod:为例，如果要给对象动态添加一个实例方法，则可以如下处理：</p>
+
+<pre><code>void dynamicMethodIMP(id self, SEL _cmd)
+{
+    // implementation ....
+}
+
++ (BOOL) resolveInstanceMethod:(SEL)aSEL
+{
+    if (aSEL == @selector(resolveThisMethodDynamically))
+    {
+          class_addMethod([self class], aSEL, (IMP) dynamicMethodIMP, "v@:");
+          return YES;
+    }
+    return [super resolveInstanceMethod:aSel];
+}
+</code></pre>
+
+<p>其次，对于备用接收者，NSObject提供了以下方法来处理：</p>
+
+<pre><code>- (id)forwardingTargetForSelector:(SEL)aSelector
+</code></pre>
+
+<p>该方法返回未被接收消息最先被转发到的对象。如果一个对象实现了这个方法，并返回一个非空的对象(且非对象本身)，则这个被返回的对象成为消息的新接收者。另外如果在非根类里面实现这个方法，如果对于给定的selector，我们没有可用的对象可以返回，则应该调用父类的方法实现，并返回其结果。</p>
+
+<p>最后，对于完整转发，NSObject提供了以下方法来处理</p>
+
+<pre><code>- (void)forwardInvocation:(NSInvocation *)anInvocation
+</code></pre>
+
+<p>当前面两步都无法处理消息时，运行时系统便会给接收者最后一个机会，将其转发给其它代理对象来处理。这主要是通过创建一个表示消息的NSInvocation对象并将这个对象当作参数传递给forwardInvocation:方法。我们在forwardInvocation:方法中可以选择将消息转发给其它对象。</p>
+
+<p>在这个方法中，主要是需要做两件事：</p>
+
+<ol>
+<li>找到一个能处理anInvocation调用的对象。</li>
+<li>将消息以anInvocation的形式发送给对象。anInvocation将维护调用的结果，而运行时则会将这个结果返回给消息的原始发送者。</li>
+</ol>
+
+
+<p>这一过程如下所示：</p>
+
+<pre><code>- (void)forwardInvocation:(NSInvocation *)invocation
+{
+    SEL aSelector = [invocation selector];
+
+    if ([friend respondsToSelector:aSelector])
+        [invocation invokeWithTarget:friend];
+    else
+        [super forwardInvocation:invocation];
+}
+</code></pre>
+
+<p>当然，对于一个非根类，如果还是无法处理消息，则应该调用父类的实现。而NSObject类对于这个方法的实现，只是简单地调用了doesNotRecognizeSelector:。它不再转发任何消息，而是抛出一个异常。doesNotRecognizeSelector:的声明如下：</p>
+
+<pre><code>- (void)doesNotRecognizeSelector:(SEL)aSelector
+</code></pre>
+
+<p>运行时系统在对象无法处理或转发一个消息时会调用这个方法。这个方法引发一个NSInvalidArgumentException异常并生成一个错误消息。</p>
+
+<p>任何doesNotRecognizeSelector:消息通常都是由运行时系统来发送的。不过，它们可以用于阻止一个方法被继承。例如，一个NSObject的子类可以按以下方式来重写copy或init方法以阻止继承：</p>
+
+<pre><code>- (id)copy
+{
+    [self doesNotRecognizeSelector:_cmd];
+}
+</code></pre>
+
+<p>这段代码阻止子类的实例响应copy消息或阻止父类转发copy消息&mdash;虽然respondsToSelector:仍然报告接收者可以访问copy方法。</p>
+
+<p>当然，如果我们要重写doesNotRecognizeSelector:方法，必须调用super的实现，或者在实现的最后引发一个NSInvalidArgumentException异常。它代表对象不能响应消息，所以总是应该引发一个异常。</p>
+
+<h2>获取方法信息</h2>
+
+<p>在消息转发的最后一步中，forwardInvocation:参数是一个NSInvocation对象，这个对象需要获取方法签名的信息，而这个签名信息就是从methodSignatureForSelector:方法中获取的。</p>
+
+<p>该方法的声明如下:</p>
+
+<pre><code>- (NSMethodSignature *)methodSignatureForSelector:(SEL)aSelector
+</code></pre>
+
+<p>这个方法返回包含方法描述信息的NSMethodSignature对象，如果找不到方法，则返回nil。如果我们的对象包含一个代理或者对象能够处理它没有直接实现的消息，则我们需要重写这个方法来返回一个合适的方法签名。</p>
+
+<p>对应于实例方法，当然还有一个处理类方法的相应方法，其声明如下：</p>
+
+<pre><code>+ (NSMethodSignature *)instanceMethodSignatureForSelector:(SEL)aSelector
+</code></pre>
+
+<p>另外，NSObject类提供了两个方法来获取一个selector对应的方法实现的地址，如下所示：</p>
+
+<pre><code>- (IMP)methodForSelector:(SEL)aSelector
++ (IMP)instanceMethodForSelector:(SEL)aSelector
+</code></pre>
+
+<p>获取到了方法实现的地址，我们就可以直接将IMP以函数形式来调用。</p>
+
+<p>对于methodForSelector:方法，如果接收者是一个对象，则aSelector应该是一个实例方法；如果接收者是一个类，则aSelector应该是一个类方法。</p>
+
+<p>对于instanceMethodForSelector:方法，其只是向类对象索取实例方法的实现。如果接收者的实例无法响应aSelector消息，则产生一个错误。</p>
+
+<h2>测试类</h2>
+
+<p>对于类的测试，在NSObject类中定义了两个方法，其中类方法instancesRespondToSelector:用于测试接收者的实例是否响应指定的消息，其声明如下：</p>
+
+<pre><code>+ (BOOL)instancesRespondToSelector:(SEL)aSelector
+</code></pre>
+
+<p>如果aSelector消息被转发到其它对象，则类的实例可以接收这个消息而不会引发错误，即使该方法返回NO。</p>
+
+<p>为了询问类是否能响应特定消息(注意：不是类的实例)，则使用这个方法，而不使用NSObject协议的实例方法respondsToSelector:。</p>
+
+<p>NSObject还提供了一个方法来查看类是否采用了某个协议，其声明如下：</p>
+
+<pre><code>+ (BOOL)conformsToProtocol:(Protocol *)aProtocol
+</code></pre>
+
+<p>如果一个类直接或间接地采用了一个协议，则我们可以说这个类实现了该协议。我们可以看看以下这个例子：</p>
+
+<pre><code>@protocol AffiliationRequests &lt;Joining&gt;
+
+@interface MyClass : NSObject &lt;AffiliationRequests, Normalization&gt;
+
+BOOL canJoin = [MyClass conformsToProtocol:@protocol(Joining)];
+</code></pre>
+
+<p>通过继承体系，MyClass类实现了Joining协议。</p>
+
+<p>不过，这个方法并不检查类是否实现了协议的方法，这应该是程序员自己的职责了。</p>
+
+<h2>识别类</h2>
+
+<p>NSObject类提供了几个类方法来识别一个类，首先是我们常用的class类方法，该方法声明如下：</p>
+
+<pre><code>+ (Class)class
+</code></pre>
+
+<p>该方法返回类对象。当类是消息的接收者时，我们只通过类的名称来引用一个类。在其它情况下，类的对象必须通过这个方法类似的方法(-class实例方法)来获取。如下所示：</p>
+
+<pre><code>BOOL test = [self isKindOfClass:[SomeClass class]];
+</code></pre>
+
+<p>NSObject还提供了superclass类方法来获取接收者的父类，其声明如下：</p>
+
+<pre><code>+ (Class)superclass
+</code></pre>
+
+<p>另外，我们还可以使用isSubclassOfClass:类方法查看一个类是否是另一个类的子类，其声明如下：</p>
+
+<pre><code>+ (BOOL)isSubclassOfClass:(Class)aClass
+</code></pre>
+
+<h2>描述类</h2>
+
+<p>描述类是使用description方法，它返回一个表示类的内容的字符串。其声明如下：</p>
+
+<pre><code>+ (NSString *)description
+</code></pre>
+
+<p>我们在LLDB调试器中打印类的信息时，使用的就是这个方法。</p>
+
+<p>当然，如果想打印类的实例的描述时，使用的是NSObject协议中的实例方法description，我们在此不多描述。</p>
+
+<h2>归档操作</h2>
+
+<p>一说到归档操作，你会首先想到什么呢？我想到的是NSCoding协议以及它的两个方法：
+initWithCoder:和encodeWithCoder:。如果我们的对象需要支持归档操作，则应该采用这个协议并提供两个方法的具体实现。</p>
+
+<p>在编码与解码的过程中，一个编码器会调用一些方法，这些方法允许将对象编码以替代一个更换类或实例本身。这样，就可以使得归档在不同类层次结构或类的不同版本的实现中被共享。例如，类簇能有效地利用这一特性。这一特性也允许每个类在解码时应该只维护单一的实例来执行这一策略。</p>
+
+<p>NSObject类虽然没有采用NSCoding协议，但却提供了一些替代方法，以支持上述策略。这些方法分为两类，即通用和专用的。</p>
+
+<p>通用方法由NSCoder对象调用，主要有如下几个方法和属性：</p>
+
+<pre><code>@property(readonly) Class classForCoder
+
+- (id)replacementObjectForCoder:(NSCoder *)aCoder
+
+- (id)awakeAfterUsingCoder:(NSCoder *)aDecoder
+</code></pre>
+
+<p>专用的方法主要是针对NSKeyedArchiver对象的，主要有如下几个方法和属性：</p>
+
+<pre><code>@property(readonly) Class classForKeyedArchiver
+
++ (NSArray *)classFallbacksForKeyedArchiver
+
++ (Class)classForKeyedUnarchiver
+
+- (id)replacementObjectForKeyedArchiver:(NSKeyedArchiver *)archiver
+</code></pre>
+
+<p>子类在归档的过程中如果有特殊的需求，可以重写这些方法。这些方法的具体描述，可以参考<a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/Foundation/Classes/NSObject_Class">官方文档</a>。</p>
+
+<p>在解码或解档过程中，有一点需要考虑的就是对象所属类的版本号，这样能确保老版本的对象能被正确地解析。NSObject类对此提供了两个方法，如下所示：</p>
+
+<pre><code>+ (void)setVersion:(NSInteger)aVersion
+
++ (NSInteger)version
+</code></pre>
+
+<p>它们都是类方法。默认情况下，如果没有设置版本号，则默认是0.</p>
+
+<h2>总结</h2>
+
+<p>NSObject类是Objective-C中大部分类层次结构中的根类，并为我们提供了很多功能。了解这些功能更让我们更好地发挥Objective-C的特性。</p>
+
+<h2>参考</h2>
+
+<ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/Foundation/Classes/NSObject_Class">NSObject Class Reference</a></li>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/Archiving/Articles/codingobjects.html">Archives and Serializations Programming Guide</a></li>
+<li><a href="http://www.cocoachina.com/ios/20150104/10826.html">NSObject的load和initialize方法</a></li>
+<li><a href="http://southpeak.github.io/blog/2014/11/03/objective-c-runtime-yun-xing-shi-zhi-san-:fang-fa-yu-xiao-xi-zhuan-fa/">Objective-C Runtime 运行时之三：方法与消息</a></li>
+<li>《Effective Objective-C 2.0》</li>
+</ol>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[工具篇：LLDB调试器]]></title>
@@ -4899,575 +5534,6 @@ BOOL protocol_conformsToProtocol ( Protocol *proto, Protocol *other );
 
 <ol>
 <li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/ObjCRuntimeRef/">Objective-C Runtime Reference</a></li>
-</ol>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Objective-C Runtime 运行时之四：Method Swizzling]]></title>
-    <link href="http://southpeak.github.io/blog/2014/11/06/objective-c-runtime-yun-xing-shi-zhi-si-:method-swizzling/"/>
-    <updated>2014-11-06T21:36:17+08:00</updated>
-    <id>http://southpeak.github.io/blog/2014/11/06/objective-c-runtime-yun-xing-shi-zhi-si-:method-swizzling</id>
-    <content type="html"><![CDATA[<p>理解Method Swizzling是学习runtime机制的一个很好的机会。在此不多做整理，仅翻译由Mattt Thompson发表于nshipster的<a href="http://nshipster.com/method-swizzling/">Method Swizzling</a>一文。</p>
-
-<p>Method Swizzling是改变一个selector的实际实现的技术。通过这一技术，我们可以在运行时通过修改类的分发表中selector对应的函数，来修改方法的实现。</p>
-
-<p>例如，我们想跟踪在程序中每一个view controller展示给用户的次数：当然，我们可以在每个view controller的viewDidAppear中添加跟踪代码；但是这太过麻烦，需要在每个view controller中写重复的代码。创建一个子类可能是一种实现方式，但需要同时创建UIViewController, UITableViewController, UINavigationController及其它UIKit中view controller的子类，这同样会产生许多重复的代码。</p>
-
-<p>这种情况下，我们就可以使用Method Swizzling，如在代码所示：</p>
-
-<pre><code>#import &lt;objc/runtime.h&gt;
-
-@implementation UIViewController (Tracking)
-
-+ (void)load {
-        static dispatch_once_t onceToken;
-    dispatch_once(&amp;onceToken, ^{
-        Class class = [self class];         
-        // When swizzling a class method, use the following:
-                    // Class class = object_getClass((id)self);
-
-        SEL originalSelector = @selector(viewWillAppear:);
-                    SEL swizzledSelector = @selector(xxx_viewWillAppear:);
-
-        Method originalMethod = class_getInstanceMethod(class, originalSelector);
-                    Method swizzledMethod = class_getInstanceMethod(class, swizzledSelector);
-
-        BOOL didAddMethod =
-                        class_addMethod(class,
-                originalSelector,
-                method_getImplementation(swizzledMethod),
-                method_getTypeEncoding(swizzledMethod));
-
-        if (didAddMethod) {
-                        class_replaceMethod(class,
-                swizzledSelector,
-                method_getImplementation(originalMethod),
-                method_getTypeEncoding(originalMethod));
-        } else {
-            method_exchangeImplementations(originalMethod, swizzledMethod);
-        }
-    });
-}
-
-#pragma mark - Method Swizzling
-
-- (void)xxx_viewWillAppear:(BOOL)animated {
-        [self xxx_viewWillAppear:animated];
-    NSLog(@"viewWillAppear: %@", self);
-}
-
-@end
-</code></pre>
-
-<p>在这里，我们通过method swizzling修改了UIViewController的@selector(viewWillAppear:)对应的函数指针，使其实现指向了我们自定义的xxx_viewWillAppear的实现。这样，当UIViewController及其子类的对象调用viewWillAppear时，都会打印一条日志信息。</p>
-
-<p>上面的例子很好地展示了使用method swizzling来一个类中注入一些我们新的操作。当然，还有许多场景可以使用method swizzling，在此不多举例。在此我们说说使用method swizzling需要注意的一些问题：</p>
-
-<h2>Swizzling应该总是在+load中执行</h2>
-
-<p>在Objective-C中，运行时会自动调用每个类的两个方法。+load会在类初始加载时调用，+initialize会在第一次调用类的类方法或实例方法之前被调用。这两个方法是可选的，且只有在实现了它们时才会被调用。由于method swizzling会影响到类的全局状态，因此要尽量避免在并发处理中出现竞争的情况。+load能保证在类的初始化过程中被加载，并保证这种改变应用级别的行为的一致性。相比之下，+initialize在其执行时不提供这种保证&mdash;事实上，如果在应用中没为给这个类发送消息，则它可能永远不会被调用。</p>
-
-<h2>Swizzling应该总是在dispatch_once中执行</h2>
-
-<p>与上面相同，因为swizzling会改变全局状态，所以我们需要在运行时采取一些预防措施。原子性就是这样一种措施，它确保代码只被执行一次，不管有多少个线程。GCD的dispatch_once可以确保这种行为，我们应该将其作为method swizzling的最佳实践。</p>
-
-<h2>选择器、方法与实现</h2>
-
-<p>在Objective-C中，选择器(selector)、方法(method)和实现(implementation)是运行时中一个特殊点，虽然在一般情况下，这些术语更多的是用在消息发送的过程描述中。</p>
-
-<p>以下是Objective-C Runtime Reference中的对这几个术语一些描述：</p>
-
-<ol>
-<li>Selector(typedef struct objc_selector *SEL)：用于在运行时中表示一个方法的名称。一个方法选择器是一个C字符串，它是在Objective-C运行时被注册的。选择器由编译器生成，并且在类被加载时由运行时自动做映射操作。</li>
-<li>Method(typedef struct objc_method *Method)：在类定义中表示方法的类型</li>
-<li>Implementation(typedef id (*IMP)(id, SEL, &hellip;))：这是一个指针类型，指向方法实现函数的开始位置。这个函数使用为当前CPU架构实现的标准C调用规范。每一个参数是指向对象自身的指针(self)，第二个参数是方法选择器。然后是方法的实际参数。</li>
-</ol>
-
-
-<p>理解这几个术语之间的关系最好的方式是：一个类维护一个运行时可接收的消息分发表；分发表中的每个入口是一个方法(Method)，其中key是一个特定名称，即选择器(SEL)，其对应一个实现(IMP)，即指向底层C函数的指针。</p>
-
-<p>为了swizzle一个方法，我们可以在分发表中将一个方法的现有的选择器映射到不同的实现，而将该选择器对应的原始实现关联到一个新的选择器中。</p>
-
-<h2>调用_cmd</h2>
-
-<p>我们回过头来看看前面新的方法的实现代码：</p>
-
-<pre><code>- (void)xxx_viewWillAppear:(BOOL)animated {
-    [self xxx_viewWillAppear:animated];
-    NSLog(@"viewWillAppear: %@", NSStringFromClass([self class]));
-}
-</code></pre>
-
-<p>咋看上去是会导致无限循环的。但令人惊奇的是，并没有出现这种情况。在swizzling的过程中，方法中的[self xxx_viewWillAppear:animated]已经被重新指定到UIViewController类的-viewWillAppear:中。在这种情况下，不会产生无限循环。不过如果我们调用的是[self viewWillAppear:animated]，则会产生无限循环，因为这个方法的实现在运行时已经被重新指定为xxx_viewWillAppear:了。</p>
-
-<h2>注意事项</h2>
-
-<p>Swizzling通常被称作是一种黑魔法，容易产生不可预知的行为和无法预见的后果。虽然它不是最安全的，但如果遵从以下几点预防措施的话，还是比较安全的：</p>
-
-<ol>
-<li>总是调用方法的原始实现(除非有更好的理由不这么做)：API提供了一个输入与输出约定，但其内部实现是一个黑盒。Swizzle一个方法而不调用原始实现可能会打破私有状态底层操作，从而影响到程序的其它部分。</li>
-<li>避免冲突：给自定义的分类方法加前缀，从而使其与所依赖的代码库不会存在命名冲突。</li>
-<li>明白是怎么回事：简单地拷贝粘贴swizzle代码而不理解它是如何工作的，不仅危险，而且会浪费学习Objective-C运行时的机会。阅读Objective-C Runtime Reference和查看&lt;objc/runtime.h>头文件以了解事件是如何发生的。</li>
-<li>小心操作：无论我们对Foundation, UIKit或其它内建框架执行Swizzle操作抱有多大信心，需要知道在下一版本中许多事可能会不一样。</li>
-</ol>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Objective-C Runtime 运行时之三：方法与消息]]></title>
-    <link href="http://southpeak.github.io/blog/2014/11/03/objective-c-runtime-yun-xing-shi-zhi-san-:fang-fa-yu-xiao-xi-zhuan-fa/"/>
-    <updated>2014-11-03T18:11:02+08:00</updated>
-    <id>http://southpeak.github.io/blog/2014/11/03/objective-c-runtime-yun-xing-shi-zhi-san-:fang-fa-yu-xiao-xi-zhuan-fa</id>
-    <content type="html"><![CDATA[<p>前面我们讨论了Runtime中对类和对象的处理，及对成员变量与属性的处理。这一章，我们就要开始讨论Runtime中最有意思的一部分：消息处理机制。我们将详细讨论消息的发送及消息的转发。不过在讨论消息之前，我们先来了解一下与方法相关的一些内容。</p>
-
-<h2>基础数据类型</h2>
-
-<h3>SEL</h3>
-
-<p>SEL又叫选择器，是表示一个方法的selector的指针，其定义如下：</p>
-
-<pre><code>typedef struct objc_selector *SEL;
-</code></pre>
-
-<p>objc_selector结构体的详细定义没有在&lt;objc/runtime.h>头文件中找到。方法的selector用于表示运行时方法的名字。Objective-C在编译时，会依据每一个方法的名字、参数序列，生成一个唯一的整型标识(Int类型的地址)，这个标识就是SEL。如下代码所示：</p>
-
-<pre><code>SEL sel1 = @selector(method1);
-NSLog(@"sel : %p", sel1);
-</code></pre>
-
-<p>上面的输出为：</p>
-
-<pre><code>2014-10-30 18:40:07.518 RuntimeTest[52734:466626] sel : 0x100002d72
-</code></pre>
-
-<p>两个类之间，不管它们是父类与子类的关系，还是之间没有这种关系，只要方法名相同，那么方法的SEL就是一样的。每一个方法都对应着一个SEL。所以在Objective-C同一个类(及类的继承体系)中，不能存在2个同名的方法，即使参数类型不同也不行。相同的方法只能对应一个SEL。这也就导致Objective-C在处理相同方法名且参数个数相同但类型不同的方法方面的能力很差。如在某个类中定义以下两个方法：</p>
-
-<pre><code>- (void)setWidth:(int)width;
-- (void)setWidth:(double)width;
-</code></pre>
-
-<p>这样的定义被认为是一种编译错误，所以我们不能像C++, C#那样。而是需要像下面这样来声明：</p>
-
-<pre><code>-(void)setWidthIntValue:(int)width;
--(void)setWidthDoubleValue:(double)width;
-</code></pre>
-
-<p>当然，不同的类可以拥有相同的selector，这个没有问题。不同类的实例对象执行相同的selector时，会在各自的方法列表中去根据selector去寻找自己对应的IMP。</p>
-
-<p>工程中的所有的SEL组成一个Set集合，Set的特点就是唯一，因此SEL是唯一的。因此，如果我们想到这个方法集合中查找某个方法时，只需要去找到这个方法对应的SEL就行了，SEL实际上就是根据方法名hash化了的一个字符串，而对于字符串的比较仅仅需要比较他们的地址就可以了，可以说速度上无语伦比！！但是，有一个问题，就是数量增多会增大hash冲突而导致的性能下降（或是没有冲突，因为也可能用的是perfect hash）。但是不管使用什么样的方法加速，如果能够将总量减少（多个方法可能对应同一个SEL），那将是最犀利的方法。那么，我们就不难理解，为什么SEL仅仅是函数名了。</p>
-
-<p>本质上，SEL只是一个指向方法的指针（准确的说，只是一个根据方法名hash化了的KEY值，能唯一代表一个方法），它的存在只是为了加快方法的查询速度。这个查找过程我们将在下面讨论。</p>
-
-<p>我们可以在运行时添加新的selector，也可以在运行时获取已存在的selector，我们可以通过下面三种方法来获取SEL:</p>
-
-<ol>
-<li>sel_registerName函数</li>
-<li>Objective-C编译器提供的@selector()</li>
-<li>NSSelectorFromString()方法</li>
-</ol>
-
-
-<h3>IMP</h3>
-
-<p>IMP实际上是一个函数指针，指向方法实现的首地址。其定义如下：</p>
-
-<pre><code>id (*IMP)(id, SEL, ...)
-</code></pre>
-
-<p>这个函数使用当前CPU架构实现的标准的C调用约定。第一个参数是指向self的指针(如果是实例方法，则是类实例的内存地址；如果是类方法，则是指向元类的指针)，第二个参数是方法选择器(selector)，接下来是方法的实际参数列表。</p>
-
-<p>前面介绍过的SEL就是为了查找方法的最终实现IMP的。由于每个方法对应唯一的SEL，因此我们可以通过SEL方便快速准确地获得它所对应的IMP，查找过程将在下面讨论。取得IMP后，我们就获得了执行这个方法代码的入口点，此时，我们就可以像调用普通的C语言函数一样来使用这个函数指针了。</p>
-
-<p>通过取得IMP，我们可以跳过Runtime的消息传递机制，直接执行IMP指向的函数实现，这样省去了Runtime消息传递过程中所做的一系列查找操作，会比直接向对象发送消息高效一些。</p>
-
-<h3>Method</h3>
-
-<p>介绍完SEL和IMP，我们就可以来讲讲Method了。Method用于表示类定义中的方法，则定义如下：</p>
-
-<pre><code>typedef struct objc_method *Method;
-
-struct objc_method {
-    SEL method_name                 OBJC2_UNAVAILABLE;  // 方法名
-    char *method_types                  OBJC2_UNAVAILABLE;
-    IMP method_imp                      OBJC2_UNAVAILABLE;  // 方法实现
-}  
-</code></pre>
-
-<p>我们可以看到该结构体中包含一个SEL和IMP，实际上相当于在SEL和IMP之间作了一个映射。有了SEL，我们便可以找到对应的IMP，从而调用方法的实现代码。具体操作流程我们将在下面讨论。</p>
-
-<h4>objc_method_description</h4>
-
-<p>objc_method_description定义了一个Objective-C方法，其定义如下：</p>
-
-<pre><code>struct objc_method_description { SEL name; char *types; };
-</code></pre>
-
-<h2>方法相关操作函数</h2>
-
-<p>Runtime提供了一系列的方法来处理与方法相关的操作。包括方法本身及SEL。本节我们介绍一下这些函数。</p>
-
-<h3>方法</h3>
-
-<p>方法操作相关函数包括下以：</p>
-
-<pre><code>// 调用指定方法的实现
-id method_invoke ( id receiver, Method m, ... );
-
-// 调用返回一个数据结构的方法的实现
-void method_invoke_stret ( id receiver, Method m, ... );
-
-// 获取方法名
-SEL method_getName ( Method m );
-
-// 返回方法的实现
-IMP method_getImplementation ( Method m );
-
-// 获取描述方法参数和返回值类型的字符串
-const char * method_getTypeEncoding ( Method m );
-
-// 获取方法的返回值类型的字符串
-char * method_copyReturnType ( Method m );
-
-// 获取方法的指定位置参数的类型字符串
-char * method_copyArgumentType ( Method m, unsigned int index );
-
-// 通过引用返回方法的返回值类型字符串
-void method_getReturnType ( Method m, char *dst, size_t dst_len );
-
-// 返回方法的参数的个数
-unsigned int method_getNumberOfArguments ( Method m );
-
-// 通过引用返回方法指定位置参数的类型字符串
-void method_getArgumentType ( Method m, unsigned int index, char *dst, size_t dst_len );
-
-// 返回指定方法的方法描述结构体
-struct objc_method_description * method_getDescription ( Method m );
-
-// 设置方法的实现
-IMP method_setImplementation ( Method m, IMP imp );
-
-// 交换两个方法的实现
-void method_exchangeImplementations ( Method m1, Method m2 );
-</code></pre>
-
-<p>● method_invoke函数，返回的是实际实现的返回值。参数receiver不能为空。这个方法的效率会比method_getImplementation和method_getName更快。</p>
-
-<p>● method_getName函数，返回的是一个SEL。如果想获取方法名的C字符串，可以使用sel_getName(method_getName(method))。</p>
-
-<p>● method_getReturnType函数，类型字符串会被拷贝到dst中。</p>
-
-<p>● method_setImplementation函数，注意该函数返回值是方法之前的实现。</p>
-
-<h3>方法选择器</h3>
-
-<p>选择器相关的操作函数包括：</p>
-
-<pre><code>// 返回给定选择器指定的方法的名称
-const char * sel_getName ( SEL sel );
-
-// 在Objective-C Runtime系统中注册一个方法，将方法名映射到一个选择器，并返回这个选择器
-SEL sel_registerName ( const char *str );
-
-// 在Objective-C Runtime系统中注册一个方法
-SEL sel_getUid ( const char *str );
-
-// 比较两个选择器
-BOOL sel_isEqual ( SEL lhs, SEL rhs );
-</code></pre>
-
-<p>● sel_registerName函数：在我们将一个方法添加到类定义时，我们必须在Objective-C Runtime系统中注册一个方法名以获取方法的选择器。</p>
-
-<h2>方法调用流程</h2>
-
-<p>在Objective-C中，消息直到运行时才绑定到方法实现上。编译器会将消息表达式[receiver message]转化为一个消息函数的调用，即objc_msgSend。这个函数将消息接收者和方法名作为其基础参数，如以下所示：</p>
-
-<pre><code>objc_msgSend(receiver, selector)
-</code></pre>
-
-<p>如果消息中还有其它参数，则该方法的形式如下所示：</p>
-
-<pre><code>objc_msgSend(receiver, selector, arg1, arg2, ...)
-</code></pre>
-
-<p>这个函数完成了动态绑定的所有事情：</p>
-
-<ol>
-<li>首先它找到selector对应的方法实现。因为同一个方法可能在不同的类中有不同的实现，所以我们需要依赖于接收者的类来找到的确切的实现。</li>
-<li>它调用方法实现，并将接收者对象及方法的所有参数传给它。</li>
-<li>最后，它将实现返回的值作为它自己的返回值。</li>
-</ol>
-
-
-<p>消息的关键在于我们前面章节讨论过的结构体objc_class，这个结构体有两个字段是我们在分发消息的关注的：</p>
-
-<ol>
-<li>指向父类的指针</li>
-<li>一个类的方法分发表，即methodLists。</li>
-</ol>
-
-
-<p>当我们创建一个新对象时，先为其分配内存，并初始化其成员变量。其中isa指针也会被初始化，让对象可以访问类及类的继承体系。</p>
-
-<p>下图演示了这样一个消息的基本框架：</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Art/messaging1.gif" alt="image" /></p>
-
-<p>当消息发送给一个对象时，objc_msgSend通过对象的isa指针获取到类的结构体，然后在方法分发表里面查找方法的selector。如果没有找到selector，则通过objc_msgSend结构体中的指向父类的指针找到其父类，并在父类的分发表里面查找方法的selector。依此，会一直沿着类的继承体系到达NSObject类。一旦定位到selector，函数会就获取到了实现的入口点，并传入相应的参数来执行方法的具体实现。如果最后没有定位到selector，则会走消息转发流程，这个我们在后面讨论。</p>
-
-<p>为了加速消息的处理，运行时系统缓存使用过的selector及对应的方法的地址。这点我们在<a href="http://southpeak.github.io/blog/2014/10/25/objective-c-runtime-yun-xing-shi-zhi-lei-yu-dui-xiang/">前面</a>讨论过，不再重复。</p>
-
-<h3>隐藏参数</h3>
-
-<p>objc_msgSend有两个隐藏参数：</p>
-
-<ol>
-<li>消息接收对象</li>
-<li>方法的selector</li>
-</ol>
-
-
-<p>这两个参数为方法的实现提供了调用者的信息。之所以说是隐藏的，是因为它们在定义方法的源代码中没有声明。它们是在编译期被插入实现代码的。</p>
-
-<p>虽然这些参数没有显示声明，但在代码中仍然可以引用它们。我们可以使用self来引用接收者对象，使用_cmd来引用选择器。如下代码所示：</p>
-
-<pre><code>- strange
-{
-    id  target = getTheReceiver();
-    SEL method = getTheMethod();
-
-    if ( target == self || method == _cmd )
-        return nil;
-    return [target performSelector:method];
-}
-</code></pre>
-
-<p>当然，这两个参数我们用得比较多的是self，_cmd在实际中用得比较少。</p>
-
-<h3>获取方法地址</h3>
-
-<p>Runtime中方法的动态绑定让我们写代码时更具灵活性，如我们可以把消息转发给我们想要的对象，或者随意交换一个方法的实现等。不过灵活性的提升也带来了性能上的一些损耗。毕竟我们需要去查找方法的实现，而不像函数调用来得那么直接。当然，方法的缓存一定程度上解决了这一问题。</p>
-
-<p>我们上面提到过，如果想要避开这种动态绑定方式，我们可以获取方法实现的地址，然后像调用函数一样来直接调用它。特别是当我们需要在一个循环内频繁地调用一个特定的方法时，通过这种方式可以提高程序的性能。</p>
-
-<p>NSObject类提供了methodForSelector:方法，让我们可以获取到方法的指针，然后通过这个指针来调用实现代码。我们需要将methodForSelector:返回的指针转换为合适的函数类型，函数参数和返回值都需要匹配上。</p>
-
-<p>我们通过以下代码来看看methodForSelector:的使用：</p>
-
-<pre><code>void (*setter)(id, SEL, BOOL);
-int i;
-
-setter = (void (*)(id, SEL, BOOL))[target
-    methodForSelector:@selector(setFilled:)];
-for ( i = 0 ; i &lt; 1000 ; i++ )
-    setter(targetList[i], @selector(setFilled:), YES);
-</code></pre>
-
-<p>这里需要注意的就是函数指针的前两个参数必须是id和SEL。</p>
-
-<p>当然这种方式只适合于在类似于for循环这种情况下频繁调用同一方法，以提高性能的情况。另外，methodForSelector:是由Cocoa运行时提供的；它不是Objective-C语言的特性。</p>
-
-<h2>消息转发</h2>
-
-<p>当一个对象能接收一个消息时，就会走正常的方法调用流程。但如果一个对象无法接收指定消息时，又会发生什么事呢？默认情况下，如果是以[object message]的方式调用方法，如果object无法响应message消息时，编译器会报错。但如果是以perform&hellip;的形式来调用，则需要等到运行时才能确定object是否能接收message消息。如果不能，则程序崩溃。</p>
-
-<p>通常，当我们不能确定一个对象是否能接收某个消息时，会先调用respondsToSelector:来判断一下。如下代码所示：</p>
-
-<pre><code>if ([self respondsToSelector:@selector(method)]) {
-    [self performSelector:@selector(method)];
-}
-</code></pre>
-
-<p>不过，我们这边想讨论下不使用respondsToSelector:判断的情况。这才是我们这一节的重点。</p>
-
-<p>当一个对象无法接收某一消息时，就会启动所谓&#8221;消息转发(message forwarding)&ldquo;机制，通过这一机制，我们可以告诉对象如何处理未知的消息。默认情况下，对象接收到未知的消息，会导致程序崩溃，通过控制台，我们可以看到以下异常信息：</p>
-
-<pre><code>-[SUTRuntimeMethod method]: unrecognized selector sent to instance 0x100111940
-*** Terminating app due to uncaught exception 'NSInvalidArgumentException', reason: '-[SUTRuntimeMethod method]: unrecognized selector sent to instance 0x100111940'
-</code></pre>
-
-<p>这段异常信息实际上是由NSObject的&#8221;doesNotRecognizeSelector&#8221;方法抛出的。不过，我们可以采取一些措施，让我们的程序执行特定的逻辑，而避免程序的崩溃。</p>
-
-<p>消息转发机制基本上分为三个步骤：</p>
-
-<ol>
-<li>动态方法解析</li>
-<li>备用接收者</li>
-<li>完整转发</li>
-</ol>
-
-
-<p>下面我们详细讨论一下这三个步骤。</p>
-
-<h3>动态方法解析</h3>
-
-<p>对象在接收到未知的消息时，首先会调用所属类的类方法+resolveInstanceMethod:(实例方法)或者+resolveClassMethod:(类方法)。在这个方法中，我们有机会为该未知消息新增一个&#8221;处理方法&#8221;&ldquo;。不过使用该方法的前提是我们已经实现了该&#8221;处理方法&#8221;，只需要在运行时通过class_addMethod函数动态添加到类里面就可以了。如下代码所示：</p>
-
-<pre><code>void functionForMethod1(id self, SEL _cmd) {
-   NSLog(@"%@, %p", self, _cmd);
-}
-
-+ (BOOL)resolveInstanceMethod:(SEL)sel {
-
-    NSString *selectorString = NSStringFromSelector(sel);
-
-    if ([selectorString isEqualToString:@"method1"]) {
-        class_addMethod(self.class, @selector(method1), (IMP)functionForMethod1, "@:");
-    }
-
-    return [super resolveInstanceMethod:sel];
-}
-</code></pre>
-
-<p>不过这种方案更多的是为了实现@dynamic属性。</p>
-
-<h3>备用接收者</h3>
-
-<p>如果在上一步无法处理消息，则Runtime会继续调以下方法：</p>
-
-<pre><code>- (id)forwardingTargetForSelector:(SEL)aSelector
-</code></pre>
-
-<p>如果一个对象实现了这个方法，并返回一个非nil的结果，则这个对象会作为消息的新接收者，且消息会被分发到这个对象。当然这个对象不能是self自身，否则就是出现无限循环。当然，如果我们没有指定相应的对象来处理aSelector，则应该调用父类的实现来返回结果。</p>
-
-<p>使用这个方法通常是在对象内部，可能还有一系列其它对象能处理该消息，我们便可借这些对象来处理消息并返回，这样在对象外部看来，还是由该对象亲自处理了这一消息。如下代码所示：</p>
-
-<pre><code>@interface SUTRuntimeMethodHelper : NSObject
-
-- (void)method2;
-
-@end
-
-@implementation SUTRuntimeMethodHelper
-
-- (void)method2 {
-    NSLog(@"%@, %p", self, _cmd);
-}
-
-@end
-
-#pragma mark -
-
-@interface SUTRuntimeMethod () {
-    SUTRuntimeMethodHelper *_helper;
-}
-
-@end
-
-@implementation SUTRuntimeMethod
-
-+ (instancetype)object {
-    return [[self alloc] init];
-}
-
-- (instancetype)init {
-    self = [super init];
-    if (self != nil) {
-        _helper = [[SUTRuntimeMethodHelper alloc] init];
-    }
-
-    return self;
-}
-
-- (void)test {
-    [self performSelector:@selector(method2)];
-}
-
-- (id)forwardingTargetForSelector:(SEL)aSelector {
-
-    NSLog(@"forwardingTargetForSelector");
-
-    NSString *selectorString = NSStringFromSelector(aSelector);
-
-    // 将消息转发给_helper来处理
-    if ([selectorString isEqualToString:@"method2"]) {
-        return _helper;
-    }
-
-    return [super forwardingTargetForSelector:aSelector];
-}
-
-@end
-</code></pre>
-
-<p>这一步合适于我们只想将消息转发到另一个能处理该消息的对象上。但这一步无法对消息进行处理，如操作消息的参数和返回值。</p>
-
-<h3>完整消息转发</h3>
-
-<p>如果在上一步还不能处理未知消息，则唯一能做的就是启用完整的消息转发机制了。此时会调用以下方法：</p>
-
-<pre><code>- (void)forwardInvocation:(NSInvocation *)anInvocation
-</code></pre>
-
-<p>运行时系统会在这一步给消息接收者最后一次机会将消息转发给其它对象。对象会创建一个表示消息的NSInvocation对象，把与尚未处理的消息有关的全部细节都封装在anInvocation中，包括selector，目标(target)和参数。我们可以在forwardInvocation方法中选择将消息转发给其它对象。</p>
-
-<p>forwardInvocation:方法的实现有两个任务：</p>
-
-<ol>
-<li>定位可以响应封装在anInvocation中的消息的对象。这个对象不需要能处理所有未知消息。</li>
-<li>使用anInvocation作为参数，将消息发送到选中的对象。anInvocation将会保留调用结果，运行时系统会提取这一结果并将其发送到消息的原始发送者。</li>
-</ol>
-
-
-<p>不过，在这个方法中我们可以实现一些更复杂的功能，我们可以对消息的内容进行修改，比如追回一个参数等，然后再去触发消息。另外，若发现某个消息不应由本类处理，则应调用父类的同名方法，以便继承体系中的每个类都有机会处理此调用请求。</p>
-
-<p>还有一个很重要的问题，我们必须重写以下方法：</p>
-
-<pre><code>- (NSMethodSignature *)methodSignatureForSelector:(SEL)aSelector
-</code></pre>
-
-<p>消息转发机制使用从这个方法中获取的信息来创建NSInvocation对象。因此我们必须重写这个方法，为给定的selector提供一个合适的方法签名。</p>
-
-<p>完整的示例如下所示：</p>
-
-<pre><code>- (NSMethodSignature *)methodSignatureForSelector:(SEL)aSelector {
-    NSMethodSignature *signature = [super methodSignatureForSelector:aSelector];
-
-    if (!signature) {
-        if ([SUTRuntimeMethodHelper instancesRespondToSelector:aSelector]) {
-            signature = [SUTRuntimeMethodHelper instanceMethodSignatureForSelector:aSelector];
-        }
-    }
-
-    return signature;
-}
-
-- (void)forwardInvocation:(NSInvocation *)anInvocation {
-    if ([SUTRuntimeMethodHelper instancesRespondToSelector:anInvocation.selector]) {
-        [anInvocation invokeWithTarget:_helper];
-    }
-}
-</code></pre>
-
-<p>NSObject的forwardInvocation:方法实现只是简单调用了doesNotRecognizeSelector:方法，它不会转发任何消息。这样，如果不在以上所述的三个步骤中处理未知消息，则会引发一个异常。</p>
-
-<p>从某种意义上来讲，forwardInvocation:就像一个未知消息的分发中心，将这些未知的消息转发给其它对象。或者也可以像一个运输站一样将所有未知消息都发送给同一个接收对象。这取决于具体的实现。</p>
-
-<h3>消息转发与多重继承</h3>
-
-<p>回过头来看第二和第三步，通过这两个方法我们可以允许一个对象与其它对象建立关系，以处理某些未知消息，而表面上看仍然是该对象在处理消息。通过这种关系，我们可以模拟“多重继承”的某些特性，让对象可以“继承”其它对象的特性来处理一些事情。不过，这两者间有一个重要的区别：多重继承将不同的功能集成到一个对象中，它会让对象变得过大，涉及的东西过多；而消息转发将功能分解到独立的小的对象中，并通过某种方式将这些对象连接起来，并做相应的消息转发。</p>
-
-<p>不过消息转发虽然类似于继承，但NSObject的一些方法还是能区分两者。如respondsToSelector:和isKindOfClass:只能用于继承体系，而不能用于转发链。便如果我们想让这种消息转发看起来像是继承，则可以重写这些方法，如以下代码所示：</p>
-
-<pre><code>- (BOOL)respondsToSelector:(SEL)aSelector   {       if ( [super respondsToSelector:aSelector] )         return YES;     else {          /* Here, test whether the aSelector message can     *            * be forwarded to another object and whether that  *            * object can respond to it. Return YES if it can.  */      }
-        return NO;  }
-</code></pre>
-
-<h2>小结</h2>
-
-<p>在此，我们已经了解了Runtime中消息发送和转发的基本机制。这也是Runtime的强大之处，通过它，我们可以为程序增加很多动态的行为，虽然我们在实际开发中很少直接使用这些机制(如直接调用objc_msgSend)，但了解它们有助于我们更多地去了解底层的实现。其实在实际的编码过程中，我们也可以灵活地使用这些机制，去实现一些特殊的功能，如hook操作等。</p>
-
-<p><strong><em>注：如有不对之处，还请指正，欢迎加QQ好友：1318202110(南峰子)</em></strong></p>
-
-<h2>参考</h2>
-
-<ol>
-<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/ObjCRuntimeRef">Objective-C Runtime Reference</a></li>
-<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Introduction/Introduction.html">Objective-C Runtime Programming Guide</a></li>
-<li><a href="http://www.xcoder.cn/html/2013/objc_0304/1373.html">Objective-C runtime之消息（二）</a></li>
-<li><a href="http://www.cnblogs.com/kesalin/archive/2011/08/15/objc_method_base.html">深入浅出Cocoa之消息</a></li>
 </ol>
 
 ]]></content>

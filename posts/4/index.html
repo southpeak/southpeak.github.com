@@ -11,7 +11,7 @@
   <meta name="baidu-site-verification" content="HoscFhWICI" />
 
   
-  <meta name="description" content="注：这一系列文章是《Quartz 2D Programming Guide》译文，三年前翻译的，放在cocoachina上面(账号名：德鲁伊)。觉得cocoachina文章的排版还不尽人意，所以现在把它们整理到这里来，也顺便温习一下。 前言 Quartz 2D是一个二维图形绘制引擎， &hellip;">
+  <meta name="description" content="路径定义了一个或多个形状，或是子路径。一个子路径可由直线，曲线，或者同时由两者构成。它可以是开放的，也可以是闭合的。一个子路径可以是简单的形状，如线、圆、矩形、星形；也可以是复杂的形状，如山脉的轮廓或者是涂鸦。图3-1显示了一些我们可以创建的路径。左上角的直线可以是虚线；直线也可以是实线。 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -68,6 +68,731 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/11/16/quartz-2dbian-cheng-zhi-nan-zhi-san-:lu-jing-path/">Quartz 2D编程指南之三：路径(Path)</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-11-16T21:44:15+08:00" pubdate data-updated="true">Nov 16<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/11/16/quartz-2dbian-cheng-zhi-nan-zhi-san-:lu-jing-path/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p><strong>路径</strong>定义了一个或多个形状，或是子路径。一个子路径可由直线，曲线，或者同时由两者构成。它可以是开放的，也可以是闭合的。一个子路径可以是简单的形状，如线、圆、矩形、星形；也可以是复杂的形状，如山脉的轮廓或者是涂鸦。图3-1显示了一些我们可以创建的路径。左上角的直线可以是虚线；直线也可以是实线。上边中间的路径是由多条曲线组成的开放路径。右上角的同心圆填充了颜色，但没有描边。左下角的加利福尼亚州是闭合路径，由许多曲线和直线构成，且对路径进行填充和描边。两个星形阐明了填充路径的两种方式，我们将在本章详细描述。</p>
+
+<p>Figure 3-1  Quartz supports path-based drawing</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/path_vector_examples.gif" alt="image" /></p>
+
+<p>在本章中，我们将学习如何构建路径，如何对路径进行填充和描边，及影响路径表现形式的参数。</p>
+
+<h2>创建及绘制路径</h2>
+
+<p>路径创建及路径绘制是两个独立的工作。首先我们创建路径。当我们需要渲染路径时，我们需要使用Quartz来绘制它。正如图3-1中所示，我们可以选择对路径进行描边，填充路径，或同时进行这两种操作。我们同样可以将其它对象绘制到路径所表示的范围内，即对对象进行裁减。</p>
+
+<p>图3-2绘制了一个路径，该路径包含两个子路径。左边的子路径是一个矩形，右边的子路径是由直线和曲线组成的抽象形状。两个子路径都进行了填充及描边。</p>
+
+<p>Figure 3-2  A path that contains two shapes, or subpaths</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/subpaths.gif" alt="image" /></p>
+
+<p>图3-3显示了多条独立绘制的路径。每个路径饮食随机生成的曲线，一些进行填充，另一些进行了描边。这些路径都包含在一个圆形裁减区域内。</p>
+
+<p>Figure 3-3  A clipping area constrains drawing</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/circle_clipping.gif" alt="image" /></p>
+
+<h2>构建块(Building Block)</h2>
+
+<p>子路径是由直线、弧和曲线构成的。Quartz同样也提供了简便的函数用于添加矩形或椭圆等形状。点也是路径最基本的构建块，因为点定义了形状的起始点与终止点。</p>
+
+<h3>点</h3>
+
+<p>点由x, y坐标值定义，用于在用户空间指定 一个位置。我们可以调用函数CGContextMoveToPoint来为新的子路径指定起始点。Quartz跟踪当前点，用于记录路径构建过程中最新的位置。例如，如果调用函数CGContextMoveToPoint并设置位置为(10, 10)，即将当前点移动到位置(10, 10)。如果在水平位置绘制50个单位长度的直线，则直线的终点为(60, 10)，该点变成当前点。直线、弧和曲线总是从当前点开始绘制。</p>
+
+<p>通常我们通过传递(x, y)值给Quartz函数来指定一个点。一些函数需要我们传递一个CGPoint数据结构，该结构包含两个浮点值。</p>
+
+<h3>直线</h3>
+
+<p>直线由两个端点定义。起始点通常是当前点，所以创建直线时，我们只需要指定终止点。我们使用函数CGContextAddLineToPoint来添加一条直线到子路径中。</p>
+
+<p>我们可以调用CGContextAddLines函数添加一系列相关的直线到子路径中。我们传递一个点数组给这个函数。第一个点必须是第一条直线的起始点；剩下的点是端点。Quartz从第一个点开始绘制一个新子路径，然后每两个相邻点连接成一条线段。</p>
+
+<h3>弧</h3>
+
+<p>弧是圆弧段。Quartz提供了两个函数来创建弧。函数CGContextAddArc从圆中来创建一个曲线段。我们指定一个圆心，半径和放射角(以弧度为单位)。放射角为2 PI时，创建的是一个圆。图3-4显示了多个独立的路径。每个路径饮食一个自动生成的圆；一些是填充的，另一些是描边的。</p>
+
+<p>Figure 3-4  Multiple paths; each path contains a randomly generated circle</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/circles.gif" alt="image" /></p>
+
+<p>函数CGContextAddArcToPoint用于为矩形创建内切弧的场景。Quartz使用我们提供的端点创建两条正切线。同样我们需要提供圆的半径。弧心是两条半径的交叉点，每条半径都与相应的正切线垂直。弧的两个端点是正切线的正切点，如图3-5所示。红色的部分是实际绘制的部分。</p>
+
+<p>Figure 3-5  Defining an arc with two tangent lines and a radius</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rounded_corner.gif" alt="image" /></p>
+
+<p>如果当前路径已经包含了一个子路径，Quartz将追加一条从当前点到弧的起始点的直线段。如果当前路径为空，Quartz将创建一个新的子路径，该子路径从弧的起始点开始，而不添加初始的直线段。</p>
+
+<h3>曲线</h3>
+
+<p>二次与三次Bezier曲线是代数曲线，可以指定任意的曲线形状。曲线上的点通过一个应用于起始、终点及一个或多个控制点的多项式计算得出。这种方式定义的形状是向量图的基础。这个公式比将位数组更容易存储，并且曲线可以在任何分辨下重新创建。</p>
+
+<p>图3-6显示了一些路径的曲线。每条路径包含一条随机生成的曲线；一些是填充的，另一些是描边的。</p>
+
+<p>Figure 3-6  Multiple paths; each path contains a randomly generated curve</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/bezier_paths.gif" alt="image" /></p>
+
+<p>我们使用函数CGContextAddCurveToPoint将Bezier曲线连接到当前点，并传递控制点和端点作为参数，如图3-7所示。两个控制点的位置决定了曲线的形状。如果两个控制点都在两个端点上面，则曲线向上凸起。如果两个控制点都在两个端点下面，则曲线向下凹。如果第二个控制点比第一个控制点离得当前点近，则曲线自交叉，创建了一个回路。</p>
+
+<p>Figure 3-7  A cubic Bézier curve uses two control points</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/cubic_bezier_curve.gif" alt="image" /></p>
+
+<p>我们也可以调用函数CGContextAddQuadCurveToPoint来创建Bezier，并传递端点及一个控制点，如图3-8所示。控制点决定了曲线弯曲的方向。由于只使用一个控制点，所以无法创建出如三次Bezier曲线一样多的曲线。例如我们无法创建出交叉的曲线。</p>
+
+<p>Figure 3-8  A quadratic Bézier curve uses one control point</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/quadratic_bezier_curve.gif" alt="image" /></p>
+
+<h3>闭合路径</h3>
+
+<p>我们可以调用函数CGContextClosePath来闭合曲线。该函数用一条直接来连接当前点与起始点，以使路径闭合。起始与终点重合的直线、弧和曲线并不自动闭合路径，我们必须调用CGContextClosePath来闭合路径。</p>
+
+<p>Quartz的一些函数将路径的子路径看成是闭合的。这些函数显示地添加一条直线来闭合 子路径，如同调用了CGContextClosePath函数。</p>
+
+<p>在闭合一条子路径后，如果程序再添加直线、弧或曲线到路径，Quartz将在闭合的子路径的起点开始创建一个子路径。</p>
+
+<h3>椭圆</h3>
+
+<p>椭圆是一种特殊的圆。椭圆是通过定义两个焦点，在平面内所有与这两个焦点的距离之和相等的点所构成的图形。图3-9显示了一些独立的路径。每个路径都包含一个随机生成的椭圆；一些进行了填充，另一边进行了描边。</p>
+
+<p>Figure 3-9  Multiple paths; each path contains a randomly generated ellipse</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/ellipses.gif" alt="image" /></p>
+
+<p>我们可以调用CGContextAddEllipseInRect函数来添加一个椭圆到当前路径。我们提供一个矩形来定义一个椭圆。Quartz利用一系列的Bezier曲线来模拟椭圆。椭圆的中心就是矩形的中心。如果矩形的宽与高相等，则椭圆变成了圆，且圆的半径为矩形宽度的一半。如果矩形的宽与高不相等，则定义了椭圆的长轴与短轴。</p>
+
+<p>添加到路径中的椭圆开始于一个move-to操作，结束于一个close-subpath操作，所有的移动方向都是顺时针。</p>
+
+<h3>矩形</h3>
+
+<p>我们可以调用CGContextAddRect来添加一个矩形到当前路径中，并提供一个CGRect结构体(包含矩形的原点及大小)作为参数。</p>
+
+<p>添加到路径的矩形开始于一个move-to操作，结束于一个close-subpath操作，所有的移动方向都是顺时针。</p>
+
+<p>我们也可能调用CGContextAddRects函数来添加一系列的矩形到当前路径，并传递一个CGRect结构体的数组。图3-10显示了一些独立的路径。每个路径包含一个随机生成的矩形；一些进行了填充，另一边进行了描边。</p>
+
+<p>Figure 3-10  Multiple paths; each path contains a randomly generated rectangle</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rectangles.gif" alt="image" /></p>
+
+<h2>创建路径</h2>
+
+<p>当我们需要在一个图形上下文中构建一个路径时，我们需要调用CGContextBeginPath来标记Quartz。然后，我们调用函数CGContextMovePoint来设置每一个图形或子路径的起始点。在构建起始点后，我们可以添加直线、弧、曲线。记住如下规则：</p>
+
+<ol>
+<li>在开始绘制路径前，调用函数CGContextBeginPath；</li>
+<li>直线、弧、曲线开始于当前点。空路径没有当前点；我们必须调用CGContextMoveToPoint来设置第一个子路径的起始点，或者调用一个便利函数来隐式地完成该任务。</li>
+<li>如果要闭合当前子路径，调用函数CGContextClosePath。随后路径将开始一个新的子路径，即使我们不显示设置一个新的起始点。</li>
+<li>当绘制弧时，Quartz将在当前点与弧的起始点间绘制一条直线。</li>
+<li>添加椭圆和矩形的Quartz程序将在路径中添加新的闭合子路径。</li>
+<li>我们必须调用绘制函数来填充或者描边一条路径，因为创建路径时并不会绘制路径。</li>
+</ol>
+
+
+<p>在绘制路径后，将清空图形上下文。我们也许想保留路径，特别是在绘制复杂场景时，我们需要反复使用。基于此，Quartz提供了两个数据类型来创建可复用路径—CGPathRef和CGMutablePathRef。我们可以调用函数CGPathCreateMutable来创建可变的CGPath对象，并可向该对象添加直线、弧、曲线和矩形。Quartz提供了一个类似于操作图形上下文的CGPath的函数集合。这些路径函数操作CGPath对象，而不是图形上下文。这些函数包括：</p>
+
+<ol>
+<li>CGPathCreateMutable，取代CGContextBeginPath</li>
+<li>CGPathMoveToPoint，取代CGContextMoveToPoint</li>
+<li>CGPathAddLineToPoint，取代CGContexAddLineToPoint</li>
+<li>CGPathAddCurveToPoint，取代CGContexAddCurveToPoint</li>
+<li>CGPathAddEllipseInRect，取代CGContexAddEllipseInRect</li>
+<li>CGPathAddArc，取代CGContexAddArc</li>
+<li>CGPathAddRect，取代CGContexAddRect</li>
+<li>CGPathCloseSubpath，取代CGContexClosePath</li>
+</ol>
+
+
+<p>如果想要添加一个路径到图形上下文，可以调用CGContextAddPath。路径将保留在图形上下文中，直到Quartz绘制它。我们可以调用CGContextAddPath再次添加路径。</p>
+
+<h2>绘制路径</h2>
+
+<p>我们可以绘制填充或描边的路径。描边(Stroke)是绘制路径的边框。填充是绘制路径包含的区域。Quartz提供了函数来填充或描边路径。描边线的属性(宽度、颜色等)，填充色及Quartz用于计算填充区域的方法都是图形状态的一部分。</p>
+
+<h3>影响描边的属性</h3>
+
+<p>我们可以使用表3-1中的属性来决定如何对路径进行描边操作。这边属性是图形上下文的一部分，这意味着我们设置的值将会影响到后续的描边操作，直到我们个性这些值。</p>
+
+<p>Table 3-1  Parameters that affect how Quartz strokes the current path</p>
+
+<p><img src="http://cc.cocimg.com/bbs/attachment/thumb/Fid_6/6_38018_fa8395db5f33397.png" alt="image" /></p>
+
+<p>linewidth是线的总宽度，单位是用户空间单元。</p>
+
+<p>linejoin属性指定如何绘制线段间的联接点。Quartz支持表3-2中描述的联接样式。</p>
+
+<p>Table 3-2  Line join styles</p>
+
+<p><img src="http://cc.cocimg.com/bbs/attachment/thumb/Fid_6/6_38018_7e06943cde66626.png" alt="image" /></p>
+
+<p>linecap指定如何绘制直线的端点。Quartz支持表3-3所示的线帽类型。默认的是butt cap。</p>
+
+<p>Table 3-3  Line cap styles</p>
+
+<p><img src="http://cc.cocimg.com/bbs/attachment/thumb/Fid_6/6_38018_a0b926ec7469e04.png" alt="image" /></p>
+
+<p>闭合路径将起始点看作是一个联接点；起始点同样也使用选定的直线连接方法进行渲染。如果通过添加一条连接到起始点的直线来闭合路径，则路径的两个端点都使用选定的线帽类型来绘制。</p>
+
+<p>Linedash pattern(虚线模式)允许我们沿着描边绘制虚线。我们通过在CGContextSetLineDash结构体中指定虚线数组和虚线相位来控制虚线的大小及位置。</p>
+
+<p>CGContextSetLineDash结构如下：</p>
+
+<pre><code>void CGContextSetLineDash (
+    CGContextRef ctx,
+    float phase,
+    const float lengths[],
+    size_t count,
+);
+</code></pre>
+
+<p>其中lengths属性指定了虚线段的长度，该值是在绘制片断与未绘制片断之间交替。phase属性指定虚线模式的起始点。图3-11显示了虚线模式：</p>
+
+<p>Figure 3-11  Examples of line dash patterns</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/linedash.gif" alt="image" /></p>
+
+<p>描边颜色空间(stroke color space)定义了Quartz如何解析描边的颜色。我们同样也可以指定一个封装了颜色和颜色空间的CGColorRef数据类型。</p>
+
+<h3>路径描边的函数</h3>
+
+<p>Quartz提供了表3-4中的函数来描边当前路径。其中一些是描边矩形及椭圆的便捷函数。</p>
+
+<p>Table 3-4  Functions that stroke paths</p>
+
+<p><img src="http://cc.cocimg.com/bbs/attachment/thumb/Fid_6/6_38018_2f7e77438d8d49c.png" alt="image" /></p>
+
+<p>函数CGContextStrokeLineSegments等同于如下代码</p>
+
+<pre><code>CGContextBeginPath(context);                                                                                                                                                                                                                                                                 
+for(k = 0; k &lt; count; k += 2)
+{
+    CGContextMoveToPoint(context,s[k].x, s[k].y); CGContextAddLineToPoint(context,s[k+1].x, s[k+1].y);
+}
+
+CGContextStrokePath(context);
+</code></pre>
+
+<p>当我们调用CGContextStrokeLineSegments时，我们通过点数组来指定线段，并组织成点对的形式。每一对是由线段的起始点与终止点组成。例如，数组的第一个点指定了第一条直线的起始点，第二个点是第一条直线的终点，第三个点是第二条直线的起始点，依此类推。</p>
+
+<h3>填充路径</h3>
+
+<p>当我们填充当前路径时，Quartz将路径包含的每个子路径都看作是闭合的。然后，使用这些闭合路径并计算填充的像素。 Quartz有两种方式来计算填充区域。椭圆和矩形这样的路径其区域都很明显。但是如果路径是由几个重叠的部分组成或者路径包含多个子路径(如图3-12所示)，我们则有两种规则来定义填充区域。</p>
+
+<p>默认的规则是非零缠绕数规则(nonzero windingnumber rule)。为了确定一个点是否需要绘制，我们从该点开始绘制一条直线穿过绘图的边界。从0开始计数，每次路径片断从左到右穿过直线是，计数加1；而从右到左穿过直线时，计数减1。如果结果为0，则不绘制该点，否则绘制。路径片断绘制的方向会影响到结果。图3-13显示了使用非缠绕数规则对内圆和外圆进行填充的结果。当两个圆绘制方向相同时，两个圆都被填充。如果方向相反，则内圆不填充。</p>
+
+<p>我们也可以使用偶数-奇数规则。为了确定一个点是否被绘制，我们从该点开始绘制一条直线穿过绘图的边界。计算穿过该直线的路径片断的数目。如果是奇数，则绘制该点，如果是偶数，则不绘制该点。路径片断绘制的方向不影响结果。如图3-12所示，无论两个圆的绘制方向是什么，填充结果都是一样的。</p>
+
+<p>Figure 3-12  Concentric circles filled using different fill rules</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/eosampleone.gif" alt="image" /></p>
+
+<p>Quartz提供了表3-5中的函数来填充当前路径。其中一些是填充矩形及椭圆的便捷函数。</p>
+
+<p>Table 3-5  Functions that fill paths</p>
+
+<p><img src="http://cc.cocimg.com/bbs/attachment/thumb/Fid_6/6_38018_b20e82e060e2e61.png" alt="image" /></p>
+
+<h3>设置混合模式</h3>
+
+<p>混合模式指定了Quartz如何将绘图绘制到背景上。Quartz默认使用普通混合模式(normal blend mode)，该模式使用如下公式来计算前景绘图与背景绘图如何混合：</p>
+
+<pre><code>result = (alpha * foreground) + (1 - alpha) *background
+</code></pre>
+
+<p>“颜色与颜色空间”章节里面详细讨论了颜色值的alpha组件，该组件用于指定颜色的透明度。在本章的例子中，我们可以假设颜色值是完全不透明的(alpha = 0)。对于不透明的颜色值，当我们用普通混合模式时，所有绘制于背景之上的绘图都会遮掩住背景。</p>
+
+<p>我们可以调用函数CGContextSetBlendMode并传递适当的混合模式常量值来设置混合模式来达到我们想到的效果。记住混合模式是图形状态的一部分。如果调用了函数CGContextSaveGState来改变混合模式，则调用函数CGContextRestoreGState来重新设置混合模式为普通混合模式。</p>
+
+<p>接下来的内容例举了不同混合模式上将图3-13的矩形绘制到图3-14的矩形之上的效果。背景图使用普通混合模式来绘制。然后调用CGContextSetBlendMode函数来改变混合模式。最后绘制前景矩形。</p>
+
+<p>Figure 3-13  The rectangles painted in the foreground</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/vertical.gif" alt="image" /></p>
+
+<p>Figure 3-14  The rectangles painted in the background</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/horizontal.gif" alt="image" /></p>
+
+<p>注意：我们同样可以使用混合来组合两张图片或将图片与图形上下文中已有的内容进行混合。</p>
+
+<h4>普通混合模式</h4>
+
+<p>由于普通混合模式是默认的混合模式，所以在设置了其它混合模式后，可以调用CGContextSetBlendMode并传递kCGBlendModeNormal来将混合模式重设为默认。图3-15显示了普通混合模式上图3-13与图3-14混合的效果。</p>
+
+<p>Figure 3-15  Rectangles painted using normal blend mode</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_normal.gif" alt="image" /></p>
+
+<h4>正片叠底混合模式(Mutiply Blend Mode)</h4>
+
+<p>正片叠底混合模式指定将前景的图片采样与背景图片采样相乘。结果颜色至少与两个采样颜色之一一样暗。图3-16显示了混合结果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeMultiply来设置这种混合模式。</p>
+
+<p>Figure 3-16  Rectangles painted using multiply blend mode</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_multiply.gif" alt="image" /></p>
+
+<h4>屏幕混合模式(Screen Blend Mode)</h4>
+
+<p>屏幕混合模式指定将前景图片采样的反转色与背景图片的反转色相乘。结果颜色至少与两种采样颜色之一一样亮。图3-17显示了混合结果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeScreen来设置这种混合模式。</p>
+
+<p>Figure 3-17  Rectangles painted using screen blend mode</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_screen.gif" alt="image" /></p>
+
+<h4>叠加混合模式(Overlay Blend Mode)</h4>
+
+<p>叠加混合模式是将前景图片与背景图片或者正片叠底，或者屏幕化，这取决于背景颜色。背景颜色值与前景颜色值以反映出背景颜色的亮度与暗度。图3-18显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeOverlay来设置这种混合模式。</p>
+
+<p>Figure 3-18  Rectangles painted using overlay blend mode</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_overlay.gif" alt="image" /></p>
+
+<h4>暗化混合模式(Darken Blend Mode)</h4>
+
+<p>通过选择前景图片与背景图片更暗的采样来混合图片采样。背景图片采样被前景图片采样更暗的部分取代，而其它部分不变。图3-19显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeDarken来设置这种混合模式。</p>
+
+<p>Figure 3-19  Rectangles painted using darken blend mode</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_darken.gif" alt="image" /></p>
+
+<h4>亮化混合模式(Lighten Blend Mode)</h4>
+
+<p>通过选择前景图片与背景图片更亮的采样来混合图片采样。背景图片采样被前景图片采样更亮的部分取代，而其它部分不变。图3-20显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeLighten来设置这种混合模式。</p>
+
+<p>Figure 3-20  Rectangles painted using lighten blend mode</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_lighten.gif" alt="image" /></p>
+
+<h4>色彩减淡模式(ColorDodge Blend Mode)</h4>
+
+<p>加亮背景图片采样以反映出前景图片采样。被指定为黑色的前景图片采样值将不产生变化。图3-21显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeColorDodge来设置这种混合模式。</p>
+
+<p>Figure 3-21  Rectangles painted using color dodge blend mode</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_color_dodge.gif" alt="image" /></p>
+
+<h4>色彩加深模式(ColorBurn Blend Mode)</h4>
+
+<p>加深背景图片采样以反映出前景图片采样。被指定为白色的前景图片采样值将不产生变化。图3-21显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeColorBurn来设置这种混合模式。</p>
+
+<p>Figure 3-22  Rectangles painted using color burn blend mode</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_color_burn.gif" alt="image" /></p>
+
+<h4>柔光混合模式(SoftLight Blend Mode)</h4>
+
+<p>根据前景采样颜色减淡或加深颜色值。如果前景采样颜色比50%灰度值更亮，则减淡背景，类似于Dodge模式。如果前景采样颜色比50%灰度值更暗，则加强背景，类似于Burn模式。纯黑或纯白的图片采样将产生更暗或更亮的区域。但是但是不产生纯白或纯黑的颜色。该效果类似于将一个漫射光源放于一个前景图前。该效果用于在场景中添加高光效果。图3-23显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeSoftLight来设置这种混合模式。</p>
+
+<p>Figure 3-23  Rectangles painted using soft light blend mode</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_soft_light.gif" alt="image" /></p>
+
+<h4>强光混合模式(Hard Light Blend Mode)</h4>
+
+<p>根据前景图片采样颜色正片叠加或屏幕化颜色。如果前景采样颜色比50%灰度值更亮，则减淡背景，类似于screen模式。如果前景采样颜色比50%灰度值更暗，则加深背景，类似于multiply模式。如果前景采样颜色等于50%灰度，则前景颜色不变。纯黑与纯白的颜色图片采样将产生纯黑或纯白的颜色值。该效果类似于将一个强光源放于一个前景图前。该效果用于在场景中添加高光效果。图3-24显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeHardLight来设置这种混合模式。</p>
+
+<p>Figure 3-24  Rectangles painted using hard light blend mode</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_hard_light.gif" alt="image" /></p>
+
+<h4>差值混合模式(Difference Blend Mode)</h4>
+
+<p>将前景图片采样颜色值与背景图片采样值相减，相减的前后关系取决于哪个采样的亮度值更大。黑色的前景采样值不发生变化；白色值转化为背景的值。图3-25显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeDifference来设置这种混合模式。</p>
+
+<p>Figure 3-25  Rectangles painted using difference blend mode</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_difference.gif" alt="image" /></p>
+
+<h4>排除混合模式(Exclusion Blend Mode)</h4>
+
+<p>该效果类似于Difference效果，只是对比度更低。黑色的前景采样值不发生变化；白色值转化为背景的值。图3-26显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeExclusion来设置这种混合模式。</p>
+
+<p>Figure 3-26  Rectangles painted using exclusion blend mode</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_exclusion.gif" alt="image" /></p>
+
+<h4>色相混合模式(Hue Blend Mode)</h4>
+
+<p>使用背景的亮度和饱和度与前景的色相混合。图3-27显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeHue来设置这种混合模式。</p>
+
+<p>Figure 3-27  Rectangles painted using hue blend mode</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_hue.gif" alt="image" /></p>
+
+<h4>饱和度混合模式(Saturation Blend Mode)</h4>
+
+<p>混合背景的亮度和色相前景的饱和度。背景中没有饱和度的区域不发生变化。图3-28显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeSaturation来设置这种混合模式。</p>
+
+<p>Figure 3-28  Rectangles painted using saturation blend mode</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_saturation.gif" alt="image" /></p>
+
+<h4>颜色混合模式(Color Blend Mode)</h4>
+
+<p>混合背景的亮度值与前景的色相与饱和度。该模式保留图片的灰度级。我们可以使用该模式绘制单色图片或彩色图片。图3-29显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeColor来设置这种混合模式。</p>
+
+<p>Figure 3-29  Rectangles painted using color blend mode</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_color.gif" alt="image" /></p>
+
+<h4>亮度混合模式(Luminosity Blend Mode)</h4>
+
+<p>将背景图片的色相、饱和度与背景图片的亮度相混合。该模块产生一个与Color Blend模式相反的效果。图3-30显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeLuminosity来设置这种混合模式。</p>
+
+<p>Figure 3-30  Rectangles painted using luminosity blend mode</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_luminosity.gif" alt="image" /></p>
+
+<h2>裁剪路径</h2>
+
+<p>当前裁剪区域是从路径中创建，作为一个遮罩，从而允许遮住我们不想绘制的部分。例如，我们有一个很大的图片，但只需要显示其中一小部分，则可以设置裁减区域来显示我们想显示的部分。</p>
+
+<p>当我们绘制的时候，Quartz只渲染裁剪区域里面的东西。裁剪区域内的闭合路径是可见的；而在区域外的部分是不可见的。</p>
+
+<p>当图形上下文初始创建时，裁减区域包含上下文所有的可绘制区域(例如，PDF上下文的media box)。我们可以通过设置当前路径来改变裁剪区域，然后使用裁减函数来取代绘制函数。裁剪函数与当前已有的裁剪区域求交集以获得路径的填充区域。因此，我们可以求交取得裁减区域，缩小图片的可视区域，但是不能扩展裁减区域。</p>
+
+<p>裁减区域是图形状态的一部分。为了恢复先前的裁减区域，我们可以在裁减前保存图形状态，并在裁减绘制后恢复图形状态。</p>
+
+<p>代码清单3-1显示了绘制圆形后设置裁减区域。该段代码使得绘图被裁减，效果类似于图3-3所示。</p>
+
+<p>Listing 3-1 Setting up a circular clip area</p>
+
+<pre><code>CGContextBeginPath(context);
+CGContextAddArc(context, w/2, h/2, ((w&gt;h) ? h : w)/2, 0, 2*PI, 0);
+CGContextClosePath(context);
+CGContextClip(context);
+</code></pre>
+
+<p>Table 3-6  Functions that clip the graphics context</p>
+
+<p><img src="http://cc.cocimg.com/bbs/attachment/thumb/Fid_6/6_38018_9138e0a8166cd38.png" alt="image" /></p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/11/11/quartz-2dbian-cheng-zhi-nan-zhi-er-:tu-xing-shang-xia-wen-graphics-contexts/">Quartz 2D编程指南之二：图形上下文(Graphics Contexts)</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-11-11T23:14:44+08:00" pubdate data-updated="true">Nov 11<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/11/11/quartz-2dbian-cheng-zhi-nan-zhi-er-:tu-xing-shang-xia-wen-graphics-contexts/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>一个Graphics Context表示一个绘制目标。它包含绘制系统用于完成绘制指令的绘制参数和设备相关信息。Graphics Context定义了基本的绘制属性，如颜色、裁减区域、线条宽度和样式信息、字体信息、混合模式等。</p>
+
+<p>我们可以通过几种方式来获取Graphics Context：Quartz提供的创建函数、Mac OS X框架或IOS的UIKit框架提供的函数。Quartz提供了多种Graphics Context的创建函数，包括bitmap和PDF，我们可以使用这些Graphics Context创建自定义的内容。</p>
+
+<p>本章介绍了如何为不同的绘制目标创建Graphics Context。在代码中，我们用CGContextRef来表示一个Graphics Context。当获得一个Graphics Context后，可以使用Quartz 2D函数在上下文(context)中进行绘制、完成操作(如平移)、修改图形状态参数(如线宽和填充颜色)等。</p>
+
+<h2>在iOS中的视图Graphics Context进行绘制</h2>
+
+<p>在iOS应用程序中，如果要在屏幕上进行绘制，需要创建一个UIView对象，并实现它的drawRect:方法。视图的drawRect:方法在视图显示在屏幕上及它的内容需要更新时被调用。在调用自定义的drawRect:后，视图对象自动配置绘图环境以便代码能立即执行绘图操作。作为配置的一部分，视图对象将为当前的绘图环境创建一个Graphics Context。我们可以通过调用UIGraphicsGetCurrentContext函数来获取这个Graphics Context。</p>
+
+<p>UIKit默认的坐标系统与Quartz不同。在UIKit中，原点位于左上角，y轴正方向为向下。UIView通过将修改Quartz的Graphics Context的CTM[原点平移到左下角，同时将y轴反转(y值乘以-1)]以使其与UIView匹配。</p>
+
+<h2>在Mac OS X中创建一个窗口Graphics Context</h2>
+
+<p>在Mac OS X中绘制时，我们需要创建一个窗口Graphics Context。Quartz 2D API 没有提供函数来获取窗口Graphics Context。取而代之的是用Cocoa框架来获取一个窗口上下文。</p>
+
+<p>我们可以在Cocoa应用程序的drawRect:中获取一个Quartz Graphics Context，如下代码所示：</p>
+
+<pre><code>CGContextRef myContext = [[NSGraphicsContext currentContext] graphicsPort];
+</code></pre>
+
+<p>currentContext方法在当前线程中返回NSGraphicsContext实例。graphicsPort方法返回一个低级别、平台相关的Graphics Context(Quartz Graphics Context)。</p>
+
+<p>在获取到Graphics Context后，我们可以在Cocoa应用程序中调用任何Quartz 2D的绘制函数。我们同样可以将Quartz 2D与Cocoa绘制操作混合使用。如图2-1是一个在Cocoa视图中用Quartz 2D绘制的实例。绘图由两个长方形组成(一个不透明的红色长方形和半透明的蓝色长方形)。</p>
+
+<p><strong>Figure 2-1  A view in the Cocoa framework that contains Quartz drawing</strong></p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/cocoa_draw.gif" alt="image" /></p>
+
+<p>为了实现图2-1实例，需要先创建一个Cocoa应用程序。在Interface Builder中，拖动一个Custom View到窗口中，并子类化。然后实现子类视图的，如代码清单2-1所示。视图的drawRect:包含了所有的Quartz绘制代码。</p>
+
+<p><em>注：NSView的drawRect:方法在每次视图需要绘制时自动调用。</em></p>
+
+<p><strong>Listing 2-1  Drawing to a window graphics context</strong></p>
+
+<pre><code>@implementation MyQuartzView
+- (id)initWithFrame:(NSRect)frameRect
+{
+    self = [super initWithFrame:frameRect];
+    return self;
+}
+- (void)drawRect:(NSRect)rec
+{
+    CGContextRef myContext = [[NSGraphicsContext  currentContext] graphicsPort]; //1
+   // ********** Your drawing code here **********       //2
+    CGContextSetRGBFillColor (myContext, 1, 0, 0, 1);     //3
+    CGContextFillRect (myContext, CGRectMake (0, 0, 200, 100 ));   //4
+    CGContextSetRGBFillColor (myContext, 0, 0, 1, .5);     //5
+    CGContextFillRect (myContext, CGRectMake (0, 0, 100, 200));   //6
+}
+@end
+</code></pre>
+
+<p>代码说明：</p>
+
+<ol>
+<li>为视图获取一个Graphics Context</li>
+<li>插入绘图代码的地方。以下四行是使用Quartz 2D函数的例子</li>
+<li>设置完全不透明的红色填充色。</li>
+<li>填充一个长方形，其原点为(0, 0), 大小为(200, 100)</li>
+<li>设置半透明的蓝色填充色。</li>
+<li>填充一个长方形，其原点为(0, 0), 大小为(100, 200)</li>
+</ol>
+
+
+<h2>创建一个PDF Graphics Context</h2>
+
+<p>当创建一个PDF Graphics Context并绘制时，Quartz将绘制操作记录为一系列的PDF绘制命令并写入文件中。我们需要提供一个PDF输出的位置及一个默认的media box(用于指定页面边界的长方形)。图2-2显示了在PDF Graphics Context中绘制及在preview打开PDF的结果。</p>
+
+<p><strong>Figure 2-2  A PDF created by using CGPDFContextCreateWithURL</strong></p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pdf_context_draw.gif" alt="image" /></p>
+
+<p>Quartz 2D API提供了两个函数来创建PDF Graphics Context:</p>
+
+<p>● CGPDFContextCreateWithURL：当你需要用Core Foundation URL指定pdf输出的位置时使用该函数。代码清单2-2显示了该函数的使用方法(代码2-2及后面代码的详细解释略)：</p>
+
+<p><strong>Listing 2-2  Calling CGPDFContextCreateWithURL to create a PDF graphics context</strong></p>
+
+<pre><code>CGContextRef MyPDFContextCreate (const CGRect *inMediaBox, CFStringRef path)
+{
+    CGContextRef myOutContext = NULL;
+    CFURLRef url;
+    url = CFURLCreateWithFileSystemPath (NULL, path, kCFURLPOSIXPathStyle, false);
+    if (url != NULL) {
+        myOutContext = CGPDFContextCreateWithURL (url,  inMediaBox,  NULL);
+        CFRelease(url);
+    }
+    return myOutContext;
+}
+</code></pre>
+
+<p>● CGPDFContextCreate：当需要将pdf输出发送给数据用户时使用该方法。代码清单2-3显示了该函数的使用方法：</p>
+
+<p><strong>Listing 2-3  Calling CGPDFContextCreate to create a PDF graphics context</strong></p>
+
+<pre><code>CGContextRef MyPDFContextCreate (const CGRect *inMediaBox, CFStringRef path)
+{
+    CGContextRef        myOutContext = NULL;
+    CFURLRef            url;
+    CGDataConsumerRef   dataConsumer;
+    url = CFURLCreateWithFileSystemPath (NULL,  path, kCFURLPOSIXPathStyle, false);
+    if (url != NULL)
+    {
+        dataConsumer = CGDataConsumerCreateWithURL (url);
+        if (dataConsumer != NULL)
+        {
+            myOutContext = CGPDFContextCreate (dataConsumer, inMediaBox, NULL);
+            CGDataConsumerRelease (dataConsumer);
+        }
+        CFRelease(url);
+    }
+    return myOutContext;
+}
+</code></pre>
+
+<p>代码清单2-4显示是如何调用MyPDFContextCreate程序及绘制操作。</p>
+
+<p><strong>Listing 2-4  Drawing to a PDF graphics context</strong></p>
+
+<pre><code>CGRect mediaBox;
+
+mediaBox = CGRectMake (0, 0, myPageWidth, myPageHeight);
+myPDFContext = MyPDFContextCreate (&amp;mediaBox, CFSTR("test.pdf"));
+CFStringRef myKeys[1];
+CFTypeRef myValues[1];
+myKeys[0] = kCGPDFContextMediaBox;
+myValues[0] = (CFTypeRef) CFDataCreate(NULL,(const UInt8 *)&amp;mediaBox, sizeof (CGRect));
+CFDictionaryRef pageDictionary = CFDictionaryCreate(NULL, (const void **) myKeys,
+                                                    (const void **) myValues, 1,
+                                                    &amp;kCFTypeDictionaryKeyCallBacks,
+                                                    &amp; kCFTypeDictionaryValueCallBacks);
+CGPDFContextBeginPage(myPDFContext, &amp;pageDictionary);
+    // ********** Your drawing code here **********
+    CGContextSetRGBFillColor (myPDFContext, 1, 0, 0, 1);
+    CGContextFillRect (myPDFContext, CGRectMake (0, 0, 200, 100 ));
+    CGContextSetRGBFillColor (myPDFContext, 0, 0, 1, .5);
+    CGContextFillRect (myPDFContext, CGRectMake (0, 0, 100, 200 ));
+CGPDFContextEndPage(myPDFContext);
+CFRelease(pageDictionary);
+CFRelease(myValues[0]);
+CGContextRelease(myPDFContext);
+</code></pre>
+
+<p>我们可以将任何内容(图片，文本，绘制路径)绘制到pdf中，并能添加链接及加密。</p>
+
+<h2>创建位图Graphics Context</h2>
+
+<p>一个位图Graphics Context接受一个指向内存缓存(包含位图存储空间)的指针，当我们绘制一个位图Graphics Context时，该缓存被更新。在释放Graphics Context后，我们将得到一个我们指定像素格式的全新的位图。</p>
+
+<p><em>注：位图Graphics Context有时用于后台绘制。CGLayer对象优化了后台绘制，因为Quartz在显卡上缓存了层。</em></p>
+
+<pre><code>iOS提示：iOS应用程序使用了UIGraphicsBeginImageContextWithOptions取代Quartz低层函数。如果使用Quartz创建一下后台bitmap，bitmap Graphics Context使用的坐标系统是Quartz默认的坐标系统。而使用UIGraphicsBeginImageContextWithOptions创建图形上下文，UIKit将会对坐标系统使用与UIView对象的图形上下文一样的转换。这允许应用程序使用相同的绘制代码而不需要担心坐标系统问题。虽然我们的应用程序可以手动调整CTM达到相同的效果，但这种做没有任何好处。
+</code></pre>
+
+<p>我们使用CGBitmapContextCreate来创建位图Graphics Context，该函数有如下参数：</p>
+
+<p>● data：一个指向内存目标的指针，该内存用于存储需要渲染的图形数据。内存块的大小至少需要(bytePerRow * height)字节。</p>
+
+<p>● width：指定位图的宽度，单位是像素(pixel)。</p>
+
+<p>● height：指定位图的高度， 单位是像素(pixel)。</p>
+
+<p>● bitsPerComponent：指定内存中一个像素的每个组件使用的位数。例如，一个32位的像素格式和一个rgb颜色空间，我们可以指定每个组件为8位。</p>
+
+<p>● bytesPerRow：指定位图每行的字节数。</p>
+
+<p>● colorspace：颜色空间用于位图上下文。在创建位图Graphics Context时，我们可以使用灰度(gray), RGB, CMYK, NULL颜色空间。</p>
+
+<p>● bitmapInfo：位图的信息，这些信息用于指定位图是否需要包含alpha组件，像素中alpha组件的相对位置(如果有的话)，alpha组件是否是预乘的，及颜色组件是整型值还是浮点值。</p>
+
+<p>代码清单2-5显示了如何创建位图Graphics Context。当向位图Graphics Context绘图时，Quartz将绘图记录到内存中指定的块中。</p>
+
+<p><strong>Listing 2-5  Creating a bitmap graphics context</strong></p>
+
+<pre><code>CGContextRef MyCreateBitmapContext (int pixelsWide, int pixelsHigh)
+{
+    CGContextRef    context = NULL;
+    CGColorSpaceRef colorSpace;
+    void *          bitmapData;
+    int             bitmapByteCount;
+    int             bitmapBytesPerRow;
+    bitmapBytesPerRow   = (pixelsWide * 4);
+    bitmapByteCount     = (bitmapBytesPerRow * pixelsHigh);
+    colorSpace = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
+    bitmapData = calloc( bitmapByteCount );
+    if (bitmapData == NULL)
+    {
+        fprintf (stderr, "Memory not allocated!");
+        return NULL;
+    }
+    context = CGBitmapContextCreate (bitmapData, pixelsWide, pixelsHigh, 8, bitmapBytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast);
+    if (context== NULL)
+    {
+        free (bitmapData);
+        fprintf (stderr, "Context not created!");
+        return NULL;
+    }
+    CGColorSpaceRelease( colorSpace );
+    return context;
+}
+</code></pre>
+
+<p>代码清单2-6显示了调用MyCreateBitmapContext 创建一个位图Graphics Context，使用位图Graphics Context来创建CGImage对象，然后将图片绘制到窗口Graphics Context中。绘制结果如图2-3所示：</p>
+
+<p><strong>Listing 2-6  Drawing to a bitmap graphics context</strong></p>
+
+<pre><code>CGRect myBoundingBox;
+myBoundingBox = CGRectMake (0, 0, myWidth, myHeight);
+myBitmapContext = MyCreateBitmapContext (400, 300);
+// ********** Your drawing code here ********** 
+CGContextSetRGBFillColor (myBitmapContext, 1, 0, 0, 1);
+CGContextFillRect (myBitmapContext, CGRectMake (0, 0, 200, 100 ));
+CGContextSetRGBFillColor (myBitmapContext, 0, 0, 1, .5);
+CGContextFillRect (myBitmapContext, CGRectMake (0, 0, 100, 200 ));
+myImage = CGBitmapContextCreateImage (myBitmapContext);
+CGContextDrawImage(myContext, myBoundingBox, myImage);
+char *bitmapData = CGBitmapContextGetData(myBitmapContext); 
+CGContextRelease (myBitmapContext);
+if (bitmapData) free(bitmapData); 
+CGImageRelease(myImage);
+</code></pre>
+
+<p><strong>Figure 2-3  An image created from a bitmap graphics context and drawn to a window graphics context</strong></p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/cocoa_draw.gif" alt="image" /></p>
+
+<h2>支持的像素格式</h2>
+
+<p>表2-1总结了位图Graphics Context支持的像素格式，相关的颜色空间及像素格式支持的Mac OS X最早版本。像素格式用bpp(每像素的位数)和bpc(每个组件的位数)来表示。表格同时也包含与像素格式相关的位图信息常量。</p>
+
+<p>表2-1：位图Graphics Context支持的像素格式</p>
+
+<p><img src="http://a1.qpic.cn/psb?/V130i6W71atwfr/yA.HJQ2EPTcENE9.Nk8Ql81JN5yDO08pmocm2G.CZ2g!/b/dPvSQHSSIAAA&amp;bo=DwOAAgAAAAADB6w!&amp;rf=viewer_4" alt="image" /></p>
+
+<h2>反锯齿</h2>
+
+<p>位图Graphics Context支持反锯齿，这一操作是人为的较正在位图中绘制文本或形状时产生的锯齿边缘。当位图的分辩率明显低于人眼的分辩率时就会产生锯齿。为了使位图中的对象显得平滑，Quartz使用不同的颜色来填充形状周边的像素。通过这种方式来混合颜色，使形状看起来更平滑。如图2-4显示的效果。我们可以通过调用CGContextSetShouldAntialias来关闭位图Graphics Context的反锯齿效果。反锯齿设置是图形状态的一部分。</p>
+
+<p>可以调用函数CGContextSetAllowsAntialiasing来控制一个特定Graphics Context是否支持反锯齿；false表示不支持。该设置不是图形状态的一部分。当上下文及图形状态设置为true时，Quartz执行反锯齿。</p>
+
+<p><strong>Figure 2-4  A comparison of aliased and anti-aliasing drawing</strong></p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/antialias.jpg" alt="image" /></p>
+
+<h2>获取打印的Graphics Context</h2>
+
+<p>Mac OS X中的Cocoa应用程序通过自定义的NSView子类来实现打印。一个视图通过调用print:方法来进行打印。然后视图以打印机为目标创建一个Graphics Context，并调用drawRect:方法。应用程序使用与在屏幕进行绘制相同的绘制代码。我们同样可以自定义drawRect: 方法将图形绘制到打印机。</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -723,635 +1448,6 @@ BOOL protocol_conformsToProtocol ( Protocol *proto, Protocol *other );
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/11/06/objective-c-runtime-yun-xing-shi-zhi-si-:method-swizzling/">Objective-C Runtime 运行时之四：Method Swizzling</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-11-06T21:36:17+08:00" pubdate data-updated="true">Nov 6<sup>th</sup>, 2014</time>
-        
-        
-           | <a href="/blog/2014/11/06/objective-c-runtime-yun-xing-shi-zhi-si-:method-swizzling/#comments">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>理解Method Swizzling是学习runtime机制的一个很好的机会。在此不多做整理，仅翻译由Mattt Thompson发表于nshipster的<a href="http://nshipster.com/method-swizzling/">Method Swizzling</a>一文。</p>
-
-<p>Method Swizzling是改变一个selector的实际实现的技术。通过这一技术，我们可以在运行时通过修改类的分发表中selector对应的函数，来修改方法的实现。</p>
-
-<p>例如，我们想跟踪在程序中每一个view controller展示给用户的次数：当然，我们可以在每个view controller的viewDidAppear中添加跟踪代码；但是这太过麻烦，需要在每个view controller中写重复的代码。创建一个子类可能是一种实现方式，但需要同时创建UIViewController, UITableViewController, UINavigationController及其它UIKit中view controller的子类，这同样会产生许多重复的代码。</p>
-
-<p>这种情况下，我们就可以使用Method Swizzling，如在代码所示：</p>
-
-<pre><code>#import &lt;objc/runtime.h&gt;
-
-@implementation UIViewController (Tracking)
-
-+ (void)load {
-        static dispatch_once_t onceToken;
-    dispatch_once(&amp;onceToken, ^{
-        Class class = [self class];         
-        // When swizzling a class method, use the following:
-                    // Class class = object_getClass((id)self);
-
-        SEL originalSelector = @selector(viewWillAppear:);
-                    SEL swizzledSelector = @selector(xxx_viewWillAppear:);
-
-        Method originalMethod = class_getInstanceMethod(class, originalSelector);
-                    Method swizzledMethod = class_getInstanceMethod(class, swizzledSelector);
-
-        BOOL didAddMethod =
-                        class_addMethod(class,
-                originalSelector,
-                method_getImplementation(swizzledMethod),
-                method_getTypeEncoding(swizzledMethod));
-
-        if (didAddMethod) {
-                        class_replaceMethod(class,
-                swizzledSelector,
-                method_getImplementation(originalMethod),
-                method_getTypeEncoding(originalMethod));
-        } else {
-            method_exchangeImplementations(originalMethod, swizzledMethod);
-        }
-    });
-}
-
-#pragma mark - Method Swizzling
-
-- (void)xxx_viewWillAppear:(BOOL)animated {
-        [self xxx_viewWillAppear:animated];
-    NSLog(@"viewWillAppear: %@", self);
-}
-
-@end
-</code></pre>
-
-<p>在这里，我们通过method swizzling修改了UIViewController的@selector(viewWillAppear:)对应的函数指针，使其实现指向了我们自定义的xxx_viewWillAppear的实现。这样，当UIViewController及其子类的对象调用viewWillAppear时，都会打印一条日志信息。</p>
-
-<p>上面的例子很好地展示了使用method swizzling来一个类中注入一些我们新的操作。当然，还有许多场景可以使用method swizzling，在此不多举例。在此我们说说使用method swizzling需要注意的一些问题：</p>
-
-<h2>Swizzling应该总是在+load中执行</h2>
-
-<p>在Objective-C中，运行时会自动调用每个类的两个方法。+load会在类初始加载时调用，+initialize会在第一次调用类的类方法或实例方法之前被调用。这两个方法是可选的，且只有在实现了它们时才会被调用。由于method swizzling会影响到类的全局状态，因此要尽量避免在并发处理中出现竞争的情况。+load能保证在类的初始化过程中被加载，并保证这种改变应用级别的行为的一致性。相比之下，+initialize在其执行时不提供这种保证&mdash;事实上，如果在应用中没为给这个类发送消息，则它可能永远不会被调用。</p>
-
-<h2>Swizzling应该总是在dispatch_once中执行</h2>
-
-<p>与上面相同，因为swizzling会改变全局状态，所以我们需要在运行时采取一些预防措施。原子性就是这样一种措施，它确保代码只被执行一次，不管有多少个线程。GCD的dispatch_once可以确保这种行为，我们应该将其作为method swizzling的最佳实践。</p>
-
-<h2>选择器、方法与实现</h2>
-
-<p>在Objective-C中，选择器(selector)、方法(method)和实现(implementation)是运行时中一个特殊点，虽然在一般情况下，这些术语更多的是用在消息发送的过程描述中。</p>
-
-<p>以下是Objective-C Runtime Reference中的对这几个术语一些描述：</p>
-
-<ol>
-<li>Selector(typedef struct objc_selector *SEL)：用于在运行时中表示一个方法的名称。一个方法选择器是一个C字符串，它是在Objective-C运行时被注册的。选择器由编译器生成，并且在类被加载时由运行时自动做映射操作。</li>
-<li>Method(typedef struct objc_method *Method)：在类定义中表示方法的类型</li>
-<li>Implementation(typedef id (*IMP)(id, SEL, &hellip;))：这是一个指针类型，指向方法实现函数的开始位置。这个函数使用为当前CPU架构实现的标准C调用规范。每一个参数是指向对象自身的指针(self)，第二个参数是方法选择器。然后是方法的实际参数。</li>
-</ol>
-
-
-<p>理解这几个术语之间的关系最好的方式是：一个类维护一个运行时可接收的消息分发表；分发表中的每个入口是一个方法(Method)，其中key是一个特定名称，即选择器(SEL)，其对应一个实现(IMP)，即指向底层C函数的指针。</p>
-
-<p>为了swizzle一个方法，我们可以在分发表中将一个方法的现有的选择器映射到不同的实现，而将该选择器对应的原始实现关联到一个新的选择器中。</p>
-
-<h2>调用_cmd</h2>
-
-<p>我们回过头来看看前面新的方法的实现代码：</p>
-
-<pre><code>- (void)xxx_viewWillAppear:(BOOL)animated {
-    [self xxx_viewWillAppear:animated];
-    NSLog(@"viewWillAppear: %@", NSStringFromClass([self class]));
-}
-</code></pre>
-
-<p>咋看上去是会导致无限循环的。但令人惊奇的是，并没有出现这种情况。在swizzling的过程中，方法中的[self xxx_viewWillAppear:animated]已经被重新指定到UIViewController类的-viewWillAppear:中。在这种情况下，不会产生无限循环。不过如果我们调用的是[self viewWillAppear:animated]，则会产生无限循环，因为这个方法的实现在运行时已经被重新指定为xxx_viewWillAppear:了。</p>
-
-<h2>注意事项</h2>
-
-<p>Swizzling通常被称作是一种黑魔法，容易产生不可预知的行为和无法预见的后果。虽然它不是最安全的，但如果遵从以下几点预防措施的话，还是比较安全的：</p>
-
-<ol>
-<li>总是调用方法的原始实现(除非有更好的理由不这么做)：API提供了一个输入与输出约定，但其内部实现是一个黑盒。Swizzle一个方法而不调用原始实现可能会打破私有状态底层操作，从而影响到程序的其它部分。</li>
-<li>避免冲突：给自定义的分类方法加前缀，从而使其与所依赖的代码库不会存在命名冲突。</li>
-<li>明白是怎么回事：简单地拷贝粘贴swizzle代码而不理解它是如何工作的，不仅危险，而且会浪费学习Objective-C运行时的机会。阅读Objective-C Runtime Reference和查看&lt;objc/runtime.h>头文件以了解事件是如何发生的。</li>
-<li>小心操作：无论我们对Foundation, UIKit或其它内建框架执行Swizzle操作抱有多大信心，需要知道在下一版本中许多事可能会不一样。</li>
-</ol>
-
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/11/03/objective-c-runtime-yun-xing-shi-zhi-san-:fang-fa-yu-xiao-xi-zhuan-fa/">Objective-C Runtime 运行时之三：方法与消息</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-11-03T18:11:02+08:00" pubdate data-updated="true">Nov 3<sup>rd</sup>, 2014</time>
-        
-        
-           | <a href="/blog/2014/11/03/objective-c-runtime-yun-xing-shi-zhi-san-:fang-fa-yu-xiao-xi-zhuan-fa/#comments">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>前面我们讨论了Runtime中对类和对象的处理，及对成员变量与属性的处理。这一章，我们就要开始讨论Runtime中最有意思的一部分：消息处理机制。我们将详细讨论消息的发送及消息的转发。不过在讨论消息之前，我们先来了解一下与方法相关的一些内容。</p>
-
-<h2>基础数据类型</h2>
-
-<h3>SEL</h3>
-
-<p>SEL又叫选择器，是表示一个方法的selector的指针，其定义如下：</p>
-
-<pre><code>typedef struct objc_selector *SEL;
-</code></pre>
-
-<p>objc_selector结构体的详细定义没有在&lt;objc/runtime.h>头文件中找到。方法的selector用于表示运行时方法的名字。Objective-C在编译时，会依据每一个方法的名字、参数序列，生成一个唯一的整型标识(Int类型的地址)，这个标识就是SEL。如下代码所示：</p>
-
-<pre><code>SEL sel1 = @selector(method1);
-NSLog(@"sel : %p", sel1);
-</code></pre>
-
-<p>上面的输出为：</p>
-
-<pre><code>2014-10-30 18:40:07.518 RuntimeTest[52734:466626] sel : 0x100002d72
-</code></pre>
-
-<p>两个类之间，不管它们是父类与子类的关系，还是之间没有这种关系，只要方法名相同，那么方法的SEL就是一样的。每一个方法都对应着一个SEL。所以在Objective-C同一个类(及类的继承体系)中，不能存在2个同名的方法，即使参数类型不同也不行。相同的方法只能对应一个SEL。这也就导致Objective-C在处理相同方法名且参数个数相同但类型不同的方法方面的能力很差。如在某个类中定义以下两个方法：</p>
-
-<pre><code>- (void)setWidth:(int)width;
-- (void)setWidth:(double)width;
-</code></pre>
-
-<p>这样的定义被认为是一种编译错误，所以我们不能像C++, C#那样。而是需要像下面这样来声明：</p>
-
-<pre><code>-(void)setWidthIntValue:(int)width;
--(void)setWidthDoubleValue:(double)width;
-</code></pre>
-
-<p>当然，不同的类可以拥有相同的selector，这个没有问题。不同类的实例对象执行相同的selector时，会在各自的方法列表中去根据selector去寻找自己对应的IMP。</p>
-
-<p>工程中的所有的SEL组成一个Set集合，Set的特点就是唯一，因此SEL是唯一的。因此，如果我们想到这个方法集合中查找某个方法时，只需要去找到这个方法对应的SEL就行了，SEL实际上就是根据方法名hash化了的一个字符串，而对于字符串的比较仅仅需要比较他们的地址就可以了，可以说速度上无语伦比！！但是，有一个问题，就是数量增多会增大hash冲突而导致的性能下降（或是没有冲突，因为也可能用的是perfect hash）。但是不管使用什么样的方法加速，如果能够将总量减少（多个方法可能对应同一个SEL），那将是最犀利的方法。那么，我们就不难理解，为什么SEL仅仅是函数名了。</p>
-
-<p>本质上，SEL只是一个指向方法的指针（准确的说，只是一个根据方法名hash化了的KEY值，能唯一代表一个方法），它的存在只是为了加快方法的查询速度。这个查找过程我们将在下面讨论。</p>
-
-<p>我们可以在运行时添加新的selector，也可以在运行时获取已存在的selector，我们可以通过下面三种方法来获取SEL:</p>
-
-<ol>
-<li>sel_registerName函数</li>
-<li>Objective-C编译器提供的@selector()</li>
-<li>NSSelectorFromString()方法</li>
-</ol>
-
-
-<h3>IMP</h3>
-
-<p>IMP实际上是一个函数指针，指向方法实现的首地址。其定义如下：</p>
-
-<pre><code>id (*IMP)(id, SEL, ...)
-</code></pre>
-
-<p>这个函数使用当前CPU架构实现的标准的C调用约定。第一个参数是指向self的指针(如果是实例方法，则是类实例的内存地址；如果是类方法，则是指向元类的指针)，第二个参数是方法选择器(selector)，接下来是方法的实际参数列表。</p>
-
-<p>前面介绍过的SEL就是为了查找方法的最终实现IMP的。由于每个方法对应唯一的SEL，因此我们可以通过SEL方便快速准确地获得它所对应的IMP，查找过程将在下面讨论。取得IMP后，我们就获得了执行这个方法代码的入口点，此时，我们就可以像调用普通的C语言函数一样来使用这个函数指针了。</p>
-
-<p>通过取得IMP，我们可以跳过Runtime的消息传递机制，直接执行IMP指向的函数实现，这样省去了Runtime消息传递过程中所做的一系列查找操作，会比直接向对象发送消息高效一些。</p>
-
-<h3>Method</h3>
-
-<p>介绍完SEL和IMP，我们就可以来讲讲Method了。Method用于表示类定义中的方法，则定义如下：</p>
-
-<pre><code>typedef struct objc_method *Method;
-
-struct objc_method {
-    SEL method_name                 OBJC2_UNAVAILABLE;  // 方法名
-    char *method_types                  OBJC2_UNAVAILABLE;
-    IMP method_imp                      OBJC2_UNAVAILABLE;  // 方法实现
-}  
-</code></pre>
-
-<p>我们可以看到该结构体中包含一个SEL和IMP，实际上相当于在SEL和IMP之间作了一个映射。有了SEL，我们便可以找到对应的IMP，从而调用方法的实现代码。具体操作流程我们将在下面讨论。</p>
-
-<h4>objc_method_description</h4>
-
-<p>objc_method_description定义了一个Objective-C方法，其定义如下：</p>
-
-<pre><code>struct objc_method_description { SEL name; char *types; };
-</code></pre>
-
-<h2>方法相关操作函数</h2>
-
-<p>Runtime提供了一系列的方法来处理与方法相关的操作。包括方法本身及SEL。本节我们介绍一下这些函数。</p>
-
-<h3>方法</h3>
-
-<p>方法操作相关函数包括下以：</p>
-
-<pre><code>// 调用指定方法的实现
-id method_invoke ( id receiver, Method m, ... );
-
-// 调用返回一个数据结构的方法的实现
-void method_invoke_stret ( id receiver, Method m, ... );
-
-// 获取方法名
-SEL method_getName ( Method m );
-
-// 返回方法的实现
-IMP method_getImplementation ( Method m );
-
-// 获取描述方法参数和返回值类型的字符串
-const char * method_getTypeEncoding ( Method m );
-
-// 获取方法的返回值类型的字符串
-char * method_copyReturnType ( Method m );
-
-// 获取方法的指定位置参数的类型字符串
-char * method_copyArgumentType ( Method m, unsigned int index );
-
-// 通过引用返回方法的返回值类型字符串
-void method_getReturnType ( Method m, char *dst, size_t dst_len );
-
-// 返回方法的参数的个数
-unsigned int method_getNumberOfArguments ( Method m );
-
-// 通过引用返回方法指定位置参数的类型字符串
-void method_getArgumentType ( Method m, unsigned int index, char *dst, size_t dst_len );
-
-// 返回指定方法的方法描述结构体
-struct objc_method_description * method_getDescription ( Method m );
-
-// 设置方法的实现
-IMP method_setImplementation ( Method m, IMP imp );
-
-// 交换两个方法的实现
-void method_exchangeImplementations ( Method m1, Method m2 );
-</code></pre>
-
-<p>● method_invoke函数，返回的是实际实现的返回值。参数receiver不能为空。这个方法的效率会比method_getImplementation和method_getName更快。</p>
-
-<p>● method_getName函数，返回的是一个SEL。如果想获取方法名的C字符串，可以使用sel_getName(method_getName(method))。</p>
-
-<p>● method_getReturnType函数，类型字符串会被拷贝到dst中。</p>
-
-<p>● method_setImplementation函数，注意该函数返回值是方法之前的实现。</p>
-
-<h3>方法选择器</h3>
-
-<p>选择器相关的操作函数包括：</p>
-
-<pre><code>// 返回给定选择器指定的方法的名称
-const char * sel_getName ( SEL sel );
-
-// 在Objective-C Runtime系统中注册一个方法，将方法名映射到一个选择器，并返回这个选择器
-SEL sel_registerName ( const char *str );
-
-// 在Objective-C Runtime系统中注册一个方法
-SEL sel_getUid ( const char *str );
-
-// 比较两个选择器
-BOOL sel_isEqual ( SEL lhs, SEL rhs );
-</code></pre>
-
-<p>● sel_registerName函数：在我们将一个方法添加到类定义时，我们必须在Objective-C Runtime系统中注册一个方法名以获取方法的选择器。</p>
-
-<h2>方法调用流程</h2>
-
-<p>在Objective-C中，消息直到运行时才绑定到方法实现上。编译器会将消息表达式[receiver message]转化为一个消息函数的调用，即objc_msgSend。这个函数将消息接收者和方法名作为其基础参数，如以下所示：</p>
-
-<pre><code>objc_msgSend(receiver, selector)
-</code></pre>
-
-<p>如果消息中还有其它参数，则该方法的形式如下所示：</p>
-
-<pre><code>objc_msgSend(receiver, selector, arg1, arg2, ...)
-</code></pre>
-
-<p>这个函数完成了动态绑定的所有事情：</p>
-
-<ol>
-<li>首先它找到selector对应的方法实现。因为同一个方法可能在不同的类中有不同的实现，所以我们需要依赖于接收者的类来找到的确切的实现。</li>
-<li>它调用方法实现，并将接收者对象及方法的所有参数传给它。</li>
-<li>最后，它将实现返回的值作为它自己的返回值。</li>
-</ol>
-
-
-<p>消息的关键在于我们前面章节讨论过的结构体objc_class，这个结构体有两个字段是我们在分发消息的关注的：</p>
-
-<ol>
-<li>指向父类的指针</li>
-<li>一个类的方法分发表，即methodLists。</li>
-</ol>
-
-
-<p>当我们创建一个新对象时，先为其分配内存，并初始化其成员变量。其中isa指针也会被初始化，让对象可以访问类及类的继承体系。</p>
-
-<p>下图演示了这样一个消息的基本框架：</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Art/messaging1.gif" alt="image" /></p>
-
-<p>当消息发送给一个对象时，objc_msgSend通过对象的isa指针获取到类的结构体，然后在方法分发表里面查找方法的selector。如果没有找到selector，则通过objc_msgSend结构体中的指向父类的指针找到其父类，并在父类的分发表里面查找方法的selector。依此，会一直沿着类的继承体系到达NSObject类。一旦定位到selector，函数会就获取到了实现的入口点，并传入相应的参数来执行方法的具体实现。如果最后没有定位到selector，则会走消息转发流程，这个我们在后面讨论。</p>
-
-<p>为了加速消息的处理，运行时系统缓存使用过的selector及对应的方法的地址。这点我们在<a href="http://southpeak.github.io/blog/2014/10/25/objective-c-runtime-yun-xing-shi-zhi-lei-yu-dui-xiang/">前面</a>讨论过，不再重复。</p>
-
-<h3>隐藏参数</h3>
-
-<p>objc_msgSend有两个隐藏参数：</p>
-
-<ol>
-<li>消息接收对象</li>
-<li>方法的selector</li>
-</ol>
-
-
-<p>这两个参数为方法的实现提供了调用者的信息。之所以说是隐藏的，是因为它们在定义方法的源代码中没有声明。它们是在编译期被插入实现代码的。</p>
-
-<p>虽然这些参数没有显示声明，但在代码中仍然可以引用它们。我们可以使用self来引用接收者对象，使用_cmd来引用选择器。如下代码所示：</p>
-
-<pre><code>- strange
-{
-    id  target = getTheReceiver();
-    SEL method = getTheMethod();
-
-    if ( target == self || method == _cmd )
-        return nil;
-    return [target performSelector:method];
-}
-</code></pre>
-
-<p>当然，这两个参数我们用得比较多的是self，_cmd在实际中用得比较少。</p>
-
-<h3>获取方法地址</h3>
-
-<p>Runtime中方法的动态绑定让我们写代码时更具灵活性，如我们可以把消息转发给我们想要的对象，或者随意交换一个方法的实现等。不过灵活性的提升也带来了性能上的一些损耗。毕竟我们需要去查找方法的实现，而不像函数调用来得那么直接。当然，方法的缓存一定程度上解决了这一问题。</p>
-
-<p>我们上面提到过，如果想要避开这种动态绑定方式，我们可以获取方法实现的地址，然后像调用函数一样来直接调用它。特别是当我们需要在一个循环内频繁地调用一个特定的方法时，通过这种方式可以提高程序的性能。</p>
-
-<p>NSObject类提供了methodForSelector:方法，让我们可以获取到方法的指针，然后通过这个指针来调用实现代码。我们需要将methodForSelector:返回的指针转换为合适的函数类型，函数参数和返回值都需要匹配上。</p>
-
-<p>我们通过以下代码来看看methodForSelector:的使用：</p>
-
-<pre><code>void (*setter)(id, SEL, BOOL);
-int i;
-
-setter = (void (*)(id, SEL, BOOL))[target
-    methodForSelector:@selector(setFilled:)];
-for ( i = 0 ; i &lt; 1000 ; i++ )
-    setter(targetList[i], @selector(setFilled:), YES);
-</code></pre>
-
-<p>这里需要注意的就是函数指针的前两个参数必须是id和SEL。</p>
-
-<p>当然这种方式只适合于在类似于for循环这种情况下频繁调用同一方法，以提高性能的情况。另外，methodForSelector:是由Cocoa运行时提供的；它不是Objective-C语言的特性。</p>
-
-<h2>消息转发</h2>
-
-<p>当一个对象能接收一个消息时，就会走正常的方法调用流程。但如果一个对象无法接收指定消息时，又会发生什么事呢？默认情况下，如果是以[object message]的方式调用方法，如果object无法响应message消息时，编译器会报错。但如果是以perform&hellip;的形式来调用，则需要等到运行时才能确定object是否能接收message消息。如果不能，则程序崩溃。</p>
-
-<p>通常，当我们不能确定一个对象是否能接收某个消息时，会先调用respondsToSelector:来判断一下。如下代码所示：</p>
-
-<pre><code>if ([self respondsToSelector:@selector(method)]) {
-    [self performSelector:@selector(method)];
-}
-</code></pre>
-
-<p>不过，我们这边想讨论下不使用respondsToSelector:判断的情况。这才是我们这一节的重点。</p>
-
-<p>当一个对象无法接收某一消息时，就会启动所谓&#8221;消息转发(message forwarding)&ldquo;机制，通过这一机制，我们可以告诉对象如何处理未知的消息。默认情况下，对象接收到未知的消息，会导致程序崩溃，通过控制台，我们可以看到以下异常信息：</p>
-
-<pre><code>-[SUTRuntimeMethod method]: unrecognized selector sent to instance 0x100111940
-*** Terminating app due to uncaught exception 'NSInvalidArgumentException', reason: '-[SUTRuntimeMethod method]: unrecognized selector sent to instance 0x100111940'
-</code></pre>
-
-<p>这段异常信息实际上是由NSObject的&#8221;doesNotRecognizeSelector&#8221;方法抛出的。不过，我们可以采取一些措施，让我们的程序执行特定的逻辑，而避免程序的崩溃。</p>
-
-<p>消息转发机制基本上分为三个步骤：</p>
-
-<ol>
-<li>动态方法解析</li>
-<li>备用接收者</li>
-<li>完整转发</li>
-</ol>
-
-
-<p>下面我们详细讨论一下这三个步骤。</p>
-
-<h3>动态方法解析</h3>
-
-<p>对象在接收到未知的消息时，首先会调用所属类的类方法+resolveInstanceMethod:(实例方法)或者+resolveClassMethod:(类方法)。在这个方法中，我们有机会为该未知消息新增一个&#8221;处理方法&#8221;&ldquo;。不过使用该方法的前提是我们已经实现了该&#8221;处理方法&#8221;，只需要在运行时通过class_addMethod函数动态添加到类里面就可以了。如下代码所示：</p>
-
-<pre><code>void functionForMethod1(id self, SEL _cmd) {
-   NSLog(@"%@, %p", self, _cmd);
-}
-
-+ (BOOL)resolveInstanceMethod:(SEL)sel {
-
-    NSString *selectorString = NSStringFromSelector(sel);
-
-    if ([selectorString isEqualToString:@"method1"]) {
-        class_addMethod(self.class, @selector(method1), (IMP)functionForMethod1, "@:");
-    }
-
-    return [super resolveInstanceMethod:sel];
-}
-</code></pre>
-
-<p>不过这种方案更多的是为了实现@dynamic属性。</p>
-
-<h3>备用接收者</h3>
-
-<p>如果在上一步无法处理消息，则Runtime会继续调以下方法：</p>
-
-<pre><code>- (id)forwardingTargetForSelector:(SEL)aSelector
-</code></pre>
-
-<p>如果一个对象实现了这个方法，并返回一个非nil的结果，则这个对象会作为消息的新接收者，且消息会被分发到这个对象。当然这个对象不能是self自身，否则就是出现无限循环。当然，如果我们没有指定相应的对象来处理aSelector，则应该调用父类的实现来返回结果。</p>
-
-<p>使用这个方法通常是在对象内部，可能还有一系列其它对象能处理该消息，我们便可借这些对象来处理消息并返回，这样在对象外部看来，还是由该对象亲自处理了这一消息。如下代码所示：</p>
-
-<pre><code>@interface SUTRuntimeMethodHelper : NSObject
-
-- (void)method2;
-
-@end
-
-@implementation SUTRuntimeMethodHelper
-
-- (void)method2 {
-    NSLog(@"%@, %p", self, _cmd);
-}
-
-@end
-
-#pragma mark -
-
-@interface SUTRuntimeMethod () {
-    SUTRuntimeMethodHelper *_helper;
-}
-
-@end
-
-@implementation SUTRuntimeMethod
-
-+ (instancetype)object {
-    return [[self alloc] init];
-}
-
-- (instancetype)init {
-    self = [super init];
-    if (self != nil) {
-        _helper = [[SUTRuntimeMethodHelper alloc] init];
-    }
-
-    return self;
-}
-
-- (void)test {
-    [self performSelector:@selector(method2)];
-}
-
-- (id)forwardingTargetForSelector:(SEL)aSelector {
-
-    NSLog(@"forwardingTargetForSelector");
-
-    NSString *selectorString = NSStringFromSelector(aSelector);
-
-    // 将消息转发给_helper来处理
-    if ([selectorString isEqualToString:@"method2"]) {
-        return _helper;
-    }
-
-    return [super forwardingTargetForSelector:aSelector];
-}
-
-@end
-</code></pre>
-
-<p>这一步合适于我们只想将消息转发到另一个能处理该消息的对象上。但这一步无法对消息进行处理，如操作消息的参数和返回值。</p>
-
-<h3>完整消息转发</h3>
-
-<p>如果在上一步还不能处理未知消息，则唯一能做的就是启用完整的消息转发机制了。此时会调用以下方法：</p>
-
-<pre><code>- (void)forwardInvocation:(NSInvocation *)anInvocation
-</code></pre>
-
-<p>运行时系统会在这一步给消息接收者最后一次机会将消息转发给其它对象。对象会创建一个表示消息的NSInvocation对象，把与尚未处理的消息有关的全部细节都封装在anInvocation中，包括selector，目标(target)和参数。我们可以在forwardInvocation方法中选择将消息转发给其它对象。</p>
-
-<p>forwardInvocation:方法的实现有两个任务：</p>
-
-<ol>
-<li>定位可以响应封装在anInvocation中的消息的对象。这个对象不需要能处理所有未知消息。</li>
-<li>使用anInvocation作为参数，将消息发送到选中的对象。anInvocation将会保留调用结果，运行时系统会提取这一结果并将其发送到消息的原始发送者。</li>
-</ol>
-
-
-<p>不过，在这个方法中我们可以实现一些更复杂的功能，我们可以对消息的内容进行修改，比如追回一个参数等，然后再去触发消息。另外，若发现某个消息不应由本类处理，则应调用父类的同名方法，以便继承体系中的每个类都有机会处理此调用请求。</p>
-
-<p>还有一个很重要的问题，我们必须重写以下方法：</p>
-
-<pre><code>- (NSMethodSignature *)methodSignatureForSelector:(SEL)aSelector
-</code></pre>
-
-<p>消息转发机制使用从这个方法中获取的信息来创建NSInvocation对象。因此我们必须重写这个方法，为给定的selector提供一个合适的方法签名。</p>
-
-<p>完整的示例如下所示：</p>
-
-<pre><code>- (NSMethodSignature *)methodSignatureForSelector:(SEL)aSelector {
-    NSMethodSignature *signature = [super methodSignatureForSelector:aSelector];
-
-    if (!signature) {
-        if ([SUTRuntimeMethodHelper instancesRespondToSelector:aSelector]) {
-            signature = [SUTRuntimeMethodHelper instanceMethodSignatureForSelector:aSelector];
-        }
-    }
-
-    return signature;
-}
-
-- (void)forwardInvocation:(NSInvocation *)anInvocation {
-    if ([SUTRuntimeMethodHelper instancesRespondToSelector:anInvocation.selector]) {
-        [anInvocation invokeWithTarget:_helper];
-    }
-}
-</code></pre>
-
-<p>NSObject的forwardInvocation:方法实现只是简单调用了doesNotRecognizeSelector:方法，它不会转发任何消息。这样，如果不在以上所述的三个步骤中处理未知消息，则会引发一个异常。</p>
-
-<p>从某种意义上来讲，forwardInvocation:就像一个未知消息的分发中心，将这些未知的消息转发给其它对象。或者也可以像一个运输站一样将所有未知消息都发送给同一个接收对象。这取决于具体的实现。</p>
-
-<h3>消息转发与多重继承</h3>
-
-<p>回过头来看第二和第三步，通过这两个方法我们可以允许一个对象与其它对象建立关系，以处理某些未知消息，而表面上看仍然是该对象在处理消息。通过这种关系，我们可以模拟“多重继承”的某些特性，让对象可以“继承”其它对象的特性来处理一些事情。不过，这两者间有一个重要的区别：多重继承将不同的功能集成到一个对象中，它会让对象变得过大，涉及的东西过多；而消息转发将功能分解到独立的小的对象中，并通过某种方式将这些对象连接起来，并做相应的消息转发。</p>
-
-<p>不过消息转发虽然类似于继承，但NSObject的一些方法还是能区分两者。如respondsToSelector:和isKindOfClass:只能用于继承体系，而不能用于转发链。便如果我们想让这种消息转发看起来像是继承，则可以重写这些方法，如以下代码所示：</p>
-
-<pre><code>- (BOOL)respondsToSelector:(SEL)aSelector   {       if ( [super respondsToSelector:aSelector] )         return YES;     else {          /* Here, test whether the aSelector message can     *            * be forwarded to another object and whether that  *            * object can respond to it. Return YES if it can.  */      }
-        return NO;  }
-</code></pre>
-
-<h2>小结</h2>
-
-<p>在此，我们已经了解了Runtime中消息发送和转发的基本机制。这也是Runtime的强大之处，通过它，我们可以为程序增加很多动态的行为，虽然我们在实际开发中很少直接使用这些机制(如直接调用objc_msgSend)，但了解它们有助于我们更多地去了解底层的实现。其实在实际的编码过程中，我们也可以灵活地使用这些机制，去实现一些特殊的功能，如hook操作等。</p>
-
-<p><strong><em>注：如有不对之处，还请指正，欢迎加QQ好友：1318202110(南峰子)</em></strong></p>
-
-<h2>参考</h2>
-
-<ol>
-<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/ObjCRuntimeRef">Objective-C Runtime Reference</a></li>
-<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Introduction/Introduction.html">Objective-C Runtime Programming Guide</a></li>
-<li><a href="http://www.xcoder.cn/html/2013/objc_0304/1373.html">Objective-C runtime之消息（二）</a></li>
-<li><a href="http://www.cnblogs.com/kesalin/archive/2011/08/15/objc_method_base.html">深入浅出Cocoa之消息</a></li>
-</ol>
-
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/5">&larr; Older</a>
@@ -1368,7 +1464,7 @@ for ( i = 0 ; i &lt; 1000 ; i++ )
 <section>
 <h1>分类</h1>
 <ul>
-  <li><a href='/blog/categories/ios'>ios (53)</a></li>
+  <li><a href='/blog/categories/ios'>ios (55)</a></li>
   <li><a href='/blog/categories/network'>network (3)</a></li>
   <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
   <li><a href='/blog/categories/swift'>swift (7)</a></li>
@@ -1380,6 +1476,14 @@ for ( i = 0 ; i &lt; 1000 ; i++ )
 <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/01/31/nsobjectzhi-er/">NSObject之二</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/31/nsobjectzhi-%5B%3F%5D/">NSObject之一</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2015/01/25/gong-ju-pian-:lldbdiao-shi-qi/">工具篇：LLDB调试器</a>
@@ -1411,14 +1515,6 @@ for ( i = 0 ; i &lt; 1000 ; i++ )
     
       <li class="post">
         <a href="/blog/2014/12/10/quartz-2dbian-cheng-zhi-nan-zhi-jiu-:tou-ming-ceng/">Quartz 2D编程指南之九：透明层</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/12/10/quartz-2dbian-cheng-zhi-nan-zhi-ba-:jian-bian/">Quartz 2D编程指南之八：渐变</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/12/05/quartz-2dbian-cheng-zhi-nan-zhi-qi-:yin-ying/">Quartz 2D编程指南之七：阴影</a>
       </li>
     
   </ul>

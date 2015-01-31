@@ -335,9 +335,8 @@ BOOL sel_isEqual ( SEL lhs, SEL rhs );
 <pre><code>void (*setter)(id, SEL, BOOL);
 int i;
 
-setter = (void (*)(id, SEL, BOOL))[target
-    methodForSelector:@selector(setFilled:)];
-for ( i = 0 ; i &lt; 1000 ; i++ )
+setter = (void (*)(id, SEL, BOOL))[target methodForSelector:@selector(setFilled:)];
+for (i = 0 ; i &lt; 1000 ; i++)
     setter(targetList[i], @selector(setFilled:), YES);
 </code></pre>
 
@@ -527,8 +526,17 @@ for ( i = 0 ; i &lt; 1000 ; i++ )
 
 <p>不过消息转发虽然类似于继承，但NSObject的一些方法还是能区分两者。如respondsToSelector:和isKindOfClass:只能用于继承体系，而不能用于转发链。便如果我们想让这种消息转发看起来像是继承，则可以重写这些方法，如以下代码所示：</p>
 
-<pre><code>- (BOOL)respondsToSelector:(SEL)aSelector   {       if ( [super respondsToSelector:aSelector] )         return YES;     else {          /* Here, test whether the aSelector message can     *            * be forwarded to another object and whether that  *            * object can respond to it. Return YES if it can.  */      }
-        return NO;  }
+<pre><code>- (BOOL)respondsToSelector:(SEL)aSelector
+{
+    if ( [super respondsToSelector:aSelector])
+        return YES;
+    else {
+        /* Here, test whether the aSelector message can     *
+         * be forwarded to another object and whether that  *
+         * object can respond to it. Return YES if it can.  */
+    }
+
+    return NO;  }
 </code></pre>
 
 <h2>小结</h2>
@@ -626,7 +634,7 @@ for ( i = 0 ; i &lt; 1000 ; i++ )
 <section>
 <h1>分类</h1>
 <ul>
-  <li><a href='/blog/categories/ios'>ios (53)</a></li>
+  <li><a href='/blog/categories/ios'>ios (55)</a></li>
   <li><a href='/blog/categories/network'>network (3)</a></li>
   <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
   <li><a href='/blog/categories/swift'>swift (7)</a></li>
@@ -638,6 +646,14 @@ for ( i = 0 ; i &lt; 1000 ; i++ )
 <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/01/31/nsobjectzhi-er/">NSObject之二</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/31/nsobjectzhi-%5B%3F%5D/">NSObject之一</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2015/01/25/gong-ju-pian-:lldbdiao-shi-qi/">工具篇：LLDB调试器</a>
@@ -669,14 +685,6 @@ for ( i = 0 ; i &lt; 1000 ; i++ )
     
       <li class="post">
         <a href="/blog/2014/12/10/quartz-2dbian-cheng-zhi-nan-zhi-jiu-:tou-ming-ceng/">Quartz 2D编程指南之九：透明层</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/12/10/quartz-2dbian-cheng-zhi-nan-zhi-ba-:jian-bian/">Quartz 2D编程指南之八：渐变</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/12/05/quartz-2dbian-cheng-zhi-nan-zhi-qi-:yin-ying/">Quartz 2D编程指南之七：阴影</a>
       </li>
     
   </ul>
