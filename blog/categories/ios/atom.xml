@@ -4,7 +4,7 @@
   <title><![CDATA[Category: ios | 南峰子的技术博客]]></title>
   <link href="http://southpeak.github.io/blog/categories/ios/atom.xml" rel="self"/>
   <link href="http://southpeak.github.io/"/>
-  <updated>2015-02-07T23:32:10+08:00</updated>
+  <updated>2015-02-07T23:52:09+08:00</updated>
   <id>http://southpeak.github.io/</id>
   <author>
     <name><![CDATA[南峰子]]></name>
@@ -18,9 +18,7 @@
     <link href="http://southpeak.github.io/blog/2015/02/07/yuan-ma-pian-:sdwebimage/"/>
     <updated>2015-02-07T23:30:45+08:00</updated>
     <id>http://southpeak.github.io/blog/2015/02/07/yuan-ma-pian-:sdwebimage</id>
-    <content type="html"><![CDATA[<h1>源码篇：SDWebImage</h1>
-
-<p>源码来源：<a href="https://github.com/rs/SDWebImage">https://github.com/rs/SDWebImage</a></p>
+    <content type="html"><![CDATA[<p>源码来源：<a href="https://github.com/rs/SDWebImage">https://github.com/rs/SDWebImage</a></p>
 
 <p>版本: 3.7</p>
 
