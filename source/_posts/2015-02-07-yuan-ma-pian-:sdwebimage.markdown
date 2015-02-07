@@ -12,8 +12,6 @@ categories: iOS
 
 ---
 
-# 源码篇：SDWebImage
-
 源码来源：[https://github.com/rs/SDWebImage](https://github.com/rs/SDWebImage)
 
 版本: 3.7
