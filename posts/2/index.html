@@ -11,7 +11,7 @@
   <meta name="baidu-site-verification" content="HoscFhWICI" />
 
   
-  <meta name="description" content="PDF文档存储依赖于分辨率的向量图形、文本和位图，并用于程序的一系列指令中。一个PDF文档可以包含多页的图形和文本。PDF可用于创建跨平台、只读的文档，也可用于绘制依赖于分辨率的图形。 Quartz为所有应用程序创建高保真的PDF文档，这些文档保留应用的绘制操作，如图13-1所示。 &hellip;">
+  <meta name="description" content="来源：https://github.com/Mantle/Mantle 版本：1.5.3 Mantle makes it easy to write a simple model layer for your Cocoa or Cocoa Touch application. 由上面这句话可知， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -68,6 +68,294 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/01/11/gong-ju-pian-:mantle/">工具篇：Mantle</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-01-11T21:55:03+08:00" pubdate data-updated="true">Jan 11<sup>th</sup>, 2015</time>
+        
+        
+           | <a href="/blog/2015/01/11/gong-ju-pian-:mantle/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>来源：<a href="https://github.com/Mantle/Mantle">https://github.com/Mantle/Mantle</a></p>
+
+<p>版本：1.5.3</p>
+
+<p><em>Mantle makes it easy to write a simple model layer for your Cocoa or Cocoa Touch application.</em></p>
+
+<p>由上面这句话可知，Mantle的目的是让我们能简化Cocoa和Cocoa Touch应用的model层。那先来看看通常我们是怎么处理model层的吧。</p>
+
+<h2>解决的问题</h2>
+
+<p>在我们写代码时，总要面对不同的数据来源。这些数据可能是来自网络服务器、本地数据库或者是内存中。通常我们需要将这些数据存储到一个Model中。一般情况下，我们会怎么去定义一个Model呢？以Mantle官方的例子为例，可能是这样的：</p>
+
+<pre><code>typedef enum : NSUInteger {
+    GHIssueStateOpen,
+    GHIssueStateClosed
+} GHIssueState;
+
+@interface GHIssue : NSObject &lt;NSCoding, NSCopying&gt;
+
+@property (nonatomic, copy, readonly) NSURL *URL;
+@property (nonatomic, copy, readonly) NSURL *HTMLURL;
+@property (nonatomic, copy, readonly) NSNumber *number;
+@property (nonatomic, assign, readonly) GHIssueState state;
+@property (nonatomic, copy, readonly) NSString *reporterLogin;
+@property (nonatomic, copy, readonly) NSDate *updatedAt;
+@property (nonatomic, strong, readonly) GHUser *assignee;
+@property (nonatomic, copy, readonly) NSDate *retrievedAt;
+
+@property (nonatomic, copy) NSString *title;
+@property (nonatomic, copy) NSString *body;
+
+- (id)initWithDictionary:(NSDictionary *)dictionary;
+
+@end
+</code></pre>
+
+<p>假定我们从网络服务器上获取了一组GHIssue对应的JSON数据，并已经将其转换为字典后，我们便可以用这个字典对GHIssue对象进行初始化了，-initWithDictionary:的实现如下：</p>
+
+<pre><code>- (id)initWithDictionary:(NSDictionary *)dictionary {
+    self = [self init];
+    if (self == nil) return nil;
+
+    _URL = [NSURL URLWithString:dictionary[@"url"]];
+    _HTMLURL = [NSURL URLWithString:dictionary[@"html_url"]];
+    _number = dictionary[@"number"];
+
+    if ([dictionary[@"state"] isEqualToString:@"open"]) {
+        _state = GHIssueStateOpen;
+    } else if ([dictionary[@"state"] isEqualToString:@"closed"]) {
+        _state = GHIssueStateClosed;
+    }
+
+    _title = [dictionary[@"title"] copy];
+    _retrievedAt = [NSDate date];
+    _body = [dictionary[@"body"] copy];
+    _reporterLogin = [dictionary[@"user"][@"login"] copy];
+    _assignee = [[GHUser alloc] initWithDictionary:dictionary[@"assignee"]];
+
+    _updatedAt = [self.class.dateFormatter dateFromString:dictionary[@"updated_at"]];
+
+    return self;
+}
+</code></pre>
+
+<p>如果GHIssue对象有归档需求，则还需要实现以下两个方法：</p>
+
+<pre><code>- (id)initWithCoder:(NSCoder *)coder {
+    self = [self init];
+    if (self == nil) return nil;
+
+    _URL = [coder decodeObjectForKey:@"URL"];
+    _HTMLURL = [coder decodeObjectForKey:@"HTMLURL"];
+    _number = [coder decodeObjectForKey:@"number"];
+    _state = [coder decodeUnsignedIntegerForKey:@"state"];
+    _title = [coder decodeObjectForKey:@"title"];
+    _retrievedAt = [NSDate date];
+    _body = [coder decodeObjectForKey:@"body"];
+    _reporterLogin = [coder decodeObjectForKey:@"reporterLogin"];
+    _assignee = [coder decodeObjectForKey:@"assignee"];
+    _updatedAt = [coder decodeObjectForKey:@"updatedAt"];
+
+    return self;
+}
+
+- (void)encodeWithCoder:(NSCoder *)coder {
+    if (self.URL != nil) [coder encodeObject:self.URL forKey:@"URL"];
+    if (self.HTMLURL != nil) [coder encodeObject:self.HTMLURL forKey:@"HTMLURL"];
+    if (self.number != nil) [coder encodeObject:self.number forKey:@"number"];
+    if (self.title != nil) [coder encodeObject:self.title forKey:@"title"];
+    if (self.body != nil) [coder encodeObject:self.body forKey:@"body"];
+    if (self.reporterLogin != nil) [coder encodeObject:self.reporterLogin forKey:@"reporterLogin"];
+    if (self.assignee != nil) [coder encodeObject:self.assignee forKey:@"assignee"];
+    if (self.updatedAt != nil) [coder encodeObject:self.updatedAt forKey:@"updatedAt"];
+
+    [coder encodeUnsignedInteger:self.state forKey:@"state"];
+}
+</code></pre>
+
+<p>额，好多代码。嗯，说实话，以前也经常写这种代码，真可谓又臭又长啊。也许我的工程中还有很多这样的Model，然后，然后&hellip;&hellip;靠，好烦啊。再然后，某天，服务端的同事告诉我有N个接口需要加字段，额～～崩溃中。而且，从上面的Model中，我无法将其还原为对应的JSON串，且如果某些信息变了，那么归档的数据可能就无法使用了。</p>
+
+<p>Mantle就是针对这几个问题而开发的一个开源库。</p>
+
+<h2>使用方法</h2>
+
+<p>其实Mantle的使用还是很简单的，它最主要的就是二个类和一个协议，即：</p>
+
+<ol>
+<li>MTLModel类：通常是作为我们的Model的基类，该类提供了一些默认的行为来处理对象的初始化和归档操作，同时可以获取到对象所有属性的键值集合。</li>
+<li>MTLJSONAdapter类：用于在MTLModel对象和JSON字典之间进行相互转换，相当于是一个适配器。</li>
+<li>MTLJSONSerializing协议：需要与JSON字典进行相互转换的MTLModel的子类都需要实现该协议，以方便MTLJSONApadter对象进行转换。</li>
+</ol>
+
+
+<p>还以GHIssue为例，我们通常会以以下方式来定义我们的Model：</p>
+
+<pre><code>@interface GHIssue : MTLModel &lt;MTLJSONSerializing&gt;
+
+@property (nonatomic, copy, readonly) NSURL *URL;
+@property (nonatomic, copy, readonly) NSURL *HTMLURL;
+@property (nonatomic, copy, readonly) NSNumber *number;
+@property (nonatomic, assign, readonly) GHIssueState state;
+
+...
+
+@end
+</code></pre>
+
+<p>可以看到，我们的Model继承了通常是MTLModel类，同时实现了MTLJSONSerializing协议。这样，我们不再需要像上面那样写一大堆的赋值代码和编码解码方法，而只需要实现MTLJSONSerializing协议的+JSONKeyPathsByPropertyKey类方法，将我们的属性名的键值与JSON字典的键值做一个映射，我们便可以在MTLJSONAdapter对象的帮助下自动进行赋值操作和编码解码操作。我们来看看GHIssue类的具体实现：</p>
+
+<pre><code>@implementation GHIssue
+
+...
+
++ (NSDictionary *)JSONKeyPathsByPropertyKey {
+    return @{
+        @"URL": @"url",
+        @"HTMLURL": @"html_url",
+        @"reporterLogin": @"user.login",
+        @"assignee": @"assignee",
+        @"updatedAt": @"updated_at"
+    };
+}
+
+...
+
+@end
+</code></pre>
+
+<p>可以看到，Model对象的属性与JSON数据之间的映射是通过字典来实现的。通过这种对应关系，Model对象便可以和JSON数据相互转换。需要注意的是返回中字典中的key值在Model对象中必须有对应的属性，否则Model对象将无法初始化成功。</p>
+
+<p>当然这两者的值之间的转换关系可能需要我们自己来定义，这时我们就可以在Model中自定义+(NSValueTransformer *)<key>JSONTransformer方法来完成这一操作，如下代码所示：</p>
+
+<pre><code>@implementation GHIssue
+
+...
+
++ (NSValueTransformer *)URLJSONTransformer {
+    return [NSValueTransformer valueTransformerForName:MTLURLValueTransformerName];
+}
+
++ (NSValueTransformer *)HTMLURLJSONTransformer {
+    return [NSValueTransformer valueTransformerForName:MTLURLValueTransformerName];
+}
+
++ (NSValueTransformer *)stateJSONTransformer {
+    return [NSValueTransformer mtl_valueMappingTransformerWithDictionary:@{
+        @"open": @(GHIssueStateOpen),
+        @"closed": @(GHIssueStateClosed)
+    }];
+}
+
+...
+
+@end
+</code></pre>
+
+<p>这样，在转换过程中，会自动调用这些方法来做数据的转换。而如果没有实现相应的方法，则会调用默认的+JSONTransformerForKey:来做处理，具体的实现可以参考<a href="http://southpeak.github.io/blog/2015/01/11/yuan-ma-pian-:mantle/">《源码篇：Mantle》</a>。</p>
+
+<p>有了上面这些准备工作，我们就需要通过MTLJSONAdapter类来适配MTLModel对象和JSON数据了，这个更容易了，代码如下所示：</p>
+
+<pre><code>NSError *error = nil;
+
+NSDictionary *JSONDictionary = ...;
+
+GHIssue *issue = [MTLJSONAdapter modelOfClass:GHIssue.class fromJSONDictionary:JSONDictionary error:&amp;error];
+</code></pre>
+
+<p>这样就根据一个JSON字典创建了一个GHIssue对象，而如果要从这个对象中获取到相应的JSON字典，则可以如下操作：</p>
+
+<pre><code>NSDictionary *JSONDictionary = [MTLJSONAdapter JSONDictionaryFromModel:issue];
+</code></pre>
+
+<p>以上便是Mantle的简单使用，当然更多的使用方式还需要在实践中多挖掘了。</p>
+
+<p>这里还需要注意的是：</p>
+
+<ol>
+<li>MTLModel的转换只针对我们定义的属性，而无法支持成员变量。</li>
+<li>支持嵌套属性的转换，这对于对象属性来说非常有用。</li>
+</ol>
+
+
+<h2>导入工程</h2>
+
+<p>想在我们的工程中使用Mantle，可以通过以下步骤导入：</p>
+
+<ol>
+<li>将Mantle库作为应用的子模块添加进来。</li>
+<li>运行Mantle文件夹下的script/bootstrap脚本。</li>
+<li>将Mantle.xcodeproj拖进我们的XCode工程或工作空间。</li>
+<li>在程序target的Build Phases选项卡中，在Link Binary With Libraries下添加Mantle的相关信息。在iOS工程中，添加libMantle.a库。</li>
+<li>在&#8221;Header Search Paths&#8221;设置中添加&#8221;$(BUILD_ROOT)/../IntermediateBuildFilesPath/UninstalledProducts/include&#8221; $(inherited)。</li>
+<li>对于iOS目标，在&#8221;Other Linker Flags&#8221;设置中添加-ObjC。</li>
+<li>如果我们将Mantle添加到工程(而不是工作空间)，则我们需要将Mantle依赖的库添加到程序的&#8221;Target Dependencies&#8221;中。</li>
+</ol>
+
+
+<p>不过，我还是喜欢用CocoaPods来处理，只需要在Podfile中添加以下代码：</p>
+
+<pre><code>pod 'Mantle', '~&gt; 1.5.3'
+</code></pre>
+
+<p>然后在对应目录下运行pod install，稍等片刻便可以使用Mantle了。关于CocoaPods的使用，可参考<a href="https://github.com/CocoaPods/CocoaPods">github上的cocoapods工程</a>。</p>
+
+<h2>不足之处</h2>
+
+<p>Mantle使用简单方便，极大的简化了我们的代码，可以满足我们大部分的需求。不过有时候我们可能会遇到这样的情况，由服务端提供的两个接口A和B，其实际上返回的数据可以转换为程序的同一个Model，只不过由于提供接口的是两个人，而且没有相互约定；抑或是服务端接口返回的数据与本地数据库的数据可以转换化同一个Model，但由于历史原因，这两者的字段也没对应上，如下所示：</p>
+
+<pre><code>// A接口返回的JSON数据为
+{"user": "abc", "password": "abc"}
+
+// B接口返回的JSON数据为
+{"user": "123", "pwd": "123"}
+</code></pre>
+
+<p>这种情况下如何使用Mantle呢？看着实际上都一样，只是字段名不一样。这时似乎就不好处理了。因为+JSONKeyPathsByPropertyKey中，字典的key表示的是MTLModel的属性键值，是通过属性的键值去找相应的JSON数据的key。因此，这种情况下可能就得定义两个Model了。</p>
+
+<p>在我们之前的工程中，也有做过类似Mantle的处理，只不过没有做得这么细致。针对上面的问题，我们的方案是刚好反过来，这个映射字典的key是JSON字典的key值，而映射字典的value是对象属性的key值。这样，我们就可以将不回数据来源的JSON字典的不同key映射到同一个Model对象的同一个属性上了。</p>
+
+<p>另外一方面，由于转换过程涉及到一些映射查找操作，所以性能上也不如直接写赋值语句来得快。不过Mantle已以通过缓存对此做了优化，所以这一点还是可以接受的。</p>
+
+<h2>参考与推荐</h2>
+
+<ol>
+<li><a href="https://github.com/Mantle/Mantle">Mantle工程</a></li>
+<li><a href="http://southpeak.github.io/blog/2015/01/11/yuan-ma-pian-:mantle/">源码篇：Mantle</a></li>
+<li><a href="http://ourui.github.io/blog/2014/01/22/mantle-use/">Mantle 初步使用</a></li>
+<li><a href="http://blog.codingcoder.com/use-mantle-to-model/">使用Mantle处理Model层对象</a></li>
+</ol>
+
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1061,103 +1349,6 @@ CGContextDrawImage(context, rect, myColorMaskedImage);
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/12/10/quartz-2dbian-cheng-zhi-nan-zhi-jiu-:tou-ming-ceng/">Quartz 2D编程指南之九：透明层</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-12-10T09:13:04+08:00" pubdate data-updated="true">Dec 10<sup>th</sup>, 2014</time>
-        
-        
-           | <a href="/blog/2014/12/10/quartz-2dbian-cheng-zhi-nan-zhi-jiu-:tou-ming-ceng/#comments">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>透明层(TransparencyLayers)通过组合两个或多个对象来生成一个组合图形。组合图形被看成是单一对象。当需要在一组对象上使用特效时，透明层非常有用，如图9-1所示的给三个圆使用阴影的效果。</p>
-
-<p>Figure 9-1  Three circles as a composite in a transparency layer</p>
-
-<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/trans_layer1.gif" alt="image" /></p>
-
-<p>如果没有使用透明层来渲染图9-1中的三个圆，对它们使用阴影的效果将是如图9-2所示：</p>
-
-<p>Figure 9-2  Three circles painted as separate entities</p>
-
-<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/trans_layer2.gif" alt="image" /></p>
-
-<h2>透明层的工作方式</h2>
-
-<p>Quartz的透明层类似于许多流行的图形应用中的层。层是独立的实体。Quartz维护为每个上下文维护一个透明层栈，并且透明层是可以嵌套的。但由于层通常是栈的一部分，所以我们不能单独操作它们。</p>
-
-<p>我们通过调用函数CGContextBeginTransparencyLayer来开始一个透明层，该函数需要两个参数：图形上下文与CFDictionary对象。字典中包含我们所提供的指定层额外信息的选项，但由于Quartz 2D API中没有使用字典，所以我们传递一个NULL。在调用这个函数后，图形状态参数保持不变，除了alpha值[默认设置为1]、阴影[默认关闭]、混合模式[默认设置为normal]、及其它影响最终组合的参数。</p>
-
-<p>在开始透明层操作后，我们可以绘制任何想显示在层上的对象。指定上下文中的绘制操作将被当成一个组合对象绘制到一个透明背景上。这个背景被当作一个独立于图形上下文的目标缓存。</p>
-
-<p>当绘制完成后，我们调用函数CGContextEndTransparencyLayer。Quartz将结合对象放入上下文，并使用上下文的全局alpha值、阴影状态及裁减区域作用于组合对象。</p>
-
-<h2>在透明层中进行绘制</h2>
-
-<p>在透明层中绘制需要三步：</p>
-
-<ol>
-<li>调用函数CGContextBeginTransparencyLayer</li>
-<li>在透明层中绘制需要组合的对象</li>
-<li>调用函数CGContextEndTransparencyLayer</li>
-</ol>
-
-
-<p>图9-3显示了在透明层中绘制三个矩形，其中将这三个矩形当成一个整体来渲染阴影。</p>
-
-<p>Figure 9-3  Three rectangles painted to a transparency layer</p>
-
-<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/trans_code.gif" alt="image" /></p>
-
-<p>代码清单9-1显示了如何利用透明层生成图9-3所示的矩形。</p>
-
-<p>Listing 9-1  Painting to a transparency layer</p>
-
-<pre><code>void MyDrawTransparencyLayer (CGContext myContext, float wd,float ht)
-{
-    CGSize myShadowOffset = CGSizeMake (10, -20);
-    CGContextSetShadow (myContext, myShadowOffset, 10);   
-    CGContextBeginTransparencyLayer (myContext, NULL);
-
-    // Your drawing code here
-    CGContextSetRGBFillColor (myContext, 0, 1, 0, 1);
-    CGContextFillRect (myContext, CGRectMake (wd/3+ 50,ht/2 ,wd/4,ht/4));
-    CGContextSetRGBFillColor (myContext, 0, 0, 1, 1);
-    CGContextFillRect (myContext, CGRectMake (wd/3-50,ht/2-100,wd/4,ht/4));
-    CGContextSetRGBFillColor (myContext, 1, 0, 0, 1);
-    CGContextFillRect (myContext, CGRectMake (wd/3,ht/2-50,wd/4,ht/4));
-    CGContextEndTransparencyLayer (myContext);
-}
-</code></pre>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/3">&larr; Older</a>
@@ -1174,7 +1365,7 @@ CGContextDrawImage(context, rect, myColorMaskedImage);
 <section>
 <h1>分类</h1>
 <ul>
-  <li><a href='/blog/categories/ios'>ios (55)</a></li>
+  <li><a href='/blog/categories/ios'>ios (56)</a></li>
   <li><a href='/blog/categories/network'>network (3)</a></li>
   <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
   <li><a href='/blog/categories/swift'>swift (7)</a></li>
@@ -1186,6 +1377,10 @@ CGContextDrawImage(context, rect, myColorMaskedImage);
 <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/02/07/yuan-ma-pian-:sdwebimage/">源码篇：SDWebImage</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2015/01/31/nsobjectzhi-er/">NSObject之二</a>
@@ -1221,10 +1416,6 @@ CGContextDrawImage(context, rect, myColorMaskedImage);
     
       <li class="post">
         <a href="/blog/2014/12/11/quartz-2dbian-cheng-zhi-nan-zhi-shi-:quartz-2dzhong-de-shu-ju-guan-li/">Quartz 2D编程指南之十：Quartz 2D中的数据管理</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/12/10/quartz-2dbian-cheng-zhi-nan-zhi-jiu-:tou-ming-ceng/">Quartz 2D编程指南之九：透明层</a>
       </li>
     
   </ul>
