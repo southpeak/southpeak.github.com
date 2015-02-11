@@ -4,7 +4,7 @@
   <title><![CDATA[南峰子的技术博客]]></title>
   <link href="http://southpeak.github.io/atom.xml" rel="self"/>
   <link href="http://southpeak.github.io/"/>
-  <updated>2015-02-11T21:54:16+08:00</updated>
+  <updated>2015-02-11T22:15:08+08:00</updated>
   <id>http://southpeak.github.io/</id>
   <author>
     <name><![CDATA[南峰子]]></name>
@@ -129,7 +129,7 @@
 
 <p>实际上，我们常用的SDWebImage图片下载库的缓存机制就是通过NSCache来实现的。《Effective Objective-C 2.0》中也专门用一小篇的内容来介绍NSCache的使用(第50条：构建缓存时选用NSCache而非NSDictionary)，里面有更精彩的内容。如果我们需要构建缓存机制，则应该使用NSCache，而不是NSDictionary，这样可以减少我们应用对内存的占用，从而达到优化内存的目标。</p>
 
-<p><em>题外话：最近好好久不用的微博整理了一下，重新开始混微博圈了，哈哈，还是个菜鸟。还望大家多提意见啊。微</em></p>
+<p><em>题外话：最近好好久不用的微博整理了一下，重新开始混微博圈了，哈哈，还是个菜鸟。还望大家多提意见啊。微博号：南峰子_老驴(<a href="http://weibo.com/touristdiary">http://weibo.com/touristdiary</a>)</em></p>
 
 <h2>参考</h2>
 
