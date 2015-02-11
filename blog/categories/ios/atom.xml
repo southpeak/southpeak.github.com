@@ -4,7 +4,7 @@
   <title><![CDATA[Category: ios | 南峰子的技术博客]]></title>
   <link href="http://southpeak.github.io/blog/categories/ios/atom.xml" rel="self"/>
   <link href="http://southpeak.github.io/"/>
-  <updated>2015-02-07T23:52:09+08:00</updated>
+  <updated>2015-02-11T21:54:16+08:00</updated>
   <id>http://southpeak.github.io/</id>
   <author>
     <name><![CDATA[南峰子]]></name>
@@ -12,6 +12,137 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[NSCache]]></title>
+    <link href="http://southpeak.github.io/blog/2015/02/11/nscache/"/>
+    <updated>2015-02-11T21:45:14+08:00</updated>
+    <id>http://southpeak.github.io/blog/2015/02/11/nscache</id>
+    <content type="html"><![CDATA[<p>NSCache是一个类似于集合的容器，即缓存。它存储key-value对，这一点类似于NSDictionary类。我们通常用使用缓存来临时存储短时间使用但创建昂贵的对象。重用这些对象可以优化性能，因为它们的值不需要重新计算。另外一方面，这些对象对于程序来说不是紧要的，在内存紧张时会被丢弃。如果对象被丢弃了，则下次使用时需要重新计算。</p>
+
+<p>当一个key-value对在缓存中时，缓存维护它的一个强引用。存储在NSCache中的通用数据类型通常是实现了NSDiscardableContent协议的对象。在缓存中存储这类对象是有好处的，因为当不再需要它时，可以丢弃这些内容，以节省内存。默认情况下，缓存中的NSDiscardableContent对象在其内容被丢弃时，会被移除出缓存，尽管我们可以改变这种缓存策略。如果一个NSDiscardableContent被放进缓存，则在对象被移除时，缓存会调用discardContentIfPossible方法。</p>
+
+<p>NSCache与可变集合有几点不同：</p>
+
+<ol>
+<li>NSCache类结合了各种自动删除策略，以确保不会占用过多的系统内存。如果其它应用需要内存时，系统自动执行这些策略。当调用这些策略时，会从缓存中删除一些对象，以最大限度减少内存的占用。</li>
+<li>NSCache是线程安全的，我们可以在不同的线程中添加、删除和查询缓存中的对象，而不需要锁定缓存区域。</li>
+<li>不像NSMutableDictionary对象，一个缓存对象不会拷贝key对象。</li>
+</ol>
+
+
+<p>这些特性对于NSCache类来说是必须的，因为在需要释放内存时，缓存必须异步地在幕后决定去自动修改自身。</p>
+
+<h2>缓存限制</h2>
+
+<p>NSCache提供了几个属性来限制缓存的大小，如属性countLimit限定了缓存最多维护的对象的个数。声明如下：</p>
+
+<pre><code>@property NSUInteger countLimit
+</code></pre>
+
+<p>默认值为0，表示不限制数量。但需要注意的是，这不是一个严格的限制。如果缓存的数量超过这个数量，缓存中的一个对象可能会被立即丢弃、或者稍后、也可能永远不会，具体依赖于缓存的实现细节。</p>
+
+<p>另外，NSCache提供了totalCostLimit属性来限定缓存能维持的最大内存。其声明如下：</p>
+
+<pre><code>@property NSUInteger totalCostLimit
+</code></pre>
+
+<p>默认值也是0，表示没有限制。当我们添加一个对象到缓存中时，我们可以为其指定一个消耗(cost)，如对象的字节大小。如果添加这个对象到缓存导致缓存总的消耗超过totalCostLimit的值，则缓存会自动丢弃一些对象，直到总消耗低于totalCostLimit值。不过被丢弃的对象的顺序无法保证。</p>
+
+<p>需要注意的是totalCostLimit也不是一个严格限制，其策略是与countLimit一样的。</p>
+
+<h2>存取方法</h2>
+
+<p>NSCache提供了一组方法来存取key-value对，类似于NSMutableDictionary类。如下所示：</p>
+
+<pre><code>- (id)objectForKey:(id)key
+
+- (void)setObject:(id)obj forKey:(id)key
+
+- (void)removeObjectForKey:(id)key
+
+- (void)removeAllObjects
+</code></pre>
+
+<p>如上所述，与NSMutableDictionary不同的就是它不会拷贝key对象。</p>
+
+<p>此外，我们在存储对象时，可以为对象指定一个消耗值，如下所示：</p>
+
+<pre><code>- (void)setObject:(id)obj forKey:(id)key cost:(NSUInteger)num
+</code></pre>
+
+<p>这个消耗值用于计算缓存中所有对象的一个消耗总和。当内存受限或者总消耗超过了限定的最大总消耗，则缓存应该开启一个丢弃过程以移除一些对象。不过，这个过程不能保证被丢弃对象的顺序。其结果是，如果我们试图操作这个消耗值来实现一些特殊的行为，则后果可能会损害我们的程序。通常情况下，这个消耗值是对象的字节大小。如果这些信息不是现成的，则我们不应该去计算它，因为这样会使增加使用缓存的成本。如果我们没有可用的值传递，则直接传递0，或者是使用-setObject:forKey:方法，这个方法不需要传入一个消耗值。</p>
+
+<h2>NSDiscardableContent协议</h2>
+
+<p>NSDiscardableContent是一个协议，实现这个协议的目的是为了让我们的对象在不被使用时，可以将其丢弃，以让程序占用更少的内存。</p>
+
+<p>一个NSDiscardableContent对象的生命周期依赖于一个“counter”变量。一个NSDiscardableContent对象实际是一个可清理内存块，这个内存记录了对象当前是否被其它对象使用。如果这块内存正在被读取，或者仍然被需要，则它的counter变量是大于或等于1的；当它不再被使用时，就可以丢弃，此时counter变量将等于0。当counter变量等于0时，如果当前时间点内存比较紧张的话，内存块就可能被丢弃。</p>
+
+<p>为了丢弃这些内容，可以调用对象的discardContentIfPossible方法，该方法的声明如下：</p>
+
+<pre><code>- (void)discardContentIfPossible
+</code></pre>
+
+<p>这样当counter变量等于0时将会释放相关的内存。而如果counter变量不为0，则该方法什么也不做。</p>
+
+<p>默认情况下，NSDiscardableContent对象的counter变量初始值为1，以确保对象不会被内存管理系统立即释放。从这个点开始，我们就需要去跟踪counter变量的状态。为此。协议声明了两个方法：beginContentAccess和endContentAccess。</p>
+
+<p>其中调用beginContentAccess方法会增加对象的counter变量(+1)，这样就可以确保对象不会被丢弃。该方法声明如下：</p>
+
+<pre><code>- (BOOL)beginContentAccess
+</code></pre>
+
+<p>通常我们在对象被需要或者将要使用时调用这个方法。具体的实现类可以决定在对象已经被丢弃的情况下是否重新创建这些内存，且重新创建成功后返回YES。协议的实现者在NSDiscardableContent对象被使用，而又没有调用它的beginContentAccess方法时，应该抛出一个异常。</p>
+
+<p>函数的返回值如果是YES，则表明可丢弃内存仍然可用且已被成功访问；否则返回NO。另外需要注意的是，该方法是在实现类中必须实现(required)。</p>
+
+<p>与beginContentAccess相对应的是endContentAccess。如果可丢弃内存不再被访问时调用。其声明如下：</p>
+
+<pre><code>- (void)endContentAccess
+</code></pre>
+
+<p>该方法会减少对象的counter变量，通常是让对象的counter值变回为0，这样在对象的内容不再被需要时，就要以将其丢弃。</p>
+
+<p>NSCache类提供了一个属性，来标识缓存是否自动舍弃那些内存已经被丢弃的对象(discardable-content object)，其声明如下：</p>
+
+<pre><code>@property BOOL evictsObjectsWithDiscardedContent
+</code></pre>
+
+<p>如果设置为YES，则在对象的内存被丢弃时舍弃对象。默认值为YES。</p>
+
+<h2>NSCacheDelegate代理</h2>
+
+<p>NSCache对象还有一个代理属性，其声明如下：</p>
+
+<pre><code>@property(assign) id&lt; NSCacheDelegate &gt; delegate
+</code></pre>
+
+<p>实现NSCacheDelegate代理的对象会在对象即将从缓存中移除时执行一些特定的操作，因此代理对象可以实现以下方法：</p>
+
+<pre><code>- (void)cache:(NSCache *)cache willEvictObject:(id)obj
+</code></pre>
+
+<p>需要注意的是在这个代理方法中不能修改cache对象。</p>
+
+<h2>小结</h2>
+
+<p>实际上，我们常用的SDWebImage图片下载库的缓存机制就是通过NSCache来实现的。《Effective Objective-C 2.0》中也专门用一小篇的内容来介绍NSCache的使用(第50条：构建缓存时选用NSCache而非NSDictionary)，里面有更精彩的内容。如果我们需要构建缓存机制，则应该使用NSCache，而不是NSDictionary，这样可以减少我们应用对内存的占用，从而达到优化内存的目标。</p>
+
+<p><em>题外话：最近好好久不用的微博整理了一下，重新开始混微博圈了，哈哈，还是个菜鸟。还望大家多提意见啊。微</em></p>
+
+<h2>参考</h2>
+
+<ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/NSCache_Class/">NSCache Class Reference</a></li>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/NSDiscardableContent_Protocol/index.html">NSDiscardableContent Protocol Reference</a></li>
+<li><a href="https://developer.apple.com/library/mac/documentation/Cocoa/Reference/NSCacheDelegate_Protocol/index.html">NSCacheDelegate Protocol Reference</a></li>
+<li><a href="http://www.15yan.com/story/45toOUzFGlr/">Objective-C中的缓存: NSCache介绍</a></li>
+<li><a href="http://nshipster.cn/nscache/">NSCache</a></li>
+</ol>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[源码篇：SDWebImage]]></title>
@@ -2142,472 +2273,6 @@ etc...
 <li><a href="http://www.cocoachina.com/ios/20141219/10709.html">与调试器共舞 &ndash; LLDB 的华尔兹</a></li>
 <li><a href="http://www.starfelix.com/blog/2014/03/17/lldbdiao-shi-ming-ling-chu-tan/">LLDB调试命令初探</a></li>
 <li><a href="http://www.cocoachina.com/ios/20140530/8619.html">NSLog效率低下的原因及尝试lldb断点打印Log</a></li>
-</ol>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[源码篇：Mantle]]></title>
-    <link href="http://southpeak.github.io/blog/2015/01/11/yuan-ma-pian-:mantle/"/>
-    <updated>2015-01-11T22:01:00+08:00</updated>
-    <id>http://southpeak.github.io/blog/2015/01/11/yuan-ma-pian-:mantle</id>
-    <content type="html"><![CDATA[<p>Mantle是一个用于简化Cocoa或Cocoa Touch程序中model层的第三方库。通常我们的应该中都会定义大量的model来表示各种数据结构，而这些model的初始化和编码解码都需要写大量的代码。而Mantle的优点在于能够大大地简化这些代码。</p>
-
-<p>Mantle源码中最主要的内容包括：</p>
-
-<ol>
-<li>MTLModel类：通常是作为我们的Model的基类，该类提供了一些默认的行为来处理对象的初始化和归档操作，同时可以获取到对象所有属性的键值集合。</li>
-<li>MTLJSONAdapter类：用于在MTLModel对象和JSON字典之间进行相互转换，相当于是一个适配器。</li>
-<li>MTLJSONSerializing协议：需要与JSON字典进行相互转换的MTLModel的子类都需要实现该协议，以方便MTLJSONApadter对象进行转换。</li>
-</ol>
-
-
-<p>在此就以这三者作为我们的分析点。</p>
-
-<h2>基类MTLModel</h2>
-
-<p>MTLModel是一个抽象类，它主要提供了一些默认的行为来处理对象的初始化和归档操作。</p>
-
-<h3>初始化</h3>
-
-<p>MTLModel默认的初始化方法-init并没有做什么事情，只是调用了下[super init]。而同时，它提供了一个另一个初始化方法：</p>
-
-<pre><code>- (instancetype)initWithDictionary:(NSDictionary *)dictionaryValue error:(NSError **)error;
-</code></pre>
-
-<p>其中参数dictionaryValue是一个字典，它包含了用于初始化对象的key-value对。我们来看下它的具体实现：</p>
-
-<pre><code>- (instancetype)initWithDictionary:(NSDictionary *)dictionary error:(NSError **)error {
-    ...
-
-    for (NSString *key in dictionary) {
-
-        // 1. 将value标记为__autoreleasing，这是因为在MTLValidateAndSetValue函数中，
-        //    可以会返回一个新的对象存在在该变量中
-        __autoreleasing id value = [dictionary objectForKey:key];
-
-        // 2. value如果为NSNull.null，会在使用前将其转换为nil
-        if ([value isEqual:NSNull.null]) value = nil;
-
-        // 3. MTLValidateAndSetValue函数利用KVC机制来验证value的值对于key是否有效，
-        //    如果无效，则使用使用默认值来设置key的值。
-        //    这里同样使用了对象的KVC特性来将value值赋值给model对应于key的属性。
-        //    有关MTLValidateAndSetValue的实现可参考源码，在此不做详细说明。
-        BOOL success = MTLValidateAndSetValue(self, key, value, YES, error);
-        if (!success) return nil;
-    }
-
-    ...
-}
-</code></pre>
-
-<p>子类可以重写该方法，以在设置完对象的属性后做进一步的处理或初始化工作，不过需要记住的是：应该通过super来调用父类的实现。</p>
-
-<h3>获取属性的键(key)、值(value)</h3>
-
-<p>MTLModel类提供了一个类方法+propertyKeys，该方法返回所有@property声明的属性所对应的名称字符串的一个集合，但不包括只读属性和MTLModel自身的属性。在这个类方法会去遍历model的所有属性，如果属性是非只读且其ivar值不为NULL，则获取到表示属性名的字符串，并将其放入到集合中，其实现如下：</p>
-
-<pre><code>+ (NSSet *)propertyKeys {
-    // 1. 如果对象中已有缓存的属性名的集合，则直接返回缓存。该缓存是放在一个关联对象中。
-    NSSet *cachedKeys = objc_getAssociatedObject(self, MTLModelCachedPropertyKeysKey);
-    if (cachedKeys != nil) return cachedKeys;
-
-    NSMutableSet *keys = [NSMutableSet set];
-
-    // 2. 遍历对象所有的属性
-    //    enumeratePropertiesUsingBlock方法会沿着superclass链一直向上遍历到MTLModel，
-    //    查找当前model所对应类的继承体系中所有的属性(不包括MTLModel)，并对该属性执行block中的操作。
-    //    有关enumeratePropertiesUsingBlock的实现可参考源码，在此不做详细说明。
-    [self enumeratePropertiesUsingBlock:^(objc_property_t property, BOOL *stop) {
-        mtl_propertyAttributes *attributes = mtl_copyPropertyAttributes(property);
-        @onExit {
-            free(attributes);
-        };
-
-        // 3. 过滤只读属性和ivar为NULL的属性
-        if (attributes-&gt;readonly &amp;&amp; attributes-&gt;ivar == NULL) return;
-
-        // 4. 获取属性名字符串，并存储到集合中
-        NSString *key = @(property_getName(property));
-        [keys addObject:key];
-    }];
-
-    // 5. 将集合缓存到关联对象中。
-    objc_setAssociatedObject(self, MTLModelCachedPropertyKeysKey, keys, OBJC_ASSOCIATION_COPY);
-
-    return keys;
-}
-</code></pre>
-
-<p>有了上面这个类方法，要想获取到对象中所有属性及其对应的值就方法了。为此MTLModel提供了一个只读属性dictionaryValue来取一个包含当前model所有属性及其值的字典。如果属性值为nil，则会用NSNull来代替。另外该属性不会为nil。</p>
-
-<pre><code>@property (nonatomic, copy, readonly) NSDictionary *dictionaryValue;
-
-// 实现
-- (NSDictionary *)dictionaryValue {
-    return [self dictionaryWithValuesForKeys:self.class.propertyKeys.allObjects];
-}
-</code></pre>
-
-<h3>合并对象</h3>
-
-<p>合并对象是指将两个MTLModel对象按照自定义的方法将其对应的属性值进行合并。为此，在MTLModel定义了以下方法：</p>
-
-<pre><code>- (void)mergeValueForKey:(NSString *)key fromModel:(MTLModel *)model;
-</code></pre>
-
-<p>该方法将当前对象指定的key属性的值与model参数对应的属性值按照指定的规则来进行合并，这种规则由我们自定义的-merge<Key>FromModel:方法来确定。如果我们的子类中实现了-merge<Key>FromModel:方法，则会调用它；如果没有找到，且model不为nil，则会用model的属性的值来替代当前对象的属性的值。具体实现如下：</p>
-
-<pre><code>- (void)mergeValueForKey:(NSString *)key fromModel:(MTLModel *)model {
-    NSParameterAssert(key != nil);
-
-    // 1. 根据传入的key拼接"merge&lt;Key&gt;FromModel:"字符串，并从该字符串中获取到对应的selector
-    //    如果当前对象没有实现-merge&lt;Key&gt;FromModel:方法，且model不为nil，则用model的属性值
-    //    替代当前对象的属性值
-    //
-    //    MTLSelectorWithCapitalizedKeyPattern函数以C语言的方式来拼接方法字符串，具体实现请
-    //    参数源码，在此不详细说明
-    SEL selector = MTLSelectorWithCapitalizedKeyPattern("merge", key, "FromModel:");
-    if (![self respondsToSelector:selector]) {
-        if (model != nil) {
-            [self setValue:[model valueForKey:key] forKey:key];
-        }
-
-        return;
-    }
-
-    // 2. 通过NSInvocation方式来调用对应的-merge&lt;Key&gt;FromModel:方法。
-    NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[self methodSignatureForSelector:selector]];
-    invocation.target = self;
-    invocation.selector = selector;
-
-    [invocation setArgument:&amp;model atIndex:2];
-    [invocation invoke];
-}
-</code></pre>
-
-<p>此外，MTLModel还提供了另一个方法来合并两个对象所有的属性值，即：</p>
-
-<pre><code>- (void)mergeValuesForKeysFromModel:(MTLModel *)model;
-</code></pre>
-
-<p>需要注意的是model必须是当前对象所属类或其子类。</p>
-
-<h3>归档对象(Archive)</h3>
-
-<p>Mantle将对MTLModel的编码解码处理都放在了MTLModel的NSCoding分类中进行处理了，该分类及相关的定义都放在MTLModel+NSCoding文件中。</p>
-
-<p>对于不同的属性，在编码解码过程中可能需要区别对待，为此Mentle定义了枚举MTLModelEncodingBehavior来确定一个MTLModel属性被编码到一个归档中的行为。其定义如下：</p>
-
-<pre><code>typedef enum : NSUInteger {
-    MTLModelEncodingBehaviorExcluded = 0,           // 属性绝不应该被编码
-    MTLModelEncodingBehaviorUnconditional,          // 属性总是应该被编码
-    MTLModelEncodingBehaviorConditional,            // 对象只有在其它地方被无条件编码时才应该被编码。这只适用于对象属性
-} MTLModelEncodingBehavior;
-</code></pre>
-
-<p>具体每个属性的归档行为我们可以在+encodingBehaviorsByPropertyKey类方法中设置。MTLModel类为我们提供了一个默认实现，如下：</p>
-
-<pre><code>+ (NSDictionary *)encodingBehaviorsByPropertyKey {
-    // 1. 获取所有属性键值
-    NSSet *propertyKeys = self.propertyKeys;
-    NSMutableDictionary *behaviors = [[NSMutableDictionary alloc] initWithCapacity:propertyKeys.count];
-
-    // 2. 对每一个属性进行处理
-    for (NSString *key in propertyKeys) {
-        objc_property_t property = class_getProperty(self, key.UTF8String);
-        NSAssert(property != NULL, @"Could not find property \"%@\" on %@", key, self);
-
-        mtl_propertyAttributes *attributes = mtl_copyPropertyAttributes(property);
-        @onExit {
-            free(attributes);
-        };
-
-        // 3. 当属性为weak时，默认设置为MTLModelEncodingBehaviorConditional，否则默认为MTLModelEncodingBehaviorUnconditional，设置完后，将其封装在NSNumber中并放入字典中。
-        MTLModelEncodingBehavior behavior = (attributes-&gt;weak ? MTLModelEncodingBehaviorConditional : MTLModelEncodingBehaviorUnconditional);
-        behaviors[key] = @(behavior);
-    }
-
-    return behaviors;
-}
-</code></pre>
-
-<p>任何不在该返回字典中的属性都不会被归档。子类可以根据自己的需要来指定各属性的归档行为。但在实际时应该通过super来调用父类的实现。</p>
-
-<p>而为了从归档中解码指定的属性，Mantle提供了以下方法：</p>
-
-<pre><code>- (id)decodeValueForKey:(NSString *)key withCoder:(NSCoder *)coder modelVersion:(NSUInteger)modelVersion;
-</code></pre>
-
-<p>默认情况下，该方法会查找当前对象中类似于<strong>-decode<Key>WithCoder:modelVersion:</strong>的方法，如果找到便会调用相应方法，并按照自定义的方式来处理属性的解码。如果我们没有实现自定义的方法或者coder不需要安全编码，则会对指定的key调用-[NSCoder decodeObjectForKey:]方法。其具体实现如下：</p>
-
-<pre><code>- (id)decodeValueForKey:(NSString *)key withCoder:(NSCoder *)coder modelVersion:(NSUInteger)modelVersion {
-    ...
-
-    SEL selector = MTLSelectorWithCapitalizedKeyPattern("decode", key, "WithCoder:modelVersion:");
-    // 1. 如果自定义了-decode&lt;Key&gt;WithCoder:modelVersion:方法，则通过NSInvocation来调用方法
-    if ([self respondsToSelector:selector]) {
-        NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[self methodSignatureForSelector:selector]];
-        invocation.target = self;
-        invocation.selector = selector;
-        [invocation setArgument:&amp;coder atIndex:2];
-        [invocation setArgument:&amp;modelVersion atIndex:3];
-        [invocation invoke];
-
-        __unsafe_unretained id result = nil;
-        [invocation getReturnValue:&amp;result];
-        return result;
-    }
-
-    @try {
-        // 2. 如果没有找到自定义的-decode&lt;Key&gt;WithCoder:modelVersion:方法，
-        //    则走以下流程。
-        //
-        // coderRequiresSecureCoding方法的具体实现请参数源码
-        if (coderRequiresSecureCoding(coder)) {
-            // 3. 如果coder要求安全编码，则会从需要安全编码的字典中取出属性所对象的类型，然后根据指定
-            //    类型来对属性进行解码操作。
-            //    为此，MTLModel提供了类方法allowedSecureCodingClassesByPropertyKey，来获取
-            //    类的对象包含的所有需要安全编码的属性及其对应的类的字典。该方法首先会查看是否已有
-            //    缓存的字典，如果没有则遍历类的所有属性。首先过滤掉那些不需要编码的属性，
-            //    然后遍历剩下的属性，如果是非对象类型或类类型，则其对应的类型设定为NSValue，
-            //    如果是这两者，则对应的类型即为相应类型。
-            //    该方法的具体实现请参考源代码。
-            NSArray *allowedClasses = self.class.allowedSecureCodingClassesByPropertyKey[key];
-            NSAssert(allowedClasses != nil, @"No allowed classes specified for securely decoding key \"%@\" on %@", key, self.class);
-
-            return [coder decodeObjectOfClasses:[NSSet setWithArray:allowedClasses] forKey:key];
-        } else {
-            // 4. 不需要安全编码
-            return [coder decodeObjectForKey:key];
-        }
-    } @catch (NSException *exception) {
-        ...
-    }
-}
-</code></pre>
-
-<p>当然，所有的编码解码工作还得需要我们实现-initWithCoder:和-encodeWithCoder:两个方法来完成。我们在定义MTLModel的子类时，可以根据自己的需要来对特定的属性进行处理，不过最好调用super的实现来执行父类的操作。MTLModel对这两个方法的实现请参考源码，在此不多作说明。</p>
-
-<h2>适配器MTLJSONApadter</h2>
-
-<p>为了便于在MTLModel对象和JSON字典之间进行相互转换，Mantle提供了类MTLJSONApadter，作为这两者之间的一个适配器。</p>
-
-<h3>MTLJSONSerializing协议</h3>
-
-<p>Mantle定义了一个协议MTLJSONSerializing，那些需要与JSON字典进行相互转换的MTLModel的子类都需要实现该协议，以方便MTLJSONApadter对象进行转换。这个协议中定义了三个方法，具体如下：</p>
-
-<pre><code>@protocol MTLJSONSerializing
-@required
-
-+ (NSDictionary *)JSONKeyPathsByPropertyKey;
-
-@optional
-
-+ (NSValueTransformer *)JSONTransformerForKey:(NSString *)key;
-+ (Class)classForParsingJSONDictionary:(NSDictionary *)JSONDictionary;
-
-@end
-</code></pre>
-
-<p>这三个方法都是类方法。其中+JSONKeyPathsByPropertyKey是必须实现的，它返回的字典指定了如何将对象的属性映射到JSON中不同的key path(字符串值或NSNull)中。任何不在此字典中的属性被认为是与JSON中使用的key值相匹配。而映射到NSNull的属性在JSON序列化过程中将不进行处理。</p>
-
-<p>+JSONTransformerForKey:方法指定了如何将一个JSON值转换为指定的属性值。反过来，转换器也用于将属性值转换成JSON值。如果转换器实现了+<key>JSONTransformer方法，则MTLJSONAdapter会使用这个具体的方法，而不使用+JSONTransformerForKey:方法。另外，如果不需要执行自定义的转换，则返回nil。</p>
-
-<p>重写+classForParsingJSONDictionary:方法可以将当前Model解析为一个不同的类对象。这对象类簇是非常有用的，其中抽象基类将被传递给-[MTLJSONAdapter initWithJSONDictionary:modelClass:]方法，而实例化的则是子类。</p>
-
-<p>如果我们希望MTLModel的一个子类能使用MTLJSONApadter来进行转换，则需要实现这个协议，并实现相应的方法。</p>
-
-<h3>初始化</h3>
-
-<p>MTLJSONApadter对象有一个只读属性，该属性即为适配器需要处理的MTLModel对象，其声明如下：</p>
-
-<pre><code>@property (nonatomic, strong, readonly) MTLModel&lt;MTLJSONSerializing&gt; *model;
-</code></pre>
-
-<p>可见该对象必须是实现了MTLJSONSerializing协议的MTLModel对象。该属性是只读的，因此它只能通过初始化方法来初始化。</p>
-
-<p>MTLJSONApadter对象不能通过-init来初始化，这个方法会直接断言。而是需要通过类提供的两个初始化方法来初始化，如下：</p>
-
-<pre><code>- (id)initWithJSONDictionary:(NSDictionary *)JSONDictionary modelClass:(Class)modelClass error:(NSError **)error;
-
-- (id)initWithModel:(MTLModel&lt;MTLJSONSerializing&gt; *)model;
-</code></pre>
-
-<p>其中-(id)initWithJSONDictionary:modelClass:error:是使用一个字典和需要转换的类来进行初始化。字典JSONDictionary表示一个JSON数据，这个字典需要符合NSJSONSerialization返回的格式。如果该参数为空，则方法返回nil，且返回带有MTLJSONAdapterErrorInvalidJSONDictionary码的error对象。该方法的具体实现如下：</p>
-
-<pre><code>- (id)initWithJSONDictionary:(NSDictionary *)JSONDictionary modelClass:(Class)modelClass error:(NSError **)error {
-    ...
-
-    if (JSONDictionary == nil || ![JSONDictionary isKindOfClass:NSDictionary.class]) {
-        ...
-        return nil;
-    }
-
-    if ([modelClass respondsToSelector:@selector(classForParsingJSONDictionary:)]) {
-        modelClass = [modelClass classForParsingJSONDictionary:JSONDictionary];
-        if (modelClass == nil) {
-            ...
-
-            return nil;
-        }
-
-        ...
-    }
-
-    ...
-
-    _modelClass = modelClass;
-    _JSONKeyPathsByPropertyKey = [[modelClass JSONKeyPathsByPropertyKey] copy];
-
-    NSMutableDictionary *dictionaryValue = [[NSMutableDictionary alloc] initWithCapacity:JSONDictionary.count];
-
-    NSSet *propertyKeys = [self.modelClass propertyKeys];
-
-    // 1. 检验model的+JSONKeyPathsByPropertyKey中字典key-value对的有效性
-    for (NSString *mappedPropertyKey in self.JSONKeyPathsByPropertyKey) {
-        // 2. 如果model对象的属性不包含+JSONKeyPathsByPropertyKey返回的字典中的某个属性键值
-        //    则返回nil。即+JSONKeyPathsByPropertyKey中指定的属性键值必须是model对象所包含
-        //    的属性。
-        if (![propertyKeys containsObject:mappedPropertyKey]) {
-            ...
-            return nil;
-        }
-
-        id value = self.JSONKeyPathsByPropertyKey[mappedPropertyKey];
-
-        // 3. 如果属性不是映射到一个JSON关键路径或者是NSNull，也返回nil。
-        if (![value isKindOfClass:NSString.class] &amp;&amp; value != NSNull.null) {
-            ...
-            return nil;
-        }
-    }
-
-    for (NSString *propertyKey in propertyKeys) {
-        NSString *JSONKeyPath = [self JSONKeyPathForPropertyKey:propertyKey];
-        if (JSONKeyPath == nil) continue;
-
-        id value;
-        @try {
-            value = [JSONDictionary valueForKeyPath:JSONKeyPath];
-        } @catch (NSException *ex) {
-            ...
-
-            return nil;
-        }
-
-        if (value == nil) continue;
-
-        @try {
-            // 4. 获取一个转换器，
-            //    如上所述，+JSONTransformerForKey:会先去查看是否有+&lt;key&gt;JSONTransformer方法，
-            //    如果有则会使用这个具体的方法，如果没有，则调用相应的+JSONTransformerForKey:方法
-            //    该方法具体实现请参考源码
-            NSValueTransformer *transformer = [self JSONTransformerForKey:propertyKey];
-            if (transformer != nil) {
-
-                // 5. 获取转换器转换生的值
-                if ([value isEqual:NSNull.null]) value = nil;
-                value = [transformer transformedValue:value] ?: NSNull.null;
-            }
-
-            dictionaryValue[propertyKey] = value;
-        } @catch (NSException *ex) {
-            ...
-
-            return nil;
-        }
-    }
-
-    // 6. 初始化_model
-    _model = [self.modelClass modelWithDictionary:dictionaryValue error:error];
-    if (_model == nil) return nil;
-
-    return self;
-}
-</code></pre>
-
-<p>另外，MTLJSONApadter还提供了几个类方法来创建一个MTLJSONApadter对象，如下：</p>
-
-<pre><code>+ (id)modelOfClass:(Class)modelClass fromJSONDictionary:(NSDictionary *)JSONDictionary error:(NSError **)error;
-
-+ (NSArray *)modelsOfClass:(Class)modelClass fromJSONArray:(NSArray *)JSONArray error:(NSError **)error;
-
-+ (NSDictionary *)JSONDictionaryFromModel:(MTLModel&lt;MTLJSONSerializing&gt; *)model;
-</code></pre>
-
-<p>具体实现可参考源码。</p>
-
-<h3>从对象中获取JSON数据</h3>
-
-<p>从MTLModel对象中获取JSON数据是上述初始化过程中的一个逆过程。该过程由-JSONDictionary方法来实现，具体如下：</p>
-
-<pre><code>- (NSDictionary *)JSONDictionary {
-    NSDictionary *dictionaryValue = self.model.dictionaryValue;
-    NSMutableDictionary *JSONDictionary = [[NSMutableDictionary alloc] initWithCapacity:dictionaryValue.count];
-
-    [dictionaryValue enumerateKeysAndObjectsUsingBlock:^(NSString *propertyKey, id value, BOOL *stop) {
-        NSString *JSONKeyPath = [self JSONKeyPathForPropertyKey:propertyKey];
-        if (JSONKeyPath == nil) return;
-
-        // 1. 获取属性的值
-        NSValueTransformer *transformer = [self JSONTransformerForKey:propertyKey];
-        if ([transformer.class allowsReverseTransformation]) {
-            if ([value isEqual:NSNull.null]) value = nil;
-            value = [transformer reverseTransformedValue:value] ?: NSNull.null;
-        }
-
-        NSArray *keyPathComponents = [JSONKeyPath componentsSeparatedByString:@"."];
-
-        // 2. 对于嵌套属性值的设置，会先从keypath中获取每一层属性，
-        //    如果当前层级的obj中没有该属性，则为其设置一个空字典；然后再进入下一层级，依此类推
-        //    最后设置如下形式的字典: @{@"nested": @{@"name": @"foo"}}
-        id obj = JSONDictionary;
-        for (NSString *component in keyPathComponents) {
-            if ([obj valueForKey:component] == nil) {
-                [obj setValue:[NSMutableDictionary dictionary] forKey:component];
-            }
-
-            obj = [obj valueForKey:component];
-        }
-
-        [JSONDictionary setValue:value forKeyPath:JSONKeyPath];
-    }];
-
-    return JSONDictionary;
-}
-</code></pre>
-
-<p>从上可以看出，该方法实际上最终获得的是一个字典。而获得字典后，再将其序列化为JSON串就容易了。</p>
-
-<p>MTLJSONApadter也提供了一个简便的方法，来从一个model中获取一个JSON字典，其定义如下：</p>
-
-<pre><code>+ (NSDictionary *)JSONDictionaryFromModel:(MTLModel&lt;MTLJSONSerializing&gt; *)model;
-</code></pre>
-
-<h3>MTLManagedObjectAdapter</h3>
-
-<p>为了适应Core Data，Mantle专门定义了MTLManagedObjectAdapter类。该类用作MTLModel对象与NSManagedObject对象之前的转换。具体的我们在此不详细描述。</p>
-
-<h2>技术点总结</h2>
-
-<p>Mantle的功能主要是进行对象间数据的转换：即如何在一个MTLModel和一个JSON字典中进行数据的转换。因此，所使用的技术大都是Cocoa Foundation提供的功能。除了对于Core Data的处理之外，主要用到的技术的有如下几条：</p>
-
-<ol>
-<li>KVC的应用：这主要体现在对MTLModel子类的属性赋值中，通过KVC机制来验证值的有效性并为属性赋值。</li>
-<li>NSValueTransform：这主要用于对JSON值转换为属性值的处理，我们可以自定义转换器来满足我们自己的转换需求。</li>
-<li>NSInvocation：这主要用于统一处理针对特定key值的一些方法的调用。比如-merge<Key>FromModel:这一类方法。</li>
-<li>Run time函数的使用：这主要用于对从一个字符串中获取到方法对应的字符串，然后通过sel_registerName函数来注册一个selector。</li>
-</ol>
-
-
-<p>当然在Mantle中还会涉及到其它的一些技术点，在此不多做叙述。</p>
-
-<h2>参考</h2>
-
-<ol>
-<li><a href="https://github.com/Mantle/Mantle">Mantle工程</a></li>
 </ol>
 
 ]]></content>

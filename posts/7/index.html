@@ -11,7 +11,7 @@
   <meta name="baidu-site-verification" content="HoscFhWICI" />
 
   
-  <meta name="description" content="继在iOS6和iOS7系统中面向开发者关闭IP地址和MAC地址的获取后，苹果在iOS8中又出新招：在扫描Wi-Fi时使用随机的、本地管理的MAC地址。基于苹果保护用户隐私的一贯政策，这一步是必然的，它会封死所以获取用户隐私信息的通道。这对于苹果用户来说，当然是件好事。 &hellip;">
+  <meta name="description" content="英文作者Colin Eberhardt，原文可查看BINDING TO A UITABLEVIEW FROM A REACTIVECOCOA VIEWMODEL 这篇博客介绍了一个工具类，这个类将ReactiveCocoa中的ViewModels绑定到UITableView， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -68,6 +68,336 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/09/21/zai-reactivecocoazhong-jiang-%5B%3F%5D-ge-viewmodelbang-ding-dao-uitableviewshang/">在ReactiveCocoa中将一个ViewModel绑定到UITableView上</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-09-21T14:14:19+08:00" pubdate data-updated="true">Sep 21<sup>st</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/09/21/zai-reactivecocoazhong-jiang-%5B%3F%5D-ge-viewmodelbang-ding-dao-uitableviewshang/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>英文作者Colin Eberhardt，原文可查看<a href="http://www.scottlogic.com/blog/2014/05/11/reactivecocoa-tableview-binding.html">BINDING TO A UITABLEVIEW FROM A REACTIVECOCOA VIEWMODEL</a></p>
+
+<p>这篇博客介绍了一个工具类，这个类将ReactiveCocoa中的ViewModels绑定到UITableView，而不需要通常的datasource和delegate。下面是这个辅助类的使用方法：</p>
+
+<pre><code>// 创建一个cell
+UINib *nib = [UINib nibWithNibName:@"CETweetTableViewCell" bundle:nil];
+
+// 将ViewModels的searchResults属性绑定到table view
+[CETableViewBindingHelper bindingHelperForTableView:self.searchResultsTable
+                        sourceSignal:RACObserve(self.viewModel, searchResults)
+                        templateCell:nib];
+</code></pre>
+
+<h2>介绍</h2>
+
+<p>我总是在不断的编写代码：在工作中，在家里，在火车上&hellip;如果我不写代码，我就会觉得不快乐！(注：这才是真正的程序员啊)</p>
+
+<p>在过去的几个月中，我开始在我的工程中越来越多地使用ReactiveCocoa了。这个框架可以用来创建一些非常优雅的解决方案，但同时它非常具有挑战性，因为对于任何一个问题，都有许多可用的解决方案。对于像我这样的编码狂人来说，这再好不过了。</p>
+
+<p>几个月之前，我在Ray Wenderlich的网站上发表了两篇关于ReactiveCocoa的文章(<a href="http://www.raywenderlich.com/62699/reactivecocoa-tutorial-pt1">第一部分</a>、<a href="http://www.raywenderlich.com/62796/reactivecocoa-tutorial-pt2">第二部分</a>)，以及一个<a href="http://www.raywenderlich.com/70598/reactivecocoa-tech-talk-video">Tech Talk</a>视频。这些覆盖了ReactiveCocoa的基本用法，希望能让广大读者熟悉ReactiveCocoa。不过，我收到不少请求，希望能讨论一些使用ReactiveCocoa实现MVVM模式的高级话题。</p>
+
+<p>正因此，我开始写这篇文章。不过，在我发布之前，我想先分享一个已纠缠我很久的问题&hellip;</p>
+
+<p>如果将一个UITableView绑定到一个ReactiveCocoa的ViewModel中？</p>
+
+<h2>视图模式</h2>
+
+<p>我以一个简单的例子开头&mdash;一个允许我们搜索Twitter的ViewModel：</p>
+
+<pre><code>/// A view model which provides a mechanism for searching twitter
+@interface CETwitterSearchViewModel : NSObject
+
+/// The current search text
+@property NSString *searchText;
+
+/// An array of CETweetViewModel instances which indicate
+/// the current search results
+@property NSArray *searchResults;
+
+/// A command which when executed searches twitter using the current searchText
+@property RACCommand *searchCommand;
+
+@end
+</code></pre>
+
+<p>这个ViewModel的实现重用了我在ReactiveCocoa指南第二部分所创建的信号，所以我不在此重复。如果想要看详细的代码，可以在github上查找。</p>
+
+<p>将ViewModel绑定到一个带有UITextField和UIButton的UI是使用ReactiveCocoa最普通不过工作了</p>
+
+<pre><code>// bind the UITextField text updates to the view model
+RAC(self.viewModel, searchText) = self.searchTextField.rac_textSignal;
+
+// bind a button to the search command
+self.searchButton.rac_command = self.viewModel.searchCommand;
+
+// when the search executes hide the keyboard
+[self.viewModel.searchCommand.executing subscribeNext:^(id x) {
+  [self.searchTextField resignFirstResponder];
+}];
+
+// show a network activity indicator when the search is being executed
+RAC([UIApplication sharedApplication], networkActivityIndicatorVisible) =
+  self.viewModel.searchCommand.executing;
+</code></pre>
+
+<p>在上面的代码中，当点击go按钮时，我们处理了诸如隐藏键盘这样的操作，并将网络连接的activity indicator绑定到了searchCommand.executing信号。</p>
+
+<p><img src="http://www.scottlogic.com/blog/ceberhardt/assets/mvvm/UIBinding.png" alt="image" /></p>
+
+<p>这样就将ViewModel三个属性中的两个绑定到了UI，到目前为止，一切都还不错！</p>
+
+<p>最后一个属性是searchResults；这个属性是一个数组，包含了搜索结果。我们可以通过RACObserve来观察这个属性的修改，RACObserve创建了一个信号，该信号会在每次更新时发出一个next事件。但不幸的是，我们不能只给UITableView一个对象的数组，并告诉它去渲染自己。</p>
+
+<p>如果我们在StackOverflow上搜索相关帖子，或者查看别人的ReactiveCocoa实例，可以看到传统的方式似乎是我们需要自己去实现table view的代理和数据源。换句话说，我们之前优雅的只需要几行绑定代码的视图类代码会由于需要实现table view的各种逻辑而显示异常丑陋。</p>
+
+<p>不过，我们有更好的方法。</p>
+
+<h2>一个Table View绑定辅助类</h2>
+
+<p>在MVVM模式中，每一个View都由一个ViewModel支撑着。一个视图可能占据整个屏幕(此时我们将一个视图控制器绑定到一个ViewModel)，或者只占据屏幕的一部分。</p>
+
+<p>我们的顶层ViewModel的searchResults属性包含了一个对象数组，其中每一个元素都是一个ViewModel。为了解决这个问题，我们需要的是一个通用的机制来为每个视图创建一个ViewModel，并将这两者绑定在一起。</p>
+
+<p>Nib提供了一种便捷的机制来定义可重用的视图。可以方便地使用nib来定义一个table view的单元格。</p>
+
+<p>一个合理的table view绑定辅助类的接口如下：</p>
+
+<pre><code>/// A helper class for binding view models with NSArray properties
+/// to a UITableView.
+@interface CETableViewBindingHelper : NSObject
+
+- (instancetype) initWithTableView:(UITableView *)tableView
+                      sourceSignal:(RACSignal *)source
+                      templateCell:(UINib *)templateCellNib;
+
+@end
+</code></pre>
+
+<p>这个绑定类使用提供的table view来渲染由源信号所提供的view model，另外templeteCell定义了视图。让我们来看看这个辅助类的实现：</p>
+
+<pre><code>＠interface CETableViewBindingHelper () &lt;UITableViewDataSource&gt;
+
+＠end
+
+＠implementation CETableViewBindingHelper {
+  UITableView *_tableView;
+  NSArray *_data;
+  UITableViewCell *_templateCell;
+}
+
+- (instancetype)initWithTableView:(UITableView *)tableView
+                     sourceSignal:(RACSignal *)source
+                     templateCell:(UINib *)templateCellNib {
+
+  if (self = [super init]) {
+    _tableView = tableView;
+    _data = [NSArray array];
+
+    // each time the view model updates the array property, store the latest
+    // value and reload the table view
+    [source subscribeNext:^(id x) {
+      _data = x;
+      [_tableView reloadData];
+    }];
+
+    // create an instance of the template cell and register
+    // with the table view
+    _templateCell = [[templateCellNib instantiateWithOwner:nil
+                                          options:nil] firstObject];
+    [_tableView registerNib:templateCellNib
+              forCellReuseIdentifier:_templateCell.reuseIdentifier];
+
+    // use the template cell to set the row height
+    _tableView.rowHeight = _templateCell.bounds.size.height;
+
+    _tableView.dataSource = self;
+  }
+  return self;
+}
+
+#pragma mark - UITableViewDataSource implementation
+
+- (NSInteger)tableView:(UITableView *)tableView
+                       numberOfRowsInSection:(NSInteger)section {
+  return _data.count;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView
+                        cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+  id&lt;CEReactiveView&gt; cell = [tableView
+      dequeueReusableCellWithIdentifier:_templateCell.reuseIdentifier];
+  [cell bindViewModel:_data[indexPath.row]];
+  return (UITableViewCell *)cell;
+}
+
+＠end
+</code></pre>
+
+<p>注意，初始化方法是内在逻辑所在。在这里，sourceSignal添加了一个subscriber，这样每次ViewModel的数组属性变化时，当前属性值的引用都会被保存，而table view也会重新加载。同样，也会创建templeteCell实例，来确定单元格的高度。</p>
+
+<p>最后，这个类实现了table view的数据源方法，并通过信号来获取数据。</p>
+
+<p>其中，单元格Cell必须实现以下协议，该协议提供了一个信号方法来将Cell绑定到相应的ViewModel上。</p>
+
+<pre><code>/// A protocol which is adopted by views which are backed by view models.
+@protocol CEReactiveView &lt;NSObject&gt;
+
+/// Binds the given view model to the view
+- (void)bindViewModel:(id)viewModel;
+
+@end 
+</code></pre>
+
+<p>将这个用于实际当中，现在只需要几行代码就可以将一个数组属性绑定到一个table view上了。</p>
+
+<pre><code>// create a cell template
+UINib *nib = [UINib nibWithNibName:@"CETweetTableViewCell" bundle:nil];
+
+// bind the view models 'searchResults' property to a table view
+[[CETableViewBindingHelper alloc]
+      initWithTableView:self.searchResultsTable
+           sourceSignal:RACObserve(self.viewModel, searchResults)
+           templateCell:nib];
+</code></pre>
+
+<p>注意，源信号是通过RACObserver宏来创建的。这个信号在每次属性通过setter来改变都会发出一个next事件。</p>
+
+<p>cell的实现类似于视图控制器；它们的UI控件定义在一个nib文件中并连接到相应的outlet属性。下图是该示例程序中定义cell的nib：</p>
+
+<p><img src="http://www.scottlogic.com/blog/ceberhardt/assets/mvvm/CellNib.png" alt="image" /></p>
+
+<p>定义在CEReactiveView协议中的ViewModel绑定方法实现如下：</p>
+
+<pre><code>- (void)bindViewModel:(id)viewModel {
+
+  CETweetViewModel *tweet = (CETweetViewModel *)viewModel;
+
+  // set the tweet 'status' label, sizing it to fit the text
+  self.titleTextField.frame =
+                 CGRectInset(self.titleBackgroundView.frame, 5.0f, 5.0f) ;
+  self.titleTextField.text = tweet.status;
+  [self.titleTextField sizeToFit];
+
+  // set the username
+  self.usernameTextField.text = tweet.username;
+
+  // use signals to fetch the images for each image view
+  self.profileImage.image = nil;
+  [[self signalForImage:[NSURL URLWithString:tweet.profileBannerUrl]]
+    subscribeNext:^(id x) {
+      self.ghostImageView.image = x;
+    }];
+
+  self.ghostImageView.image = nil;
+  [[self signalForImage:[NSURL URLWithString:tweet.profileImageUrl]]
+    subscribeNext:^(id x) {
+      self.profileImage.image = x;
+    }];
+} 
+</code></pre>
+
+<p>注意，由于CETweetViewModel的属性不会发生变化，因此它们的值直接被拷贝到相应的UI控件上。当然，如果它们的值会改变，我们也可以使用ReactiveCocoa来将两者绑定到一起。</p>
+
+<p>cell的实现同样使用了ReactiveCocoa在后台加载图片：</p>
+
+<pre><code>// creates a signal that fetches an image in the background, delivering
+// it on the UI thread. This signal 'cancels' itself if the cell is re-used before the
+// image is downloaded.
+-(RACSignal *)signalForImage:(NSURL *)imageUrl {
+
+  RACScheduler *scheduler = [RACScheduler 
+                 schedulerWithPriority:RACSchedulerPriorityBackground];
+
+  RACSignal *imageDownloadSignal = [[RACSignal
+    createSignal:^RACDisposable *(id&lt;RACSubscriber&gt; subscriber) {
+      NSData *data = [NSData dataWithContentsOfURL:imageUrl];
+      UIImage *image = [UIImage imageWithData:data];
+      [subscriber sendNext:image];
+      [subscriber sendCompleted];
+      return nil;
+    }] subscribeOn:scheduler];
+
+  return [[imageDownloadSignal
+          takeUntil:self.rac_prepareForReuseSignal]
+          deliverOn:[RACScheduler mainThreadScheduler]];
+
+}
+</code></pre>
+
+<p>通过这种方式，我们就可以让我们的视图控制器保持少量的代码。看，是不是很整洁。</p>
+
+<p>下面是完整的程序的实现效果：</p>
+
+<p><img src="http://www.scottlogic.com/blog/ceberhardt/assets/mvvm/CellBinding.png" alt="image" /></p>
+
+<h2>处理选中事件</h2>
+
+<p>当前的绑定辅助类允许我们在一个table view中渲染ViewModel的数组，但如果我们需要处理选中事件呢？传统的方法是在视图控制器的手动处理，实现table view的代理方法，并执行相关的ViewModel的命令。</p>
+
+<p>不过，这部分逻辑代码也可以放入到绑定辅助类中。</p>
+
+<p>首先，我们在初始化方法中添加一个选择命令：</p>
+
+<pre><code>- (instancetype) initWithTableView:(UITableView *)tableView
+                      sourceSignal:(RACSignal *)source
+                  selectionCommand:(RACCommand *)selection                  
+                      templateCell:(UINib *)templateCellNib;
+</code></pre>
+
+<p>这个初始化方法的实现现在存储了这个命令的引用。辅助类同样也实现了table view的代理，即tableView:didSelectRowAtIndexPath:方法的实现如下：</p>
+
+<pre><code>- (void)tableView:(UITableView *)tableView
+               didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+  [_selection execute:_data[indexPath.row]];
+}
+</code></pre>
+
+<p>即当命令被调用时，会将选择的ViewModel作为执行参数传入。</p>
+
+<p>在顶层ViewModel中，我已经添加了一个命令，这个操作只是简单地记录一下日志：</p>
+
+<pre><code> // create the tweet selected command, that simply logs
+ self.tweetSelectedCommand = [[RACCommand alloc]
+             initWithSignalBlock:^RACSignal *(CETweetViewModel *selected) {
+   NSLog(selected.status);
+   return [RACSignal empty];
+ }];
+</code></pre>
+
+<h2>结论</h2>
+
+<p>希望这个table view绑定辅助类能够帮助那些使用MVVM和ReactiveCocoa来开发iOS应用的开发者们。所有的代码都在github上。如果您有任何意见、想法或建议，请让我知道。</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1871,640 +2201,6 @@ RACSignal *fetchMetadata = [[visibleSignal delay:1.0f]
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/08/02/reactivecocoazhi-nan-er-:twittersou-suo-shi-li/">ReactiveCocoa指南二：Twitter搜索实例</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-08-02T23:20:48+08:00" pubdate data-updated="true">Aug 2<sup>nd</sup>, 2014</time>
-        
-        
-           | <a href="/blog/2014/08/02/reactivecocoazhi-nan-er-:twittersou-suo-shi-li/#comments">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>原文由Colin Eberhardt发表于raywenderlich，<a href="http://www.raywenderlich.com/62796/reactivecocoa-tutorial-pt2">ReactiveCocoa Tutorial – The Definitive Introduction: Part 2/2</a></p>
-
-<p><a href="http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-%5B%3F%5D-:xin-hao/">第一部分</a>我们学习了ReactiveCocoa处理信号的基本流程，如何发送流事件，以及分割及组合信号。在这一部分中，我们将继续学习ReactiveCocoa更多的特性，包括：</p>
-
-<ol>
-<li>error和completed事件类型</li>
-<li>节流(Throttling)</li>
-<li>线程</li>
-<li>扩展</li>
-</ol>
-
-
-<h2>Twitter Instant</h2>
-
-<p>本部分我们将要开发的是一个称为Twitter Instant的程序，这是一个Twitter搜索应用，用于裡更新搜索结果。可以在<a href="http://cdn5.raywenderlich.com/wp-content/uploads/2014/01/TwitterInstant-Starter2.zip">这里</a>下载初始程序，同时我们需要通过Cocoapods来下载依赖库，这个过程与第一部分相同。完成之后，运行程序，将得到下面的界面：</p>
-
-<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/01/TwitterInstantStarter.png" alt="image" /></p>
-
-<p>我们花点时间熟悉一下。这个程序很简单。左侧控制面板是RWSearchFormViewController，有一个搜索框。右侧是RWSearchResultsViewController。如果我们打开RWSearchFormViewController.m，我们可以看到viewDidLoad方法中指定了resultsViewController属性，这个程序的主要逻辑是在RWSearchFormViewController中，这个属性将搜索结果提供给RWSearchResultsViewController。</p>
-
-<h2>验证搜索框</h2>
-
-<p>首先我们来校验输入框的字符长度是否大于2。我们在RWSearchFormViewController.m的viewDidLoad方法下面添加以下代码：</p>
-
-<pre><code>- (BOOL)isValidSearchText:(NSString *)text
-{
-    return text.length &gt; 2;
-}
-</code></pre>
-
-<p>接下来，我们在RWSearchFormViewController.m中导入ReactiveCocoa</p>
-
-<pre><code>#import &lt;ReactiveCocoa/ReactiveCocoa.h&gt;
-</code></pre>
-
-<p>同时在viewDidLoad方法最后加上以下代码：</p>
-
-<pre><code>[[self.searchText.rac_textSignal map:^id(NSString *text) {
-    return [self isValidSearchText:text] ? [UIColor whiteColor] : [UIColor yellowColor];
-}] subscribeNext:^(UIColor *color) {
-    self.searchText.backgroundColor = color;
-}];
-</code></pre>
-
-<p>这段代码通过信号来检测输入是否有效，并设置相应的输入框背影颜色值。运行后，可以看到如下效果：</p>
-
-<p><img src="http://cdn3.raywenderlich.com/wp-content/uploads/2014/01/ValidatedTextField.png" alt="image" /></p>
-
-<p>其管道流程图如下所示：</p>
-
-<p><img src="http://cdn5.raywenderlich.com/wp-content/uploads/2014/01/TextValidationPipeline.png" alt="image" /></p>
-
-<p>rac_textSignal在每次输入时发出next事件，并包含当前输入框的文本。然后map操作将其转换为颜色值，最后subscribeNext:获取这个颜色值并用它来设置输入框的背景颜色。</p>
-
-<p>在添加Twitter查找逻辑之前，我们先看看一些有趣的东西。</p>
-
-<h2>格式化管道代码</h2>
-
-<p>在调用信号的方法时，我们建议每个操作都新起一行，并排列所有的步骤。如下图所示，一个复杂的管道通过分行，看起来会更加清晰</p>
-
-<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/01/PipelineFormatting.png" alt="image" /></p>
-
-<h2>内存管理</h2>
-
-<p>考虑下我们添加到TwitterInstant程序中的代码，想知道我们创建的管道是如何被保存的么？当然，因为它没有被指定给变量或属性，所以它没有增加引用计数，因此注定被销毁？ReactiveCocoa设计的目的之一是允许这样一种编程样式，即管道可以匿名创建。到目前为止，我们的管道都是这么处理的。为了支持这种模式，ReactiveCocoa维护了一个全局的信号集合。如果信号有一个或多个订阅者，它就是可用的。如果所有订阅者都被移除了，信号就被释放了。</p>
-
-<p>剩下最后一个问题：如何取消对信号的订阅？在一个completed事件或error事件后，一个订阅者会自动将自己移除。手动移除可能通过<strong>RACDisposable</strong>来完成。RACSignal的所有订阅方法都返回一个RACDisposable实例，我们可以调用它的dispose方法来手动移除订阅者。如下代码所示：</p>
-
-<pre><code>RACSignal *backgroundColorSignal =
-    [self.searchText.rac_textSignal
-     map:^id(NSString *text) {
-         return [self isValidSearchText:text] ? [UIColor whiteColor] : [UIColor yellowColor];
-     }];
-
-RACDisposable *subscripion =
-    [backgroundColorSignal subscribeNext:^(UIColor *color) {
-        self.searchText.backgroundColor = color;
-    }];
-
-// 在某个位置调用
-[subscripion dispose];
-</code></pre>
-
-<p>当然实际上我们不需要这样来写，只需要知道是这么回事就行。</p>
-
-<p><em>注意：如果我们创建了一个管道，但不去订阅它，则管理永远不会执行，包括任何如doNext:块这样的附加操作。</em></p>
-
-<h2>避免循环引用</h2>
-
-<p>ReactiveCocoa在幕后做了许多事情，让我们不需要担心信号的内存管理问题，但有一点关于内存管理的问题需要特别注意。我们先来看看下面的代码：</p>
-
-<pre><code>[[self.searchText.rac_textSignal map:^id(NSString *text) {
-    return [self isValidSearchText:text] ? [UIColor whiteColor] : [UIColor yellowColor];
-}] subscribeNext:^(UIColor *color) {
-    self.searchText.backgroundColor = color;
-}];
-</code></pre>
-
-<p>subscribeNext:块使用了self，以获取文本输入域。Block会捕获并保留闭包中的值，因此如果在self与信号之间有一个强引用，则会导致循环引用问题。这是不是问题取决于self对象的生命周期。如果self的生命周期是整个程序生存期，则没问题，好好用吧。但在大多数情况下，它确实是一个问题。</p>
-
-<p>为了避循环引用，根据苹果的文档中推荐的捕获self的一个弱引用。如下代码所示：</p>
-
-<pre><code>__typeof(self) __weak weakSelf = self;
-
-[[self.searchText.rac_textSignal map:^id(NSString *text) {
-    return [weakSelf isValidSearchText:text] ? [UIColor whiteColor] : [UIColor yellowColor];
-}] subscribeNext:^(UIColor *color) {
-    weakSelf.searchText.backgroundColor = color;
-}];
-</code></pre>
-
-<p>在上面的代码中weakSelf是self对象的一个弱引用。现在subscribeNext:中使用了这个变量。不过ReactiveCocoa框架给我们提供了一个更好的选择。首先导入以下头文件：</p>
-
-<pre><code>#import &lt;RACEXTScope.h&gt;
-</code></pre>
-
-<p>然后使用以下代码：</p>
-
-<pre><code>@weakify(self)
-
-[[self.searchText.rac_textSignal map:^id(NSString *text) {
-    return [self isValidSearchText:text] ? [UIColor whiteColor] : [UIColor yellowColor];
-}] subscribeNext:^(UIColor *color) {
-    @strongify(self)
-    self.searchText.backgroundColor = color;
-}];
-</code></pre>
-
-<p>宏@weakify与@strongify在<a href="https://github.com/jspahrsummers/libextobjc">Extended Objective-C</a>库中引用，它们包含在ReactiveCocoa框架中。@weakify允许我们创建一些影子变量，它是都是弱引用(可以同时创建多个)，@strongify允许创建变量的强引用，这些变量是先前传递给@weakify的。</p>
-
-<p>最后需要注意的是，当在block中使用实例变量时，block同样会捕获self的一个强引用。我们可以打开编译器警告，来提示我们这种情况。如下所求来处理</p>
-
-<p><img src="http://cdn3.raywenderlich.com/wp-content/uploads/2014/01/AvoidRetainSelf.png" alt="image" /></p>
-
-<p>OK，内存问题说得差不多了，现在我们回到正题。</p>
-
-<h2>请求访问Twitter</h2>
-
-<p>我们将使用Social Framework以允许TwitterInstant程序搜索Tweets，同时使用Accounts Framework来获取对Twitter的访问。</p>
-
-<p>在添加代码前，我们需要先登录Twitter。可以在系统的设置中登录，如下图所示：</p>
-
-<p><img src="http://cdn3.raywenderlich.com/wp-content/uploads/2014/01/TwitterCredentials.png" alt="image" /></p>
-
-<p>我们的工程已经添加了所需要的框架，所以只需要在RWSearchFormViewController.m导入头文件。</p>
-
-<pre><code>#import &lt;Accounts/Accounts.h&gt;
-#import &lt;Social/Social.h&gt;
-</code></pre>
-
-<p>然后在下面添加枚举及常量用于标识错误：</p>
-
-<pre><code>typedef NS_ENUM(NSInteger, RWTwitterInstantError) {
-    RWTwitterInstantErrorAccessDenied,
-    RWTwitterInstantErrorNoTwitterAccounts,
-    RWTwitterInstantErrorInvalidResponse
-};
-
-static NSString * const RWTwitterInstantDomain = @"TwitterInstant";
-</code></pre>
-
-<p>然后我们RWSearchFormViewController()分类中添加以下代码：</p>
-
-<pre><code>@property (strong, nonatomic) ACAccountStore *accountStore;
-@property (strong, nonatomic) ACAccountType *twitterAccountType;
-</code></pre>
-
-<p>ACAccountsStore类提供了我们的设备可连接的多种社交账号，ACAccountType类表示账号的指定类型。</p>
-
-<p>我们在viewDidLoad的结尾处添加以下代码，来创建账户存储及Twitter账户标识：</p>
-
-<pre><code>self.accountStore = [[ACAccountStore alloc] init];
-self.twitterAccountType = [self.accountStore accountTypeWithAccountTypeIdentifier:ACAccountTypeIdentifierTwitter];
-</code></pre>
-
-<p>当账户请求社账号时，用户可以看到一个弹出框。这是一个异步操作，所以将其包装到一个信号中是很好的选择。</p>
-
-<p>仍然在这个文件中，添加以下代码：</p>
-
-<pre><code>- (RACSignal *)requestAccessToTwitterSignal
-{
-    // 定义一个错误，如果用户拒绝访问则发送
-    NSError *accessError = [NSError errorWithDomain:RWTwitterInstantDomain code:RWTwitterInstantErrorAccessDenied userInfo:nil];
-
-    // 创建并返回信号
-    @weakify(self)
-    return [RACSignal createSignal:^RACDisposable *(id&lt;RACSubscriber&gt; subscriber) {
-
-        // 请求访问twitter
-        @strongify(self)
-        [self.accountStore requestAccessToAccountsWithType:self.twitterAccountType
-                                                   options:nil
-                                                completion:^(BOOL granted, NSError *error) {
-                                                    // 处理响应
-                                                    if (!granted)
-                                                    {
-                                                        [subscriber sendError:accessError];
-                                                    }
-                                                    else
-                                                    {
-                                                        [subscriber sendNext:nil];
-                                                        [subscriber sendCompleted];
-                                                    }
-                                                }];
-        return nil;
-    }];
-}
-</code></pre>
-
-<p>一个信号可以发送三种事件类型：next, completed, error。</p>
-
-<p>在信号的整个生命周期中，都可能不会发送事件，或者发送一个或多个next事件，其后跟着completed或error事件。</p>
-
-<p>最后，为了使用这个信号，在viewDidLoad中添加以下代码：</p>
-
-<pre><code>[[self requestAccessToTwitterSignal]
- subscribeNext:^(id x) {
-     NSLog(@"Access granted");
- } error:^(NSError *error) {
-     NSLog(@"An error occurred: %@", error);
- }];
-</code></pre>
-
-<p>运行程序，可以看到下面的提示</p>
-
-<p><img src="http://cdn1.raywenderlich.com/wp-content/uploads/2014/01/RequestAccessToTwitter.png" alt="image" /></p>
-
-<p>如果点击OK，subscribeNext:块中的日志会打印出来。如果点击Don&rsquo;t allow，则会执行错误块并打印期望的信息。</p>
-
-<h2>链接信号</h2>
-
-<p>一旦用户获取了Twitter账户的访问权限，程序需要继续监听搜索框的输入，以查询twitter。程序需要等待请求访问Twitter的信号来发出完成事件，然后订阅广西输入框的信号。不同信号的顺序链接是一个问题，但ReactiveCocoa已经做了很好的处理。</p>
-
-<p>在viewDidLoad中用下面代码来替换当前的管道：</p>
-
-<pre><code>[[[self requestAccessToTwitterSignal]
- then:^RACSignal *{
-     @strongify(self)
-     return self.searchText.rac_textSignal;
- }]
- subscribeNext:^(id x) {
-     NSLog(@"%@", x);
- } error:^(NSError *error) {
-     NSLog(@"An error occurred: %@", error);
- }];
-</code></pre>
-
-<p>then方法会等到completed事件发出后调用，然后订阅由block参数返回的信号。这有效地将控制从一个信号传递给下一个信号。运行程序，获取访问，然后在输入框输入，会在控制台看到以下输出：</p>
-
-<pre><code>2014-01-04 08:16:11.444 TwitterInstant[39118:a0b] m
-2014-01-04 08:16:12.276 TwitterInstant[39118:a0b] ma
-2014-01-04 08:16:12.413 TwitterInstant[39118:a0b] mag
-2014-01-04 08:16:12.548 TwitterInstant[39118:a0b] magi
-2014-01-04 08:16:12.628 TwitterInstant[39118:a0b] magic
-2014-01-04 08:16:13.172 TwitterInstant[39118:a0b] magic!
-</code></pre>
-
-<p>下一步，我们添加一个filter操作到管道，以移除无效的搜索字符串。在这个实例中，是要求输入长度不小于3：</p>
-
-<pre><code>[[[[self requestAccessToTwitterSignal]
- then:^RACSignal *{
-     @strongify(self)
-     return self.searchText.rac_textSignal;
- }]
- filter:^BOOL(NSString *text) {
-     @strongify(self)
-     return [self isValidSearchText:text];
- }]
- subscribeNext:^(id x) {
-     NSLog(@"%@", x);
- } error:^(NSError *error) {
-     NSLog(@"An error occurred: %@", error);
- }];
-</code></pre>
-
-<p>运行后的输出是</p>
-
-<pre><code>2014-01-04 08:16:12.548 TwitterInstant[39118:a0b] magi
-2014-01-04 08:16:12.628 TwitterInstant[39118:a0b] magic
-2014-01-04 08:16:13.172 TwitterInstant[39118:a0b] magic!
-</code></pre>
-
-<p>当前管道如下图所示：</p>
-
-<p><img src="http://cdn3.raywenderlich.com/wp-content/uploads/2014/01/PipelineWithThen.png" alt="image" /></p>
-
-<p>现在我们有一个发送搜索文本的信号了，是时候用它来搜索Twitter了。接下来才是正题。</p>
-
-<h2>搜索Twitter</h2>
-
-<p>Social Framework是访问Twitter搜索API的一个选择。但是Social Framework不是响应式的。接下来是封装所需要的API方法到信号中。现在，我们需要挂起这个过程。</p>
-
-<p>在RWSearchFormViewController.m中，添加以下方法：</p>
-
-<pre><code>- (SLRequest *)requestforTwitterSearchWithText:(NSString *)text
-{
-    NSURL *url = [NSURL URLWithString:@"https://api.twitter.com/1.1/search/tweets.json"];
-    NSDictionary *params = @{@"q": text};
-
-    SLRequest *request = [SLRequest requestForServiceType:SLServiceTypeTwitter
-                                            requestMethod:SLRequestMethodGET
-                                                      URL:url
-                                               parameters:params];
-    return request;
-}
-</code></pre>
-
-<p>这个方法通过<a href="https://dev.twitter.com/docs/api/1.1">v1.1 REST API</a>创建了一个搜索Twitter的请求。关于这个API，可以在<a href="https://dev.twitter.com/docs/api/1.1/get/search/tweets">Twitter API docs</a>中查看更多信息。</p>
-
-<p>接下来创建一个基于请求的信号。在同一文件中，添加以下代码：</p>
-
-<pre><code>- (RACSignal *)signalForSearchWithText:(NSString *)text {
-    // 定义错误
-    NSError *noAccountError = [NSError errorWithDomain:RWTwitterInstantDomain code:RWTwitterInstantErrorNoTwitterAccounts userInfo:nil];
-
-    NSError *invalidResponseError = [NSError errorWithDomain:RWTwitterInstantDomain code:RWTwitterInstantErrorInvalidResponse userInfo:nil];
-
-    // 创建信号block
-    @weakify(self)
-    return [RACSignal createSignal:^RACDisposable *(id&lt;RACSubscriber&gt; subscriber) {
-        @strongify(self)
-
-        // 创建请求
-        SLRequest *request = [self requestforTwitterSearchWithText:text];
-
-        // 提供Twitter账户
-        NSArray *twitterAccounts = [self.accountStore accountsWithAccountType:self.twitterAccountType];
-        if (twitterAccounts.count == 0) {
-            [subscriber sendError:noAccountError];
-        } else {
-            [request setAccount:[twitterAccounts lastObject]];
-
-            // 执行请求
-            [request performRequestWithHandler:^(NSData *responseData, NSHTTPURLResponse *urlResponse, NSError *error) {
-                if (urlResponse.statusCode == 200) {
-                    // 成功，解析响应
-                    NSDictionary *timelineData = [NSJSONSerialization JSONObjectWithData:responseData options:NSJSONReadingAllowFragments error:nil];
-                    [subscriber sendNext:timelineData];
-                    [subscriber sendCompleted];
-                } else {
-                    // 失败，发送一个错误
-                    [subscriber sendError:invalidResponseError];
-                }
-            }];
-        }
-
-        return nil;
-    }];
-}
-</code></pre>
-
-<p>现在我们来使用这个新信号。</p>
-
-<p>在第一部分中我们学习了如何使用flattenMap来将每个next事件映射到一个新的被订阅的信号。这里我们再次使用它们。在viewDidLoad的最后用如下代码更新：</p>
-
-<pre><code>[[[[[self requestAccessToTwitterSignal]
- then:^RACSignal *{
-     @strongify(self)
-     return self.searchText.rac_textSignal;
- }]
- filter:^BOOL(NSString *text) {
-     @strongify(self)
-     return [self isValidSearchText:text];
- }]
- flattenMap:^RACStream *(NSString *text ) {
-     @strongify(self)
-     return [self signalForSearchWithText:text];
- }]
- subscribeNext:^(id x) {
-     NSLog(@"%@", x);
- } error:^(NSError *error) {
-     NSLog(@"An error occurred: %@", error);
- }];
-</code></pre>
-
-<p>运行并在搜索框中输入一些文本。一旦文本字符串长度大于3后，我们可以在控制台查看搜索的结果。如下显示了返回数据的一个片断：</p>
-
-<pre><code>2014-01-05 07:42:27.697 TwitterInstant[40308:5403] {
-    "search_metadata" =     {
-        "completed_in" = "0.019";
-        count = 15;
-        "max_id" = 419735546840117248;
-        "max_id_str" = 419735546840117248;
-        "next_results" = "?max_id=419734921599787007&amp;q=asd&amp;include_entities=1";
-        query = asd;
-        "refresh_url" = "?since_id=419735546840117248&amp;q=asd&amp;include_entities=1";
-        "since_id" = 0;
-        "since_id_str" = 0;
-    };
-    statuses =     (
-                {
-            contributors = "&lt;null&gt;";
-            coordinates = "&lt;null&gt;";
-            "created_at" = "Sun Jan 05 07:42:07 +0000 2014";
-            entities =             {
-                hashtags = ...
-</code></pre>
-
-<p>signalForSearchText:方法同样发出了一个error事件，其由subscribeNext:error:块来处理。</p>
-
-<h2>线程</h2>
-
-<p>现在一定想把返回的JSON数据显示到UI上了吧，不过，在此之前我们还有一件事情需要处理。要了解这是什么，我们还需要探索一下。</p>
-
-<p>在下图的subscribeNext:error:中打个断点：</p>
-
-<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/01/BreakpointLocation.png" alt="image" /></p>
-
-<p>重新运行程序，如果需要则再次输入Twitter账号密码，在搜索框中输入一些文本。当程序运行到断点位置时可以看到类似于下图的场景：</p>
-
-<p><img src="http://cdn5.raywenderlich.com/wp-content/uploads/2014/01/BreakpointResult.png" alt="image" /></p>
-
-<p>注意，从左侧的线程列表中我们可以看到debugger到的代码并没有运行在主线程，即线程Thread 1。记住，更新UI的操作一定得在主线程中操作；因此，如果要在UI上显示tweet列表，则必须切换线程。</p>
-
-<p>这说明了ReactiveCocoa框架的一个重要点。上面显示的操作是在信号初始发出事件时的那个线程执行。尝试在管道的其它步骤添加断点，我们会很惊奇的发现它们会运行在多个不同的线程上。</p>
-
-<p>因此，我们应该如何来更新UI呢？当然ReactiveCocoa也为我们解决了这个问题。我们只需要在flattenMap:后面添加deliverOn:操作：</p>
-
-<pre><code>[[[[[[self requestAccessToTwitterSignal]
- then:^RACSignal *{
-     @strongify(self)
-     return self.searchText.rac_textSignal;
- }]
- filter:^BOOL(NSString *text) {
-     @strongify(self)
-     return [self isValidSearchText:text];
- }] flattenMap:^RACStream *(NSString *text) {
-     @strongify(self)
-     return [self signalForSearchWithText:text];
- }]
- deliverOn:[RACScheduler mainThreadScheduler]]
- subscribeNext:^(id x) {
-     NSLog(@"%@", x);
- } error:^(NSError *error) {
-     NSLog(@"An error occurred: %@", error);
- }];
-</code></pre>
-
-<p>现在重新运行，此时我们可以看到subscribeNext:error:是运行在主线程了。</p>
-
-<p><img src="http://cdn3.raywenderlich.com/wp-content/uploads/2014/01/BreakpointNowOnUIThread.png" alt="image" /></p>
-
-<p>这样我们就可以安全地更新我们的UI了。</p>
-
-<h2>更新UI</h2>
-
-<p>打开RWSearchResultsViewController.h文件，我们可以看到displayTweets:方法，这个方法会让右侧的ViewController来渲染tweet数组。实现非常简单，它只是一个标准UITableView数据源。displayTweets:只需要一个包含RWTweet实例的数组作为参数。我们同样发现RWTweet实例是作为初始工程的一部分提供的。</p>
-
-<p>在subscibeNext:error:步骤中获取到的数据现在是一个NSDictionary，它是在signalForSearchWithText:解析JSON数据时构造的。那么，我们如何处理这个字典的内容呢？</p>
-
-<p>如果看一看<a href="https://dev.twitter.com/docs/api/1.1/get/search/tweets">Twitter API documentation</a>，我们可以发现一个示例响应。在NSDictionary反映了这种结构，所以我们需要找到一个键名为statues的字典，其值为一个tweets数组。具体如何解析我们就不在此说明。这里给个更好的实现方式。</p>
-
-<p>我们现在讲的是ReactiveCocoa及函数式编程。当我们使用函数式API时，数据从一种格式转换到另一种格式会变得更优雅。我们可以使用<a href="https://github.com/ColinEberhardt/LinqToObjectiveC">LinqToObjectiveC</a>来执行这个任务。</p>
-
-<p>我们需要使用Cocoapods来导入LinqToObjectiveC。在配置文件中加入以下代码：</p>
-
-<pre><code>pod 'LinqToObjectiveC', '2.0.0'
-</code></pre>
-
-<p>关闭工程，在终端执行pod update命令，完成后在我们的Pods工程中就可以看到LinqToObjectiveC了。</p>
-
-<p>打开RWSearchFormViewController.m并导入以下文件：</p>
-
-<pre><code>#import "RWTweet.h"
-#import "NSArray+LinqExtensions.h"
-</code></pre>
-
-<p>NSArray+LinqExtensions.h头文件来自于LinqToObjectiveC，并为NSArray添加了许多方法以允许我们使用一个流畅的API来转换、排序、分组及过滤数组的数据。</p>
-
-<p>现在我们使用这些API来更新当前管道操作，在viewDidLoad代码中做如下修改：</p>
-
-<pre><code>[[[[[[self requestAccessToTwitterSignal]
-     then:^RACSignal *{
-         @strongify(self)
-         return self.searchText.rac_textSignal;
-     }]
-    filter:^BOOL(NSString *text) {
-        @strongify(self)
-        return [self isValidSearchText:text];
-    }]
-   flattenMap:^RACStream *(NSString *text) {
-       @strongify(self)
-       return [self signalForSearchWithText:text];
-   }]
-  deliverOn:[RACScheduler mainThreadScheduler]]
- subscribeNext:^(NSDictionary *jsonSearchResult) {
-     NSArray *statuses = jsonSearchResult[@"statuses"];
-     NSArray *tweets = [statuses linq_select:^id(id tweet) {
-         return [RWTweet tweetWithStatus:tweet];
-     }];
-     [self.resultsViewController displayTweets:tweets];
- } error:^(NSError *error) {
-     NSLog(@"An error occurred: %@", error);
- }];
-</code></pre>
-
-<p>如上所看到的，subscribeNext:块首先获取twetts的NSArray对象。linq_select方法通过执行应用于每个数组元素的block来转换NSDictionary字典的数组，并生成一个RWTweet实例的数组。</p>
-
-<p>一旦转换完成，tweets将结果发送给ViewController。</p>
-
-<p>运行程序后我们可以看到以下UI：</p>
-
-<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/01/FinallyWeSeeTweets.png" alt="image" /></p>
-
-<h2>异步加载图片</h2>
-
-<p>在上图中，我们可以看到每行数据前面有一片空白，这是用来显示用户头像的。RWTweet类已经有一个profileImageUrl属性，它是一个图片的URL地址。为了让UITableTable滑动得更平滑，我们需要让获取指定URL的图片的操作不运行在主线程中。这可以使用GCD或者是NSOperationQueue。不过，ReactiveCocoa同样为我们提供了解决方案。</p>
-
-<p>打开RWSearchResultsViewController.m，添加以下代码：</p>
-
-<pre><code>-(RACSignal *)signalForLoadingImage:(NSString *)imageUrl {
-
-    RACScheduler *scheduler = [RACScheduler
-                               schedulerWithPriority:RACSchedulerPriorityBackground];
-
-    return [[RACSignal createSignal:^RACDisposable *(id&lt;RACSubscriber&gt; subscriber) {
-        NSData *data = [NSData dataWithContentsOfURL:[NSURL URLWithString:imageUrl]];
-        UIImage *image = [UIImage imageWithData:data];
-        [subscriber sendNext:image];
-        [subscriber sendCompleted];
-        return nil;
-    }] subscribeOn:scheduler];
-
-}
-</code></pre>
-
-<p>现在我们应该熟悉这种模式了。以上的方法首先获取一个后台scheduler作为信号执行的线程，而不是主线程。接下来，创建一个下载图片数据的信号并在其有订阅者时创建一个UIImage。最后我们调用subscribeOn:，以确保信号在给定的scheduler上执行。</p>
-
-<p>现在，我们可以更新tableView:cellForRowAtIndex:，在return之前添加以下代码：</p>
-
-<pre><code>cell.twitterAvatarView.image = nil;
-
-[[[self signalForLoadingImage:tweet.profileImageUrl]
-  deliverOn:[RACScheduler mainThreadScheduler]]
-  subscribeNext:^(UIImage *image) {
-   cell.twitterAvatarView.image = image;
-  }];
-</code></pre>
-
-<p>上面的代码首先重新设置图片，因为重用的单元格可能包含之前的数据。然后创建一个请求信号去获取数据，在deliverOn:中我们将后面的next事件运行在主线程，这样subscribeNext:可以安全运行。</p>
-
-<p>运行后得到如下结果：</p>
-
-<p><img src="http://cdn1.raywenderlich.com/wp-content/uploads/2014/01/AvatarsAtAlast.png" alt="image" /></p>
-
-<h2>节流</h2>
-
-<p>你可能已经发现每次我们输入一个新的字符时，搜索操作都会立即执行。如果我们快速输入，可能会导致程序在一秒钟内执行了多次搜索操作。这当然是不好的，因为：</p>
-
-<ol>
-<li>我们多次调用了Twitter搜索API，同时扔掉了大部分结果。</li>
-<li>我们不断更新结果会分散用户的注意力。</li>
-</ol>
-
-
-<p>一个更好的方案是如果搜索文本在一个较短时间内没有改变时我们再去执行搜索操作，如500毫秒。ReactiveCocoa框架让这一任务变得相当简单。</p>
-
-<p>打开RWSearchFormViewController.m并更新管道操作：</p>
-
-<pre><code>[[[[[[[self requestAccessToTwitterSignal]
-      then:^RACSignal *{
-          @strongify(self)
-          return self.searchText.rac_textSignal;
-      }]
-     filter:^BOOL(NSString *text) {
-         @strongify(self)
-         return [self isValidSearchText:text];
-     }]
-    throttle:0.5]
-   flattenMap:^RACStream *(NSString *text) {
-       @strongify(self)
-       return [self signalForSearchWithText:text];
-   }]
-  deliverOn:[RACScheduler mainThreadScheduler]]
- subscribeNext:^(NSDictionary *jsonSearchResult) {
-     NSArray *statuses = jsonSearchResult[@"statuses"];
-     NSArray *tweets = [statuses linq_select:^id(id tweet) {
-         return [RWTweet tweetWithStatus:tweet];
-     }];
-     [self.resultsViewController displayTweets:tweets];
- } error:^(NSError *error) {
-     NSLog(@"An error occurred: %@", error);
- }];
-</code></pre>
-
-<p>throttle操作只有在两次next事件间隔指定的时间时才会发送第二个next事件。相当简单吧。运行程序看看效果吧。</p>
-
-<h2>小结</h2>
-
-<p>在庆祝胜利前，看看程序最终的管道是值得的。</p>
-
-<p><img src="http://cdn2.raywenderlich.com/wp-content/uploads/2014/01/CompletePipeline.png" alt="image" /></p>
-
-<p>这是一个相当复杂的数据流，但可以作为一个响应管道简洁地表示出来。看起来不错吧。如果使用非响应式技术，你会觉得这会有多复杂呢？在这样一个程序中，数据流的流动又会是多难以理解呢？听起来很麻烦吧。但有了ReactiveCocoa，我们不必再考虑这些了。现在我们知道ReactiveCocoa有多棒了吧。</p>
-
-<p>最后，ReactiveCocoa让使用Model View ViewModel(MVVM)设计模式变成可能。如果有兴趣研究MVVM，可以去网上搜索相关的文章。</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/8">&larr; Older</a>
@@ -2521,7 +2217,7 @@ self.twitterAccountType = [self.accountStore accountTypeWithAccountTypeIdentifie
 <section>
 <h1>分类</h1>
 <ul>
-  <li><a href='/blog/categories/ios'>ios (56)</a></li>
+  <li><a href='/blog/categories/ios'>ios (57)</a></li>
   <li><a href='/blog/categories/network'>network (3)</a></li>
   <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
   <li><a href='/blog/categories/swift'>swift (7)</a></li>
@@ -2533,6 +2229,10 @@ self.twitterAccountType = [self.accountStore accountTypeWithAccountTypeIdentifie
 <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/02/11/nscache/">NSCache</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2015/02/07/yuan-ma-pian-:sdwebimage/">源码篇：SDWebImage</a>
@@ -2568,10 +2268,6 @@ self.twitterAccountType = [self.accountStore accountTypeWithAccountTypeIdentifie
     
       <li class="post">
         <a href="/blog/2015/01/05/quartz-2dbian-cheng-zhi-nan-zhi-shi-%5B%3F%5D-:wei-tu-yu-tu-xiang-zhe-zhao/">Quartz 2D编程指南之十一：位图与图像遮罩</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/12/11/quartz-2dbian-cheng-zhi-nan-zhi-shi-:quartz-2dzhong-de-shu-ju-guan-li/">Quartz 2D编程指南之十：Quartz 2D中的数据管理</a>
       </li>
     
   </ul>

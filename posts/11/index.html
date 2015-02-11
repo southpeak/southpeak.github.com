@@ -11,7 +11,7 @@
   <meta name="baidu-site-verification" content="HoscFhWICI" />
 
   
-  <meta name="description" content="个人认为，Swift对指针的处理略显复杂。 我们通过调试可以看到存在这样一个类型Builtin.RawPointer，我们可以假设其为C指针在Swife中的内部表示，但不可以直接使用。相反，在Swift中，定义了7种指针类型，可以通过这7种类型来操作C指针。 COpaquePointer &hellip;">
+  <meta name="description" content="Swift和Objective-C可以在同一个工程中共存。不管创建工程时选择的是Swift还是Objective-C作为初始语言，我们都可以在工程中添加另一种语言的文件。 混合编程的处理过程在App工程和库工程中稍微有点不同。具体的工作模型如下图所示 下面我们讨论下具体的操作 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -68,6 +68,83 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/07/08/mix-swift-and-objective-c/">混合使用Swift和Objective-C</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-07-08T16:58:06+08:00" pubdate data-updated="true">Jul 8<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/07/08/mix-swift-and-objective-c/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Swift和Objective-C可以在同一个工程中共存。不管创建工程时选择的是Swift还是Objective-C作为初始语言，我们都可以在工程中添加另一种语言的文件。</p>
+
+<p>混合编程的处理过程在App工程和库工程中稍微有点不同。具体的工作模型如下图所示</p>
+
+<p><img src="https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/BuildingCocoaApps/Art/DAG_2x.png" alt="image" /></p>
+
+<p>下面我们讨论下具体的操作</p>
+
+<h2>同一App工程中导入代码</h2>
+
+<h4>在Swift工程中导入Objective-C</h4>
+
+<p>如果我们需要在一个Swift工程中导入Objective-C代码，需要依托于Objective-C Bridging header(桥接头文件)。在Swift工程中，当我们添加一个Objective-C文件时，如果工程中没有现存的Bridging header文件，则XCode会提示我们是否创建该文件。如果我们点击Yes，则XCode会自动创建头文件，并命名为&#8221;工程名-Bridging-Header.h&#8221;。</p>
+
+<p>我们需要编辑这个文件，以导入我们的Objective-C代码。</p>
+
+<p>如果是从同一个target中导入Objective-C代码，则我们需要做如下操作</p>
+
+<ol>
+<li><p>在Bridging header文件中，import所有需要在Swift中使用的头文件</p>
+
+<p> #import &ldquo;XYZCustomCell.h&rdquo;</p>
+
+<p> #import &ldquo;XYZCustomView.h&rdquo;</p>
+
+<p> #import &ldquo;XYZCustomViewController.h&rdquo;</p></li>
+<li><p>在Build Settings中，确保Swift Compiler Code Generation->Objective-C Bridging Header下的头文件的路径是对的。路径必须直接指向文件本身，而不是文件所在的文件夹。</p></li>
+</ol>
+
+
+<p>所有在Bridging header中的公有Objective-C头文件在Swift都是可见的，并且其中的所有功能在所有Swift中都是可用的，而不需要任何导入处理。可以像使用Swift代码一样使用Objective-C代码。如下所示</p>
+
+<pre><code>let myCell = XYZCustomCell()
+myCell.subtitle = "A custom cell"
+</code></pre>
+
+<h4>在Objective-C中导入Swift</h4>
+
+<p>如果我们要在一个Objective-C工程中导入Swift，则需要依托于XCode-generated header文件。这个自动生成的文件是一个Objective-C头文件，其声明了在我们的target中使用的所有Swift接口。</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1094,213 +1171,6 @@ for object : AnyObject in objects {
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/06/27/ios-swift-extension/">Swift扩展(Extension)基础</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-06-27T20:54:59+08:00" pubdate data-updated="true">Jun 27<sup>th</sup>, 2014</time>
-        
-        
-           | <a href="/blog/2014/06/27/ios-swift-extension/#comments">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>扩展(Extension)用于为已存在的类、结构体或枚举添加新的功能。它类似于Objecitve-C中的分类，不同的是Swift的扩展没有名字</p>
-
-<p>Swift的扩展可以做以下事情：</p>
-
-<ul>
-<li><p> 添加计算属性和静态计算属性</p></li>
-<li><p> 定义实例方法和类型方法</p></li>
-<li><p> 提供新的初始化方法</p></li>
-<li><p> 定义下标操作符</p></li>
-<li><p> 定义并使用新的嵌套类型</p></li>
-<li><p> 让已存在类型实现一个协议</p></li>
-</ul>
-
-
-<p>在定义类型的扩展后，访扩展中的功能可以用于类型所有已存在的实例中，即使这些实例在扩展之前定义。</p>
-
-<p>我们使用关键字extension来声明一个扩展，一个扩展可以让类型实现一个或多个协议，如代码清单1所示：</p>
-
-<h6>代码清单1：</h6>
-
-<pre><code>extension SomeType: SomeProtocol, AnotherProtocol {
-    // implementation of protocol requirement goes here
-}
-</code></pre>
-
-<p>下面我们分别介绍如何去扩展一个已有类型的各种功能</p>
-
-<h2>计算属性</h2>
-
-<p>扩展可以添加实例计算属性和类型计算属性。如代码清单2所示：</p>
-
-<h6>代码清单2：</h6>
-
-<pre><code>extension Double {
-    var km: Double {return self * 1_000.0}
-    var m: Double { return self }
-    var cm: Double { return self / 100.0 }
-    var mm: Double { return self / 1_000.0 }
-    var ft: Double { return self / 3.28084 }
-}
-
-let onInch = 25.4.mm        // 0.0254
-let threeFeet = 3.ft        // 0.914399970739201
-</code></pre>
-
-<p>上例扩展了Double，并定义了一些实例计算属性。我们可以将其用于Double的实例，也可以用于Double类型的字面值。</p>
-
-<p>需要注意的是，扩展可以添加新的计算属性，但不能添加存储属性，也不能给已存在的属性添加观察者</p>
-
-<h2>初始化方法</h2>
-
-<p>扩展可以为已存在类型添加新的初始化方法。这可以让我们扩展某一类型以接受我们自定义的类型作为它的初始化方法，或者为现有类型提供额外的初始化方法。</p>
-
-<p>扩展可以为类添加新的便捷初始化方法，但不能添加命名初始化方法(designated initializers)和析构方法，这两者必须由类型的原始实现来提供。</p>
-
-<p>代码清单3定义了Rect类型，并通过扩展为其定义了一个新的初始化方法</p>
-
-<h6>代码清单3</h6>
-
-<pre><code>struct Size {
-    var width = 0.0, height = 0.0
-}
-
-struct Point {
-    var x = 0.0, y = 0.0
-}
-
-struct Rect {
-    var origin = Point()
-    var size = Size()
-}
-
-let defaultRect = Rect()
-let memeberwiseRect = Rect(origin: Point(x: 1.0, y: 2.0), size: Size(width: 5.0, height: 10.0))
-
-extension Rect {
-    init (center: Point, size: Size) {
-        let originX = center.x - (size.width / 2)
-        let originY = center.y - size.height / 2
-        self.init(origin: Point(x: originX, y: originY), size:size)
-    }
-}
-
-let centerRect = Rect(center: Point(x: 20.0, y: 3.0), size: Size(width: 10.0, height: 40.0))
-</code></pre>
-
-<p>需要注意的是，如果我们提供新的初始化方法，仍然需要确保在初始化方法结束前初始化实例的所有常量和变量。</p>
-
-<p>另外，如果我们扩展的类型的所有存储属性都有默认值，而没有定义初始化方法时，我们可以在扩展的初始化方法中调用默认的初始化方法和</p>
-
-<h2>方法</h2>
-
-<p>扩展可以为已存在类型添加新的实例方法和类型方法。对于结构体和枚举类型而言，如果扩展的方法需要修改self或者它的属性的话，需要将实例方法标记为mutating(与结构体和枚举的原始实现相同)。</p>
-
-<h6>代码清单4：演示了扩展方法的定义</h6>
-
-<pre><code>extension Int {
-    func repetitions(task: () -&gt; ()) {
-        for i in  0..self {
-            task()
-        }
-    }
-
-    mutating func square() {        // mutating
-        self = self * self
-    }
-}
-
-var someInt = 3
-someInt.square()
-</code></pre>
-
-<h2>下标</h2>
-
-<p>扩展可以为已存在类型添加新的下标。例如我们想为Int类型添加一个下标操作，指定下标为n时，返回数字从右侧起第n个数字，即</p>
-
-<ul>
-<li><p> 123456789[0] = 9</p></li>
-<li><p> 123456789[1] = 8</p></li>
-<li><p> …</p></li>
-</ul>
-
-
-<p>代码清单5给出了相应的实现</p>
-
-<h6>代码清单5</h6>
-
-<pre><code>extension Int {
-    subscript(digitIndex: Int) -&gt; Int {
-        var decimalBase = 1
-            for _ in 1...digitIndex {
-                decimalBase * 10
-            }
-            return (self / decimalBase) % 10
-    }
-}
-
-8738793219[0]   // 9
-8738793219[1]   // 1
-8738793219[2]   // 2
-8738793219[8]   // 7
-</code></pre>
-
-<h2>嵌套类型</h2>
-
-<p>扩展可以为已存在类型添加新的嵌套类型，如代码清单6所示</p>
-
-<h6>代码清单6：</h6>
-
-<pre><code>extension Character {
-    enum Kind {
-        case Vowel, Consonant, Other
-    }
-
-    var kind:Kind {
-    switch String(self).lowercaseString {
-        case "a", "e", "i", "o", "u":
-            return .Vowel
-        case "b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n",
-             "p", "q", "r", "s", "t", "v", "w", "x", "y", "z":
-            return .Consonant
-        default:
-            return .Other
-    }
-    }
-}
-</code></pre>
-
-<p>上面为Character类型添加了一个嵌套枚举，以表示字符的类型。定义之后，嵌套类型就可以用于Character的值了。</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/12">&larr; Older</a>
@@ -1317,7 +1187,7 @@ someInt.square()
 <section>
 <h1>分类</h1>
 <ul>
-  <li><a href='/blog/categories/ios'>ios (56)</a></li>
+  <li><a href='/blog/categories/ios'>ios (57)</a></li>
   <li><a href='/blog/categories/network'>network (3)</a></li>
   <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
   <li><a href='/blog/categories/swift'>swift (7)</a></li>
@@ -1329,6 +1199,10 @@ someInt.square()
 <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/02/11/nscache/">NSCache</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2015/02/07/yuan-ma-pian-:sdwebimage/">源码篇：SDWebImage</a>
@@ -1364,10 +1238,6 @@ someInt.square()
     
       <li class="post">
         <a href="/blog/2015/01/05/quartz-2dbian-cheng-zhi-nan-zhi-shi-%5B%3F%5D-:wei-tu-yu-tu-xiang-zhe-zhao/">Quartz 2D编程指南之十一：位图与图像遮罩</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/12/11/quartz-2dbian-cheng-zhi-nan-zhi-shi-:quartz-2dzhong-de-shu-ju-guan-li/">Quartz 2D编程指南之十：Quartz 2D中的数据管理</a>
       </li>
     
   </ul>
