@@ -4,7 +4,7 @@
   <title><![CDATA[Category: ios | 南峰子的技术博客]]></title>
   <link href="http://southpeak.github.io/blog/categories/ios/atom.xml" rel="self"/>
   <link href="http://southpeak.github.io/"/>
-  <updated>2015-02-11T22:15:08+08:00</updated>
+  <updated>2015-03-01T14:16:49+08:00</updated>
   <id>http://southpeak.github.io/</id>
   <author>
     <name><![CDATA[南峰子]]></name>
@@ -12,6 +12,637 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[翻译篇：iOS 8 Handoff Tutorial]]></title>
+    <link href="http://southpeak.github.io/blog/2015/03/01/fan-yi-pian-:ios-8-handoff-tutorial/"/>
+    <updated>2015-03-01T12:33:51+08:00</updated>
+    <id>http://southpeak.github.io/blog/2015/03/01/fan-yi-pian-:ios-8-handoff-tutorial</id>
+    <content type="html"><![CDATA[<p>原文由Soheil Azarpour发表于raywenderlich，地址是<a href="http://www.raywenderlich.com/84174/ios-8-handoff-tutorial">iOS 8 Handoff Tutorial</a></p>
+
+<p>Handoff是iOS 8和OS X Yosemite中的一个新特性。它让我们在不同的设备间切换时，可以不间断地继续一个Activity，而不需要重新配置任何设备。</p>
+
+<p>我们可以为在iOS 8和Yosemite上的应用添加Handoff特性。在这篇指南中，我们将学习Handoff的基本功能和如何在非基于文档的app中使用Handoff。</p>
+
+<h2>Handoff概览</h2>
+
+<p>在开始写代码前，我们需要先来了解一下handoff的一些基本概念。</p>
+
+<h3>起步</h3>
+
+<p>Handoff不仅可以将当前的activity从一个iOS设备传递到OS X设备，还可以将activity在不同的iOS设备传递。目前在模拟器上还不能使用Handoff功能，所以需要在iOS设备上运行我们的实例。</p>
+
+<h4>设备兼容性：iOS</h4>
+
+<p>为了查看我们的iOS设备是否支持handoff功能，我们可以查看“设置”->“通用”列表。如果在列表中看到“Handoff与建议的应用程序”，则设备具备Handoff功能。以下截图显示了iPhone 5s(具备Handoff功能)和iPad3(不具备Handoff功能)的对比：</p>
+
+<p><img src="http://cdn5.raywenderlich.com/wp-content/uploads/2014/10/settings_screenshots-436x320.jpg" alt="image" /></p>
+
+<p>Handoff功能依赖于以下几点：</p>
+
+<ol>
+<li>一个iCloud账户：我们必须在希望使用Handoff功能的多台设备上登录同一个iCloud账户。</li>
+<li>低功耗蓝牙(Bluetooth LE 4.0)：Handoff是通过低功耗蓝牙来广播activities的，所以广播设备和接收设备都必须支持Bluetooth LE 4.0。</li>
+<li>iCloud配对：设备必须已经通过iCloud配对。当在支持Handoff的设备上登录iCloud账户后，每台设备都会与其它支持Handoff的设备进行配对。</li>
+</ol>
+
+
+<p>此时，我们需要确保已经使用同一iCloud账号在两台支持Handoff功能且运行iOS 8+系统的设备上登录了。(译者注：具体配置可以参考<a href="https://support.google.com/chrome/answer/6153783?hl=zh-Hans">在 Chrome（iOS 版）中使用 Handoff</a>)</p>
+
+<h3>User Activities</h3>
+
+<p>Handoff是基于User Activity的。User Activity是一个独立的信息集合单位，可以不依赖于任何其它信息而进行传输(be handed off)。</p>
+
+<p>NSUserActivity对象表示一个User Activity实例。它封装了程序的一些状态，这些状态可以在其它设备相关的程序中继续使用。</p>
+
+<p>有三种方法和一个NSUserActivity对象交互：</p>
+
+<p>1) 创建一个user activity：原始应用程序创建一个NSUserActivity实例并调用becomeCurrent()以开启一个广播进程。下面是一个实例：</p>
+
+<pre><code>let activity = NSUserActivity(activityType: "com.razeware.shopsnap.view")
+activity.title = "Viewing"
+activity.userInfo = ["shopsnap.item.key": ["Apple", "Orange", "Banana"]]
+self.userActivity = activity;
+self.userActivity?.becomeCurrent()
+</code></pre>
+
+<p>我们可以使用NSUserActivity的userInfo字典来传递本地数据类型对象或可编码的自定义对象以将其传输到接收设备。本地数据类型包括NSArray, NSData, NSDate, NSDictionary, NSNull, NSNumber, NSSet, NSString, NSUUID和NSURL。通过NSURL可能会有点棘手。在使用NSURL前可以先参考一下下面的“最佳实践”一节。</p>
+
+<p>2) 更新user activity：一旦一个NSUserActivity成为当前的activity，则iOS会在最上层的视图控制器中调用updateUserActivityState(activity:)方法，以让我们有机会来更新user activity。下面是一个实例：</p>
+
+<pre><code>override func updateUserActivityState(activity: NSUserActivity) {
+  let activityListItems = // ... get updated list of items
+  activity.addUserInfoEntriesFromDictionary(["shopsnap.item.key": activityListItems])
+  super.updateUserActivityState(activity)
+}
+</code></pre>
+
+<p>注意我们不要将userInfo设置为一个新的字典或直接更新它，而是应该使用便捷方法addUserInfoEntriesFromDictionary()。</p>
+
+<p>在下文中，我们将学习如何按需求强制刷新user activity，或者是在程序的app delegate级别来获取一个相似功能的回调。</p>
+
+<p>3) 接收user activity：当我们的接收程序以Handoff的方式启动时，程序代理会调用application(:willContinueUserActivityWithType:)方法。注意这个方法的参数不是NSUserActivity对象，因为接收程序在下载并传递NSUserActivity数据需要花费一定的时间。在user activity已经被下载完成后，会调用以下的回调函数：</p>
+
+<pre><code>func application(application: UIApplication!, 
+                 continueUserActivity userActivity: NSUserActivity!,
+                 restorationHandler: (([AnyObject]!) -&gt; Void)!) 
+                 -&gt; Bool {
+
+  // Do some checks to make sure you can proceed
+  if let window = self.window {
+    window.rootViewController?.restoreUserActivityState(userActivity)
+  }
+  return true
+}
+</code></pre>
+
+<p>然后我们可以使用存储在NSUserActivity对象中的数据来重新创建用户的activity。在这里，我们更新我们的应用以继续相关的activity。</p>
+
+<h3>Activity类型</h3>
+
+<p>当创建一个user activity后，我们必须为其指定一个activity类型。一个activity类型是一个简单的唯一字符串，通常使用反转DNS语义，如com.razeware.shopsnap.view。</p>
+
+<p>每一个可以接收user activity的程序都必须声明其可接收的activity类型。这类似于在程序中声明支持的URL方案(URL scheme)。对于非基于文本的程序，activity类型需要在Info.plist文件中定义，其键值为NSUserActivityTypes，如下所示：</p>
+
+<p><img src="http://cdn5.raywenderlich.com/wp-content/uploads/2014/10/image10-38-480x259.png" alt="image" /></p>
+
+<p>对于支持一个给定activity的程序来说，需要满足三个要求：</p>
+
+<ol>
+<li>相同的组：两个程序都必须源于使用同一开发者组ID(developer Team ID)的开发者。</li>
+<li>相同的activity类型：发送程序创建某一activity类型的user activity，接收程序必须有相应类型的NSUserActivityTypes入口。</li>
+<li>签约：两个程序必须通过App store来发布或使用同一开发者账号来签约。</li>
+</ol>
+
+
+<p>现在我们已经学习了user activities和activity类型的基础知识，接下来让我们来看一个实例。</p>
+
+<h2>启动工程</h2>
+
+<p>本指南的启动工程可以在“<a href="http://cdn2.raywenderlich.com/wp-content/uploads/2014/10/ShopSnap-Starter.zip">启动工程</a>”中下载。下载后，使用Xcode打开工程并在iPhone模拟器中运行。</p>
+
+<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/10/App_Screenshots-700x412.jpg" alt="image" /></p>
+
+<p>工程名是ShopSnap，我们可以在这个程序中构建一个简单的购物清单。一个购物项由一个字符串表示，然后我们将购物项存储在一个字符串的数组中。点击+按钮添加一个新的项目到清单中，而轻扫可以移除项目。</p>
+
+<p>我们将在程序中定义两个独立的user activity：</p>
+
+<ol>
+<li>查看清单。如果用户当前正在查看清单，我们将传输整个数组。</li>
+<li>添加或编译项目。如果用户当前正在添加新的项目，我们将传递一个单一项目的“编辑”activity。</li>
+</ol>
+
+
+<h3>设置开发组</h3>
+
+<p>为了让Handoff工作，发送和接收app都必须使用相同的开发组来签约。由于这个示例程序即是发送者也是接收者，所以这很简单！</p>
+
+<p>选择ShopSnap工程，在“通用”选项卡中，在"Team"中选择自己的开发组：</p>
+
+<p><img src="http://cdn2.raywenderlich.com/wp-content/uploads/2014/10/image15-49-700x232.png" alt="image" /></p>
+
+<p>在支持Handoff的设备中编译并运行程序，以确保运行正常，然后继续。</p>
+
+<h3>配置activity类型</h3>
+
+<p>接下来是配置程序所支持的activity类型。打开"Supporting Files\Info.plist"，点击"Information Property List"旁边的"+&ldquo;按钮，在"Information Property List"中添加一个新的选项：</p>
+
+<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/10/image16-52-480x268.png" alt="image" /></p>
+
+<p>键名为"NSUserActivityTypes"，类型设备为数组类型，如下所示：</p>
+
+<p><img src="http://cdn1.raywenderlich.com/wp-content/uploads/2014/10/image17-55-480x233.png" alt="image" /></p>
+
+<p>在NSUserActivityTypes下添加两项并设置类型为字符串。Item 0的值为com.razeware.shopsnap.view，Item 1的值为com.razeware.shopsnap.edit。</p>
+
+<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/10/image18-58-480x85.png" alt="image" /></p>
+
+<p>这些任意的activity类型对于我们的程序来说是特定和唯一的。因为我们将在程序的不同地方引用它们，所以在独立的文件中将其添加为常量是一种好的实践。</p>
+
+<p>在工程导航中右键点击ShopSnap组，选择"New File \ iOS \ Source \ Swift File"。将文件命名为Constants.swift并确保新类被添加到ShopSnap target中。</p>
+
+<p>在类中添加以下代码：</p>
+
+<pre><code>let ActivityTypeView = "com.razeware.shopsnap.view"
+let ActivityTypeEdit = "com.razeware.shopsnap.edit"
+
+let ActivityItemsKey = "shopsnap.items.key"
+let ActivityItemKey  = "shopsnap.item.key"
+</code></pre>
+
+<p>然后我们就可以使用这两个activity类型的常量。同时我们定义一些用于user activity的userInfo字典的键名字符串。</p>
+
+<h3>快速端到端测试</h3>
+
+<p>让我们来运行一个快速端到端测试以确保设备可以正确地通信。</p>
+
+<p>打开ListViewController.swift并添加以下两个函数：</p>
+
+<pre><code>// 1.
+func startUserActivity() {
+  let activity = NSUserActivity(activityType: ActivityTypeView)
+  activity.title = "Viewing Shopping List"
+  activity.userInfo = [ActivityItemsKey: ["Ice cream", "Apple", "Nuts"]]
+  userActivity = activity
+  userActivity?.becomeCurrent()
+}
+
+// 2.
+override func updateUserActivityState(activity: NSUserActivity) {
+  activity.addUserInfoEntriesFromDictionary([ActivityItemsKey: ["Ice cream", "Apple", "Nuts"]])
+  super.updateUserActivityState(activity)
+}
+</code></pre>
+
+<p>我们通过硬编码一个user activity来快速测试，以确保我们可以在另一端正常接收。</p>
+
+<p>上面的代码做了以下两件事：</p>
+
+<ol>
+<li>startUserActivity()是一个辅助函数，它使用一个硬编码的购物清单来创建了一个NSUserActivity实例。然后调用becomeCurrent()来广播这个activity。</li>
+<li>在调用becomeCurrent()后，系统将定期调用updateUserActivityState()。UIViewController从UIResponder类中继承了这个方法，我们应该重写它来更新我们的userActivity的状态。在这里，我们像前面一样使用硬编码来更新购物清单。注意，我们应该使用addUserInfoEntriesFromDictionary方法来修改NSUserActivity的userInfo字典。我们应该总是在方法的结尾调用super.updateUserActivityState()。</li>
+</ol>
+
+
+<p>注意，我们只需要调用上面的起始方法。在viewDidLoad()起始行下面添加以下代码</p>
+
+<pre><code>startUserActivity()
+</code></pre>
+
+<p>开始广播至少需要以上步骤。现在来看看接收者。打开AppDelegate.swift并添加以下代码：</p>
+
+<pre><code>func application(application: UIApplication!, 
+                 continueUserActivity userActivity: NSUserActivity!, 
+                 restorationHandler: (([AnyObject]!) -&gt; Void)!) 
+                 -&gt; Bool {
+
+  let userInfo = userActivity.userInfo as NSDictionary
+  println("Received a payload via handoff: \(userInfo)")
+  return true
+}
+</code></pre>
+
+<p>AppDelegate中的这个方法在所有事情都准备好，且一个userActivity被成功传送后调用。在这里我们简单打印userActivity中的userInfo字典。我们返回true来标识我们处理了user activity。</p>
+
+<p>让我们来试试！要想在两台设备中正常工作，还需要做一些协调工作，所以还得仔细跟着。</p>
+
+<ol>
+<li>在第一台设备上安装并运行程序。</li>
+<li>在第二台设备上安装并运行程序。确保在Xcode中调用程序以便我们能看到打印输出。</li>
+<li><p>按下电源按钮让第二台设备休眠。在同一台设备上，按下Home键。如果所有事件都正常运行，我们应该可以看到ShopSnap程序的icon显示在屏幕的左下角上。从这里我们可以启动程序，然后在Xcode控制台可以看到以下的日志信息：</p>
+
+<p> Received a payload via handoff: {
+     &ldquo;shopsnap.items.key&rdquo; = (
+     &ldquo;Ice cream&rdquo;,
+     Apple,
+     Nuts
+   );
+ }</p></li>
+</ol>
+
+
+<p>如果在锁屏下没有看到程序的icon，则在源设备上关闭并重新打开程序。这将强制系统重新广播信息。同时确认一下设备的控制台以查看是否有来自于Handoff的错误消息。</p>
+
+<p><img src="http://cdn1.raywenderlich.com/wp-content/uploads/2014/10/image20-63-180x320.png" alt="image" /></p>
+
+<h2>创建一个新的Activity</h2>
+
+<p>现在我们有一个基本上可以工作的Handoff程序，是时候来扩展它了。打开ListViewController.swift，更新startUserActivity()方法，这次我们传入实际的购物清单以代码硬编码。使用以下代码来更新方法：</p>
+
+<pre><code>func startUserActivity() {
+  let activity = NSUserActivity(activityType: ActivityTypeView)
+  activity.title = "Viewing Shopping List"
+  activity.userInfo = [ActivityItemsKey: items]
+  userActivity = activity
+  userActivity?.becomeCurrent()
+}
+</code></pre>
+
+<p>同样，更新ListViewController.swift的updateUserActivityState(activity:)方法，传递购物清单数组：</p>
+
+<pre><code>override func updateUserActivityState(activity: NSUserActivity) {
+  activity.addUserInfoEntriesFromDictionary([ActivityItemsKey: items])
+  super.updateUserActivityState(activity)
+}
+</code></pre>
+
+<p>现在，更新ListViewController.swift中的viewDidLoad()，在从前面的代码中成功获取到清单后开启userActivity，如下所示：</p>
+
+<pre><code>override func viewDidLoad() {
+  title = "Shopping List"
+  weak var weakSelf = self
+  PersistentStore.defaultStore().fetchItems({ (items:[String]) in
+    if let unwrapped = weakSelf {
+      unwrapped.items = items
+      unwrapped.tableView.reloadData()
+      if items.isEmpty == false {
+        unwrapped.startUserActivity()
+      }
+    }
+  })
+  super.viewDidLoad()
+}
+</code></pre>
+
+<p>当然，如果程序开始时，清单是空的，则程序不会去广播user activity。我们需要解决这个问题：在用户第一次添加一个购物项到列表时开启user activity。</p>
+
+<p>为了做到这一点，更新ListViewController.swift中代理回调detailViewController(controller:didFinishWithUpdatedItem:)的实现，如下所示：</p>
+
+<pre><code>func detailViewController(#controller: DetailViewController,
+                          didFinishWithUpdatedItem item: String) {
+    // ... some code
+    if !items.isEmpty {
+      startUserActivity()
+    }
+}
+</code></pre>
+
+<p>在此有三种可能：</p>
+
+<ol>
+<li>用于更新一个已存在的购物项</li>
+<li>用户删除一个存在的购物项</li>
+<li>用户添加一个新的购物项</li>
+</ol>
+
+
+<p>现存的代码处理了所有的可能性；我们只需要添加一些检测代码，以在有一个非空的清单时开始一个activity。</p>
+
+<p>在两台设备上编译并运行。此时，我们应该可以在一台设备上添加新的项目，然后将其发送给另外一台设备。</p>
+
+<h3>收尾</h3>
+
+<p>当用户开始添加一个新的项目或编辑一个已存在的项目时，用户可能不是在查看购物清单。所以我们需要停止广播当前activity。同样，当清单中的所有项目被删除时，没有理由去继续广播当前activiry。在ListViewController.swift中添加以下辅助方法：</p>
+
+<pre><code>func stopUserActivity() {
+  userActivity?.invalidate()
+}
+</code></pre>
+
+<p>在stopUserActivity()中，我们废止已存在的NSUserActivity。这让handoff停止广播。</p>
+
+<p>现在有了stopUserActivity()，是时候在适当的地方调用它了。</p>
+
+<p>在ListViewController.swift中，更新prepareForSegue(segue:, sender:)方法的实现，如下所示：</p>
+
+<pre><code>override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject!) {
+    // ... some code
+    stopUserActivity()
+}
+</code></pre>
+
+<p>当用户选择一行或者点击添加按钮时，ListViewController准备导航到详情视图。我们废弃当前的清单查看activity。</p>
+
+<p>在同一文件中，更新tableView(_:commitEditingStyle:forRowAtIndexPath:)的实现，如下所示：</p>
+
+<pre><code>override func tableView(tableView: UITableView, 
+                        commitEditingStyle editingStyle: UITableViewCellEditingStyle,
+                        forRowAtIndexPath indexPath: NSIndexPath) {
+  // ... some code
+  if items.isEmpty {
+    stopUserActivity()
+  } else {
+    userActivity?.needsSave = true
+  }
+}
+</code></pre>
+
+<p>当用户从清单中删除一项时，我们需要相应地更新user activity。如果移除清单中的所有项目，我们停止广播。否则，我们设置userActivity的needsSave属性为true。当我们这样做时，系统会立即回调updateUserActivityState(activity:)，在这里我们会更新userActivity。</p>
+
+<p>结束这一节之前，还有一种情况需要考虑，用户点击取消按钮，然后从DetailViewController中返回。这触发了一个已存在的场景。我们需要重新开始userActivity。更新unwindDetailViewController(unwindSegue:)的实现，如下所示：</p>
+
+<pre><code>@IBAction func unwindDetailViewController(unwindSegue: UIStoryboardSegue) {
+  // ... some code
+  startUserActivity()
+}
+</code></pre>
+
+<p>编译并运行，确保所有事情运行正常。尝试添加一些项目到清单中，确保它们在设备间传输。</p>
+
+<h2>创建一个编辑Activity</h2>
+
+<p>接下来，我们以类似的方式来处理DetailViewController。这一次，我们广播另一个activity类型。</p>
+
+<p>打开DetailViewController.swift并修改textFieldDidBeginEditing(textField:)，如下所示：</p>
+
+<pre><code>func textFieldDidBeginEditing(textField: UITextField!) {
+  // Broadcast what we have, if there is anything!
+  let activity = NSUserActivity(activityType: ActivityTypeEdit)
+  activity.title = "Editing Shopping List Item"
+  let activityItem = (countElements(textField.text!) &gt; 0) ? textField.text : ""
+  activity.userInfo = [ActivityItemKey: activityItem]
+  userActivity = activity
+  userActivity?.becomeCurrent()
+}
+</code></pre>
+
+<p>上面的方法使用项目的字符串的当前内容创建一个“编辑”activity。</p>
+
+<p>当用户继续编辑项目时，我们需要更新user activity。仍然是在DetailViewController.swift中，更新textFieldTextDidChange(notification:)的实现，如下所示：</p>
+
+<pre><code>func textFieldTextDidChange(notification: NSNotification) {
+  if let text = textField!.text {
+    item = text
+  }
+
+  userActivity?.needsSave = true
+}
+</code></pre>
+
+<p>现在我们已经标记了activity需要更新，接下来实现updateUserActivityState(activity:)，以备系统的更新需求：</p>
+
+<pre><code>override func updateUserActivityState(activity: NSUserActivity) {
+  let activityListItem = (countElements(textField!.text!) &gt; 0) ? textField!.text : ""
+  activity.addUserInfoEntriesFromDictionary([ActivityItemKey: activityListItem])
+  super.updateUserActivityState(activity)
+}
+</code></pre>
+
+<p>这里我们简单地更新了当前项为文本输入框中的文本。</p>
+
+<p>编译并运行。此时，如果我们在一个设备中开始添加一个新项或编辑已存在的项目，我们可以将编辑进程同步给另一个设备。</p>
+
+<h3>收尾</h3>
+
+<p>因为needsSave是一个轻量级的操作，在上面的代码中，你可以根据需要来设置它，然后在每次按键时更新userInfo。</p>
+
+<p>这里有一个小细节你可能已经注意到了。视图控制器在iPad和iPhone的景观模式下中是一个分离视图。这样可以在清单的项目间切换而不需要收起键盘。这种情况发生时，textFieldDidBeginEditing(textField:)方法不会被调用，导致我们的user activity不会更新为新的文本。</p>
+
+<p>为了解决这个问题，更新DetailViewController.swift中item属性的didSet观察者，如下所示：</p>
+
+<pre><code>var item: String? {
+  didSet {
+    if let textField = self.textField {
+      textField.text = item
+    }
+    if let activity = userActivity {
+      activity.needsSave = true
+    }
+  }
+}
+</code></pre>
+
+<p>当用户点击ListViewController中的一个项目时，DetailViewController的item属性被设置。一个简单解决方案是让视图控制器知道，在项目更新时它必须更新activity。</p>
+
+<p>最后，当用户离开DetailViewController时，我们需要废止userActivity，以让编辑activity不再被广播。</p>
+
+<p>在DetailViewController.swift的textFieldShouldReturn(_:)方法的起始位置添加以下代码：</p>
+
+<pre><code>userActivity?.invalidate()
+</code></pre>
+
+<p>编译并运行程序，确保程序工作正常。接下来，我们将处理接收的activity。</p>
+
+<h2>接收Activity</h2>
+
+<p>当用户通过Handoff启动程序时，处理接收的NSUserActivity的任务大部分是由程序的delegate来完成的。</p>
+
+<p>假设所有事情运行正常，数据成功传输，iOS会调用application(_:continueUserActivity:restorationHandler:)方法。这是我们与NSUserActivity实例交互的第一次机会。</p>
+
+<p>我们在前面的章节中已经有一个该方法的实现了。现在，我们做如下修改：</p>
+
+<pre><code>func application(application: UIApplication!, 
+                 continueUserActivity userActivity: NSUserActivity!,
+                 restorationHandler: (([AnyObject]!) -&gt; Void)!)
+                 -&gt; Bool {
+
+  if let window = self.window {
+    window.rootViewController?.restoreUserActivityState(userActivity)
+  }
+  return true
+}
+</code></pre>
+
+<p>我们将userActivity传递给程序的window对象的rootViewController，然后返回true。这告诉系统成功处理了Handoff行为。从这里开始，我们将自己转发调用并恢复activity。</p>
+
+<p>我们在rootViewController中调用的方法是restoreUserActivityState(activity:)。这是在UIResponder中声明的一个标准方法。系统使用这个方法来告诉接收者恢复一个NSUserActivivty实例。</p>
+
+<p>我们现在的任务是沿着视图控制器架构往下，将activity从父视图控制器传递到子视图控制器，直到到达需要使用activity的地方：</p>
+
+<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/10/image22-691-700x360.png" alt="image" /></p>
+
+<p>根视图控制器是一个TraitOverrideViewController对象，它的任务是管理程序的size classes；它对我们的user activity不感兴趣。打开TraitOverrideViewController.swift并添加以下代码：</p>
+
+<pre><code>override func restoreUserActivityState(activity: NSUserActivity) {
+  let nextViewController = childViewControllers.first as UIViewController
+  nextViewController.restoreUserActivityState(activity)
+  super.restoreUserActivityState(activity)
+}
+</code></pre>
+
+<p>在这里，我们获取TraitOverrideViewController的第一个子视图控制器，然后将activity往下传递。这样做是安全的，因为我们知道程序的视图控制器只包含一个子视图控制器。</p>
+
+<p>层级架构中的下一个视图控制器是SplitViewController，在这里事情会变得更有趣一些。</p>
+
+<p>打开SplitViewController.swift并添加以下代码：</p>
+
+<pre><code>override func restoreUserActivityState(activity: NSUserActivity) {
+  // What type of activity is it?
+  let activityType = activity.activityType
+
+  // This is an activity for ListViewController.
+  if activityType == ActivityTypeView {
+    let controller = viewControllerForViewing()
+    controller.restoreUserActivityState(activity)
+
+  } else if activityType == ActivityTypeEdit {
+    // This is an activity for DetailViewController.
+    let controller = viewControllerForEditing()
+    controller.restoreUserActivityState(activity)
+  }
+
+  super.restoreUserActivityState(activity)
+}
+</code></pre>
+
+<p>SplitViewController知道ListViewController和DetailViewController。如果NSUserActivity是一个列表查看activity类型，则将其传递给ListViewController；否则，如果是一个编辑activity类型，则传递给DetailViewController。</p>
+
+<p>我们将所有的activity传递给正确的对象，现在是时候从这些activity中获取数据了。</p>
+
+<p>打开ListViewController.swift并实现restoreUserActivityState(activity:)，如下所示：</p>
+
+<pre><code>override func restoreUserActivityState(activity: NSUserActivity) {
+  // Get the list of items.
+  if let userInfo = activity.userInfo {
+    if let importedItems = userInfo[ActivityItemsKey] as? NSArray {
+      // Merge it with what we have locally and update UI.
+      for anItem in importedItems {
+        addItemToItemsIfUnique(anItem as String)
+      }
+      PersistentStore.defaultStore().updateStoreWithItems(items)
+      PersistentStore.defaultStore().commit()
+      tableView.reloadData()
+    }
+  }
+  super.restoreUserActivityState(activity)
+}
+</code></pre>
+
+<p>在上面的方法中，我们终于可以继续一个查看activity了。因为我们需要维护一个唯一的购物清单时，我们只需要将这些唯一的项目添加到本地列表中，然后保存并更新UI。</p>
+
+<p>编译并运行。现在我们可以看到通过Handoff从另一台设备上同步过来的清单数据了。</p>
+
+<p>编辑activity以类似的方法来处理。打开DetailViewController.swift并实现restoreUserActivityState(activity:)，如下所示：</p>
+
+<pre><code>override func restoreUserActivityState(activity: NSUserActivity) {
+  if let userInfo = activity.userInfo {
+    var activityItem: AnyObject? = userInfo[ActivityItemKey]
+    if let itemToRestore = activityItem as? String {
+      item = itemToRestore
+      textField?.text = item
+    }
+  }
+  super.restoreUserActivityState(activity)
+}
+</code></pre>
+
+<p>这里获取编辑activity的信息并更新文本域的内容。</p>
+
+<p>编译并运行，查看运行结果！</p>
+
+<h3>收尾</h3>
+
+<p>当用户在另一台设备上点击程序的icon以表明他们想要继续一个user activity时，系统启动相应的程序。一旦程序启动后，系统调用application(_, willContinueUserActivityWithType:)方法。打开AppDelegate.swift并添加以下方法：</p>
+
+<pre><code>func application(application: UIApplication,
+                 willContinueUserActivityWithType userActivityType: String!)
+                 -&gt; Bool {
+  return true
+}
+</code></pre>
+
+<p>到这里，我们的程序已经下载了NSUserActivity实例及其userInfo有效载荷。现在我们只是简单返回true。这强制程序在每次用户初始Handoff进程时接收activity。如果想要通知用户activity正在处理，则这是个好地方。</p>
+
+<p>到这里，系统开始将数据从一台设备同步到另一台设备上。我们已经覆盖了任务正常运行的所有情况。但是可以想象Handoff的activity在某些情况下会失败。</p>
+
+<p>将以下方法添加到AppDelegate.swift中来处理这种情况：</p>
+
+<pre><code>func application(application: UIApplication!, 
+                 didFailToContinueUserActivityWithType userActivityType: String!,
+                 error: NSError!) {
+
+  if error.code != NSUserCancelledError {
+    let message = "The connection to your other device may have been interrupted. Please try again. \(error.localizedDescription)"
+    let alertView = UIAlertView(title: "Handoff Error", message: message, delegate: nil, cancelButtonTitle: "Dismiss")
+    alertView.show()
+  }
+}
+</code></pre>
+
+<p>如果我们接收到除了NSUserCancelledError之外的任何信息，则发生了某些错误，且我们不能恢复activity。在这种情况下，我们显示一个适当的消息给用户。然而，如果用户显示取消Handoff行为，则在这里我们不需要做任何事情，只需要放弃操作。</p>
+
+<h2>版本支持</h2>
+
+<p>使用Handoff的最佳实践之一是版本化。处理这的一个策略是为每个发送的Handoff添加一个版本号，并且只接收来自这个版本号(或者更早的)handoff。让我们来试试。</p>
+
+<p>打开Constants.swift并添加以下常量：</p>
+
+<pre><code>let ActivityVersionKey = "shopsnap.version.key"
+let ActivityVersionValue = "1.0"
+</code></pre>
+
+<p>上面的版本键名和值是我们为这个版本的程序随意挑选的键值对。</p>
+
+<p>如果我们回顾一下上面的章节，系统会定期并自动调用restoreUserActivityState(activity:)方法。这个方法的实现聚集于并限定于实现它的对象的范围内。例如，ListViewController重写了这个方法来更新带有购物清单的userActivity，而DetailViewController的实现是更新当前正在被编辑的项目。</p>
+
+<p>如果涉及到的东西对于userActivity来说是通用的，可用于所有的user activity，如版本号，则处理它的最好的地方就是在AppDelegate中了。</p>
+
+<p>任何时候调用restoreUserActivityState(activity:)，系统都会紧接着调用程序delegate的application(application:, didUpdateUserActivity userActivity:)方法。我们使用这个方法来为我们的Handoff添加版本支持。</p>
+
+<p>打开AppDelegate.swift并添加以下代码：</p>
+
+<pre><code>func application(application: UIApplication, 
+                 didUpdateUserActivity userActivity: NSUserActivity) {
+  userActivity.addUserInfoEntriesFromDictionary([ActivityVersionKey: ActivityVersionValue])
+}
+</code></pre>
+
+<p>在这里我们简单地使用了程序的版本号来更新了userInfo字典。</p>
+
+<p>仍然是在AppDelegate.swift中，更新application(_:, continueUserActivity: restorationHandler:)的实现，如下所示：</p>
+
+<pre><code>func application(application: UIApplication!,
+                 continueUserActivity userActivity: NSUserActivity!,
+                 restorationHandler: (([AnyObject]!) -&gt; Void)!)
+                 -&gt; Bool {
+
+  if let userInfo: NSDictionary = userActivity.userInfo {
+    if let version = userInfo[ActivityVersionKey] as? String {
+      // Pass it on.
+      if let window = self.window {
+        window.rootViewController?.restoreUserActivityState(userActivity)
+      }
+      return true
+    }
+  }
+  return false
+}
+</code></pre>
+
+<p>在这里我们检查userAcitivty的版本，只有当版本号与我们知道的相匹配时才传递。编译并运行，确保程序运行正常。</p>
+
+<h2>Handoff最佳实践</h2>
+
+<p>在结束之前，我们来看看Handoff的最佳实践：</p>
+
+<ol>
+<li><p>NSURL：在NSUserActivity的userInfo字典中使用NSURL有点棘手。唯一可以安全地在Handoff中传输的NSURLs是使用HTTP/HTTPS和iCloud文档的web网址。我们不能传递本地文件的URL，因为在接收者端，接收者不能正确地转换并映射这些URL。传输文件链接的最好的方式是传递相对路径，然后在接收者端重新构建我们的URL。</p></li>
+<li><p>平台特定值：避免使用平台特定值，如滑动视图的内容偏移量；更好的方法是使用相对位置。例如，如果用户查看table view中的一些项目时，在我们的user activity中传递table view最上面的可视项的index path，而不是传递table view可视区域的内容偏移量。</p></li>
+<li><p>版本：想想在程序中使用版本和将来的更新。我们可以在程序的未来版本中添加一些新数据格式或者从userInfo字典中移除值。版本让我们可以理好地控制我们的user activity在当前和将来版本的程序中的行为。</p></li>
+</ol>
+
+
+<h2>下一步是哪</h2>
+
+<p>这里是<a href="http://cdn5.raywenderlich.com/wp-content/uploads/2014/10/ShopSnap-Final.zip">示例工程</a>的最终版本。</p>
+
+<p>如果想了解更多的关于Handoff，流和基于文档的Handoff，则可以查看Handoff的开发文档<a href="https://developer.apple.com/library/prerelease/ios/documentation/UserExperience/Conceptual/Handoff/HandoffFundamentals/HandoffFundamentals.html">Apple’s Handoff Programming Guide</a>以获取更多的信息。</p>
+
+<p>如果喜欢这篇文章，则可以下载我们的书<a href="http://www.raywenderlich.com/store/ios-8-by-tutorials">iOS 8 by Tutorials</a>，这里塞满了这样的教程。</p>
+
+<p>如果有更多的总量或关于这篇文章的评论，那么可以加入下面的讨论。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[NSCache]]></title>
@@ -1634,645 +2265,6 @@ initWithCoder:和encodeWithCoder:。如果我们的对象需要支持归档操�
 <li><a href="http://www.cocoachina.com/ios/20150104/10826.html">NSObject的load和initialize方法</a></li>
 <li><a href="http://southpeak.github.io/blog/2014/11/03/objective-c-runtime-yun-xing-shi-zhi-san-:fang-fa-yu-xiao-xi-zhuan-fa/">Objective-C Runtime 运行时之三：方法与消息</a></li>
 <li>《Effective Objective-C 2.0》</li>
-</ol>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[工具篇：LLDB调试器]]></title>
-    <link href="http://southpeak.github.io/blog/2015/01/25/gong-ju-pian-:lldbdiao-shi-qi/"/>
-    <updated>2015-01-25T21:33:25+08:00</updated>
-    <id>http://southpeak.github.io/blog/2015/01/25/gong-ju-pian-:lldbdiao-shi-qi</id>
-    <content type="html"><![CDATA[<p>随着Xcode 5的发布，LLDB调试器已经取代了GDB，成为了Xcode工程中默认的调试器。它与LLVM编译器一起，带给我们更丰富的流程控制和数据检测的调试功能。LLDB为Xcode提供了底层调试环境，其中包括内嵌在Xcode IDE中的位于调试区域的控制面板，在这里我们可以直接调用LLDB命令。如图1所示：</p>
-
-<p>图1：位于Xcode调试区域的控制台</p>
-
-<p><img src="https://developer.apple.com/library/mac/documentation/IDEs/Conceptual/gdb_to_lldb_transition_guide/art/lldb_in_xc5_command_window_2x.png" alt="image" /></p>
-
-<p>在本文中，我们主要整理一下LLDB调试器提供给我们的调试命令，更详细的内容可以查看<a href="http://lldb.llvm.org/tutorial.html">The LLDB Debugger</a>。</p>
-
-<h2>LLDB命令结构</h2>
-
-<p>在使用LLDB前，我们需要了解一下LLDB的命令结构及语法，这样可以尽可能地挖掘LLDB的潜能，以帮助我们更充分地利用它。</p>
-
-<p>LLDB命令的语法有其通用结构，通常是以下形式的：</p>
-
-<pre><code>&lt;command&gt; [&lt;subcommand&gt; [&lt;subcommand&gt;...]] &lt;action&gt; [-options [option-value]] [argument [argument...]]
-</code></pre>
-
-<p>其中：</p>
-
-<ol>
-<li>&lt;command>(命令)和&lt;subcommand>(子命令)：LLDB调试命令的名称。命令和子命令按层级结构来排列：一个命令对象为跟随其的子命令对象创建一个上下文，子命令又为其子命令创建一个上下文，依此类推。</li>
-<li>&lt;action>：我们想在前面的命令序列的上下文中执行的一些操作。</li>
-<li>&lt;options>：行为修改器(action modifiers)。通常带有一些值。</li>
-<li>&lt;argument>：根据使用的命令的上下文来表示各种不同的东西。</li>
-</ol>
-
-
-<p>LLBD命令行的解析操作在执行命令之前完成。上面的这些元素之间通过空格来分割，如果某一元素自身含有空格，则可以使用双引用。而如果元素中又包含双引号，则可以使用反斜杠；或者元素使用单引号。如下所示：</p>
-
-<pre><code>(lldb) command [subcommand] -option "some \"quoted\" string"
-(lldb) command [subcommand] -option 'some "quoted" string'
-</code></pre>
-
-<p>这种命令解析设计规范了LLDB命令语法，并对所有命令做了个统一。</p>
-
-<h3>命令选项</h3>
-
-<p>LLDB中的命令选项有规范形式和缩写形式两种格式。以设置断点的命令breakpoint set为例，以下列表了其部分选项的格式，其中括号中的是规范形式：</p>
-
-<pre><code>breakpoint set
-   -M &lt;method&gt; ( --method &lt;method&gt; )
-   -S &lt;selector&gt; ( --selector &lt;selector&gt; )
-   -b &lt;function-name&gt; ( --basename &lt;function-name&gt; )
-   -f &lt;filename&gt; ( --file &lt;filename&gt; )
-   -l &lt;linenum&gt; ( --line &lt;linenum&gt; )
-   -n &lt;function-name&gt; ( --name &lt;function-name&gt; )
-…
-</code></pre>
-
-<p>各选项的顺序是任意的。如果后面的参数是以"&ndash;&ldquo;开头的，则在选项后面添加&rdquo;&mdash;&ldquo;作为选项的终止信号，以告诉LLDB我们处理的选项的正确位置。如下命令所示：</p>
-
-<pre><code>(lldb) process launch --stop-at-entry -- -program_arg_1 value -program_arg_2 value
-</code></pre>
-
-<p>如上所示，命令的选项是&mdash;stop-at-entry，参数是-program_arg_1和-program_arg_2，我们使用"&mdash;&ldquo;将选项与参数作一下区分。</p>
-
-<h3>原始命令</h3>
-
-<p>LLDB命令解析器支持"原始(raw)&ldquo;命令，即没有命令选项，命令字符串的剩余部分未经解析就传递给命令。例如，expression就是一个原始命令。</p>
-
-<p>不过原始命令也可以有选项，如果命令字符串中有虚线，则在命令名与命令字符串之间放置一个选项结束符(&mdash;)来表明没有命令标记。</p>
-
-<p>我们可以通过help命令的输出来查看一个命令是否是原始命令。</p>
-
-<h3>命令补全(Command Completion)</h3>
-
-<p>LLDB支持源文件名，符号名，文件名，等等的命令补全(Commmand Completion)。终端窗口中的补全是通过在命令行中输入一个制表符来初始化的。Xcode控制台中的补全与在源码编辑器中的补全方式是一样的：补全会在第三个字符被键入时自动弹出，或者通过Esc键手动弹出。</p>
-
-<p>一个命令中的私有选项可以有不同的完成者(completers)。如breakpoint中的&mdash;file <path>选项作为源文件的完成者，&mdash;shlib <path>选项作为当前加载的库的完成者，等等。这些行为是特定的，例如，如果指定&mdash;shlib <path>，且以&mdash;file <path>结尾，则LLDB只会列出由&mdash;shlib <path>指定的共享类库。</p>
-
-<h3>Python脚本</h3>
-
-<p>对于高级用户来说，LLDB有一个内置的Python解析器，可以通过脚本命令来访问。调试器中的所有特性在Python解析器中都可以作为类来访问。这样，我们就可以使用LLDB-Python库来写Python函数，并通过脚本将其加载到运行会话中，以执行一些更复杂的调试操作。</p>
-
-<h2>在命令行中调试程序</h2>
-
-<p>通常我们都是在Xcode中直接使用LLDB调试器，Xcode会帮我们完成很多操作。当然，如果我们想让自己看着更Bigger，或者想了解下调试器具体的一些流程，就可以试试直接在终端使用LLDB命令来调试程序。在终端中使用LLDB调试器，我们需要了解以下内容：</p>
-
-<ol>
-<li>加载程序以备调试</li>
-<li>将一个运行的程序绑定到LLDB</li>
-<li>设置断点和观察点</li>
-<li>控制程序的执行</li>
-<li>在调试的程序中导航</li>
-<li>检查状态和值的变量</li>
-<li>执行替代代码</li>
-</ol>
-
-
-<p>了解在终端中这些操作是如何进行的，可以帮助我们更深入的了解调试器在Xcode中是如何运作的。下面我们分步来介绍一下。</p>
-
-<h3>指定需要调试的程序</h3>
-
-<p>首先我们需要设置需要调试的程序。我们可以使用如下命令做到这一点：</p>
-
-<pre><code>$ lldb /Projects/Sketch/build/Debug/Sketch.app 
-Current executable set to '/Projects/Sketch/build/Debug/Sketch.app' (x86_64).
-</code></pre>
-
-<p>或者在运行lldb后，使用file命令来处理，如下所示：</p>
-
-<pre><code>$ lldb 
-(lldb) file /Projects/Sketch/build/Debug/Sketch.app 
-Current executable set to '/Projects/Sketch/build/Debug/Sketch.app' (x86_64).
-</code></pre>
-
-<h3>设置断点</h3>
-
-<p>在设置完程序后，我们可能想设置一点断点来调试程序。此时我们可以使用breakpoint set命令来设置断点，这个命令简单、直观，且有智能补全，接下来我们看看它的具体操作。</p>
-
-<p>如果想在某个文件中的某行设置一个断点，可使用以下命令：</p>
-
-<pre><code>(lldb) breakpoint set --file foo.c --line 12
-</code></pre>
-
-<p>如果想给某个函数设置断点，可使用以下命令：</p>
-
-<pre><code>(lldb) breakpoint set --name foo
-</code></pre>
-
-<p>如果想给C++中所有命名为foo的方法设置断点，可以使用以下命令：</p>
-
-<pre><code>(lldb) breakpoint set --method foo
-</code></pre>
-
-<p>如果想给Objective-C中所有命名为alignLeftEdges:的选择器设置断点，则可以使用以下命令：</p>
-
-<pre><code>(lldb) breakpoint set --selector alignLeftEdges:
-</code></pre>
-
-<p>我们可以使用&mdash;shlib &lt;path>来将断点限定在一个特定的可执行库中：</p>
-
-<pre><code>(lldb) breakpoint set --shlib foo.dylib --name foo
-</code></pre>
-
-<p>看吧，断点设置命令还是很强大的。</p>
-
-<p>如果我们想查看程序中所有的断点，则可以使用breakpoint list命令，如下所示：</p>
-
-<pre><code>(lldb) breakpoint list
-Current breakpoints:
-1: name = 'alignLeftEdges:', locations = 1, resolved = 1
-  1.1: where = Sketch`-[SKTGraphicView alignLeftEdges:] + 33 at /Projects/Sketch/SKTGraphicView.m:1405, address = 0x0000000100010d5b, resolved, hit count = 0
-</code></pre>
-
-<p>从上面的输出结果可以看出，一个断点一般有两部分：</p>
-
-<ol>
-<li>断点的逻辑规范，这一部分是用户提供给breakpoint set命令的。</li>
-<li>与规范匹配的断点的位置。</li>
-</ol>
-
-
-<p>如上所示，通过"breakpoint set &mdash;selector alignLeftEdges:&ldquo;设置的断点，其信息中会显示出所有alignLeftEdges:方法的位置。</p>
-
-<p>breakpoint list命令输出列表显示每个逻辑断点都有一个整数标识，如上所示断点标识为1。而每个位置也会有一个标识，如上所示的1.1。</p>
-
-<p>输出列表中另一个信息是断点位置是否是已解析的(resolved)。这个标识表示当与之相关的文件地址被加载到程序进行调试时，其位置是已解析的。例如，如果在共享库中设置的断点之后被卸载了，则断点的位置还会保留，但其不能再被解析。</p>
-
-<p>不管是逻辑断点产生的所有位置，还是逻辑断点解析的任何特定位置，我们都可以使用断点触发命令来对其进行删除、禁用、设置条件或忽略计数操作。例如，如果我们想添加一个命令，以在LLDB命中断点1.1时打印跟踪栈，则可以执行以下命令</p>
-
-<pre><code>(lldb) breakpoint command add 1.1
-Enter your debugger command(s). Type 'DONE' to end.
-&gt; bt
-&gt; DONE
-</code></pre>
-
-<p>如果想更详细地了解"breakpoint command add"命令的使用，可以使用help帮助系统来查看。</p>
-
-<h3>设置观察点</h3>
-
-<p>作为断点的补充，LLDB支持观察点以在不中断程序运行的情况下监测一些变量。例如，我们可以使用以下命令来监测名为global的变量的写操作，并在(global==5)为真时停止监测：</p>
-
-<pre><code>(lldb) watch set var global
-Watchpoint created: Watchpoint 1: addr = 0x100001018 size = 4 state = enabled type = w
-   declare @ '/Volumes/data/lldb/svn/ToT/test/functionalities/watchpoint/watchpoint_commands/condition/main.cpp:12'
-(lldb) watch modify -c '(global==5)'
-(lldb) watch list
-Current watchpoints:
-Watchpoint 1: addr = 0x100001018 size = 4 state = enabled type = w
-    declare @ '/Volumes/data/lldb/svn/ToT/test/functionalities/watchpoint/watchpoint_commands/condition/main.cpp:12'
-    condition = '(global==5)'
-(lldb) c
-Process 15562 resuming
-(lldb) about to write to 'global'...
-Process 15562 stopped and was programmatically restarted.
-Process 15562 stopped and was programmatically restarted.
-Process 15562 stopped and was programmatically restarted.
-Process 15562 stopped and was programmatically restarted.
-Process 15562 stopped
-* thread #1: tid = 0x1c03, 0x0000000100000ef5 a.out`modify + 21 at main.cpp:16, stop reason = watchpoint 1
-    frame #0: 0x0000000100000ef5 a.out`modify + 21 at main.cpp:16
-   13
-   14      static void modify(int32_t &amp;var) {
-   15          ++var;
--&gt; 16      }
-   17
-   18      int main(int argc, char** argv) {
-   19          int local = 0;
-(lldb) bt
-* thread #1: tid = 0x1c03, 0x0000000100000ef5 a.out`modify + 21 at main.cpp:16, stop reason = watchpoint 1
-    frame #0: 0x0000000100000ef5 a.out`modify + 21 at main.cpp:16
-    frame #1: 0x0000000100000eac a.out`main + 108 at main.cpp:25
-    frame #2: 0x00007fff8ac9c7e1 libdyld.dylib`start + 1
-(lldb) frame var global
-(int32_t) global = 5
-(lldb) watch list -v
-Current watchpoints:
-Watchpoint 1: addr = 0x100001018 size = 4 state = enabled type = w
-    declare @ '/Volumes/data/lldb/svn/ToT/test/functionalities/watchpoint/watchpoint_commands/condition/main.cpp:12'
-    condition = '(global==5)'
-    hw_index = 0  hit_count = 5     ignore_count = 0
-(lldb)
-</code></pre>
-
-<p>可以使用help watchpoint来查看该命令的使用。</p>
-
-<h3>使用LLDB来启动程序</h3>
-
-<p>一旦指定了调试哪个程序，并为其设置了一些断点后，就可以开始运行程序了。我们可以使用以下命令来启动程序：</p>
-
-<pre><code>(lldb) process launch
-(lldb) run
-(lldb) r
-</code></pre>
-
-<p>我们同样可以使用进程ID或进程名来连接一个已经运行的程序。当使用名称来连接一个程序时，LLDB支持&mdash;waitfor选项。这个选项告诉LLDB等待下一个名称为指定名称的程序出现，然后连接它。例如，下面3个命令都是用于连接Sketch程序(假定其进程ID为123)：</p>
-
-<pre><code>(lldb) process attach --pid 123
-(lldb) process attach --name Sketch
-(lldb) process attach --name Sketch --waitfor
-</code></pre>
-
-<p>启动或连接程序后，进程可能由于某些原因而停止，如：</p>
-
-<pre><code>(lldb) process attach -p 12345
-Process 46915 Attaching
-Process 46915 Stopped
-1 of 3 threads stopped with reasons:
-* thread #1: tid = 0x2c03, 0x00007fff85cac76a, where = libSystem.B.dylib`__getdirentries64 + 10,
-stop reason = signal = SIGSTOP, queue = com.apple.main-thread
-</code></pre>
-
-<p>注意“1 of 3 threads stopped with reasons:”及其下面一行。在多线程环境下，在内核实际返回控制权给调试器前，可能会有多个线程命中同一个断点。在这种情况下，我们可以在停止信息中看到所有因此而停止的线程。</p>
-
-<h3>控制程序</h3>
-
-<p>启动程序后，LLDB允许程序在到达断点前继续运行。LLDB中流程控制的命令都在thread命令层级中。如下所示：</p>
-
-<pre><code>(lldb) thread continue
-Resuming thread 0x2c03 in process 46915
-Resuming process 46915
-</code></pre>
-
-<p>另外，还有以下命令：</p>
-
-<pre><code>(lldb) thread step-in // The same as "step" or "s" in GDB.
-(lldb) thread step-over // The same as "next" or "n" in GDB.
-(lldb) thread step-out // The same as "finish" or "f" in GDB.
-(lldb) thread step-inst // The same as "stepi" / "si" in GDB.
-(lldb) thread step-over-inst // The same as "nexti" / "ni" in GDB.
-</code></pre>
-
-<p>LLDB还提供了run until line按步调度模式，如：</p>
-
-<pre><code>lldb) thread until 100
-</code></pre>
-
-<p>这条命令会运行线程，直到当前frame到达100行。如果代码在运行的过程中跳过了100行，则当frame被弹出栈后终止执行。</p>
-
-<h3>查看线程状态</h3>
-
-<p>在进程停止后，LLDB会选择一个当前线程和线程中当前帧(frame)。很多检测状态的命令可以用于这个线程或帧。</p>
-
-<p>为了检测进程的当前状态，可以从以下命令开始：</p>
-
-<pre><code>(lldb) thread list
-Process 46915 state is Stopped
-* thread #1: tid = 0x2c03, 0x00007fff85cac76a, where = libSystem.B.dylib`__getdirentries64 + 10, stop reason = signal = SIGSTOP, queue = com.apple.main-thread
-  thread #2: tid = 0x2e03, 0x00007fff85cbb08a, where = libSystem.B.dylib`kevent + 10, queue = com.apple.libdispatch-manager
-  thread #3: tid = 0x2f03, 0x00007fff85cbbeaa, where = libSystem.B.dylib`__workq_kernreturn + 10
-</code></pre>
-
-<p>星号(*)表示thread #1为当前线程。为了获取线程的跟踪栈，可以使用以下命令：</p>
-
-<pre><code>(lldb) thread backtrace
-
-thread #1: tid = 0x2c03, stop reason = breakpoint 1.1, queue = com.apple.main-thread
- frame #0: 0x0000000100010d5b, where = Sketch`-[SKTGraphicView alignLeftEdges:] + 33 at /Projects/Sketch/SKTGraphicView.m:1405
- frame #1: 0x00007fff8602d152, where = AppKit`-[NSApplication sendAction:to:from:] + 95
- frame #2: 0x00007fff860516be, where = AppKit`-[NSMenuItem _corePerformAction] + 365
- frame #3: 0x00007fff86051428, where = AppKit`-[NSCarbonMenuImpl performActionWithHighlightingForItemAtIndex:] + 121
- frame #4: 0x00007fff860370c1, where = AppKit`-[NSMenu performKeyEquivalent:] + 272
- frame #5: 0x00007fff86035e69, where = AppKit`-[NSApplication _handleKeyEquivalent:] + 559
- frame #6: 0x00007fff85f06aa1, where = AppKit`-[NSApplication sendEvent:] + 3630
- frame #7: 0x00007fff85e9d922, where = AppKit`-[NSApplication run] + 474
- frame #8: 0x00007fff85e965f8, where = AppKit`NSApplicationMain + 364
- frame #9: 0x0000000100015ae3, where = Sketch`main + 33 at /Projects/Sketch/SKTMain.m:11
- frame #10: 0x0000000100000f20, where = Sketch`start + 52
-</code></pre>
-
-<p>如果想查看所有线程的调用栈，则可以使用以下命令：</p>
-
-<pre><code>(lldb) thread backtrace all
-</code></pre>
-
-<h3>查看调用栈状态</h3>
-
-<p>检查帧参数和本地变量的最简便的方式是使用frame variable命令：</p>
-
-<pre><code>(lldb) frame variable
-self = (SKTGraphicView *) 0x0000000100208b40
-_cmd = (struct objc_selector *) 0x000000010001bae1
-sender = (id) 0x00000001001264e0
-selection = (NSArray *) 0x00000001001264e0
-i = (NSUInteger) 0x00000001001264e0
-c = (NSUInteger) 0x00000001001253b0
-</code></pre>
-
-<p>如果没有指定任何变量名，则会显示所有参数和本地变量。如果指定参数名或变量名，则只打印指定的值。如：</p>
-
-<pre><code>(lldb) frame variable self
-(SKTGraphicView *) self = 0x0000000100208b40
-</code></pre>
-
-<p>frame variable命令不是一个完全的表达式解析器，但它支持一些简单的操作符，如&amp;,*,&ndash;>,[]。这个数组括号可用于指针，以将指针作为数组处理。如下所示：</p>
-
-<pre><code>(lldb) frame variable *self
-(SKTGraphicView *) self = 0x0000000100208b40
-(NSView) NSView = {
-(NSResponder) NSResponder = {
-...
-
-(lldb) frame variable &amp;self
-(SKTGraphicView **) &amp;self = 0x0000000100304ab
-
-(lldb) frame variable argv[0]
-(char const *) argv[0] = 0x00007fff5fbffaf8 "/Projects/Sketch/build/Debug/Sketch.app/Contents/MacOS/Sketch"
-</code></pre>
-
-<p>frame variable命令会在变量上执行"对象打印"操作。目前，LLDB只支持Objective-C打印，使用的是对象的description方法。</p>
-
-<p>如果想查看另外一帧，可以使用frame select命令，如下所示：</p>
-
-<pre><code>(lldb) frame select 9
-frame #9: 0x0000000100015ae3, where = Sketch`function1 + 33 at /Projects/Sketch/SKTFunctions.m:11
-</code></pre>
-
-<h3>小结</h3>
-
-<p>以上所介绍的命令可以让我们在终端中直接调试程序。当然，很多命令也可以在Xcode中直接使用。这些命令可以让我们了解程序运行的状态，当然有些状态可以在Xcode中了解到。建议在调试过程中，可以多使用这些命令。</p>
-
-<p>如果想了解这一过程中使用的各种命令，可以查看<a href="https://developer.apple.com/library/mac/documentation/IDEs/Conceptual/gdb_to_lldb_transition_guide/document/lldb-command-examples.html#//apple_ref/doc/uid/TP40012917-CH3-SW5">苹果的官方文档</a>。</p>
-
-<h2>在Xcode中调试程序</h2>
-
-<p>对于我们日常的开发工作来说，更多的时候是在Xcode中进行调试工作。因此上面所描述的流程，其实Xcode已经帮我们完成了大部分的工作，而且很多东西也可以在Xcode里面看到。因此，我们可以把精力都集中在代码层面上。</p>
-
-<p>在<a href="https://developer.apple.com/library/mac/documentation/IDEs/Conceptual/gdb_to_lldb_transition_guide/document/lldb-command-examples.html#//apple_ref/doc/uid/TP40012917-CH3-SW5">苹果的官方文档</a>中列出了我们在调试中能用到的一些命令，我们在这重点讲一些常用的命令。</p>
-
-<h3>打印</h3>
-
-<p>打印变量的值可以使用print命令，该命令如果打印的是简单类型，则会列出简单类型的类型和值。如果是对象，还会打印出对象指针地址，如下所示：</p>
-
-<pre><code>(lldb) print a
-(NSInteger) $0 = 0
-(lldb) print b
-(NSInteger) $1 = 0
-(lldb) print str
-(NSString *) $2 = 0x0000000100001048 @"abc"
-(lldb) print url
-(NSURL *) $3 = 0x0000000100206cc0 @"abc"
-</code></pre>
-
-<p>在输出结果中我们还能看到类似于$0,$1这样的符号，我们可以将其看作是指向对象的一个引用，我们在控制面板中可以直接使用这个符号来操作对应的对象，这些东西存在于LLDB的全名空间中，目的是为了辅助调试。如下所示：</p>
-
-<pre><code>(lldb) exp $0 = 100
-(NSInteger) $9 = 100
-(lldb) p a
-(NSInteger) $10 = 100
-</code></pre>
-
-<p>另外$后面的数值是递增的，每打印一个与对象相关的命令，这个值都会加1。</p>
-
-<p>上面的print命令会打印出对象的很多信息，如果我们只想查看对象的值的信息，则可以使用po(print object的缩写)命令，如下所示：</p>
-
-<pre><code>(lldb) po str
-abc
-</code></pre>
-
-<p>当然，po命令是"exp -O &mdash;&ldquo;命令的别名，使用"exp -O &mdash;"能达到同样的效果。</p>
-
-<p>对于简单类型，我们还可以为其指定不同的打印格式，其命令格式是print/，如下所示：</p>
-
-<pre><code>(lldb) p/x a
-(NSInteger) $13 = 0x0000000000000064
-</code></pre>
-
-<p>格式的完整清单可以参考<a href="https://sourceware.org/gdb/onlinedocs/gdb/Output-Formats.html">Output Formats</a>。</p>
-
-<h3>expression</h3>
-
-<p>在开发中，我们经常会遇到这样一种情况：我们设置一个视图的背景颜色，运行后发现颜色不好看。嗯，好吧，在代码里面修改一下，再编译运行一下，嗯，还是不好看，然后再修改吧～～这样无形中浪费了我们大把的时间。在这种情况下，expression命令强大的功能就能体现出来了，它不仅会改变调试器中的值，还改变了程序中的实际值。我们先来看看实际效果，如下所示：</p>
-
-<pre><code>(lldb) exp a = 10
-(NSInteger) $0 = 10
-(lldb) exp b = 100
-(NSInteger) $1 = 100
-2015-01-25 14:00:41.313 test[18064:71466] a + b = 110, abc
-</code></pre>
-
-<p>expression命令的功能不仅于此，正如上面的po命令，其实际也是"expression -O &mdash;&ldquo;命令的别名。更详细使用可以参考<a href="https://developer.apple.com/library/mac/documentation/IDEs/Conceptual/gdb_to_lldb_transition_guide/document/lldb-command-examples.html#//apple_ref/doc/uid/TP40012917-CH3-SW5">Evaluating Expressions</a>。</p>
-
-<h3>image</h3>
-
-<p>image命令的用法也挺多，首先可以用它来查看工程中使用的库，如下所示：</p>
-
-<pre><code>(lldb) image list
-[  0] 432A6EBF-B9D2-3850-BCB2-821B9E62B1E0 0x0000000100000000 /Users/**/Library/Developer/Xcode/DerivedData/test-byjqwkhxixddxudlnvqhrfughkra/Build/Products/Debug/test 
-[  1] 65DCCB06-339C-3E25-9702-600A28291D0E 0x00007fff5fc00000 /usr/lib/dyld 
-[  2] E3746EDD-DFB1-3ECB-88ED-A91AC0EF3AAA 0x00007fff8d324000 /System/Library/Frameworks/Foundation.framework/Versions/C/Foundation 
-[  3] 759E155D-BC42-3D4E-869B-6F57D477177C 0x00007fff8869f000 /usr/lib/libobjc.A.dylib 
-[  4] 5C161F1A-93BA-3221-A31D-F86222005B1B 0x00007fff8c75c000 /usr/lib/libSystem.B.dylib 
-[  5] CBD1591C-405E-376E-87E9-B264610EBF49 0x00007fff8df0d000 /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation 
-[  6] A260789B-D4D8-316A-9490-254767B8A5F1 0x00007fff8de36000 /usr/lib/libauto.dylib 
-......
-</code></pre>
-
-<p>我们还可以用它来查找可执行文件或共享库的原始地址，这一点还是很有用的，当我们的程序崩溃时，我们可以使用这条命令来查找崩溃所在的具体位置，如下所示：</p>
-
-<pre><code>NSArray *array = @[@1, @2];
-NSLog(@"item 3: %@", array[2]);
-</code></pre>
-
-<p>这段代码在运行后会抛出如下异常：</p>
-
-<pre><code>2015-01-25 14:12:01.007 test[18122:76474] *** Terminating app due to uncaught exception 'NSRangeException', reason: '*** -[__NSArrayI objectAtIndex:]: index 2 beyond bounds [0 .. 1]'
-*** First throw call stack:
-(
-    0   CoreFoundation                      0x00007fff8e06f66c __exceptionPreprocess + 172
-    1   libobjc.A.dylib                     0x00007fff886ad76e objc_exception_throw + 43
-    2   CoreFoundation                      0x00007fff8df487de -[__NSArrayI objectAtIndex:] + 190
-    3   test                                0x0000000100000de0 main + 384
-    4   libdyld.dylib                       0x00007fff8f1b65c9 start + 1
-)
-libc++abi.dylib: terminating with uncaught exception of type NSException
-</code></pre>
-
-<p>根据以上信息，我们可以判断崩溃位置是在main.m文件中，要想知道具体在哪一行，可以使用以下命令：</p>
-
-<pre><code>(lldb) image lookup --address 0x0000000100000de0
-      Address: test[0x0000000100000de0] (test.__TEXT.__text + 384)
-      Summary: test`main + 384 at main.m:23
-</code></pre>
-
-<p>可以看到，最后定位到了main.m文件的第23行，正是我们代码所在的位置。</p>
-
-<p>我们还可以使用image lookup命令来查看具体的类型，如下所示：</p>
-
-<pre><code>(lldb) image lookup --type NSURL
-Best match found in /Users/**/Library/Developer/Xcode/DerivedData/test-byjqwkhxixddxudlnvqhrfughkra/Build/Products/Debug/test:
-id = {0x100000157}, name = "NSURL", byte-size = 40, decl = NSURL.h:17, clang_type = "@interface NSURL : NSObject{
-    NSString * _urlString;
-    NSURL * _baseURL;
-    void * _clients;
-    void * _reserved;
-}
-@property ( readonly,getter = absoluteString,setter = &lt;null selector&gt;,nonatomic ) NSString * absoluteString;
-@property ( readonly,getter = relativeString,setter = &lt;null selector&gt;,nonatomic ) NSString * relativeString;
-@property ( readonly,getter = baseURL,setter = &lt;null selector&gt;,nonatomic ) NSURL * baseURL;
-@property ( readonly,getter = absoluteURL,setter = &lt;null selector&gt;,nonatomic ) NSURL * absoluteURL;
-@property ( readonly,getter = scheme,setter = &lt;null selector&gt;,nonatomic ) NSString * scheme;
-@property ( readonly,getter = resourceSpecifier,setter = &lt;null selector&gt;,nonatomic ) NSString * resourceSpecifier;
-@property ( readonly,getter = host,setter = &lt;null selector&gt;,nonatomic ) NSString * host;
-@property ( readonly,getter = port,setter = &lt;null selector&gt;,nonatomic ) NSNumber * port;
-@property ( readonly,getter = user,setter = &lt;null selector&gt;,nonatomic ) NSString * user;
-@property ( readonly,getter = password,setter = &lt;null selector&gt;,nonatomic ) NSString * password;
-@property ( readonly,getter = path,setter = &lt;null selector&gt;,nonatomic ) NSString * path;
-@property ( readonly,getter = fragment,setter = &lt;null selector&gt;,nonatomic ) NSString * fragment;
-@property ( readonly,getter = parameterString,setter = &lt;null selector&gt;,nonatomic ) NSString * parameterString;
-@property ( readonly,getter = query,setter = &lt;null selector&gt;,nonatomic ) NSString * query;
-@property ( readonly,getter = relativePath,setter = &lt;null selector&gt;,nonatomic ) NSString * relativePath;
-@property ( readonly,getter = fileSystemRepresentation,setter = &lt;null selector&gt; ) const char * fileSystemRepresentation;
-@property ( readonly,getter = isFileURL,setter = &lt;null selector&gt;,readwrite ) BOOL fileURL;
-@property ( readonly,getter = standardizedURL,setter = &lt;null selector&gt;,nonatomic ) NSURL * standardizedURL;
-@property ( readonly,getter = filePathURL,setter = &lt;null selector&gt;,nonatomic ) NSURL * filePathURL;
-@end"
-</code></pre>
-
-<p>可以看到，输出结果中列出了NSURL的一些成员变量及属性信息。</p>
-
-<p>image命令还有许多其它功能，具体可以参考<a href="https://developer.apple.com/library/mac/documentation/IDEs/Conceptual/gdb_to_lldb_transition_guide/document/lldb-command-examples.html#//apple_ref/doc/uid/TP40012917-CH3-SW5">Executable and Shared Library Query Commands</a>。</p>
-
-<h3>流程控制</h3>
-
-<p>流程控制的命令实际上我们在上一小节已经讲过了，在Xcode的控制面板中同样可以使用这些命令，在此不在重复。</p>
-
-<h2>命令别名及帮助系统</h2>
-
-<p>LLDB有两个非常有用的特性，即命令别名及帮助。</p>
-
-<h3>命令别名</h3>
-
-<p>我们可以使用LLDB的别名机制来为常用的命令创建一个别名，以方便我们的使用，如下命令：</p>
-
-<pre><code>(lldb) breakpoint set --file foo.c --line 12
-</code></pre>
-
-<p>如果在我们的调试中需要经常用到这条命令，则每次输入这么一长串的字符一定会很让人抓狂。此时，我们就可以为这条命令创建一个别名，如下所示：</p>
-
-<pre><code>(lldb) command alias bfl breakpoint set -f %1 -l %2
-</code></pre>
-
-<p>这样，我们只需要按如下方式来使用它即可：</p>
-
-<pre><code>(lldb) bfl foo.c 12
-</code></pre>
-
-<p>是不是简单多了？</p>
-
-<p>我们可以自由地创建LLDB命令的别名集合。LLDB在启动时会读取~/.lldbinit文件。这个文件中存储了command alias命令创建的别名。LLDB帮助系统会读取这个初始化文件并会列出这些别名，以让我们了解自己所设置的别名。我们可以使用"help -a"命令并在输出的后面来查看这边别名，其以下面这行开始：</p>
-
-<pre><code>...
-The following is a list of your current command abbreviations (see 'help command alias' for more info): ...
-</code></pre>
-
-<p>如果我们不喜欢已有命令的别名，则可以使用以下命令来取消这个别名：</p>
-
-<pre><code>(lldb) command unalias b
-</code></pre>
-
-<h3>帮助系统</h3>
-
-<p>LLDB帮助系统让我们可以了解LLDB提供了哪些功能，并可以查看LLDB命令结构的详细信息。熟悉帮助系统可以让我们访问帮助系统中中命令文档。</p>
-
-<p>我们可以简单地调用help命令来列出LLDB所有的顶层命令。如下所示：</p>
-
-<pre><code>(lldb) help
-The following is a list of built-in, permanent debugger commands:
-
-_regexp-attach    -- Attach to a process id if in decimal, otherwise treat the
-                     argument as a process name to attach to.
-_regexp-break     -- Set a breakpoint using a regular expression to specify the
-                     location, where &lt;linenum&gt; is in decimal and &lt;address&gt; is
-                     in hex.
-_regexp-bt        -- Show a backtrace.  An optional argument is accepted; if
-                     that argument is a number, it specifies the number of
-                     frames to display.  If that argument is 'all', full
-                     backtraces of all threads are displayed.
- … and so forth …
-</code></pre>
-
-<p>如果help后面跟着某个特定的命令，则会列出该命令相关的所有信息，我们以breakpoint set为例，输出信息如下：</p>
-
-<pre><code>(lldb) help breakpoint set
-     Sets a breakpoint or set of breakpoints in the executable.
-
-Syntax: breakpoint set &lt;cmd-options&gt;
-
-Command Options Usage:
-  breakpoint set [-Ho] -l &lt;linenum&gt; [-s &lt;shlib-name&gt;] [-i &lt;count&gt;] [-c &lt;expr&gt;] [-x &lt;thread-index&gt;] [-t &lt;thread-id&gt;] [-T &lt;thread-name&gt;] [-q &lt;queue-name&gt;] [-f &lt;filename&gt;] [-K &lt;boolean&gt;]
-  breakpoint set [-Ho] -a &lt;address-expression&gt; [-s &lt;shlib-name&gt;] [-i &lt;count&gt;] [-c &lt;expr&gt;] [-x &lt;thread-index&gt;] [-t &lt;thread-id&gt;] [-T &lt;thread-name&gt;] [-q &lt;queue-name&gt;]
-  breakpoint set [-Ho] -n &lt;function-name&gt; [-s &lt;shlib-name&gt;] [-i &lt;count&gt;] [-c &lt;expr&gt;] [-x &lt;thread-index&gt;] [-t &lt;thread-id&gt;] [-T &lt;thread-name&gt;] [-q &lt;queue-name&gt;] [-f &lt;filename&gt;] [-K &lt;boolean&gt;] [-L &lt;language&gt;]
-  breakpoint set [-Ho] -F &lt;fullname&gt; [-s &lt;shlib-name&gt;] [-i &lt;count&gt;] [-c &lt;expr&gt;] [-x &lt;thread-index&gt;] [-t &lt;thread-id&gt;] [-T &lt;thread-name&gt;] [-q &lt;queue-name&gt;] [-f &lt;filename&gt;] [-K &lt;boolean&gt;]
-
- … and so forth …
-</code></pre>
-
-<p>还有一种更直接的方式来查看LLDB有哪些功能，即使用apropos命令：它会根据关键字来搜索LLDB帮助文档，并为每个命令选取一个帮助字符串，我们以apropos file为例，其输出如下：</p>
-
-<pre><code>(lldb) apropos file
-The following commands may relate to 'file':
-…
-log enable                     -- Enable logging for a single log channel.
-memory read                    -- Read from the memory of the process being
-                                  debugged.
-memory write                   -- Write to the memory of the process being
-                                  debugged.
-platform process launch        -- Launch a new process on a remote platform.
-platform select                -- Create a platform if needed and select it as
-                                  the current platform.
-plugin load                    -- Import a dylib that implements an LLDB
-                                  plugin.
-process launch                 -- Launch the executable in the debugger.
-process load                   -- Load a shared library into the current
-                                  process.
-source                         -- A set of commands for accessing source file
-                                  information
-… and so forth …
-</code></pre>
-
-<p>我们还可以使用help来了解一个命令别名的构成。如：</p>
-
-<pre><code>(lldb) help b
-…
-'b' is an abbreviation for '_regexp-break'
-</code></pre>
-
-<p>help命令的另一个特性是可以查看某个具体参数的使用，我们以"break command add"命令为例：</p>
-
-<pre><code>(lldb) help break command add
-Add a set of commands to a breakpoint, to be executed whenever the breakpoint is hit.
-
-Syntax: breakpoint command add &lt;cmd-options&gt; &lt;breakpt-id&gt;
-etc...
-</code></pre>
-
-<p>如果想了解以上输出的参数&lt;breakpt-id>的作用，我们可以在help后面直接指定这个参数(将其放在尖括号内)来查询它的详细信息，如下所示：</p>
-
-<pre><code>(lldb) help &lt;breakpt-id&gt;
-
-&lt;breakpt-id&gt; -- Breakpoint IDs consist major and minor numbers; the major
-etc...
-</code></pre>
-
-<p>帮助系统能让我们快速地了解一个LLDB命令的使用方法。经常使用它，可以让我们更快地熟悉LLDB的各项功能，所以建议多使用它。</p>
-
-<h2>总结</h2>
-
-<p>LLDB带给我们强大的调试功能，在调试过程中充分地利用它可以帮助我们极大地提高调试效率。我们可以不用写那么多的NSLog来打印一大堆的日志。所以建议在日常工作中多去使用它。当然，上面的命令只是LLDB的冰山一角，更多的使用还需要大家自己去发掘，在此只是抛砖引玉，做了一些整理。</p>
-
-<h2>参考</h2>
-
-<ol>
-<li><a href="http://lldb.llvm.org/tutorial.html">The LLDB Debugger</a></li>
-<li><a href="https://developer.apple.com/library/mac/documentation/IDEs/Conceptual/gdb_to_lldb_transition_guide/document/Introduction.html">LLDB Quick Start Guide</a></li>
-<li><a href="http://www.cocoachina.com/ios/20141219/10709.html">与调试器共舞 &ndash; LLDB 的华尔兹</a></li>
-<li><a href="http://www.starfelix.com/blog/2014/03/17/lldbdiao-shi-ming-ling-chu-tan/">LLDB调试命令初探</a></li>
-<li><a href="http://www.cocoachina.com/ios/20140530/8619.html">NSLog效率低下的原因及尝试lldb断点打印Log</a></li>
 </ol>
 
 ]]></content>
