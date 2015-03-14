@@ -4,7 +4,7 @@
   <title><![CDATA[南峰子的技术博客]]></title>
   <link href="http://southpeak.github.io/atom.xml" rel="self"/>
   <link href="http://southpeak.github.io/"/>
-  <updated>2015-03-07T18:57:39+08:00</updated>
+  <updated>2015-03-14T13:05:07+08:00</updated>
   <id>http://southpeak.github.io/</id>
   <author>
     <name><![CDATA[南峰子]]></name>
@@ -12,6 +12,354 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Notification与多线程]]></title>
+    <link href="http://southpeak.github.io/blog/2015/03/14/nsnotificationyu-duo-xian-cheng/"/>
+    <updated>2015-03-14T12:58:59+08:00</updated>
+    <id>http://southpeak.github.io/blog/2015/03/14/nsnotificationyu-duo-xian-cheng</id>
+    <content type="html"><![CDATA[<p>前几天与同事讨论到Notification在多线程下的转发问题，所以就此整理一下。</p>
+
+<p>先来看看官方的文档，是这样写的：</p>
+
+<pre><code>In a multithreaded application, notifications are always delivered in the thread in which the notification was posted, which may not be the same thread in which an observer registered itself.
+</code></pre>
+
+<p>翻译过来是：</p>
+
+<pre><code>在多线程应用中，Notification在哪个线程中post，就在哪个线程中被转发，而不一定是在注册观察者的那个线程中。
+</code></pre>
+
+<p>也就是说，Notification的发送与接收处理都是在同一个线程中。为了说明这一点，我们先来看一个示例：</p>
+
+<p><strong>代码清单1：Notification的发送与处理</strong></p>
+
+<pre><code>@implementation ViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    NSLog(@"current thread = %@", [NSThread currentThread]);
+
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleNotification:) name:TEST_NOTIFICATION object:nil];
+
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+
+        [[NSNotificationCenter defaultCenter] postNotificationName:TEST_NOTIFICATION object:nil userInfo:nil];
+    });
+}
+
+- (void)handleNotification:(NSNotification *)notification
+{
+    NSLog(@"current thread = %@", [NSThread currentThread]);
+
+    NSLog(@"test notification");
+}
+
+@end
+</code></pre>
+
+<p>其输出结果如下：</p>
+
+<pre><code>2015-03-11 22:05:12.856 test[865:45102] current thread = &lt;NSThread: 0x7fbb23412f30&gt;{number = 1, name = main}
+2015-03-11 22:05:12.857 test[865:45174] current thread = &lt;NSThread: 0x7fbb23552370&gt;{number = 2, name = (null)}
+2015-03-11 22:05:12.857 test[865:45174] test notification
+</code></pre>
+
+<p>可以看到，虽然我们在主线程中注册了通知的观察者，但在全局队列中post的Notification，并不是在主线程处理的。所以，这时候就需要注意，如果我们想在回调中处理与UI相关的操作，需要确保是在主线程中执行回调。</p>
+
+<p>这时，就有一个问题了，如果我们的Notification是在二级线程中post的，如何能在主线程中对这个Notification进行处理呢？或者换个提法，如果我们希望一个Notification的post线程与转发线程不是同一个线程，应该怎么办呢？我们看看官方文档是怎么说的：</p>
+
+<pre><code>For example, if an object running in a background thread is listening for notifications from the user interface, such as a window closing, you would like to receive the notifications in the background thread instead of the main thread. In these cases, you must capture the notifications as they are delivered on the default thread and redirect them to the appropriate thread.
+</code></pre>
+
+<p>这里讲到了“重定向”，就是我们在Notification所在的默认线程中捕获这些分发的通知，然后将其重定向到指定的线程中。</p>
+
+<p>一种重定向的实现思路是自定义一个通知队列(注意，不是NSNotificationQueue对象，而是一个数组)，让这个队列去维护那些我们需要重定向的Notification。我们仍然是像平常一样去注册一个通知的观察者，当Notification来了时，先看看post这个Notification的线程是不是我们所期望的线程，如果不是，则将这个Notification存储到我们的队列中，并发送一个信号(signal)到期望的线程中，来告诉这个线程需要处理一个Notification。指定的线程在收到信号后，将Notification从队列中移除，并进行处理。</p>
+
+<p>官方文档已经给出了示例代码，在此借用一下，以测试实际结果：</p>
+
+<p><strong>代码清单2：在不同线程中post和转发一个Notification</strong></p>
+
+<pre><code>@interface ViewController () &lt;NSMachPortDelegate&gt;
+
+@property (nonatomic) NSMutableArray    *notifications;         // 通知队列
+@property (nonatomic) NSThread          *notificationThread;    // 期望线程
+@property (nonatomic) NSLock            *notificationLock;      // 用于对通知队列加锁的锁对象，避免线程冲突
+@property (nonatomic) NSMachPort        *notificationPort;      // 用于向期望线程发送信号的通信端口
+
+@end
+
+@implementation ViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    NSLog(@"current thread = %@", [NSThread currentThread]);
+
+    // 初始化
+    self.notifications = [[NSMutableArray alloc] init];
+    self.notificationLock = [[NSLock alloc] init];
+
+    self.notificationThread = [NSThread currentThread];
+    self.notificationPort = [[NSMachPort alloc] init];
+    self.notificationPort.delegate = self;
+
+    // 往当前线程的run loop添加端口源
+    // 当Mach消息到达而接收线程的run loop没有运行时，则内核会保存这条消息，直到下一次进入run loop
+    [[NSRunLoop currentRunLoop] addPort:self.notificationPort
+                                forMode:(__bridge NSString *)kCFRunLoopCommonModes];
+
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(processNotification:) name:@"TestNotification" object:nil];
+
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+
+        [[NSNotificationCenter defaultCenter] postNotificationName:TEST_NOTIFICATION object:nil userInfo:nil];
+
+    });
+}
+
+- (void)handleMachMessage:(void *)msg {
+
+    [self.notificationLock lock];
+
+    while ([self.notifications count]) {
+        NSNotification *notification = [self.notifications objectAtIndex:0];
+        [self.notifications removeObjectAtIndex:0];
+        [self.notificationLock unlock];
+        [self processNotification:notification];
+        [self.notificationLock lock];
+    };
+
+    [self.notificationLock unlock];
+}
+
+- (void)processNotification:(NSNotification *)notification {
+
+    if ([NSThread currentThread] != _notificationThread) {
+        // Forward the notification to the correct thread.
+        [self.notificationLock lock];
+        [self.notifications addObject:notification];
+        [self.notificationLock unlock];
+        [self.notificationPort sendBeforeDate:[NSDate date]
+                                   components:nil
+                                         from:nil
+                                     reserved:0];
+    }
+    else {
+        // Process the notification here;
+        NSLog(@"current thread = %@", [NSThread currentThread]);
+        NSLog(@"process notification");
+    }
+}
+
+@end
+</code></pre>
+
+<p>运行后，其输出如下：</p>
+
+<pre><code>2015-03-11 23:38:31.637 test[1474:92483] current thread = &lt;NSThread: 0x7ffa4070ed50&gt;{number = 1, name = main}
+2015-03-11 23:38:31.663 test[1474:92483] current thread = &lt;NSThread: 0x7ffa4070ed50&gt;{number = 1, name = main}
+2015-03-11 23:38:31.663 test[1474:92483] process notification
+</code></pre>
+
+<p>可以看到，我们在全局dispatch队列中抛出的Notification，如愿地在主线程中接收到了。</p>
+
+<p>这种实现方式的具体解析及其局限性大家可以参考官方文档<a href="https://developer.apple.com/library/mac/documentation/Cocoa/Conceptual/Notifications/Articles/Threading.html#//apple_ref/doc/uid/20001289-CEGJFDFG">Delivering Notifications To Particular Threads</a>，在此不多做解释。当然，更好的方法可能是我们自己去子类化一个NSNotificationCenter，或者单独写一个类来处理这种转发。</p>
+
+<h2>NSNotificationCenter的线程安全性</h2>
+
+<p>苹果之所以采取通知中心在同一个线程中post和转发同一消息这一策略，应该是出于线程安全的角度来考量的。官方文档告诉我们，NSNotificationCenter是一个线程安全类，我们可以在多线程环境下使用同一个NSNotificationCenter对象而不需要加锁。原文在<a href="https://developer.apple.com/library/mac/documentation/Cocoa/Conceptual/Multithreading/ThreadSafetySummary/ThreadSafetySummary.html">Threading Programming Guide</a>中，具体如下：</p>
+
+<pre><code>The following classes and functions are generally considered to be thread-safe. You can use the same instance from multiple threads without first acquiring a lock.
+
+NSArray
+...
+NSNotification
+NSNotificationCenter
+...
+</code></pre>
+
+<p>我们可以在任何线程中添加/删除通知的观察者，也可以在任何线程中post一个通知。</p>
+
+<p>NSNotificationCenter在线程安全性方面已经做了不少工作了，那是否意味着我们可以高枕无忧了呢？再回过头来看看第一个例子，我们稍微改造一下，一点一点来：</p>
+
+<p><strong>代码清单3：NSNotificationCenter的通用模式</strong></p>
+
+<pre><code>@interface Observer : NSObject
+
+@end
+
+@implementation Observer
+
+- (instancetype)init
+{
+    self = [super init];
+
+    if (self)
+    {
+        _poster = [[Poster alloc] init];
+
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleNotification:) name:TEST_NOTIFICATION object:nil]
+    }
+
+    return self;
+}
+
+- (void)handleNotification:(NSNotification *)notification
+{
+    NSLog(@"handle notification ");
+}
+
+- (void)dealloc
+{
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+@end
+
+// 其它地方
+[[NSNotificationCenter defaultCenter] postNotificationName:TEST_NOTIFICATION object:nil];   
+</code></pre>
+
+<p>上面的代码就是我们通常所做的事情：添加一个通知监听者，定义一个回调，并在所属对象释放时移除监听者；然后在程序的某个地方post一个通知。简单明了，如果这一切都是发生在一个线程里面，或者至少dealloc方法是在-postNotificationName:的线程中运行的(注意：NSNotification的post和转发是同步的)，那么都OK，没有线程安全问题。但如果dealloc方法和-postNotificationName:方法不在同一个线程中运行时，会出现什么问题呢？</p>
+
+<p>我们再改造一下上面的代码：</p>
+
+<p><strong>代码清单4：NSNotificationCenter引发的线程安全问题</strong></p>
+
+<pre><code>#pragma mark - Poster
+
+@interface Poster : NSObject
+
+@end
+
+@implementation Poster
+
+- (instancetype)init
+{
+    self = [super init];
+
+    if (self)
+    {
+        [self performSelectorInBackground:@selector(postNotification) withObject:nil];
+    }
+
+    return self;
+}
+
+- (void)postNotification
+{
+    [[NSNotificationCenter defaultCenter] postNotificationName:TEST_NOTIFICATION object:nil];
+}
+
+@end
+
+#pragma mark - Observer
+
+@interface Observer : NSObject
+{
+    Poster  *_poster;
+}
+
+@property (nonatomic, assign) NSInteger i;
+
+@end
+
+@implementation Observer
+
+- (instancetype)init
+{
+    self = [super init];
+
+    if (self)
+    {
+        _poster = [[Poster alloc] init];
+
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleNotification:) name:TEST_NOTIFICATION object:nil];
+    }
+
+    return self;
+}
+
+- (void)handleNotification:(NSNotification *)notification
+{
+    NSLog(@"handle notification begin");
+    sleep(1);
+    NSLog(@"handle notification end");
+
+    self.i = 10;
+}
+
+- (void)dealloc
+{
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+
+    NSLog(@"Observer dealloc");
+}
+
+@end
+
+#pragma mark - ViewController
+
+@implementation ViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    __autoreleasing Observer *observer = [[Observer alloc] init];
+}
+
+@end
+</code></pre>
+
+<p>这段代码是在主线程添加了一个TEST_NOTIFICATION通知的监听者，并在主线程中将其移除，而我们的NSNotification是在后台线程中post的。在通知处理函数中，我们让回调所在的线程睡眠1秒钟，然后再去设置属性i值。这时会发生什么呢？我们先来看看输出结果：</p>
+
+<pre><code>2015-03-14 00:31:41.286 SKTest[932:88791] handle notification begin
+2015-03-14 00:31:41.291 SKTest[932:88713] Observer dealloc
+2015-03-14 00:31:42.361 SKTest[932:88791] handle notification end
+(lldb) 
+
+// 程序在self.i = 10处抛出了"Thread 6: EXC_BAD_ACCESS(code=EXC_I386_GPFLT)"
+</code></pre>
+
+<p>经典的内存错误，程序崩溃了。其实从输出结果中，我们就可以看到到底是发生了什么事。我们简要描述一下：</p>
+
+<ol>
+<li>当我们注册一个观察者是，通知中心会持有观察者的一个弱引用，来确保观察者是可用的。</li>
+<li>主线程调用dealloc操作会让Observer对象的引用计数减为0，这时对象会被释放掉。</li>
+<li>后台线程发送一个通知，如果此时Observer还未被释放，则会用其转出消息，并执行回调方法。而如果在回调执行的过程中对象被释放了，就会出现上面的问题。</li>
+</ol>
+
+
+<p>当然，上面这个例子是故意而为之，但不排除在实际编码中会遇到类似的问题。虽然NSNotificationCenter是线程安全的，但并不意味着我们在使用时就可以保证线程安全的，如果稍不注意，还是会出现线程问题。</p>
+
+<p>那我们该怎么做呢？这里有一些好的建议：</p>
+
+<ol>
+<li>尽量在一个线程中处理通知相关的操作，大部分情况下，这样做都能确保通知的正常工作。不过，我们无法确定到底会在哪个线程中调用dealloc方法，所以这一点还是比较困难。</li>
+<li>注册监听都时，使用基于block的API。这样我们在block还要继续调用self的属性或方法，就可以通过weak-strong的方式来处理。具体大家可以改造下上面的代码试试是什么效果。</li>
+<li>使用带有安全生命周期的对象，这一点对象单例对象来说再合适不过了，在应用的整个生命周期都不会被释放。</li>
+<li>使用代理。</li>
+</ol>
+
+
+<h2>小结</h2>
+
+<p>NSNotificationCenter虽然是线程安全的，但不要被这个事实所误导。在涉及到多线程时，我们还是需要多加小心，避免出现上面的线程问题。想进一步了解的话，可以查看<a href="http://inessential.com/2013/12/20/observers_and_thread_safety">Observers and Thread Safety</a>。</p>
+
+<h2>参考</h2>
+
+<ol>
+<li><a href="https://developer.apple.com/library/mac/documentation/Cocoa/Conceptual/Notifications/Articles/Notifications.html">Notification Programming Topics</a></li>
+<li><a href="https://developer.apple.com/library/mac/documentation/Cocoa/Conceptual/Multithreading/ThreadSafetySummary/ThreadSafetySummary.html">Threading Programming Guide</a></li>
+<li><a href="http://blog.csdn.net/wzzvictory/article/details/8489516">NSNotification的几点说明</a></li>
+<li><a href="http://lapcatsoftware.com/articles/nsnotificationcenter-is-threadsafe-not.html">NSNotificationCenter is thread-safe NOT</a></li>
+<li><a href="http://inessential.com/2013/12/20/observers_and_thread_safety">Observers and Thread Safety</a></li>
+</ol>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[UIResponder]]></title>
@@ -6248,415 +6596,6 @@ CGContextTranslateCTM (myContext, w/4, 0);
 <li>kCGRenderingIntentSaturation：饱和度渲染意图。把颜色转换到输出设备色域内时，保持颜色的相对饱和度。结果是包含亮度、饱和度颜色的图片。饱和度意图适用于生成低细度的图片，如描述性图表。</li>
 </ol>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Quartz 2D编程指南之三：路径(Path)]]></title>
-    <link href="http://southpeak.github.io/blog/2014/11/16/quartz-2dbian-cheng-zhi-nan-zhi-san-:lu-jing-path/"/>
-    <updated>2014-11-16T21:44:15+08:00</updated>
-    <id>http://southpeak.github.io/blog/2014/11/16/quartz-2dbian-cheng-zhi-nan-zhi-san-:lu-jing-path</id>
-    <content type="html"><![CDATA[<p><strong>路径</strong>定义了一个或多个形状，或是子路径。一个子路径可由直线，曲线，或者同时由两者构成。它可以是开放的，也可以是闭合的。一个子路径可以是简单的形状，如线、圆、矩形、星形；也可以是复杂的形状，如山脉的轮廓或者是涂鸦。图3-1显示了一些我们可以创建的路径。左上角的直线可以是虚线；直线也可以是实线。上边中间的路径是由多条曲线组成的开放路径。右上角的同心圆填充了颜色，但没有描边。左下角的加利福尼亚州是闭合路径，由许多曲线和直线构成，且对路径进行填充和描边。两个星形阐明了填充路径的两种方式，我们将在本章详细描述。</p>
-
-<p>Figure 3-1  Quartz supports path-based drawing</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/path_vector_examples.gif" alt="image" /></p>
-
-<p>在本章中，我们将学习如何构建路径，如何对路径进行填充和描边，及影响路径表现形式的参数。</p>
-
-<h2>创建及绘制路径</h2>
-
-<p>路径创建及路径绘制是两个独立的工作。首先我们创建路径。当我们需要渲染路径时，我们需要使用Quartz来绘制它。正如图3-1中所示，我们可以选择对路径进行描边，填充路径，或同时进行这两种操作。我们同样可以将其它对象绘制到路径所表示的范围内，即对对象进行裁减。</p>
-
-<p>图3-2绘制了一个路径，该路径包含两个子路径。左边的子路径是一个矩形，右边的子路径是由直线和曲线组成的抽象形状。两个子路径都进行了填充及描边。</p>
-
-<p>Figure 3-2  A path that contains two shapes, or subpaths</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/subpaths.gif" alt="image" /></p>
-
-<p>图3-3显示了多条独立绘制的路径。每个路径饮食随机生成的曲线，一些进行填充，另一些进行了描边。这些路径都包含在一个圆形裁减区域内。</p>
-
-<p>Figure 3-3  A clipping area constrains drawing</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/circle_clipping.gif" alt="image" /></p>
-
-<h2>构建块(Building Block)</h2>
-
-<p>子路径是由直线、弧和曲线构成的。Quartz同样也提供了简便的函数用于添加矩形或椭圆等形状。点也是路径最基本的构建块，因为点定义了形状的起始点与终止点。</p>
-
-<h3>点</h3>
-
-<p>点由x, y坐标值定义，用于在用户空间指定 一个位置。我们可以调用函数CGContextMoveToPoint来为新的子路径指定起始点。Quartz跟踪当前点，用于记录路径构建过程中最新的位置。例如，如果调用函数CGContextMoveToPoint并设置位置为(10, 10)，即将当前点移动到位置(10, 10)。如果在水平位置绘制50个单位长度的直线，则直线的终点为(60, 10)，该点变成当前点。直线、弧和曲线总是从当前点开始绘制。</p>
-
-<p>通常我们通过传递(x, y)值给Quartz函数来指定一个点。一些函数需要我们传递一个CGPoint数据结构，该结构包含两个浮点值。</p>
-
-<h3>直线</h3>
-
-<p>直线由两个端点定义。起始点通常是当前点，所以创建直线时，我们只需要指定终止点。我们使用函数CGContextAddLineToPoint来添加一条直线到子路径中。</p>
-
-<p>我们可以调用CGContextAddLines函数添加一系列相关的直线到子路径中。我们传递一个点数组给这个函数。第一个点必须是第一条直线的起始点；剩下的点是端点。Quartz从第一个点开始绘制一个新子路径，然后每两个相邻点连接成一条线段。</p>
-
-<h3>弧</h3>
-
-<p>弧是圆弧段。Quartz提供了两个函数来创建弧。函数CGContextAddArc从圆中来创建一个曲线段。我们指定一个圆心，半径和放射角(以弧度为单位)。放射角为2 PI时，创建的是一个圆。图3-4显示了多个独立的路径。每个路径饮食一个自动生成的圆；一些是填充的，另一些是描边的。</p>
-
-<p>Figure 3-4  Multiple paths; each path contains a randomly generated circle</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/circles.gif" alt="image" /></p>
-
-<p>函数CGContextAddArcToPoint用于为矩形创建内切弧的场景。Quartz使用我们提供的端点创建两条正切线。同样我们需要提供圆的半径。弧心是两条半径的交叉点，每条半径都与相应的正切线垂直。弧的两个端点是正切线的正切点，如图3-5所示。红色的部分是实际绘制的部分。</p>
-
-<p>Figure 3-5  Defining an arc with two tangent lines and a radius</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rounded_corner.gif" alt="image" /></p>
-
-<p>如果当前路径已经包含了一个子路径，Quartz将追加一条从当前点到弧的起始点的直线段。如果当前路径为空，Quartz将创建一个新的子路径，该子路径从弧的起始点开始，而不添加初始的直线段。</p>
-
-<h3>曲线</h3>
-
-<p>二次与三次Bezier曲线是代数曲线，可以指定任意的曲线形状。曲线上的点通过一个应用于起始、终点及一个或多个控制点的多项式计算得出。这种方式定义的形状是向量图的基础。这个公式比将位数组更容易存储，并且曲线可以在任何分辨下重新创建。</p>
-
-<p>图3-6显示了一些路径的曲线。每条路径包含一条随机生成的曲线；一些是填充的，另一些是描边的。</p>
-
-<p>Figure 3-6  Multiple paths; each path contains a randomly generated curve</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/bezier_paths.gif" alt="image" /></p>
-
-<p>我们使用函数CGContextAddCurveToPoint将Bezier曲线连接到当前点，并传递控制点和端点作为参数，如图3-7所示。两个控制点的位置决定了曲线的形状。如果两个控制点都在两个端点上面，则曲线向上凸起。如果两个控制点都在两个端点下面，则曲线向下凹。如果第二个控制点比第一个控制点离得当前点近，则曲线自交叉，创建了一个回路。</p>
-
-<p>Figure 3-7  A cubic Bézier curve uses two control points</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/cubic_bezier_curve.gif" alt="image" /></p>
-
-<p>我们也可以调用函数CGContextAddQuadCurveToPoint来创建Bezier，并传递端点及一个控制点，如图3-8所示。控制点决定了曲线弯曲的方向。由于只使用一个控制点，所以无法创建出如三次Bezier曲线一样多的曲线。例如我们无法创建出交叉的曲线。</p>
-
-<p>Figure 3-8  A quadratic Bézier curve uses one control point</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/quadratic_bezier_curve.gif" alt="image" /></p>
-
-<h3>闭合路径</h3>
-
-<p>我们可以调用函数CGContextClosePath来闭合曲线。该函数用一条直接来连接当前点与起始点，以使路径闭合。起始与终点重合的直线、弧和曲线并不自动闭合路径，我们必须调用CGContextClosePath来闭合路径。</p>
-
-<p>Quartz的一些函数将路径的子路径看成是闭合的。这些函数显示地添加一条直线来闭合 子路径，如同调用了CGContextClosePath函数。</p>
-
-<p>在闭合一条子路径后，如果程序再添加直线、弧或曲线到路径，Quartz将在闭合的子路径的起点开始创建一个子路径。</p>
-
-<h3>椭圆</h3>
-
-<p>椭圆是一种特殊的圆。椭圆是通过定义两个焦点，在平面内所有与这两个焦点的距离之和相等的点所构成的图形。图3-9显示了一些独立的路径。每个路径都包含一个随机生成的椭圆；一些进行了填充，另一边进行了描边。</p>
-
-<p>Figure 3-9  Multiple paths; each path contains a randomly generated ellipse</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/ellipses.gif" alt="image" /></p>
-
-<p>我们可以调用CGContextAddEllipseInRect函数来添加一个椭圆到当前路径。我们提供一个矩形来定义一个椭圆。Quartz利用一系列的Bezier曲线来模拟椭圆。椭圆的中心就是矩形的中心。如果矩形的宽与高相等，则椭圆变成了圆，且圆的半径为矩形宽度的一半。如果矩形的宽与高不相等，则定义了椭圆的长轴与短轴。</p>
-
-<p>添加到路径中的椭圆开始于一个move-to操作，结束于一个close-subpath操作，所有的移动方向都是顺时针。</p>
-
-<h3>矩形</h3>
-
-<p>我们可以调用CGContextAddRect来添加一个矩形到当前路径中，并提供一个CGRect结构体(包含矩形的原点及大小)作为参数。</p>
-
-<p>添加到路径的矩形开始于一个move-to操作，结束于一个close-subpath操作，所有的移动方向都是顺时针。</p>
-
-<p>我们也可能调用CGContextAddRects函数来添加一系列的矩形到当前路径，并传递一个CGRect结构体的数组。图3-10显示了一些独立的路径。每个路径包含一个随机生成的矩形；一些进行了填充，另一边进行了描边。</p>
-
-<p>Figure 3-10  Multiple paths; each path contains a randomly generated rectangle</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rectangles.gif" alt="image" /></p>
-
-<h2>创建路径</h2>
-
-<p>当我们需要在一个图形上下文中构建一个路径时，我们需要调用CGContextBeginPath来标记Quartz。然后，我们调用函数CGContextMovePoint来设置每一个图形或子路径的起始点。在构建起始点后，我们可以添加直线、弧、曲线。记住如下规则：</p>
-
-<ol>
-<li>在开始绘制路径前，调用函数CGContextBeginPath；</li>
-<li>直线、弧、曲线开始于当前点。空路径没有当前点；我们必须调用CGContextMoveToPoint来设置第一个子路径的起始点，或者调用一个便利函数来隐式地完成该任务。</li>
-<li>如果要闭合当前子路径，调用函数CGContextClosePath。随后路径将开始一个新的子路径，即使我们不显示设置一个新的起始点。</li>
-<li>当绘制弧时，Quartz将在当前点与弧的起始点间绘制一条直线。</li>
-<li>添加椭圆和矩形的Quartz程序将在路径中添加新的闭合子路径。</li>
-<li>我们必须调用绘制函数来填充或者描边一条路径，因为创建路径时并不会绘制路径。</li>
-</ol>
-
-
-<p>在绘制路径后，将清空图形上下文。我们也许想保留路径，特别是在绘制复杂场景时，我们需要反复使用。基于此，Quartz提供了两个数据类型来创建可复用路径—CGPathRef和CGMutablePathRef。我们可以调用函数CGPathCreateMutable来创建可变的CGPath对象，并可向该对象添加直线、弧、曲线和矩形。Quartz提供了一个类似于操作图形上下文的CGPath的函数集合。这些路径函数操作CGPath对象，而不是图形上下文。这些函数包括：</p>
-
-<ol>
-<li>CGPathCreateMutable，取代CGContextBeginPath</li>
-<li>CGPathMoveToPoint，取代CGContextMoveToPoint</li>
-<li>CGPathAddLineToPoint，取代CGContexAddLineToPoint</li>
-<li>CGPathAddCurveToPoint，取代CGContexAddCurveToPoint</li>
-<li>CGPathAddEllipseInRect，取代CGContexAddEllipseInRect</li>
-<li>CGPathAddArc，取代CGContexAddArc</li>
-<li>CGPathAddRect，取代CGContexAddRect</li>
-<li>CGPathCloseSubpath，取代CGContexClosePath</li>
-</ol>
-
-
-<p>如果想要添加一个路径到图形上下文，可以调用CGContextAddPath。路径将保留在图形上下文中，直到Quartz绘制它。我们可以调用CGContextAddPath再次添加路径。</p>
-
-<h2>绘制路径</h2>
-
-<p>我们可以绘制填充或描边的路径。描边(Stroke)是绘制路径的边框。填充是绘制路径包含的区域。Quartz提供了函数来填充或描边路径。描边线的属性(宽度、颜色等)，填充色及Quartz用于计算填充区域的方法都是图形状态的一部分。</p>
-
-<h3>影响描边的属性</h3>
-
-<p>我们可以使用表3-1中的属性来决定如何对路径进行描边操作。这边属性是图形上下文的一部分，这意味着我们设置的值将会影响到后续的描边操作，直到我们个性这些值。</p>
-
-<p>Table 3-1  Parameters that affect how Quartz strokes the current path</p>
-
-<p><img src="http://cc.cocimg.com/bbs/attachment/thumb/Fid_6/6_38018_fa8395db5f33397.png" alt="image" /></p>
-
-<p>linewidth是线的总宽度，单位是用户空间单元。</p>
-
-<p>linejoin属性指定如何绘制线段间的联接点。Quartz支持表3-2中描述的联接样式。</p>
-
-<p>Table 3-2  Line join styles</p>
-
-<p><img src="http://cc.cocimg.com/bbs/attachment/thumb/Fid_6/6_38018_7e06943cde66626.png" alt="image" /></p>
-
-<p>linecap指定如何绘制直线的端点。Quartz支持表3-3所示的线帽类型。默认的是butt cap。</p>
-
-<p>Table 3-3  Line cap styles</p>
-
-<p><img src="http://cc.cocimg.com/bbs/attachment/thumb/Fid_6/6_38018_a0b926ec7469e04.png" alt="image" /></p>
-
-<p>闭合路径将起始点看作是一个联接点；起始点同样也使用选定的直线连接方法进行渲染。如果通过添加一条连接到起始点的直线来闭合路径，则路径的两个端点都使用选定的线帽类型来绘制。</p>
-
-<p>Linedash pattern(虚线模式)允许我们沿着描边绘制虚线。我们通过在CGContextSetLineDash结构体中指定虚线数组和虚线相位来控制虚线的大小及位置。</p>
-
-<p>CGContextSetLineDash结构如下：</p>
-
-<pre><code>void CGContextSetLineDash (
-    CGContextRef ctx,
-    float phase,
-    const float lengths[],
-    size_t count,
-);
-</code></pre>
-
-<p>其中lengths属性指定了虚线段的长度，该值是在绘制片断与未绘制片断之间交替。phase属性指定虚线模式的起始点。图3-11显示了虚线模式：</p>
-
-<p>Figure 3-11  Examples of line dash patterns</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/linedash.gif" alt="image" /></p>
-
-<p>描边颜色空间(stroke color space)定义了Quartz如何解析描边的颜色。我们同样也可以指定一个封装了颜色和颜色空间的CGColorRef数据类型。</p>
-
-<h3>路径描边的函数</h3>
-
-<p>Quartz提供了表3-4中的函数来描边当前路径。其中一些是描边矩形及椭圆的便捷函数。</p>
-
-<p>Table 3-4  Functions that stroke paths</p>
-
-<p><img src="http://cc.cocimg.com/bbs/attachment/thumb/Fid_6/6_38018_2f7e77438d8d49c.png" alt="image" /></p>
-
-<p>函数CGContextStrokeLineSegments等同于如下代码</p>
-
-<pre><code>CGContextBeginPath(context);                                                                                                                                                                                                                                                                 
-for(k = 0; k &lt; count; k += 2)
-{
-    CGContextMoveToPoint(context,s[k].x, s[k].y); CGContextAddLineToPoint(context,s[k+1].x, s[k+1].y);
-}
-
-CGContextStrokePath(context);
-</code></pre>
-
-<p>当我们调用CGContextStrokeLineSegments时，我们通过点数组来指定线段，并组织成点对的形式。每一对是由线段的起始点与终止点组成。例如，数组的第一个点指定了第一条直线的起始点，第二个点是第一条直线的终点，第三个点是第二条直线的起始点，依此类推。</p>
-
-<h3>填充路径</h3>
-
-<p>当我们填充当前路径时，Quartz将路径包含的每个子路径都看作是闭合的。然后，使用这些闭合路径并计算填充的像素。 Quartz有两种方式来计算填充区域。椭圆和矩形这样的路径其区域都很明显。但是如果路径是由几个重叠的部分组成或者路径包含多个子路径(如图3-12所示)，我们则有两种规则来定义填充区域。</p>
-
-<p>默认的规则是非零缠绕数规则(nonzero windingnumber rule)。为了确定一个点是否需要绘制，我们从该点开始绘制一条直线穿过绘图的边界。从0开始计数，每次路径片断从左到右穿过直线是，计数加1；而从右到左穿过直线时，计数减1。如果结果为0，则不绘制该点，否则绘制。路径片断绘制的方向会影响到结果。图3-13显示了使用非缠绕数规则对内圆和外圆进行填充的结果。当两个圆绘制方向相同时，两个圆都被填充。如果方向相反，则内圆不填充。</p>
-
-<p>我们也可以使用偶数-奇数规则。为了确定一个点是否被绘制，我们从该点开始绘制一条直线穿过绘图的边界。计算穿过该直线的路径片断的数目。如果是奇数，则绘制该点，如果是偶数，则不绘制该点。路径片断绘制的方向不影响结果。如图3-12所示，无论两个圆的绘制方向是什么，填充结果都是一样的。</p>
-
-<p>Figure 3-12  Concentric circles filled using different fill rules</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/eosampleone.gif" alt="image" /></p>
-
-<p>Quartz提供了表3-5中的函数来填充当前路径。其中一些是填充矩形及椭圆的便捷函数。</p>
-
-<p>Table 3-5  Functions that fill paths</p>
-
-<p><img src="http://cc.cocimg.com/bbs/attachment/thumb/Fid_6/6_38018_b20e82e060e2e61.png" alt="image" /></p>
-
-<h3>设置混合模式</h3>
-
-<p>混合模式指定了Quartz如何将绘图绘制到背景上。Quartz默认使用普通混合模式(normal blend mode)，该模式使用如下公式来计算前景绘图与背景绘图如何混合：</p>
-
-<pre><code>result = (alpha * foreground) + (1 - alpha) *background
-</code></pre>
-
-<p>“颜色与颜色空间”章节里面详细讨论了颜色值的alpha组件，该组件用于指定颜色的透明度。在本章的例子中，我们可以假设颜色值是完全不透明的(alpha = 0)。对于不透明的颜色值，当我们用普通混合模式时，所有绘制于背景之上的绘图都会遮掩住背景。</p>
-
-<p>我们可以调用函数CGContextSetBlendMode并传递适当的混合模式常量值来设置混合模式来达到我们想到的效果。记住混合模式是图形状态的一部分。如果调用了函数CGContextSaveGState来改变混合模式，则调用函数CGContextRestoreGState来重新设置混合模式为普通混合模式。</p>
-
-<p>接下来的内容例举了不同混合模式上将图3-13的矩形绘制到图3-14的矩形之上的效果。背景图使用普通混合模式来绘制。然后调用CGContextSetBlendMode函数来改变混合模式。最后绘制前景矩形。</p>
-
-<p>Figure 3-13  The rectangles painted in the foreground</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/vertical.gif" alt="image" /></p>
-
-<p>Figure 3-14  The rectangles painted in the background</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/horizontal.gif" alt="image" /></p>
-
-<p>注意：我们同样可以使用混合来组合两张图片或将图片与图形上下文中已有的内容进行混合。</p>
-
-<h4>普通混合模式</h4>
-
-<p>由于普通混合模式是默认的混合模式，所以在设置了其它混合模式后，可以调用CGContextSetBlendMode并传递kCGBlendModeNormal来将混合模式重设为默认。图3-15显示了普通混合模式上图3-13与图3-14混合的效果。</p>
-
-<p>Figure 3-15  Rectangles painted using normal blend mode</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_normal.gif" alt="image" /></p>
-
-<h4>正片叠底混合模式(Mutiply Blend Mode)</h4>
-
-<p>正片叠底混合模式指定将前景的图片采样与背景图片采样相乘。结果颜色至少与两个采样颜色之一一样暗。图3-16显示了混合结果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeMultiply来设置这种混合模式。</p>
-
-<p>Figure 3-16  Rectangles painted using multiply blend mode</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_multiply.gif" alt="image" /></p>
-
-<h4>屏幕混合模式(Screen Blend Mode)</h4>
-
-<p>屏幕混合模式指定将前景图片采样的反转色与背景图片的反转色相乘。结果颜色至少与两种采样颜色之一一样亮。图3-17显示了混合结果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeScreen来设置这种混合模式。</p>
-
-<p>Figure 3-17  Rectangles painted using screen blend mode</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_screen.gif" alt="image" /></p>
-
-<h4>叠加混合模式(Overlay Blend Mode)</h4>
-
-<p>叠加混合模式是将前景图片与背景图片或者正片叠底，或者屏幕化，这取决于背景颜色。背景颜色值与前景颜色值以反映出背景颜色的亮度与暗度。图3-18显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeOverlay来设置这种混合模式。</p>
-
-<p>Figure 3-18  Rectangles painted using overlay blend mode</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_overlay.gif" alt="image" /></p>
-
-<h4>暗化混合模式(Darken Blend Mode)</h4>
-
-<p>通过选择前景图片与背景图片更暗的采样来混合图片采样。背景图片采样被前景图片采样更暗的部分取代，而其它部分不变。图3-19显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeDarken来设置这种混合模式。</p>
-
-<p>Figure 3-19  Rectangles painted using darken blend mode</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_darken.gif" alt="image" /></p>
-
-<h4>亮化混合模式(Lighten Blend Mode)</h4>
-
-<p>通过选择前景图片与背景图片更亮的采样来混合图片采样。背景图片采样被前景图片采样更亮的部分取代，而其它部分不变。图3-20显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeLighten来设置这种混合模式。</p>
-
-<p>Figure 3-20  Rectangles painted using lighten blend mode</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_lighten.gif" alt="image" /></p>
-
-<h4>色彩减淡模式(ColorDodge Blend Mode)</h4>
-
-<p>加亮背景图片采样以反映出前景图片采样。被指定为黑色的前景图片采样值将不产生变化。图3-21显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeColorDodge来设置这种混合模式。</p>
-
-<p>Figure 3-21  Rectangles painted using color dodge blend mode</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_color_dodge.gif" alt="image" /></p>
-
-<h4>色彩加深模式(ColorBurn Blend Mode)</h4>
-
-<p>加深背景图片采样以反映出前景图片采样。被指定为白色的前景图片采样值将不产生变化。图3-21显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeColorBurn来设置这种混合模式。</p>
-
-<p>Figure 3-22  Rectangles painted using color burn blend mode</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_color_burn.gif" alt="image" /></p>
-
-<h4>柔光混合模式(SoftLight Blend Mode)</h4>
-
-<p>根据前景采样颜色减淡或加深颜色值。如果前景采样颜色比50%灰度值更亮，则减淡背景，类似于Dodge模式。如果前景采样颜色比50%灰度值更暗，则加强背景，类似于Burn模式。纯黑或纯白的图片采样将产生更暗或更亮的区域。但是但是不产生纯白或纯黑的颜色。该效果类似于将一个漫射光源放于一个前景图前。该效果用于在场景中添加高光效果。图3-23显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeSoftLight来设置这种混合模式。</p>
-
-<p>Figure 3-23  Rectangles painted using soft light blend mode</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_soft_light.gif" alt="image" /></p>
-
-<h4>强光混合模式(Hard Light Blend Mode)</h4>
-
-<p>根据前景图片采样颜色正片叠加或屏幕化颜色。如果前景采样颜色比50%灰度值更亮，则减淡背景，类似于screen模式。如果前景采样颜色比50%灰度值更暗，则加深背景，类似于multiply模式。如果前景采样颜色等于50%灰度，则前景颜色不变。纯黑与纯白的颜色图片采样将产生纯黑或纯白的颜色值。该效果类似于将一个强光源放于一个前景图前。该效果用于在场景中添加高光效果。图3-24显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeHardLight来设置这种混合模式。</p>
-
-<p>Figure 3-24  Rectangles painted using hard light blend mode</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_hard_light.gif" alt="image" /></p>
-
-<h4>差值混合模式(Difference Blend Mode)</h4>
-
-<p>将前景图片采样颜色值与背景图片采样值相减，相减的前后关系取决于哪个采样的亮度值更大。黑色的前景采样值不发生变化；白色值转化为背景的值。图3-25显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeDifference来设置这种混合模式。</p>
-
-<p>Figure 3-25  Rectangles painted using difference blend mode</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_difference.gif" alt="image" /></p>
-
-<h4>排除混合模式(Exclusion Blend Mode)</h4>
-
-<p>该效果类似于Difference效果，只是对比度更低。黑色的前景采样值不发生变化；白色值转化为背景的值。图3-26显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeExclusion来设置这种混合模式。</p>
-
-<p>Figure 3-26  Rectangles painted using exclusion blend mode</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_exclusion.gif" alt="image" /></p>
-
-<h4>色相混合模式(Hue Blend Mode)</h4>
-
-<p>使用背景的亮度和饱和度与前景的色相混合。图3-27显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeHue来设置这种混合模式。</p>
-
-<p>Figure 3-27  Rectangles painted using hue blend mode</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_hue.gif" alt="image" /></p>
-
-<h4>饱和度混合模式(Saturation Blend Mode)</h4>
-
-<p>混合背景的亮度和色相前景的饱和度。背景中没有饱和度的区域不发生变化。图3-28显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeSaturation来设置这种混合模式。</p>
-
-<p>Figure 3-28  Rectangles painted using saturation blend mode</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_saturation.gif" alt="image" /></p>
-
-<h4>颜色混合模式(Color Blend Mode)</h4>
-
-<p>混合背景的亮度值与前景的色相与饱和度。该模式保留图片的灰度级。我们可以使用该模式绘制单色图片或彩色图片。图3-29显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeColor来设置这种混合模式。</p>
-
-<p>Figure 3-29  Rectangles painted using color blend mode</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_color.gif" alt="image" /></p>
-
-<h4>亮度混合模式(Luminosity Blend Mode)</h4>
-
-<p>将背景图片的色相、饱和度与背景图片的亮度相混合。该模块产生一个与Color Blend模式相反的效果。图3-30显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeLuminosity来设置这种混合模式。</p>
-
-<p>Figure 3-30  Rectangles painted using luminosity blend mode</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_luminosity.gif" alt="image" /></p>
-
-<h2>裁剪路径</h2>
-
-<p>当前裁剪区域是从路径中创建，作为一个遮罩，从而允许遮住我们不想绘制的部分。例如，我们有一个很大的图片，但只需要显示其中一小部分，则可以设置裁减区域来显示我们想显示的部分。</p>
-
-<p>当我们绘制的时候，Quartz只渲染裁剪区域里面的东西。裁剪区域内的闭合路径是可见的；而在区域外的部分是不可见的。</p>
-
-<p>当图形上下文初始创建时，裁减区域包含上下文所有的可绘制区域(例如，PDF上下文的media box)。我们可以通过设置当前路径来改变裁剪区域，然后使用裁减函数来取代绘制函数。裁剪函数与当前已有的裁剪区域求交集以获得路径的填充区域。因此，我们可以求交取得裁减区域，缩小图片的可视区域，但是不能扩展裁减区域。</p>
-
-<p>裁减区域是图形状态的一部分。为了恢复先前的裁减区域，我们可以在裁减前保存图形状态，并在裁减绘制后恢复图形状态。</p>
-
-<p>代码清单3-1显示了绘制圆形后设置裁减区域。该段代码使得绘图被裁减，效果类似于图3-3所示。</p>
-
-<p>Listing 3-1 Setting up a circular clip area</p>
-
-<pre><code>CGContextBeginPath(context);
-CGContextAddArc(context, w/2, h/2, ((w&gt;h) ? h : w)/2, 0, 2*PI, 0);
-CGContextClosePath(context);
-CGContextClip(context);
-</code></pre>
-
-<p>Table 3-6  Functions that clip the graphics context</p>
-
-<p><img src="http://cc.cocimg.com/bbs/attachment/thumb/Fid_6/6_38018_9138e0a8166cd38.png" alt="image" /></p>
 ]]></content>
   </entry>
   

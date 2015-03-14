@@ -11,7 +11,7 @@
   <meta name="baidu-site-verification" content="HoscFhWICI" />
 
   
-  <meta name="description" content="阴影是绘制在一个图形对象下的且有一定偏移的图片，它用于模拟光源照射到图形对象上所形成的阴影效果，如果7-1所示。文本也可以有阴影。阴影可以让一幅图像看上去是立体的或者是浮动的。 Figure 7-1 A shadow 阴影有三个属性： x偏移值，用于指定阴影相对于图片在水平方向上的偏移值。 &hellip;">
+  <meta name="description" content="Quartz提供了两个不透明数据odgago创建渐变：CGShadingRef和CGGradientRef。我们可以使用任何一个来创建轴向(axial)或径向(radial)渐变。一个渐变是从一个颜色到另外一种颜色的填充。 一个轴向渐变(也称为线性渐变)沿着由两个端点连接的轴线渐变。 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -70,6 +70,568 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/12/10/quartz-2dbian-cheng-zhi-nan-zhi-ba-:jian-bian/">Quartz 2D编程指南之八：渐变</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-12-10T09:00:26+08:00" pubdate data-updated="true">Dec 10<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/12/10/quartz-2dbian-cheng-zhi-nan-zhi-ba-:jian-bian/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Quartz提供了两个不透明数据odgago创建渐变：CGShadingRef和CGGradientRef。我们可以使用任何一个来创建轴向(axial)或径向(radial)渐变。一个渐变是从一个颜色到另外一种颜色的填充。</p>
+
+<p>一个轴向渐变(也称为线性渐变)沿着由两个端点连接的轴线渐变。所有位于垂直于轴线的某条线上的点都具有相同的颜色值。</p>
+
+<p>一个径向渐变也是沿着两个端点连接的轴线渐变，不过路径通常由两个圆来定义。</p>
+
+<p>本章提供了一些我们使用Quartz能够创建的轴向和径向渐变的类型的例子，并比较绘制渐变的两种方法，然后演示了如何使用每种不透明数据类型来创建渐变。</p>
+
+<h2>轴向和径向渐变实例</h2>
+
+<p>Quartz函数提供了一个丰富的功能来创建渐变效果。这一部分显示了一些我们能达到的效果。图8-1中的轴向渐变由橙色向黄色渐变。在这个例子中，渐变轴相对于原点倾斜了45度角。</p>
+
+<p>Figure 8-1  An axial gradient along a 45 degree axis</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/two_color_gradient.jpg" alt="image" /></p>
+
+<p>Quartz也允许我们指定一系列的颜色和位置值，以沿着轴来创建更复杂的轴向渐变，如图8-2所示。起始点的颜色值是红色，结束点的颜色是紫罗兰色。同时，在轴上有五个位置，它们的颜色值分别被设置为橙、黄、绿、蓝和靛蓝。我们可以把它看成沿着同一轴线的六段连续的线性渐变。虽然这里的轴线与图8-1是一样的，但这不是必须的。轴线的角度由我们提供的两个端点定义。</p>
+
+<p>Figure 8-2  An axial gradient created with seven locations and colors</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rainbow_gradient.jpg" alt="image" /></p>
+
+<p>图8-3显示了一个径向渐变，它从一个小的明亮的红色圆渐变到一个大小黑色的圆。</p>
+
+<p>Figure 8-3  A radial gradient that varies between two circles</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/cylinder6.gif" alt="image" /></p>
+
+<p>使用Quartz，我们不局限于创建颜色值改变的渐变；我们可以只修改alpha值，或者创建alpha值与其它颜色组件一起改变的渐变。图8-4显示了一个渐变，其红、绿、蓝组件的值是不变的，但alpha值从1.0渐变到0.1。</p>
+
+<p>注意：如果我们使用alpha值来改变一个渐变，则在绘制一个PDF内容时我们不能捕获这个渐变。因此，这样的渐变无法打印。如果需要绘制一个渐变到PDF，则需要让alpha值为1.0。</p>
+
+<p>Figure 8-4  A radial gradient created by varying only the alpha component</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/alpha_only.jpg" alt="image" /></p>
+
+<p>我们可以把一个圆放置到一个径向渐变中来创建各种形状。如果一个圆是另一个的一部分或者完全在另一个的外面，则Quartz创建了圆锥和一个圆柱。径向渐变的一个通常用法就是创建一个球体阴影，如图8-5所示。在这种情况下，一个单一的点(半径为0的圆)位于一个大圆以内。</p>
+
+<p>Figure 8-5  A radial gradient that varies between a point and a circle</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/shaded_sphere.gif" alt="image" /></p>
+
+<p>我们可以像图8-6一样通过内嵌几个径向渐变来创建更复杂的效果。它使用同心圆来创建图形中的各环形部分。</p>
+
+<p>Figure 8-6  Nested radial gradients</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/torus.gif" alt="image" /></p>
+
+<h2>CGShading和CGGradient对象的对比</h2>
+
+<p>我们有两个对象类型用于创建渐变，你可能想知道哪一个更好用。本节就来回答这个问题。</p>
+
+<p>CGShadingRef这个不透明数据类型给我们更多的控制权，以确定如何计算每个端点的颜色。在我们创建CGShading对象之前，我们必须创建一个CGFunction对象(CGFunctionRef)，这个对象定义了一个用于计算渐变颜色的函数。写一个自定义的函数让我们能够创建平滑的渐变，如图8-3，8-3和8-5及更多非传统的效果，如图8-12所示。</p>
+
+<p>当创建一个CGShading对象时，我们指定其是轴向还是径向。除了计算函数外，我们还需要提供一个颜色空间、起始点和结束点或者是半径，这取决于是绘制轴向还是径向渐变。在绘制时，我们只是简单地传递CGShading对象及绘制上下文给CGContextDrawShading函数。Quartz为渐变上的每个点调用渐变计算函数。</p>
+
+<p>一个CGGradient对象是CGShading对象的子集，其更易于使用。CGGradientRef不透明类型易于作用，因为Quartz在渐变的每一个顶点上计算颜色值。我们不需要提供一个渐变计算函数。当创建一个渐变对象时，我们提供一个位置和颜色的数组。Quartz使用对应的颜色值来计算每个梯度的渐变，。我们可以使用单一的起始与结束点来设置一个渐变对象，如图8-1所示，或者提供一组端点来创建一个类似于图8-2的的效果。使用CGShading对象可以提供多于两个位置的能力。</p>
+
+<p>当我们创建一个CGGradient对象时，我们需要设置一个颜色空间、位置、和每个位置对应的颜色值。当使用一个渐变对象绘制上下文时，我们指定Quartz是绘制一个轴向还是径向渐变。在绘制时，我们指定开始结束点或半径，这取决于我们是绘制轴向还是径向渐变。而CGShading的几何形状是在创建时定义的，而不是绘制时。</p>
+
+<p>表8-1总结了两种不透明数据类型之间的区别。</p>
+
+<p><img src="http://a1.qpic.cn/psb?/V130i6W71atwfr/AaDaf5N2GhcgG29GukC4bGMrQsPTL35OU4kjfjH2tZo!/b/dDOyEHb5CAAA&amp;bo=ggckAgAAAAADB4E!&amp;rf=viewer_4" alt="image" /></p>
+
+<h2>扩展渐变端点外部的颜色</h2>
+
+<p>当我们创建一个渐变时，我们可以选择使用纯色来填充渐变端点外部的空间。Quartz使用使用渐变边界上的颜色作为填充颜色。我们可以扩展渐变起点、终点或两端的颜色。我们可以扩展使用CGShading对象或CGGradient对象创建的轴向或径向渐变。</p>
+
+<p>图8-7演示了一个轴向渐变，它扩展了起点和终点两侧的区域。图片中的线段显示了渐变的轴线。我们可以看到，填充颜色与起点和终点的颜色是对应的。</p>
+
+<p>Figure 8-7  Extending an axial gradient</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/extend_axial2.gif" alt="image" /></p>
+
+<p>图8-8对比了一个未使用扩展的径向渐变和一个在起点和终点两侧使用扩展的径向渐变。Quartz获取了起点和终点的颜色值，并使用这边纯色值来扩展立面。</p>
+
+<p>Figure 8-8  Extending a radial gradient</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/extend_radial.gif" alt="image" /></p>
+
+<h2>使用CGGradient对象</h2>
+
+<p>一个CGGradient对象是一个渐变的抽象定义&mdash;它简单地指定了颜色值和位置，但没有指定几何形状。我们可以在轴向和径向几何形状中使用这个对象。作为一个抽象定义，CGGradient对象可能比CGShading对象更容易重用。没有将几何形状存储在CGGradient对象中，这样允许我们使用相同的颜色方案来绘制不同的几何图形，而不需要为多个图形创建多个CGGradient对象。</p>
+
+<p>因为Quartz为我们计算渐变，使用一个CGGradient对象来创建和绘制一个渐变则更直接，只需要以下几步：</p>
+
+<ol>
+<li>创建一个CGGradient对象，提供一个颜色空间，一个饱含两个或更多颜色组件的数组，一个包含两个或多个位置的数组，和两个数组中元素的个数。</li>
+<li>调用CGContextDrawLinearGradient或CGContextDrawRadialGradient函数并提供一个上下文、一个CGGradient对象、绘制选项和开始结束几何图形来绘制渐变。</li>
+<li>当不再需要时释放CGGradient对象。</li>
+</ol>
+
+
+<p>一个位置是一个值区间在0.0到1.0之间的CGFloat值，它指定了沿着渐变的轴线的标准化距离。值0.0指定的轴线的起点，1.0指定了轴线的终点。其它的值指定了一个距离的比例。最低限度情况下，Quartz使用两个位置值。如果我们传递NULL值作为位置数组参数，则Quartz使用0作为第一个位置，1作为第二个位置。</p>
+
+<p>每个颜色的颜色组件的数目取决于颜色空间。对于离屏绘制，我们使用一个RGB颜色空间。因为Quartz使用alpha来绘制，每个离屏颜色都有四个组件&mdash;红、绿、蓝和alpha。所以，对于离屏绘制，我们提供的颜色组件数组的元素的数目必须是位置数目的4倍。Quartz的RGBA颜色组件可以在0.0到1.0之间改变。</p>
+
+<p>代码清单8-1是创建一个CGGradient对象的代码片断。在声明了必须的变量后，代码设置了位置和颜色组件数组。然后创建了一个通用的RGB颜色空间。(在iOS中，不管RGB颜色空间是否可用，我们都应该调用CGColorSpaceCreateDeviceRGB)。然后，它传递必要的参数到CGGradientCreateWithColorComponents函数。我们同样可以使用CGGradientCreateWithColors，如果我们的程序设置了CGColor对象，这是一种便捷的方法。</p>
+
+<p>Listing 8-1  Creating a CGGradient object</p>
+
+<pre><code>CGGradientRef myGradient;
+CGColorSpaceRef myColorspace;
+size_t num_locations = 2;
+CGFloat locations[2] = { 0.0, 1.0 };
+CGFloat components[8] = { 1.0, 0.5, 0.4, 1.0,  // Start color
+                          0.8, 0.8, 0.3, 1.0 }; // End color
+
+myColorspace = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
+myGradient = CGGradientCreateWithColorComponents (myColorspace, components,
+                          locations, num_locations);
+</code></pre>
+
+<p>在创建了CGGradient对象后，我们可以使用它来绘制一个轴向或线性渐变。代码清单8-2声明并设置了线性渐变的起始点然后绘制渐变。图8-1显示了结果。代码没有演示如何获取CGContext对象。</p>
+
+<p>Listing 8-2  Painting an axial gradient using a CGGradient object</p>
+
+<pre><code>CGPoint myStartPoint, myEndPoint;
+myStartPoint.x = 0.0;
+myStartPoint.y = 0.0;
+myEndPoint.x = 1.0;
+myEndPoint.y = 1.0;
+CGContextDrawLinearGradient (myContext, myGradient, myStartPoint, myEndPoint, 0);
+</code></pre>
+
+<p>代码清单8-3使用代码清单8-1中创建的CGGradient对象来绘制图8-9中径向渐变。这个例子同时也演示了使用纯色来填充渐变的扩展区域。</p>
+
+<p>Listing 8-3  Painting a radial gradient using a CGGradient object</p>
+
+<pre><code>CGPoint myStartPoint, myEndPoint;
+CGFloat myStartRadius, myEndRadius;
+myStartPoint.x = 0.15;
+myStartPoint.y = 0.15;
+myEndPoint.x = 0.5;
+myEndPoint.y = 0.5;
+myStartRadius = 0.1;
+myEndRadius = 0.25;
+CGContextDrawRadialGradient (myContext, myGradient, myStartPoint,
+                         myStartRadius, myEndPoint, myEndRadius,
+                         kCGGradientDrawsAfterEndLocation);
+</code></pre>
+
+<p>Figure 8-9  A radial gradient painted using a CGGradient object</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/radial_cggradient.jpg" alt="image" /></p>
+
+<p>图8-4中的径向渐变使用代码清单8-4中的变量来创建。</p>
+
+<p>Listing 8-4  The variables used to create a radial gradient by varying alpha</p>
+
+<pre><code>CGPoint myStartPoint, myEndPoint;
+CGFloat myStartRadius, myEndRadius;
+myStartPoint.x = 0.2;
+myStartPoint.y = 0.5;
+myEndPoint.x = 0.65;
+myEndPoint.y = 0.5;
+myStartRadius = 0.1;
+myEndRadius = 0.25;
+size_t num_locations = 2;
+CGFloat locations[2] = { 0, 1.0 };
+CGFloat components[8] = { 0.95, 0.3, 0.4, 1.0,
+                          0.95, 0.3, 0.4, 0.1 };
+</code></pre>
+
+<p>代码清单8-5显示了用于创建图8-10中的灰色渐变的变量，其中有3个位置。</p>
+
+<p>Listing 8-5  The variables used to create a gray gradient</p>
+
+<pre><code>size_t num_locations = 3;
+CGFloat locations[3] = { 0.0, 0.5, 1.0};
+CGFloat components[12] = {  1.0, 1.0, 1.0, 1.0,
+                            0.5, 0.5, 0.5, 1.0,
+                            1.0, 1.0, 1.0, 1.0 };
+</code></pre>
+
+<p>Figure 8-10  An axial gradient with three locations</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/gray_gradient_3.jpg" alt="image" /></p>
+
+<h2>使用CGShading对象</h2>
+
+<p>我们通过调用函数CGShadingCreateAxial或CGShadingCreateRadial创建一个CGShading对象来设置一个渐变，调用这些函数需要提供以下参数：</p>
+
+<ol>
+<li>CGColorSpace对象：颜色空间</li>
+<li>起始点和终点。对于轴向渐变，有轴线的起始点和终点的坐标。对于径向渐变，有起始圆和终点圆中心的坐标。</li>
+<li>用于定义渐变区域的圆的起始半径与终止半径。</li>
+<li>一个CGFunction对象，可以通过CGFunctionCreate函数来获取。这个回调例程必须返回绘制到特定点的颜色值。</li>
+<li>一个布尔值，用于指定是否使用纯色来绘制起始点与终点的扩展区域。</li>
+</ol>
+
+
+<p>我们提供给CGShading创建函数的CGFunction对象包含一个回调结构体，及Quartz需要实现这个回调的所有信息。也许设置CGShasing对象的最棘手的部分是创建CGFunction对象。当我们调用CGFunctionCreate函数时，我们提供以下参数：</p>
+
+<ol>
+<li>指向回调所需要的数据的指针</li>
+<li>回调的输入值的个数。Quartz要求回调携带一个输入值。</li>
+<li>一个浮点数的数组。Quartz只会提供数组中的一个元素给回调函数。一个转入值的范围是0(渐变的开始点的颜色)到1(渐变的结束点的颜色)。</li>
+<li>回调提供的输出值的数目。对于每一个输入值，我们的回调必须为每个颜色组件提供一个值，以及一个alpha值来指定透明度。颜色组件值由Quartz提供的颜色空间来解释，并会提供给CGShading创建函数。例如，如果我们使用RGB颜色空间，则我们提供值4作为输出值(R,G,B,A)的数目。</li>
+<li>一个浮点数的数组，用于指定每个颜色组件的值及alpha值。</li>
+<li><p>一个回调数据结构，包含结构体的版本(设置为0)、生成颜色组件值的回调、一个可选的用于释放回调中info参数表示的数据。该回调类似于以下格式：</p>
+
+<p> void myCalculateShadingValues (void <em>info, const CGFloat </em>in, CGFloat *out)</p></li>
+</ol>
+
+
+<p>在创建CGShading对象后，如果需要我们可以设置额外的裁减操作。然后调用CGContextDrawShading函数来使用渐变来绘制上下文的裁减区域。当调用这个函数时，Quartz调用回调函数来获取从起点到终点这个范围内的颜色值。</p>
+
+<p>当不再需要CGShading对象时，我们调用CGShadingRelease来释放它。</p>
+
+<p>下面我们将一步步地通过代码来看看如何使用CGShading对象来绘制渐变。</p>
+
+<h3>使用CGShading对象绘制一个轴向渐变</h3>
+
+<p>绘制轴向和径向渐变的步骤是差不多的。这个例子演示了如何使用一个CGShading对象来绘制一个轴向渐变，并在图形上下文中绘制一个半圆形的裁减路径，然后将渐变绘制到裁减区域来达到图8-11的效果。</p>
+
+<p>Figure 8-11  An axial gradient that is clipped and painted</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/axial_shading_arc.gif" alt="image" /></p>
+
+<p>为了绘制图中的轴向渐变，需要按以下步骤来处理：</p>
+
+<ol>
+<li>设置CGFunction对象来计算颜色值</li>
+<li>创建轴向渐变的CGShading对象</li>
+<li>裁减上下文</li>
+<li>使用CGShading对象来绘制轴向渐变</li>
+<li>释放对象</li>
+</ol>
+
+
+<h4>设置CGFunction对象来计算颜色值</h4>
+
+<p>我们可以以我们想要的方式来计算颜色值，我们的颜色计算函数包含以下三个参数：</p>
+
+<ol>
+<li>void *info：这个值可以为NULL或者是一个指向传递给CGShading创建函数的数据。</li>
+<li>const CGFloat *in：Quartz传递in数组给回调。数组中的值必须在为CGFunction对象定义的输入值范围内。例如，输入范围是0到1；看代码清单8-7</li>
+<li>CGFloat *out：我们的回调函数传递out数组给Quartz。它包含用于颜色空间中每个颜色组件的元素及一个alpha值。输出值应该在CGFunction对象中定义的输出值的范围内，例如，输出范围是0到1；看代码清单8-7。</li>
+</ol>
+
+
+<p>更多关于参数的信息可以查看CGFunctionEvaluateCallback。</p>
+
+<p>代码清单8-6演示了一个函数，它通过将一个常数数组中的值乘以输入值来计算颜色组件值。因为输入值在0到1之间，所以输入值位于黑色(对于RGB来说值为0, 0, 0)和紫色(1, 0, 0.5)之间。注意最后一个组件通常设置为1，表示颜色总是完全不透明的。</p>
+
+<p>Listing 8-6  Computing color component values</p>
+
+<pre><code>static void myCalculateShadingValues (void *info,
+                            const CGFloat *in,
+                            CGFloat *out)
+{
+    CGFloat v;
+    size_t k, components;
+    static const CGFloat c[] = {1, 0, .5, 0 };
+
+    components = (size_t)info;
+
+    v = *in;
+    for (k = 0; k &lt; components -1; k++)
+        *out++ = c[k] * v;
+     *out++ = 1;
+}
+</code></pre>
+
+<p>在写完回调计算颜色值后，我们将其打包以作为CGFunction对象的一部分。代码清单显示了一个函数，它创建了一个包含代码清单8-6中的回调函数的CGFunction对象。</p>
+
+<p>Listing 8-7  Creating a CGFunction object</p>
+
+<pre><code>static CGFunctionRef myGetFunction (CGColorSpaceRef colorspace)
+{
+    size_t numComponents;
+    static const CGFloat input_value_range [2] = { 0, 1 };
+    static const CGFloat output_value_ranges [8] = { 0, 1, 0, 1, 0, 1, 0, 1 };
+    static const CGFunctionCallbacks callbacks = { 0,
+                                &amp;myCalculateShadingValues,
+                                NULL };
+
+    numComponents = 1 + CGColorSpaceGetNumberOfComponents (colorspace);
+    return CGFunctionCreate ((void *) numComponents,
+                                1, 
+                                input_value_range, 
+                                numComponents, 
+                                output_value_ranges, 
+                                &amp;callbacks);
+}
+</code></pre>
+
+<h4>创建一个轴向渐变的CGShading对象</h4>
+
+<p>为了创建一个CGShading对象，我们调用CGShadingCreateAxial函数，如代码清单8-8所示。我们传递一个颜色空间，开始点和结束点，一个CGFunction对象，和一个用于指定是否填充渐变的开始点和结束点扩展的布尔值。</p>
+
+<p>Listing 8-8  Creating a CGShading object for an axial gradient</p>
+
+<pre><code>CGPoint     startPoint,
+            endPoint;
+CGFunctionRef myFunctionObject;
+CGShadingRef myShading;
+
+startPoint = CGPointMake(0,0.5);
+endPoint = CGPointMake(1,0.5);
+colorspace = CGColorSpaceCreateDeviceRGB();
+myFunctionObject = myGetFunction (colorspace);
+
+myShading = CGShadingCreateAxial (colorspace,
+                        startPoint, endPoint,
+                        myFunctionObject,
+                        false, false);
+</code></pre>
+
+<h4>裁减上下文</h4>
+
+<p>当绘制一个渐变时，Quartz填充当前上下文。绘制一个渐变与操作颜色和模式不同，后者是用于描边或填充一个路径对象。因此，如果要我们的渐变出现在一个特定形状中，我们需要裁减上下文。代码清单8-9的代码添加了一个半圆形到当前上下文，以便渐变绘制到这个裁减区域，如图8-11。</p>
+
+<p>如果我们仔细看，会发现代码绘制的是一个半圆，而图中显示的是一个半椭圆形。为什么呢？我们会看到，当我们查看后面完整的绘制代码时，上下文被缩放了。稍后会详细说明。虽然我们不需要使用缩放或裁减，这些在Quartz 2D中的选项可以帮助我们达到有趣的效果。</p>
+
+<p>Listing 8-9  Adding a semicircle clip to the graphics context</p>
+
+<pre><code>CGContextBeginPath (myContext);
+CGContextAddArc (myContext, .5, .5, .3, 0,
+                my_convert_to_radians (180), 0);
+CGContextClosePath (myContext);
+CGContextClip (myContext);
+</code></pre>
+
+<h4>使用CGShading对象来绘制轴向渐变</h4>
+
+<p>调用函数CGContextDrawShading使用CGShading对象为指定的颜色渐变来填充当前上下文：</p>
+
+<pre><code>CGContextDrawShading (myContext, myShading);
+</code></pre>
+
+<h4>释放对象</h4>
+
+<p>当我们不再需要CGShading对象时，可以调用函数CGShadingRelease来释放它。我们需要同时释放CGColorSpace对象和CGFunction对象，如代码清单8-10所示：</p>
+
+<p>Listing 8-10  Releasing objects</p>
+
+<pre><code>CGShadingRelease (myShading);
+CGColorSpaceRelease (colorspace);
+CGFunctionRelease (myFunctionObject);
+</code></pre>
+
+<h4>使用CGShading对象绘制轴向渐变的完整例程</h4>
+
+<p>代码清单8-11显示了绘制一个轴向渐变的完整例程，使用8-7中的CGFunction对象和8-6中的回调函数。</p>
+
+<p>Listing 8-11  Painting an axial gradient using a CGShading object</p>
+
+<pre><code>void myPaintAxialShading (CGContextRef myContext,
+                            CGRect bounds)
+{
+    CGPoint     startPoint,
+                endPoint;
+    CGAffineTransform myTransform;
+    CGFloat width = bounds.size.width;
+    CGFloat height = bounds.size.height;
+
+
+    startPoint = CGPointMake(0,0.5); 
+    endPoint = CGPointMake(1,0.5);
+
+    colorspace = CGColorSpaceCreateDeviceRGB();
+    myShadingFunction = myGetFunction(colorspace);
+
+    shading = CGShadingCreateAxial (colorspace, 
+                                 startPoint, endPoint,
+                                 myShadingFunction,
+                                 false, false);
+
+    myTransform = CGAffineTransformMakeScale (width, height);
+    CGContextConcatCTM (myContext, myTransform);
+    CGContextSaveGState (myContext);
+
+    CGContextClipToRect (myContext, CGRectMake(0, 0, 1, 1));
+    CGContextSetRGBFillColor (myContext, 1, 1, 1, 1);
+    CGContextFillRect (myContext, CGRectMake(0, 0, 1, 1));
+
+    CGContextBeginPath (myContext);
+    CGContextAddArc (myContext, .5, .5, .3, 0,
+                        my_convert_to_radians (180), 0);
+    CGContextClosePath (myContext);
+    CGContextClip (myContext);
+
+    CGContextDrawShading (myContext, shading);
+    CGColorSpaceRelease (colorspace);
+    CGShadingRelease (shading);
+    CGFunctionRelease (myShadingFunction);
+
+    CGContextRestoreGState (myContext); 
+}
+</code></pre>
+
+<h3>使用CGShading对象绘制一个径向渐变</h3>
+
+<p>这个例子演示了如何使用CGShading对象来生成如图8-12所示的输出</p>
+
+<p>Figure 8-12  A radial gradient created using a CGShading object</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/radial_shading.gif" alt="image" /></p>
+
+<p>为了绘制一个径向渐变，我们需要按以下步骤来处理：</p>
+
+<ol>
+<li>设置CGFunction对象来计算颜色值</li>
+<li>创建径向渐变的CGShading对象</li>
+<li>使用CGShading对象来绘制径向渐变</li>
+<li>释放对象</li>
+</ol>
+
+
+<h4>设置CGFunction对象来计算颜色值</h4>
+
+<p>计算径向渐变和轴向渐变颜色值的函数没有什么区别。事实上，我们可以依照上面的轴向的&#8221;设置CGFunction对象来计算颜色值&#8221;。代码清单8-12用于计算颜色，使用颜色按正弦变化。图8-12与图8-11的结果非常不同。虽然颜色输出值不同，代码清单8-12的代码与8-6中的函数遵循相同的原型。每个函数获取一个输入值并计算N个值，即颜色空间的每个颜色组件加一个alpha值。</p>
+
+<p>Listing 8-12  Computing color component values</p>
+
+<pre><code>static void  myCalculateShadingValues (void *info,
+                                const CGFloat *in,
+                                CGFloat *out)
+{
+    size_t k, components;
+    double frequency[4] = { 55, 220, 110, 0 };
+    components = (size_t)info;
+    for (k = 0; k &lt; components - 1; k++)
+        *out++ = (1 + sin(*in * frequency[k]))/2;
+     *out++ = 1; // alpha
+}
+</code></pre>
+
+<p>在写完颜色计算函数后调用它，我们需要创建一个CGFunction对象，如在轴向中&#8221;设置CGFunction对象来计算颜色值&#8221;所描述的一样。</p>
+
+<h4>创建径向渐变的CGShading对象</h4>
+
+<p>为了创建一个CGShading对象或者一个径向渐变，我们调用CGShadingCreateRadial函数，如代码清单8-13所求，传递一个颜色空间、开始点和结束点，开始半径和结束半径，一个CGFunction对象，和一个用于指定是否填充渐变的开始点和结束点扩展的布尔值。</p>
+
+<p>Listing 8-13  Creating a CGShading object for a radial gradient</p>
+
+<pre><code>CGPoint startPoint, endPoint;
+CGFloat startRadius, endRadius;
+
+startPoint = CGPointMake(0.25,0.3);
+startRadius = .1;
+endPoint = CGPointMake(.7,0.7);
+endRadius = .25;
+colorspace = CGColorSpaceCreateDeviceRGB();
+myShadingFunction = myGetFunction (colorspace);
+CGShadingCreateRadial (colorspace,
+                startPoint,
+                startRadius,
+                endPoint,
+                endRadius,
+                myShadingFunction,
+                false,
+                false);
+</code></pre>
+
+<h4>使用CGShading对象来绘制径向渐变</h4>
+
+<p>调用函数CGContextDrawShading使用CGShading对象为指定的颜色渐变来填充当前上下文：</p>
+
+<pre><code>CGContextDrawShading (myContext, myShading);
+</code></pre>
+
+<p>注意我们使用相同的函数来绘制渐变，而不管它是轴向还是径向。</p>
+
+<h4>释放对象</h4>
+
+<p>当我们不再需要CGShading对象时，可以调用函数CGShadingRelease来释放它。我们需要同时释放CGColorSpace对象和CGFunction对象，如代码清单8-14所示：</p>
+
+<p>Listing 8-10  Releasing objects</p>
+
+<pre><code>CGShadingRelease (myShading);
+CGColorSpaceRelease (colorspace);
+CGFunctionRelease (myFunctionObject);
+</code></pre>
+
+<h4>使用CGShading对象绘制径向渐变的完整例程</h4>
+
+<p>代码清单8-15显示了绘制一个轴径向渐变的完整例程，使用8-7中的CGFunction对象和8-12中的回调函数。</p>
+
+<p>Listing 8-15  A routine that paints a radial gradient using a CGShading object</p>
+
+<pre><code>void myPaintRadialShading (CGContextRef myContext,
+                            CGRect bounds);
+{
+    CGPoint startPoint,
+            endPoint;
+    CGFloat startRadius,
+            endRadius;
+    CGAffineTransform myTransform;
+    CGFloat width = bounds.size.width;
+    CGFloat height = bounds.size.height;
+
+    startPoint = CGPointMake(0.25,0.3); 
+    startRadius = .1;  
+    endPoint = CGPointMake(.7,0.7); 
+    endRadius = .25; 
+
+    colorspace = CGColorSpaceCreateDeviceRGB(); 
+    myShadingFunction = myGetFunction (colorspace);
+
+    shading = CGShadingCreateRadial (colorspace, 
+                            startPoint, startRadius,
+                            endPoint, endRadius,
+                            myShadingFunction,
+                            false, false);
+
+    myTransform = CGAffineTransformMakeScale (width, height); 
+    CGContextConcatCTM (myContext, myTransform); 
+    CGContextSaveGState (myContext); 
+
+    CGContextClipToRect (myContext, CGRectMake(0, 0, 1, 1)); 
+    CGContextSetRGBFillColor (myContext, 1, 1, 1, 1);
+    CGContextFillRect (myContext, CGRectMake(0, 0, 1, 1));
+
+    CGContextDrawShading (myContext, shading); 
+    CGColorSpaceRelease (colorspace); 
+    CGShadingRelease (shading);
+    CGFunctionRelease (myShadingFunction);
+
+    CGContextRestoreGState (myContext); 
+}
+</code></pre>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1019,445 +1581,6 @@ CGContextTranslateCTM (myContext, w/4, 0);
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/11/16/quartz-2dbian-cheng-zhi-nan-zhi-san-:lu-jing-path/">Quartz 2D编程指南之三：路径(Path)</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-11-16T21:44:15+08:00" pubdate data-updated="true">Nov 16<sup>th</sup>, 2014</time>
-        
-        
-           | <a href="/blog/2014/11/16/quartz-2dbian-cheng-zhi-nan-zhi-san-:lu-jing-path/#comments">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p><strong>路径</strong>定义了一个或多个形状，或是子路径。一个子路径可由直线，曲线，或者同时由两者构成。它可以是开放的，也可以是闭合的。一个子路径可以是简单的形状，如线、圆、矩形、星形；也可以是复杂的形状，如山脉的轮廓或者是涂鸦。图3-1显示了一些我们可以创建的路径。左上角的直线可以是虚线；直线也可以是实线。上边中间的路径是由多条曲线组成的开放路径。右上角的同心圆填充了颜色，但没有描边。左下角的加利福尼亚州是闭合路径，由许多曲线和直线构成，且对路径进行填充和描边。两个星形阐明了填充路径的两种方式，我们将在本章详细描述。</p>
-
-<p>Figure 3-1  Quartz supports path-based drawing</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/path_vector_examples.gif" alt="image" /></p>
-
-<p>在本章中，我们将学习如何构建路径，如何对路径进行填充和描边，及影响路径表现形式的参数。</p>
-
-<h2>创建及绘制路径</h2>
-
-<p>路径创建及路径绘制是两个独立的工作。首先我们创建路径。当我们需要渲染路径时，我们需要使用Quartz来绘制它。正如图3-1中所示，我们可以选择对路径进行描边，填充路径，或同时进行这两种操作。我们同样可以将其它对象绘制到路径所表示的范围内，即对对象进行裁减。</p>
-
-<p>图3-2绘制了一个路径，该路径包含两个子路径。左边的子路径是一个矩形，右边的子路径是由直线和曲线组成的抽象形状。两个子路径都进行了填充及描边。</p>
-
-<p>Figure 3-2  A path that contains two shapes, or subpaths</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/subpaths.gif" alt="image" /></p>
-
-<p>图3-3显示了多条独立绘制的路径。每个路径饮食随机生成的曲线，一些进行填充，另一些进行了描边。这些路径都包含在一个圆形裁减区域内。</p>
-
-<p>Figure 3-3  A clipping area constrains drawing</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/circle_clipping.gif" alt="image" /></p>
-
-<h2>构建块(Building Block)</h2>
-
-<p>子路径是由直线、弧和曲线构成的。Quartz同样也提供了简便的函数用于添加矩形或椭圆等形状。点也是路径最基本的构建块，因为点定义了形状的起始点与终止点。</p>
-
-<h3>点</h3>
-
-<p>点由x, y坐标值定义，用于在用户空间指定 一个位置。我们可以调用函数CGContextMoveToPoint来为新的子路径指定起始点。Quartz跟踪当前点，用于记录路径构建过程中最新的位置。例如，如果调用函数CGContextMoveToPoint并设置位置为(10, 10)，即将当前点移动到位置(10, 10)。如果在水平位置绘制50个单位长度的直线，则直线的终点为(60, 10)，该点变成当前点。直线、弧和曲线总是从当前点开始绘制。</p>
-
-<p>通常我们通过传递(x, y)值给Quartz函数来指定一个点。一些函数需要我们传递一个CGPoint数据结构，该结构包含两个浮点值。</p>
-
-<h3>直线</h3>
-
-<p>直线由两个端点定义。起始点通常是当前点，所以创建直线时，我们只需要指定终止点。我们使用函数CGContextAddLineToPoint来添加一条直线到子路径中。</p>
-
-<p>我们可以调用CGContextAddLines函数添加一系列相关的直线到子路径中。我们传递一个点数组给这个函数。第一个点必须是第一条直线的起始点；剩下的点是端点。Quartz从第一个点开始绘制一个新子路径，然后每两个相邻点连接成一条线段。</p>
-
-<h3>弧</h3>
-
-<p>弧是圆弧段。Quartz提供了两个函数来创建弧。函数CGContextAddArc从圆中来创建一个曲线段。我们指定一个圆心，半径和放射角(以弧度为单位)。放射角为2 PI时，创建的是一个圆。图3-4显示了多个独立的路径。每个路径饮食一个自动生成的圆；一些是填充的，另一些是描边的。</p>
-
-<p>Figure 3-4  Multiple paths; each path contains a randomly generated circle</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/circles.gif" alt="image" /></p>
-
-<p>函数CGContextAddArcToPoint用于为矩形创建内切弧的场景。Quartz使用我们提供的端点创建两条正切线。同样我们需要提供圆的半径。弧心是两条半径的交叉点，每条半径都与相应的正切线垂直。弧的两个端点是正切线的正切点，如图3-5所示。红色的部分是实际绘制的部分。</p>
-
-<p>Figure 3-5  Defining an arc with two tangent lines and a radius</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rounded_corner.gif" alt="image" /></p>
-
-<p>如果当前路径已经包含了一个子路径，Quartz将追加一条从当前点到弧的起始点的直线段。如果当前路径为空，Quartz将创建一个新的子路径，该子路径从弧的起始点开始，而不添加初始的直线段。</p>
-
-<h3>曲线</h3>
-
-<p>二次与三次Bezier曲线是代数曲线，可以指定任意的曲线形状。曲线上的点通过一个应用于起始、终点及一个或多个控制点的多项式计算得出。这种方式定义的形状是向量图的基础。这个公式比将位数组更容易存储，并且曲线可以在任何分辨下重新创建。</p>
-
-<p>图3-6显示了一些路径的曲线。每条路径包含一条随机生成的曲线；一些是填充的，另一些是描边的。</p>
-
-<p>Figure 3-6  Multiple paths; each path contains a randomly generated curve</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/bezier_paths.gif" alt="image" /></p>
-
-<p>我们使用函数CGContextAddCurveToPoint将Bezier曲线连接到当前点，并传递控制点和端点作为参数，如图3-7所示。两个控制点的位置决定了曲线的形状。如果两个控制点都在两个端点上面，则曲线向上凸起。如果两个控制点都在两个端点下面，则曲线向下凹。如果第二个控制点比第一个控制点离得当前点近，则曲线自交叉，创建了一个回路。</p>
-
-<p>Figure 3-7  A cubic Bézier curve uses two control points</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/cubic_bezier_curve.gif" alt="image" /></p>
-
-<p>我们也可以调用函数CGContextAddQuadCurveToPoint来创建Bezier，并传递端点及一个控制点，如图3-8所示。控制点决定了曲线弯曲的方向。由于只使用一个控制点，所以无法创建出如三次Bezier曲线一样多的曲线。例如我们无法创建出交叉的曲线。</p>
-
-<p>Figure 3-8  A quadratic Bézier curve uses one control point</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/quadratic_bezier_curve.gif" alt="image" /></p>
-
-<h3>闭合路径</h3>
-
-<p>我们可以调用函数CGContextClosePath来闭合曲线。该函数用一条直接来连接当前点与起始点，以使路径闭合。起始与终点重合的直线、弧和曲线并不自动闭合路径，我们必须调用CGContextClosePath来闭合路径。</p>
-
-<p>Quartz的一些函数将路径的子路径看成是闭合的。这些函数显示地添加一条直线来闭合 子路径，如同调用了CGContextClosePath函数。</p>
-
-<p>在闭合一条子路径后，如果程序再添加直线、弧或曲线到路径，Quartz将在闭合的子路径的起点开始创建一个子路径。</p>
-
-<h3>椭圆</h3>
-
-<p>椭圆是一种特殊的圆。椭圆是通过定义两个焦点，在平面内所有与这两个焦点的距离之和相等的点所构成的图形。图3-9显示了一些独立的路径。每个路径都包含一个随机生成的椭圆；一些进行了填充，另一边进行了描边。</p>
-
-<p>Figure 3-9  Multiple paths; each path contains a randomly generated ellipse</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/ellipses.gif" alt="image" /></p>
-
-<p>我们可以调用CGContextAddEllipseInRect函数来添加一个椭圆到当前路径。我们提供一个矩形来定义一个椭圆。Quartz利用一系列的Bezier曲线来模拟椭圆。椭圆的中心就是矩形的中心。如果矩形的宽与高相等，则椭圆变成了圆，且圆的半径为矩形宽度的一半。如果矩形的宽与高不相等，则定义了椭圆的长轴与短轴。</p>
-
-<p>添加到路径中的椭圆开始于一个move-to操作，结束于一个close-subpath操作，所有的移动方向都是顺时针。</p>
-
-<h3>矩形</h3>
-
-<p>我们可以调用CGContextAddRect来添加一个矩形到当前路径中，并提供一个CGRect结构体(包含矩形的原点及大小)作为参数。</p>
-
-<p>添加到路径的矩形开始于一个move-to操作，结束于一个close-subpath操作，所有的移动方向都是顺时针。</p>
-
-<p>我们也可能调用CGContextAddRects函数来添加一系列的矩形到当前路径，并传递一个CGRect结构体的数组。图3-10显示了一些独立的路径。每个路径包含一个随机生成的矩形；一些进行了填充，另一边进行了描边。</p>
-
-<p>Figure 3-10  Multiple paths; each path contains a randomly generated rectangle</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rectangles.gif" alt="image" /></p>
-
-<h2>创建路径</h2>
-
-<p>当我们需要在一个图形上下文中构建一个路径时，我们需要调用CGContextBeginPath来标记Quartz。然后，我们调用函数CGContextMovePoint来设置每一个图形或子路径的起始点。在构建起始点后，我们可以添加直线、弧、曲线。记住如下规则：</p>
-
-<ol>
-<li>在开始绘制路径前，调用函数CGContextBeginPath；</li>
-<li>直线、弧、曲线开始于当前点。空路径没有当前点；我们必须调用CGContextMoveToPoint来设置第一个子路径的起始点，或者调用一个便利函数来隐式地完成该任务。</li>
-<li>如果要闭合当前子路径，调用函数CGContextClosePath。随后路径将开始一个新的子路径，即使我们不显示设置一个新的起始点。</li>
-<li>当绘制弧时，Quartz将在当前点与弧的起始点间绘制一条直线。</li>
-<li>添加椭圆和矩形的Quartz程序将在路径中添加新的闭合子路径。</li>
-<li>我们必须调用绘制函数来填充或者描边一条路径，因为创建路径时并不会绘制路径。</li>
-</ol>
-
-
-<p>在绘制路径后，将清空图形上下文。我们也许想保留路径，特别是在绘制复杂场景时，我们需要反复使用。基于此，Quartz提供了两个数据类型来创建可复用路径—CGPathRef和CGMutablePathRef。我们可以调用函数CGPathCreateMutable来创建可变的CGPath对象，并可向该对象添加直线、弧、曲线和矩形。Quartz提供了一个类似于操作图形上下文的CGPath的函数集合。这些路径函数操作CGPath对象，而不是图形上下文。这些函数包括：</p>
-
-<ol>
-<li>CGPathCreateMutable，取代CGContextBeginPath</li>
-<li>CGPathMoveToPoint，取代CGContextMoveToPoint</li>
-<li>CGPathAddLineToPoint，取代CGContexAddLineToPoint</li>
-<li>CGPathAddCurveToPoint，取代CGContexAddCurveToPoint</li>
-<li>CGPathAddEllipseInRect，取代CGContexAddEllipseInRect</li>
-<li>CGPathAddArc，取代CGContexAddArc</li>
-<li>CGPathAddRect，取代CGContexAddRect</li>
-<li>CGPathCloseSubpath，取代CGContexClosePath</li>
-</ol>
-
-
-<p>如果想要添加一个路径到图形上下文，可以调用CGContextAddPath。路径将保留在图形上下文中，直到Quartz绘制它。我们可以调用CGContextAddPath再次添加路径。</p>
-
-<h2>绘制路径</h2>
-
-<p>我们可以绘制填充或描边的路径。描边(Stroke)是绘制路径的边框。填充是绘制路径包含的区域。Quartz提供了函数来填充或描边路径。描边线的属性(宽度、颜色等)，填充色及Quartz用于计算填充区域的方法都是图形状态的一部分。</p>
-
-<h3>影响描边的属性</h3>
-
-<p>我们可以使用表3-1中的属性来决定如何对路径进行描边操作。这边属性是图形上下文的一部分，这意味着我们设置的值将会影响到后续的描边操作，直到我们个性这些值。</p>
-
-<p>Table 3-1  Parameters that affect how Quartz strokes the current path</p>
-
-<p><img src="http://cc.cocimg.com/bbs/attachment/thumb/Fid_6/6_38018_fa8395db5f33397.png" alt="image" /></p>
-
-<p>linewidth是线的总宽度，单位是用户空间单元。</p>
-
-<p>linejoin属性指定如何绘制线段间的联接点。Quartz支持表3-2中描述的联接样式。</p>
-
-<p>Table 3-2  Line join styles</p>
-
-<p><img src="http://cc.cocimg.com/bbs/attachment/thumb/Fid_6/6_38018_7e06943cde66626.png" alt="image" /></p>
-
-<p>linecap指定如何绘制直线的端点。Quartz支持表3-3所示的线帽类型。默认的是butt cap。</p>
-
-<p>Table 3-3  Line cap styles</p>
-
-<p><img src="http://cc.cocimg.com/bbs/attachment/thumb/Fid_6/6_38018_a0b926ec7469e04.png" alt="image" /></p>
-
-<p>闭合路径将起始点看作是一个联接点；起始点同样也使用选定的直线连接方法进行渲染。如果通过添加一条连接到起始点的直线来闭合路径，则路径的两个端点都使用选定的线帽类型来绘制。</p>
-
-<p>Linedash pattern(虚线模式)允许我们沿着描边绘制虚线。我们通过在CGContextSetLineDash结构体中指定虚线数组和虚线相位来控制虚线的大小及位置。</p>
-
-<p>CGContextSetLineDash结构如下：</p>
-
-<pre><code>void CGContextSetLineDash (
-    CGContextRef ctx,
-    float phase,
-    const float lengths[],
-    size_t count,
-);
-</code></pre>
-
-<p>其中lengths属性指定了虚线段的长度，该值是在绘制片断与未绘制片断之间交替。phase属性指定虚线模式的起始点。图3-11显示了虚线模式：</p>
-
-<p>Figure 3-11  Examples of line dash patterns</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/linedash.gif" alt="image" /></p>
-
-<p>描边颜色空间(stroke color space)定义了Quartz如何解析描边的颜色。我们同样也可以指定一个封装了颜色和颜色空间的CGColorRef数据类型。</p>
-
-<h3>路径描边的函数</h3>
-
-<p>Quartz提供了表3-4中的函数来描边当前路径。其中一些是描边矩形及椭圆的便捷函数。</p>
-
-<p>Table 3-4  Functions that stroke paths</p>
-
-<p><img src="http://cc.cocimg.com/bbs/attachment/thumb/Fid_6/6_38018_2f7e77438d8d49c.png" alt="image" /></p>
-
-<p>函数CGContextStrokeLineSegments等同于如下代码</p>
-
-<pre><code>CGContextBeginPath(context);                                                                                                                                                                                                                                                                 
-for(k = 0; k &lt; count; k += 2)
-{
-    CGContextMoveToPoint(context,s[k].x, s[k].y); CGContextAddLineToPoint(context,s[k+1].x, s[k+1].y);
-}
-
-CGContextStrokePath(context);
-</code></pre>
-
-<p>当我们调用CGContextStrokeLineSegments时，我们通过点数组来指定线段，并组织成点对的形式。每一对是由线段的起始点与终止点组成。例如，数组的第一个点指定了第一条直线的起始点，第二个点是第一条直线的终点，第三个点是第二条直线的起始点，依此类推。</p>
-
-<h3>填充路径</h3>
-
-<p>当我们填充当前路径时，Quartz将路径包含的每个子路径都看作是闭合的。然后，使用这些闭合路径并计算填充的像素。 Quartz有两种方式来计算填充区域。椭圆和矩形这样的路径其区域都很明显。但是如果路径是由几个重叠的部分组成或者路径包含多个子路径(如图3-12所示)，我们则有两种规则来定义填充区域。</p>
-
-<p>默认的规则是非零缠绕数规则(nonzero windingnumber rule)。为了确定一个点是否需要绘制，我们从该点开始绘制一条直线穿过绘图的边界。从0开始计数，每次路径片断从左到右穿过直线是，计数加1；而从右到左穿过直线时，计数减1。如果结果为0，则不绘制该点，否则绘制。路径片断绘制的方向会影响到结果。图3-13显示了使用非缠绕数规则对内圆和外圆进行填充的结果。当两个圆绘制方向相同时，两个圆都被填充。如果方向相反，则内圆不填充。</p>
-
-<p>我们也可以使用偶数-奇数规则。为了确定一个点是否被绘制，我们从该点开始绘制一条直线穿过绘图的边界。计算穿过该直线的路径片断的数目。如果是奇数，则绘制该点，如果是偶数，则不绘制该点。路径片断绘制的方向不影响结果。如图3-12所示，无论两个圆的绘制方向是什么，填充结果都是一样的。</p>
-
-<p>Figure 3-12  Concentric circles filled using different fill rules</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/eosampleone.gif" alt="image" /></p>
-
-<p>Quartz提供了表3-5中的函数来填充当前路径。其中一些是填充矩形及椭圆的便捷函数。</p>
-
-<p>Table 3-5  Functions that fill paths</p>
-
-<p><img src="http://cc.cocimg.com/bbs/attachment/thumb/Fid_6/6_38018_b20e82e060e2e61.png" alt="image" /></p>
-
-<h3>设置混合模式</h3>
-
-<p>混合模式指定了Quartz如何将绘图绘制到背景上。Quartz默认使用普通混合模式(normal blend mode)，该模式使用如下公式来计算前景绘图与背景绘图如何混合：</p>
-
-<pre><code>result = (alpha * foreground) + (1 - alpha) *background
-</code></pre>
-
-<p>“颜色与颜色空间”章节里面详细讨论了颜色值的alpha组件，该组件用于指定颜色的透明度。在本章的例子中，我们可以假设颜色值是完全不透明的(alpha = 0)。对于不透明的颜色值，当我们用普通混合模式时，所有绘制于背景之上的绘图都会遮掩住背景。</p>
-
-<p>我们可以调用函数CGContextSetBlendMode并传递适当的混合模式常量值来设置混合模式来达到我们想到的效果。记住混合模式是图形状态的一部分。如果调用了函数CGContextSaveGState来改变混合模式，则调用函数CGContextRestoreGState来重新设置混合模式为普通混合模式。</p>
-
-<p>接下来的内容例举了不同混合模式上将图3-13的矩形绘制到图3-14的矩形之上的效果。背景图使用普通混合模式来绘制。然后调用CGContextSetBlendMode函数来改变混合模式。最后绘制前景矩形。</p>
-
-<p>Figure 3-13  The rectangles painted in the foreground</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/vertical.gif" alt="image" /></p>
-
-<p>Figure 3-14  The rectangles painted in the background</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/horizontal.gif" alt="image" /></p>
-
-<p>注意：我们同样可以使用混合来组合两张图片或将图片与图形上下文中已有的内容进行混合。</p>
-
-<h4>普通混合模式</h4>
-
-<p>由于普通混合模式是默认的混合模式，所以在设置了其它混合模式后，可以调用CGContextSetBlendMode并传递kCGBlendModeNormal来将混合模式重设为默认。图3-15显示了普通混合模式上图3-13与图3-14混合的效果。</p>
-
-<p>Figure 3-15  Rectangles painted using normal blend mode</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_normal.gif" alt="image" /></p>
-
-<h4>正片叠底混合模式(Mutiply Blend Mode)</h4>
-
-<p>正片叠底混合模式指定将前景的图片采样与背景图片采样相乘。结果颜色至少与两个采样颜色之一一样暗。图3-16显示了混合结果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeMultiply来设置这种混合模式。</p>
-
-<p>Figure 3-16  Rectangles painted using multiply blend mode</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_multiply.gif" alt="image" /></p>
-
-<h4>屏幕混合模式(Screen Blend Mode)</h4>
-
-<p>屏幕混合模式指定将前景图片采样的反转色与背景图片的反转色相乘。结果颜色至少与两种采样颜色之一一样亮。图3-17显示了混合结果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeScreen来设置这种混合模式。</p>
-
-<p>Figure 3-17  Rectangles painted using screen blend mode</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_screen.gif" alt="image" /></p>
-
-<h4>叠加混合模式(Overlay Blend Mode)</h4>
-
-<p>叠加混合模式是将前景图片与背景图片或者正片叠底，或者屏幕化，这取决于背景颜色。背景颜色值与前景颜色值以反映出背景颜色的亮度与暗度。图3-18显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeOverlay来设置这种混合模式。</p>
-
-<p>Figure 3-18  Rectangles painted using overlay blend mode</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_overlay.gif" alt="image" /></p>
-
-<h4>暗化混合模式(Darken Blend Mode)</h4>
-
-<p>通过选择前景图片与背景图片更暗的采样来混合图片采样。背景图片采样被前景图片采样更暗的部分取代，而其它部分不变。图3-19显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeDarken来设置这种混合模式。</p>
-
-<p>Figure 3-19  Rectangles painted using darken blend mode</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_darken.gif" alt="image" /></p>
-
-<h4>亮化混合模式(Lighten Blend Mode)</h4>
-
-<p>通过选择前景图片与背景图片更亮的采样来混合图片采样。背景图片采样被前景图片采样更亮的部分取代，而其它部分不变。图3-20显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeLighten来设置这种混合模式。</p>
-
-<p>Figure 3-20  Rectangles painted using lighten blend mode</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_lighten.gif" alt="image" /></p>
-
-<h4>色彩减淡模式(ColorDodge Blend Mode)</h4>
-
-<p>加亮背景图片采样以反映出前景图片采样。被指定为黑色的前景图片采样值将不产生变化。图3-21显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeColorDodge来设置这种混合模式。</p>
-
-<p>Figure 3-21  Rectangles painted using color dodge blend mode</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_color_dodge.gif" alt="image" /></p>
-
-<h4>色彩加深模式(ColorBurn Blend Mode)</h4>
-
-<p>加深背景图片采样以反映出前景图片采样。被指定为白色的前景图片采样值将不产生变化。图3-21显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeColorBurn来设置这种混合模式。</p>
-
-<p>Figure 3-22  Rectangles painted using color burn blend mode</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_color_burn.gif" alt="image" /></p>
-
-<h4>柔光混合模式(SoftLight Blend Mode)</h4>
-
-<p>根据前景采样颜色减淡或加深颜色值。如果前景采样颜色比50%灰度值更亮，则减淡背景，类似于Dodge模式。如果前景采样颜色比50%灰度值更暗，则加强背景，类似于Burn模式。纯黑或纯白的图片采样将产生更暗或更亮的区域。但是但是不产生纯白或纯黑的颜色。该效果类似于将一个漫射光源放于一个前景图前。该效果用于在场景中添加高光效果。图3-23显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeSoftLight来设置这种混合模式。</p>
-
-<p>Figure 3-23  Rectangles painted using soft light blend mode</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_soft_light.gif" alt="image" /></p>
-
-<h4>强光混合模式(Hard Light Blend Mode)</h4>
-
-<p>根据前景图片采样颜色正片叠加或屏幕化颜色。如果前景采样颜色比50%灰度值更亮，则减淡背景，类似于screen模式。如果前景采样颜色比50%灰度值更暗，则加深背景，类似于multiply模式。如果前景采样颜色等于50%灰度，则前景颜色不变。纯黑与纯白的颜色图片采样将产生纯黑或纯白的颜色值。该效果类似于将一个强光源放于一个前景图前。该效果用于在场景中添加高光效果。图3-24显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeHardLight来设置这种混合模式。</p>
-
-<p>Figure 3-24  Rectangles painted using hard light blend mode</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_hard_light.gif" alt="image" /></p>
-
-<h4>差值混合模式(Difference Blend Mode)</h4>
-
-<p>将前景图片采样颜色值与背景图片采样值相减，相减的前后关系取决于哪个采样的亮度值更大。黑色的前景采样值不发生变化；白色值转化为背景的值。图3-25显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeDifference来设置这种混合模式。</p>
-
-<p>Figure 3-25  Rectangles painted using difference blend mode</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_difference.gif" alt="image" /></p>
-
-<h4>排除混合模式(Exclusion Blend Mode)</h4>
-
-<p>该效果类似于Difference效果，只是对比度更低。黑色的前景采样值不发生变化；白色值转化为背景的值。图3-26显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeExclusion来设置这种混合模式。</p>
-
-<p>Figure 3-26  Rectangles painted using exclusion blend mode</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_exclusion.gif" alt="image" /></p>
-
-<h4>色相混合模式(Hue Blend Mode)</h4>
-
-<p>使用背景的亮度和饱和度与前景的色相混合。图3-27显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeHue来设置这种混合模式。</p>
-
-<p>Figure 3-27  Rectangles painted using hue blend mode</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_hue.gif" alt="image" /></p>
-
-<h4>饱和度混合模式(Saturation Blend Mode)</h4>
-
-<p>混合背景的亮度和色相前景的饱和度。背景中没有饱和度的区域不发生变化。图3-28显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeSaturation来设置这种混合模式。</p>
-
-<p>Figure 3-28  Rectangles painted using saturation blend mode</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_saturation.gif" alt="image" /></p>
-
-<h4>颜色混合模式(Color Blend Mode)</h4>
-
-<p>混合背景的亮度值与前景的色相与饱和度。该模式保留图片的灰度级。我们可以使用该模式绘制单色图片或彩色图片。图3-29显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeColor来设置这种混合模式。</p>
-
-<p>Figure 3-29  Rectangles painted using color blend mode</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_color.gif" alt="image" /></p>
-
-<h4>亮度混合模式(Luminosity Blend Mode)</h4>
-
-<p>将背景图片的色相、饱和度与背景图片的亮度相混合。该模块产生一个与Color Blend模式相反的效果。图3-30显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeLuminosity来设置这种混合模式。</p>
-
-<p>Figure 3-30  Rectangles painted using luminosity blend mode</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_luminosity.gif" alt="image" /></p>
-
-<h2>裁剪路径</h2>
-
-<p>当前裁剪区域是从路径中创建，作为一个遮罩，从而允许遮住我们不想绘制的部分。例如，我们有一个很大的图片，但只需要显示其中一小部分，则可以设置裁减区域来显示我们想显示的部分。</p>
-
-<p>当我们绘制的时候，Quartz只渲染裁剪区域里面的东西。裁剪区域内的闭合路径是可见的；而在区域外的部分是不可见的。</p>
-
-<p>当图形上下文初始创建时，裁减区域包含上下文所有的可绘制区域(例如，PDF上下文的media box)。我们可以通过设置当前路径来改变裁剪区域，然后使用裁减函数来取代绘制函数。裁剪函数与当前已有的裁剪区域求交集以获得路径的填充区域。因此，我们可以求交取得裁减区域，缩小图片的可视区域，但是不能扩展裁减区域。</p>
-
-<p>裁减区域是图形状态的一部分。为了恢复先前的裁减区域，我们可以在裁减前保存图形状态，并在裁减绘制后恢复图形状态。</p>
-
-<p>代码清单3-1显示了绘制圆形后设置裁减区域。该段代码使得绘图被裁减，效果类似于图3-3所示。</p>
-
-<p>Listing 3-1 Setting up a circular clip area</p>
-
-<pre><code>CGContextBeginPath(context);
-CGContextAddArc(context, w/2, h/2, ((w&gt;h) ? h : w)/2, 0, 2*PI, 0);
-CGContextClosePath(context);
-CGContextClip(context);
-</code></pre>
-
-<p>Table 3-6  Functions that clip the graphics context</p>
-
-<p><img src="http://cc.cocimg.com/bbs/attachment/thumb/Fid_6/6_38018_9138e0a8166cd38.png" alt="image" /></p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/5">&larr; Older</a>
@@ -1474,7 +1597,7 @@ CGContextClip(context);
 <section>
 <h1>分类</h1>
 <ul>
-  <li><a href='/blog/categories/ios'>ios (59)</a></li>
+  <li><a href='/blog/categories/ios'>ios (60)</a></li>
   <li><a href='/blog/categories/network'>network (3)</a></li>
   <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
   <li><a href='/blog/categories/swift'>swift (7)</a></li>
@@ -1486,6 +1609,10 @@ CGContextClip(context);
 <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/03/14/nsnotificationyu-duo-xian-cheng/">Notification与多线程</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2015/03/07/uiresponder/">UIResponder</a>
@@ -1521,10 +1648,6 @@ CGContextClip(context);
     
       <li class="post">
         <a href="/blog/2015/01/11/gong-ju-pian-:mantle/">工具篇：Mantle</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/01/08/quartz-2dbian-cheng-zhi-nan-zhi-shi-san-:pdfwen-dang-de-chuang-jian-,-xian-shi-ji-zhuan-huan/">Quartz 2D编程指南之十三：PDF文档的创建、显示及转换</a>
       </li>
     
   </ul>

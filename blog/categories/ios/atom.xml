@@ -4,7 +4,7 @@
   <title><![CDATA[Category: ios | 南峰子的技术博客]]></title>
   <link href="http://southpeak.github.io/blog/categories/ios/atom.xml" rel="self"/>
   <link href="http://southpeak.github.io/"/>
-  <updated>2015-03-07T18:57:39+08:00</updated>
+  <updated>2015-03-14T13:05:07+08:00</updated>
   <id>http://southpeak.github.io/</id>
   <author>
     <name><![CDATA[南峰子]]></name>
@@ -12,6 +12,354 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Notification与多线程]]></title>
+    <link href="http://southpeak.github.io/blog/2015/03/14/nsnotificationyu-duo-xian-cheng/"/>
+    <updated>2015-03-14T12:58:59+08:00</updated>
+    <id>http://southpeak.github.io/blog/2015/03/14/nsnotificationyu-duo-xian-cheng</id>
+    <content type="html"><![CDATA[<p>前几天与同事讨论到Notification在多线程下的转发问题，所以就此整理一下。</p>
+
+<p>先来看看官方的文档，是这样写的：</p>
+
+<pre><code>In a multithreaded application, notifications are always delivered in the thread in which the notification was posted, which may not be the same thread in which an observer registered itself.
+</code></pre>
+
+<p>翻译过来是：</p>
+
+<pre><code>在多线程应用中，Notification在哪个线程中post，就在哪个线程中被转发，而不一定是在注册观察者的那个线程中。
+</code></pre>
+
+<p>也就是说，Notification的发送与接收处理都是在同一个线程中。为了说明这一点，我们先来看一个示例：</p>
+
+<p><strong>代码清单1：Notification的发送与处理</strong></p>
+
+<pre><code>@implementation ViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    NSLog(@"current thread = %@", [NSThread currentThread]);
+
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleNotification:) name:TEST_NOTIFICATION object:nil];
+
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+
+        [[NSNotificationCenter defaultCenter] postNotificationName:TEST_NOTIFICATION object:nil userInfo:nil];
+    });
+}
+
+- (void)handleNotification:(NSNotification *)notification
+{
+    NSLog(@"current thread = %@", [NSThread currentThread]);
+
+    NSLog(@"test notification");
+}
+
+@end
+</code></pre>
+
+<p>其输出结果如下：</p>
+
+<pre><code>2015-03-11 22:05:12.856 test[865:45102] current thread = &lt;NSThread: 0x7fbb23412f30&gt;{number = 1, name = main}
+2015-03-11 22:05:12.857 test[865:45174] current thread = &lt;NSThread: 0x7fbb23552370&gt;{number = 2, name = (null)}
+2015-03-11 22:05:12.857 test[865:45174] test notification
+</code></pre>
+
+<p>可以看到，虽然我们在主线程中注册了通知的观察者，但在全局队列中post的Notification，并不是在主线程处理的。所以，这时候就需要注意，如果我们想在回调中处理与UI相关的操作，需要确保是在主线程中执行回调。</p>
+
+<p>这时，就有一个问题了，如果我们的Notification是在二级线程中post的，如何能在主线程中对这个Notification进行处理呢？或者换个提法，如果我们希望一个Notification的post线程与转发线程不是同一个线程，应该怎么办呢？我们看看官方文档是怎么说的：</p>
+
+<pre><code>For example, if an object running in a background thread is listening for notifications from the user interface, such as a window closing, you would like to receive the notifications in the background thread instead of the main thread. In these cases, you must capture the notifications as they are delivered on the default thread and redirect them to the appropriate thread.
+</code></pre>
+
+<p>这里讲到了“重定向”，就是我们在Notification所在的默认线程中捕获这些分发的通知，然后将其重定向到指定的线程中。</p>
+
+<p>一种重定向的实现思路是自定义一个通知队列(注意，不是NSNotificationQueue对象，而是一个数组)，让这个队列去维护那些我们需要重定向的Notification。我们仍然是像平常一样去注册一个通知的观察者，当Notification来了时，先看看post这个Notification的线程是不是我们所期望的线程，如果不是，则将这个Notification存储到我们的队列中，并发送一个信号(signal)到期望的线程中，来告诉这个线程需要处理一个Notification。指定的线程在收到信号后，将Notification从队列中移除，并进行处理。</p>
+
+<p>官方文档已经给出了示例代码，在此借用一下，以测试实际结果：</p>
+
+<p><strong>代码清单2：在不同线程中post和转发一个Notification</strong></p>
+
+<pre><code>@interface ViewController () &lt;NSMachPortDelegate&gt;
+
+@property (nonatomic) NSMutableArray    *notifications;         // 通知队列
+@property (nonatomic) NSThread          *notificationThread;    // 期望线程
+@property (nonatomic) NSLock            *notificationLock;      // 用于对通知队列加锁的锁对象，避免线程冲突
+@property (nonatomic) NSMachPort        *notificationPort;      // 用于向期望线程发送信号的通信端口
+
+@end
+
+@implementation ViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    NSLog(@"current thread = %@", [NSThread currentThread]);
+
+    // 初始化
+    self.notifications = [[NSMutableArray alloc] init];
+    self.notificationLock = [[NSLock alloc] init];
+
+    self.notificationThread = [NSThread currentThread];
+    self.notificationPort = [[NSMachPort alloc] init];
+    self.notificationPort.delegate = self;
+
+    // 往当前线程的run loop添加端口源
+    // 当Mach消息到达而接收线程的run loop没有运行时，则内核会保存这条消息，直到下一次进入run loop
+    [[NSRunLoop currentRunLoop] addPort:self.notificationPort
+                                forMode:(__bridge NSString *)kCFRunLoopCommonModes];
+
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(processNotification:) name:@"TestNotification" object:nil];
+
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+
+        [[NSNotificationCenter defaultCenter] postNotificationName:TEST_NOTIFICATION object:nil userInfo:nil];
+
+    });
+}
+
+- (void)handleMachMessage:(void *)msg {
+
+    [self.notificationLock lock];
+
+    while ([self.notifications count]) {
+        NSNotification *notification = [self.notifications objectAtIndex:0];
+        [self.notifications removeObjectAtIndex:0];
+        [self.notificationLock unlock];
+        [self processNotification:notification];
+        [self.notificationLock lock];
+    };
+
+    [self.notificationLock unlock];
+}
+
+- (void)processNotification:(NSNotification *)notification {
+
+    if ([NSThread currentThread] != _notificationThread) {
+        // Forward the notification to the correct thread.
+        [self.notificationLock lock];
+        [self.notifications addObject:notification];
+        [self.notificationLock unlock];
+        [self.notificationPort sendBeforeDate:[NSDate date]
+                                   components:nil
+                                         from:nil
+                                     reserved:0];
+    }
+    else {
+        // Process the notification here;
+        NSLog(@"current thread = %@", [NSThread currentThread]);
+        NSLog(@"process notification");
+    }
+}
+
+@end
+</code></pre>
+
+<p>运行后，其输出如下：</p>
+
+<pre><code>2015-03-11 23:38:31.637 test[1474:92483] current thread = &lt;NSThread: 0x7ffa4070ed50&gt;{number = 1, name = main}
+2015-03-11 23:38:31.663 test[1474:92483] current thread = &lt;NSThread: 0x7ffa4070ed50&gt;{number = 1, name = main}
+2015-03-11 23:38:31.663 test[1474:92483] process notification
+</code></pre>
+
+<p>可以看到，我们在全局dispatch队列中抛出的Notification，如愿地在主线程中接收到了。</p>
+
+<p>这种实现方式的具体解析及其局限性大家可以参考官方文档<a href="https://developer.apple.com/library/mac/documentation/Cocoa/Conceptual/Notifications/Articles/Threading.html#//apple_ref/doc/uid/20001289-CEGJFDFG">Delivering Notifications To Particular Threads</a>，在此不多做解释。当然，更好的方法可能是我们自己去子类化一个NSNotificationCenter，或者单独写一个类来处理这种转发。</p>
+
+<h2>NSNotificationCenter的线程安全性</h2>
+
+<p>苹果之所以采取通知中心在同一个线程中post和转发同一消息这一策略，应该是出于线程安全的角度来考量的。官方文档告诉我们，NSNotificationCenter是一个线程安全类，我们可以在多线程环境下使用同一个NSNotificationCenter对象而不需要加锁。原文在<a href="https://developer.apple.com/library/mac/documentation/Cocoa/Conceptual/Multithreading/ThreadSafetySummary/ThreadSafetySummary.html">Threading Programming Guide</a>中，具体如下：</p>
+
+<pre><code>The following classes and functions are generally considered to be thread-safe. You can use the same instance from multiple threads without first acquiring a lock.
+
+NSArray
+...
+NSNotification
+NSNotificationCenter
+...
+</code></pre>
+
+<p>我们可以在任何线程中添加/删除通知的观察者，也可以在任何线程中post一个通知。</p>
+
+<p>NSNotificationCenter在线程安全性方面已经做了不少工作了，那是否意味着我们可以高枕无忧了呢？再回过头来看看第一个例子，我们稍微改造一下，一点一点来：</p>
+
+<p><strong>代码清单3：NSNotificationCenter的通用模式</strong></p>
+
+<pre><code>@interface Observer : NSObject
+
+@end
+
+@implementation Observer
+
+- (instancetype)init
+{
+    self = [super init];
+
+    if (self)
+    {
+        _poster = [[Poster alloc] init];
+
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleNotification:) name:TEST_NOTIFICATION object:nil]
+    }
+
+    return self;
+}
+
+- (void)handleNotification:(NSNotification *)notification
+{
+    NSLog(@"handle notification ");
+}
+
+- (void)dealloc
+{
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+@end
+
+// 其它地方
+[[NSNotificationCenter defaultCenter] postNotificationName:TEST_NOTIFICATION object:nil];   
+</code></pre>
+
+<p>上面的代码就是我们通常所做的事情：添加一个通知监听者，定义一个回调，并在所属对象释放时移除监听者；然后在程序的某个地方post一个通知。简单明了，如果这一切都是发生在一个线程里面，或者至少dealloc方法是在-postNotificationName:的线程中运行的(注意：NSNotification的post和转发是同步的)，那么都OK，没有线程安全问题。但如果dealloc方法和-postNotificationName:方法不在同一个线程中运行时，会出现什么问题呢？</p>
+
+<p>我们再改造一下上面的代码：</p>
+
+<p><strong>代码清单4：NSNotificationCenter引发的线程安全问题</strong></p>
+
+<pre><code>#pragma mark - Poster
+
+@interface Poster : NSObject
+
+@end
+
+@implementation Poster
+
+- (instancetype)init
+{
+    self = [super init];
+
+    if (self)
+    {
+        [self performSelectorInBackground:@selector(postNotification) withObject:nil];
+    }
+
+    return self;
+}
+
+- (void)postNotification
+{
+    [[NSNotificationCenter defaultCenter] postNotificationName:TEST_NOTIFICATION object:nil];
+}
+
+@end
+
+#pragma mark - Observer
+
+@interface Observer : NSObject
+{
+    Poster  *_poster;
+}
+
+@property (nonatomic, assign) NSInteger i;
+
+@end
+
+@implementation Observer
+
+- (instancetype)init
+{
+    self = [super init];
+
+    if (self)
+    {
+        _poster = [[Poster alloc] init];
+
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleNotification:) name:TEST_NOTIFICATION object:nil];
+    }
+
+    return self;
+}
+
+- (void)handleNotification:(NSNotification *)notification
+{
+    NSLog(@"handle notification begin");
+    sleep(1);
+    NSLog(@"handle notification end");
+
+    self.i = 10;
+}
+
+- (void)dealloc
+{
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+
+    NSLog(@"Observer dealloc");
+}
+
+@end
+
+#pragma mark - ViewController
+
+@implementation ViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    __autoreleasing Observer *observer = [[Observer alloc] init];
+}
+
+@end
+</code></pre>
+
+<p>这段代码是在主线程添加了一个TEST_NOTIFICATION通知的监听者，并在主线程中将其移除，而我们的NSNotification是在后台线程中post的。在通知处理函数中，我们让回调所在的线程睡眠1秒钟，然后再去设置属性i值。这时会发生什么呢？我们先来看看输出结果：</p>
+
+<pre><code>2015-03-14 00:31:41.286 SKTest[932:88791] handle notification begin
+2015-03-14 00:31:41.291 SKTest[932:88713] Observer dealloc
+2015-03-14 00:31:42.361 SKTest[932:88791] handle notification end
+(lldb) 
+
+// 程序在self.i = 10处抛出了"Thread 6: EXC_BAD_ACCESS(code=EXC_I386_GPFLT)"
+</code></pre>
+
+<p>经典的内存错误，程序崩溃了。其实从输出结果中，我们就可以看到到底是发生了什么事。我们简要描述一下：</p>
+
+<ol>
+<li>当我们注册一个观察者是，通知中心会持有观察者的一个弱引用，来确保观察者是可用的。</li>
+<li>主线程调用dealloc操作会让Observer对象的引用计数减为0，这时对象会被释放掉。</li>
+<li>后台线程发送一个通知，如果此时Observer还未被释放，则会用其转出消息，并执行回调方法。而如果在回调执行的过程中对象被释放了，就会出现上面的问题。</li>
+</ol>
+
+
+<p>当然，上面这个例子是故意而为之，但不排除在实际编码中会遇到类似的问题。虽然NSNotificationCenter是线程安全的，但并不意味着我们在使用时就可以保证线程安全的，如果稍不注意，还是会出现线程问题。</p>
+
+<p>那我们该怎么做呢？这里有一些好的建议：</p>
+
+<ol>
+<li>尽量在一个线程中处理通知相关的操作，大部分情况下，这样做都能确保通知的正常工作。不过，我们无法确定到底会在哪个线程中调用dealloc方法，所以这一点还是比较困难。</li>
+<li>注册监听都时，使用基于block的API。这样我们在block还要继续调用self的属性或方法，就可以通过weak-strong的方式来处理。具体大家可以改造下上面的代码试试是什么效果。</li>
+<li>使用带有安全生命周期的对象，这一点对象单例对象来说再合适不过了，在应用的整个生命周期都不会被释放。</li>
+<li>使用代理。</li>
+</ol>
+
+
+<h2>小结</h2>
+
+<p>NSNotificationCenter虽然是线程安全的，但不要被这个事实所误导。在涉及到多线程时，我们还是需要多加小心，避免出现上面的线程问题。想进一步了解的话，可以查看<a href="http://inessential.com/2013/12/20/observers_and_thread_safety">Observers and Thread Safety</a>。</p>
+
+<h2>参考</h2>
+
+<ol>
+<li><a href="https://developer.apple.com/library/mac/documentation/Cocoa/Conceptual/Notifications/Articles/Notifications.html">Notification Programming Topics</a></li>
+<li><a href="https://developer.apple.com/library/mac/documentation/Cocoa/Conceptual/Multithreading/ThreadSafetySummary/ThreadSafetySummary.html">Threading Programming Guide</a></li>
+<li><a href="http://blog.csdn.net/wzzvictory/article/details/8489516">NSNotification的几点说明</a></li>
+<li><a href="http://lapcatsoftware.com/articles/nsnotificationcenter-is-threadsafe-not.html">NSNotificationCenter is thread-safe NOT</a></li>
+<li><a href="http://inessential.com/2013/12/20/observers_and_thread_safety">Observers and Thread Safety</a></li>
+</ol>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[UIResponder]]></title>
@@ -1949,170 +2297,6 @@ typedef NSDictionary *(^SDWebImageDownloaderHeadersFilterBlock)(NSURL *url, NSDi
 <li><a href="http://objccn.io/issue-2-2/">常见的后台实践</a></li>
 <li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/NSOperation_class/">NSOperation Class Reference</a></li>
 <li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/NSCache_Class/">NSCache Class Reference</a></li>
-</ol>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[NSObject之二]]></title>
-    <link href="http://southpeak.github.io/blog/2015/01/31/nsobjectzhi-er/"/>
-    <updated>2015-01-31T22:41:09+08:00</updated>
-    <id>http://southpeak.github.io/blog/2015/01/31/nsobjectzhi-er</id>
-    <content type="html"><![CDATA[<p>前面一章我们整理了NSObject类，这一章我们来看看NSObject协议的内容。</p>
-
-<p>NSObject协议提供了一组方法作为Objective-C对象的基础。其实我们对照一个NSObject类和NSObject协议，可以看到很多方法的方法名都是一样的，只不过NSObject类提供的是类方法，是基于类级别的操作；而NSObject协议提供的是实例方法，是基于实例对象级别的操作。</p>
-
-<p>如果一个对象如果采用了这个协议，则可以被看作是一级对象。我们可以从这个对象获取以下信息：</p>
-
-<ol>
-<li>类信息，以及类所在的继承体系。</li>
-<li>协议信息</li>
-<li>响应特定消息的能力</li>
-</ol>
-
-
-<p>实际上，Cocoa的根类NSObject就采用了这个类，所以所有继承自NSObject类的对象都具备NSObject协议中描述的功能。接下来，我们参照NSObject类，整理一下这些功能。</p>
-
-<h2>识别对象</h2>
-
-<p>类似于NSObject类，NSObject协议提供了一些方法来识别类。</p>
-
-<p>如果想获取对象的类对象，则可以使用如下方法：</p>
-
-<pre><code>- (Class)class
-</code></pre>
-
-<p>如果想获取对象父类的类对象，则可以使用以下只读属性：</p>
-
-<pre><code>@property(readonly) Class superclass
-</code></pre>
-
-<p>如果想查看某个对象是否是给定类的实例或者是给定类子类的实例，则可以使用以下方法：</p>
-
-<pre><code>- (BOOL)isKindOfClass:(Class)aClass
-</code></pre>
-
-<p>这个方法应该是大家常用的方法。需要注意的是在类簇中使用这个方法。在类簇中，我们获取到的对象类型可能并不是我们期望的类型。如果我们调用一个返回类簇的方法，则这个方法返回的实际类型会是最能标识这个类能做些什么的类型。例如，如果一个方法返回一个指向NSArray对象的指针，则不能使用isKindOfClass:方法查看经是否是一个可变数组，如以下代码：</p>
-
-<pre><code>if ([myArray isKindOfClass:[NSMutableArray class]])
-{
-    // Modify the object
-}
-</code></pre>
-
-<p>如果我们使用这样的代码，我们可能会认为修改一个实际上不应该被修改的对象是没问题的。这样做可能会对那些期望对象保持不要变的代码产生影响。</p>
-
-<p>另外，查看对象是否是指定类的一个实例还可以使用以下方法：</p>
-
-<pre><code>- (BOOL)isMemberOfClass:(Class)aClass
-</code></pre>
-
-<p>注意，这个方法无法确定对象是否是指定类子类的实例。另外，类对象可能是编译器创建的对象，但它仍然支持这一概念。</p>
-
-<h2>测试对象</h2>
-
-<p>对于对象的测试，NSObject协议也定义了两个方法，其中respondsToSelector:方法用于测试对象是否能响应指定的消息，这个方法可以是类自定义的实例方法，也可以是继承而来的实例方法。其声明如下：</p>
-
-<pre><code>- (BOOL)respondsToSelector:(SEL)aSelector
-</code></pre>
-
-<p>不过我们不能使用super关键字来调用respondsToSelector:，以查看对象是否是从其父类继承了某个方法。因为我们可以从super的定义可知，消息的最终实际接收者还是self本身，因此测试的还是对象的整个体系(包括对象所在类本身)，而不仅仅是父类。不过，我们可以使用父类来调用NSObject类的类方法instancesRespondToSelector:来达到这个目的，如下所示：</p>
-
-<pre><code>if( [MySuperclass instancesRespondToSelector:@selector(aMethod)] ) {
-    // invoke the inherited method
-    [super aMethod];
-}
-</code></pre>
-
-<p>我们不能简单地使用[[self superclass] instancesRespondToSelector:@selector(aMethod)]，因为如果由一个子类来调用，则可能导致方法的失败。</p>
-
-<p>还需要注意的是，如果对象能够转发消息，则也可以响应这个消息，不过这个方法会返回NO。</p>
-
-<p>如果想查看对象是否实现了某个类，则可以使用如下方法：</p>
-
-<pre><code>- (BOOL)conformsToProtocol:(Protocol *)aProtocol
-</code></pre>
-
-<p>这个方法与NSObject类的类方法conformsToProtocol:是一样的。它只是提供了一个便捷方法，我们不需要先去取对象的类，再调用类方法conformsToProtocol:。</p>
-
-<h2>标识和比较对象</h2>
-
-<p>如果我们想获取对象本身，则可以使用以下方法：</p>
-
-<pre><code>- (instancetype)self
-</code></pre>
-
-<p>比较两个对象是否相同，则可以使用以下方法：</p>
-
-<pre><code>- (BOOL)isEqual:(id)anObject
-</code></pre>
-
-<p>这个方法定义了对象相同的意义。例如，一个容器对象可能会按照特定规则来定义两个对象是否相等，如其所有元素的isEqual:请求都返回YES。我们在自定义子类时，可以重写这个方法，以使用我们自己的规则来评判两个对象相等。</p>
-
-<p>如果两个对象相等，则它们必须拥有相同的hash值。在子类中定义isEqual:方法并打算把子类的实例放入集合中时，这一点非常重要。因此在子类中必须同时定义hash。</p>
-
-<p>hash值是一个整数值，它可以用于在hash表结构中作为一个表地址。其声明如下：</p>
-
-<pre><code>@property(readonly) NSUInteger hash
-</code></pre>
-
-<p>如果一个可变对象被添加到一个以hash值来确定对象位置的集合中，则当对象还在集合中时，其由hash方法返回的值不能改变。因此，hash方法不能依赖于对象内部的任何状态信息，或许我们必须确保对象在集合中时，不能改变其内部状态信息。比如，一个可变字典可以放到一个hash表中，但当它还在表中时，不能改变它。</p>
-
-<h2>发送消息</h2>
-
-<p>在NSObject类中，定义了一系列的发送消息的方法，用于在目标线程中执行方法。NSObject协议也定义了如下几个方法，来执行发送消息的任务：</p>
-
-<pre><code>- (id)performSelector:(SEL)aSelector
-
-- (id)performSelector:(SEL)aSelector withObject:(id)anObject
-
-- (id)performSelector:(SEL)aSelector withObject:(id)anObject withObject:(id)anotherObject
-</code></pre>
-
-<p>这三个方法基本相同，只不过后面两个方法能为selector指定的方法携带参数。因此我们以performSelector:为例。</p>
-
-<p>performSelector:方法的使用与直接将消息发送给对象的效果是一样的，如下面几个操作，做的事情是一样的：</p>
-
-<pre><code>id myClone = [anObject copy];
-id myClone = [anObject performSelector:@selector(copy)];
-id myClone = [anObject performSelector:sel_getUid("copy")];
-</code></pre>
-
-<p>区别在于，performSelector:允许在运行时再去确定对象是否能处理消息。而[anObject copy]中，如果anObject不能处理copy，编译器就直接会报错。</p>
-
-<p>如果方法的参数过多，以至于上面几个方法都无法处理，则可以考虑使用NSInvocation对象。</p>
-
-<h2>描述对象</h2>
-
-<p>描述对象的方法与NSObject类中描述类的方法其方法名相同，都是description，其声明如下：</p>
-
-<pre><code>@property(readonly, copy) NSString *description
-</code></pre>
-
-<p>这个方法用于创建一个对象的文本表达方式，例如：</p>
-
-<pre><code>ClassName *anObject = &lt;#An object#&gt;;
-NSString *string = [NSString stringWithFormat:@"anObject is %@", anObject];
-</code></pre>
-
-<p>为了便于调试，NSObject协议还定义debugDescription方法，该方法声明如下：</p>
-
-<pre><code>@property(readonly, copy) NSString *debugDescription
-</code></pre>
-
-<p>该方法返回一个在调试器中显示的用于描述对象内容的字符串。在调试器中打印一个对象时，会调用这个方法。NSObject类实现这个方法时只是调用了description方法，所以默认情况下，这两个方法的输出都是一样的。我们在子类中可以重写这个方法的实现。</p>
-
-<h2>总结</h2>
-
-<p>NSObject协议的定义的很多方法都是我们平常经常使用的。我们在创建NSObject类的子类时，默认都继承了NSObject类对于NSObject协议的实现。如果有特殊的需求，我们可以重写这些方法。</p>
-
-<p>当然，NSObject协议还定义了一些方法，如我们非常熟悉的retain, release, autorelease, retainCount方法，不过这些方法在ARC时代已经过时了，我们在此不过多说明。</p>
-
-<h2>参考</h2>
-
-<ol>
-<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/Foundation/Protocols/NSObject_Protocol/index.html">NSObject Protocol Reference</a></li>
 </ol>
 
 ]]></content>
