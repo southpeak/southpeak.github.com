@@ -12,8 +12,6 @@ categories: iOS
 
 ---
 
-# NSNotificationCenter
-
 一个NSNotificationCenter对象(通知中心)提供了在程序中广播消息的机制，它实质上就是一个通知分发表。这个分发表负责维护为各个通知注册的观察者，并在通知到达时，去查找相应的观察者，将通知转发给他们进行处理。
 
 我们可以使用通知中心的addObserver:selector:name:object:或addObserverForName:object:queue:usingBlock:在通知中心注册一个观察者。每调用这个方法都指定了通知的一个集合。因此，我们可以多次调用这些方法，以让我们的对象监听不同的通知。
