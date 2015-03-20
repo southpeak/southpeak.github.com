@@ -409,7 +409,7 @@ NSNotificationCenter
 <ol>
 <li>当我们注册一个观察者是，通知中心会持有观察者的一个弱引用，来确保观察者是可用的。</li>
 <li>主线程调用dealloc操作会让Observer对象的引用计数减为0，这时对象会被释放掉。</li>
-<li>后台线程发送一个通知，如果此时Observer还未被释放，则会用其转出消息，并执行回调方法。而如果在回调执行的过程中对象被释放了，就会出现上面的问题。</li>
+<li>后台线程发送一个通知，如果此时Observer还未被释放，则会向其转发消息，并执行回调方法。而如果在回调执行的过程中对象被释放了，就会出现上面的问题。</li>
 </ol>
 
 
@@ -485,6 +485,8 @@ NSNotificationCenter
         <a class="basic-alignment left" href="/blog/2015/03/07/uiresponder/" title="Previous Post: UIResponder">&laquo; UIResponder</a>
       
       
+        <a class="basic-alignment right" href="/blog/2015/03/20/nsnotificationcenter/" title="Next Post: NSNotificationCenter">NSNotificationCenter &raquo;</a>
+      
     </p>
   </footer>
 </article>
@@ -517,7 +519,7 @@ NSNotificationCenter
 <section>
 <h1>分类</h1>
 <ul>
-  <li><a href='/blog/categories/ios'>ios (60)</a></li>
+  <li><a href='/blog/categories/ios'>ios (61)</a></li>
   <li><a href='/blog/categories/network'>network (3)</a></li>
   <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
   <li><a href='/blog/categories/swift'>swift (7)</a></li>
@@ -529,6 +531,10 @@ NSNotificationCenter
 <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/03/20/nsnotificationcenter/">NSNotificationCenter</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2015/03/14/nsnotificationyu-duo-xian-cheng/">Notification与多线程</a>
@@ -564,10 +570,6 @@ NSNotificationCenter
     
       <li class="post">
         <a href="/blog/2015/01/11/yuan-ma-pian-:mantle/">源码篇：Mantle</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/01/11/gong-ju-pian-:mantle/">工具篇：Mantle</a>
       </li>
     
   </ul>
