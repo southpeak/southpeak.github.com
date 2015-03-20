@@ -293,6 +293,8 @@ categories: iOS
 
 个人认为可能是unsafe_unretained的引用，因为我们知道如果是weak引用，其所指的对象被释放后，这个引用会被置成nil。而实际情况是通知中心还会给这个对象发送消息，并引发一个异常。而如果向nil发送一个消息是不会导致异常的。
 
+【非常感谢 [@lv-pw](http://weibo.com/u/2814972697)，上面这个问题在[《斯坦福大学公开课：iOS 7应用开发》的第5集](http://open.163.com/movie/2014/1/L/H/M9H7S9F1H_M9H801GLH.html)的第57分50秒中得到了解答：老师的解释是，之所以使用unsafe_unretainer，而不使用weak，是为了兼容老版本的系统。】
+
 另外，我们知道NSNotificationCenter实现的是观察者模式，而且通常情况下消息在哪个线程被post，就在哪个线程被转发。而从上面的描述可以发现，
 -addObserverForName:object:queue:usingBlock:添加的匿名观察者可以在指定的队列中处理通知，那它的实现机制是什么呢？
 
@@ -335,4 +337,4 @@ Objective-C中的通知由于其广播性及松耦合性，非常适合于大的
 6. [NSNotificationCenter part 3: Unit testing notifications with OCMock](http://www.hpique.com/2013/12/nsnotificationcenter-part-3/)
 7. [NSNotificationCenter part 4: Asynchronous notifications with NSNotificationQueue](http://www.hpique.com/2013/12/nsnotificationcenter-part-4/)
 8. [View controller dealloc not called when using NSNotificationCenter code block method with ARC](http://stackoverflow.com/questions/12699118/view-controller-dealloc-not-called-when-using-nsnotificationcenter-code-block-me)
-
+9. [《斯坦福大学公开课：iOS 7应用开发》第5集](http://open.163.com/movie/2014/1/L/H/M9H7S9F1H_M9H801GLH.html)
