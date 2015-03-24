@@ -4,7 +4,7 @@
   <title><![CDATA[Category: ios | 南峰子的技术博客]]></title>
   <link href="http://southpeak.github.io/blog/categories/ios/atom.xml" rel="self"/>
   <link href="http://southpeak.github.io/"/>
-  <updated>2015-03-20T21:59:45+08:00</updated>
+  <updated>2015-03-24T20:44:57+08:00</updated>
   <id>http://southpeak.github.io/</id>
   <author>
     <name><![CDATA[南峰子]]></name>
@@ -12,6 +12,493 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[源码篇：MBProgressHUD]]></title>
+    <link href="http://southpeak.github.io/blog/2015/03/24/yuan-ma-pian-:mbprogresshud/"/>
+    <updated>2015-03-24T20:41:51+08:00</updated>
+    <id>http://southpeak.github.io/blog/2015/03/24/yuan-ma-pian-:mbprogresshud</id>
+    <content type="html"><![CDATA[<p>源码来源：<a href="https://github.com/jdg/MBProgressHUD">https://github.com/jdg/MBProgressHUD</a></p>
+
+<p>版本：0.9.1</p>
+
+<p>MBProgressHUD是一个显示HUD窗口的第三方类库，用于在执行一些后台任务时，在程序中显示一个表示进度的loading视图和两个可选的文本提示的HUD窗口。我想最多是应用在加载网络数据的时候。其实苹果官方自己有一个带有此功能的类UIProgressHUD，只不过它是私有的，现在不让用。至于实际的效果，可以看看github上工程给出的几张图例(貌似我这经常无法单独打开图片，所以就不在这贴图片了)，也可以运行一下Demo。</p>
+
+<p>具体用法我们就不多说了，参考github上的说明就能用得很顺的。本文主要还是从源码的角度来分析一下它的具体实现。</p>
+
+<h2>模式</h2>
+
+<p>在分析实现代码之前，我们先来看看MBProgressHUD中定义的MBProgressHUDMode枚举。它用来表示HUD窗口的模式，即我们从效果图中看到的几种显示样式。其具体定义如下：</p>
+
+<pre><code>typedef enum {
+    // 使用UIActivityIndicatorView来显示进度，这是默认值
+    MBProgressHUDModeIndeterminate,
+
+    // 使用一个圆形饼图来作为进度视图
+    MBProgressHUDModeDeterminate,
+
+    // 使用一个水平进度条
+    MBProgressHUDModeDeterminateHorizontalBar,
+
+    // 使用圆环作为进度条
+    MBProgressHUDModeAnnularDeterminate,
+
+    // 显示一个自定义视图，通过这种方式，可以显示一个正确或错误的提示图
+    MBProgressHUDModeCustomView,
+
+    // 只显示文本
+    MBProgressHUDModeText
+
+} MBProgressHUDMode;
+</code></pre>
+
+<p>通过设置MBProgressHUD的模式，我们可以使用MBProgressHUD自定义的表示进度的视图来满足我们的需求，也可以自定义这个进度视图，当然还可以只显示文本。在下面我们会讨论源码中是如何使用这几个值的。</p>
+
+<h2>外观</h2>
+
+<p>我们先来了解一下MBProgressHUD的基本组成。一个MBProgressHUD视图主要由四个部分组成：</p>
+
+<ol>
+<li>loading动画视图(在此做个统称，当然这个区域可以是自定义的一个UIImageView视图)。这个视图由我们设定的模式值决定，可以是菊花、进度条，也可以是我们自定义的视图；</li>
+<li>标题文本框(label)：主要用于显示提示的主题信息。这个文本框是可选的，通常位于loading动画视图的下面，且它是单行显示。它会根据labelText属性来自适应文本的大小(有一个长度上限)，如果过长，则超出的部分会显示为"&hellip;&ldquo;；</li>
+<li>详情文本框(detailsLabel)。如果觉得标题不够详细，或者有附属信息，就可以将详细信息放在这里面显示。该文本框对应的是显示detailsLabelText属性的值，它是可以多行显示的。另外，详情的显示还依赖于labelText属性的设置，只有labelText属性被设置了，且不为空串，才会显示detailsLabel；</li>
+<li>HUD背景框。主要是作为上面三个部分的一个背景，用来突出上面三部分。</li>
+</ol>
+
+
+<p>为了让我们更好地自定义这几个部分，MBProgressHUD还提供了一些属性，我们简单了解一下：</p>
+
+<pre><code>// 背景框的透明度，默认值是0.8
+@property (assign) float opacity;
+
+// 背景框的颜色
+// 需要注意的是如果设置了这个属性，则opacity属性会失效，即不会有半透明效果
+@property (MB_STRONG) UIColor *color;
+
+// 背景框的圆角半径。默认值是10.0
+@property (assign) float cornerRadius;
+
+// 标题文本的字体及颜色
+@property (MB_STRONG) UIFont* labelFont;
+@property (MB_STRONG) UIColor* labelColor;
+
+// 详情文本的字体及颜色
+@property (MB_STRONG) UIFont* detailsLabelFont;
+@property (MB_STRONG) UIColor* detailsLabelColor;
+
+// 菊花的颜色，默认是白色
+@property (MB_STRONG) UIColor *activityIndicatorColor;
+</code></pre>
+
+<p>通过以上属性，我们可以根据自己的需要来设置这几个部分的外观。</p>
+
+<p>另外还有一个比较有意思的属性是dimBackground，用于为HUD窗口的视图区域覆盖上一层径向渐变(radial gradient)层，其定义如下：</p>
+
+<pre><code>@property (assign) BOOL dimBackground;
+</code></pre>
+
+<p>让我们来看看通过它，MBProgressHUD都做了些什么。代码如下：</p>
+
+<pre><code>- (void)drawRect:(CGRect)rect {
+
+    ...
+
+    if (self.dimBackground) {
+        //Gradient colours
+        size_t gradLocationsNum = 2;
+        CGFloat gradLocations[2] = {0.0f, 1.0f};
+        CGFloat gradColors[8] = {0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.75f}; 
+        CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+        CGGradientRef gradient = CGGradientCreateWithColorComponents(colorSpace, gradColors, gradLocations, gradLocationsNum);
+        CGColorSpaceRelease(colorSpace);
+
+        //Gradient center
+        CGPoint gradCenter= CGPointMake(self.bounds.size.width/2, self.bounds.size.height/2);
+        //Gradient radius
+        float gradRadius = MIN(self.bounds.size.width , self.bounds.size.height) ;
+
+        // 由中心向四周绘制渐变
+        CGContextDrawRadialGradient (context, gradient, gradCenter,
+                                     0, gradCenter, gradRadius,
+                                     kCGGradientDrawsAfterEndLocation);
+        CGGradientRelease(gradient);
+    }
+    ... 
+}
+</code></pre>
+
+<p>这段代码由中心向MBProgressHUD视图的四周绘制了一个渐变层。当然，这里的颜色值是写死的，我们无法自行定义。有兴趣的话，大家可以将这个属性设置为YES，看看实际的效果。</p>
+
+<h2>创建、布局与绘制</h2>
+
+<p>除了继承自UIView的-initWithFrame:初始化方法，MBProgressHUD还为我们提供了两个初始化方法，如下所示：</p>
+
+<pre><code>- (id)initWithWindow:(UIWindow *)window;
+
+- (id)initWithView:(UIView *)view;
+</code></pre>
+
+<p>这两个方法分别传入一个UIWindow对象和一个UIView对象。传入的视图对象仅仅是做为MBProgressHUD视图定义其frame属性的参照，而不会直接将MBProgressHUD视图添加到传入的视图对象上。这个添加操作还得我们自行处理(当然，MBProgressHUD还提供了几个便捷的类方法，我们下面会说明)。</p>
+
+<p>MBProgressHUD提供了几个属性，可以让我们控制HUD的布局，这些属性主要有以下几个：</p>
+
+<pre><code>// HUD相对于父视图中心点的x轴偏移量和y轴偏移量
+@property (assign) float xOffset;
+@property (assign) float yOffset;
+
+// HUD各元素与HUD边缘的间距
+@property (assign) float margin;
+
+// HUD背景框的最小大小
+@property (assign) CGSize minSize;
+
+// HUD的实际大小
+@property (atomic, assign, readonly) CGSize size;
+
+// 是否强制HUD背景框宽高相等
+@property (assign, getter = isSquare) BOOL square;
+</code></pre>
+
+<p>需要注意的是，MBProgressHUD视图会充满其父视图的frame内，为此，在MBProgressHUD的layoutSubviews方法中，还专门做了处理，如下代码所示：</p>
+
+<pre><code>- (void)layoutSubviews {
+    [super layoutSubviews];
+
+    // Entirely cover the parent view
+    UIView *parent = self.superview;
+    if (parent) {
+        self.frame = parent.bounds;
+    }
+
+    ...
+}
+</code></pre>
+
+<p>也因此，当MBProgressHUD显示时，它也会屏蔽父视图的各种交互操作。</p>
+
+<p>在布局的过程中，会先根据我们要显示的视图计算出容纳这些视图所需要的总的宽度和高度。当然，会设置一个最大值。我们截取其中一段来看看：</p>
+
+<pre><code>CGRect bounds = self.bounds;
+
+...
+
+CGFloat remainingHeight = bounds.size.height - totalSize.height - kPadding - 4 * margin; 
+CGSize maxSize = CGSizeMake(maxWidth, remainingHeight);
+CGSize detailsLabelSize = MB_MULTILINE_TEXTSIZE(detailsLabel.text, detailsLabel.font, maxSize, detailsLabel.lineBreakMode);
+totalSize.width = MAX(totalSize.width, detailsLabelSize.width);
+totalSize.height += detailsLabelSize.height;
+if (detailsLabelSize.height &gt; 0.f &amp;&amp; (indicatorF.size.height &gt; 0.f || labelSize.height &gt; 0.f)) {
+    totalSize.height += kPadding;
+}
+
+totalSize.width += 2 * margin;
+totalSize.height += 2 * margin;
+</code></pre>
+
+<p>之后，就开始从上到下放置各个视图。在布局代码的最后，计算了一个size值，这是为后面绘制背景框做准备的。</p>
+
+<p>在上面的布局代码中，主要是处理了loading动画视图、标题文本框和详情文本框，而HUD背景框主要是在drawRect:中来绘制的。背景框的绘制代码如下：</p>
+
+<pre><code>// Center HUD
+CGRect allRect = self.bounds;
+// Draw rounded HUD backgroud rect
+CGRect boxRect = CGRectMake(round((allRect.size.width - size.width) / 2) + self.xOffset,
+                            round((allRect.size.height - size.height) / 2) + self.yOffset, size.width, size.height);
+float radius = self.cornerRadius;
+CGContextBeginPath(context);
+CGContextMoveToPoint(context, CGRectGetMinX(boxRect) + radius, CGRectGetMinY(boxRect));
+CGContextAddArc(context, CGRectGetMaxX(boxRect) - radius, CGRectGetMinY(boxRect) + radius, radius, 3 * (float)M_PI / 2, 0, 0);
+CGContextAddArc(context, CGRectGetMaxX(boxRect) - radius, CGRectGetMaxY(boxRect) - radius, radius, 0, (float)M_PI / 2, 0);
+CGContextAddArc(context, CGRectGetMinX(boxRect) + radius, CGRectGetMaxY(boxRect) - radius, radius, (float)M_PI / 2, (float)M_PI, 0);
+CGContextAddArc(context, CGRectGetMinX(boxRect) + radius, CGRectGetMinY(boxRect) + radius, radius, (float)M_PI, 3 * (float)M_PI / 2, 0);
+CGContextClosePath(context);
+CGContextFillPath(context);
+</code></pre>
+
+<p>这是最平常的绘制操作，在此不多做解释。</p>
+
+<p>我们上面讲过MBProgressHUD提供了几种窗口模式，这几种模式的主要区别在于loading动画视图的展示。默认情况下，使用的是菊花(MBProgressHUDModeIndeterminate)。我们可以通过设置以下属性，来改变loading动画视图：</p>
+
+<pre><code>@property (assign) MBProgressHUDMode mode;
+</code></pre>
+
+<p>对于其它几种模式，MBProgressHUD专门我们提供了几个视图类。如果是进度条模式(MBProgressHUDModeDeterminateHorizontalBar)，则使用的是MBBarProgressView类；如果是饼图模式(MBProgressHUDModeDeterminate)或环形模式(MBProgressHUDModeAnnularDeterminate)，则使用的是MBRoundProgressView类。上面这两个类的主要操作就是在drawRect:中根据一些进度参数来绘制形状，大家可以自己详细看一下。</p>
+
+<p>当然，我们还可以自定义loading动画视图，此时选择的模式是MBProgressHUDModeCustomView。或者不显示loading动画视图，而只显示文本框(MBProgressHUDModeText)。</p>
+
+<p>具体显示哪一种loading动画视图，是在-updateIndicators方法中来处理的，其实现如下所示：</p>
+
+<pre><code>- (void)updateIndicators {
+
+    BOOL isActivityIndicator = [indicator isKindOfClass:[UIActivityIndicatorView class]];
+    BOOL isRoundIndicator = [indicator isKindOfClass:[MBRoundProgressView class]];
+
+    if (mode == MBProgressHUDModeIndeterminate) {
+        ...
+    }
+    else if (mode == MBProgressHUDModeDeterminateHorizontalBar) {
+        // Update to bar determinate indicator
+        [indicator removeFromSuperview];
+        self.indicator = MB_AUTORELEASE([[MBBarProgressView alloc] init]);
+        [self addSubview:indicator];
+    }
+    else if (mode == MBProgressHUDModeDeterminate || mode == MBProgressHUDModeAnnularDeterminate) {
+        if (!isRoundIndicator) {
+            ...
+        }
+        if (mode == MBProgressHUDModeAnnularDeterminate) {
+            [(MBRoundProgressView *)indicator setAnnular:YES];
+        }
+    } 
+    else if (mode == MBProgressHUDModeCustomView &amp;&amp; customView != indicator) {
+        ...
+    } else if (mode == MBProgressHUDModeText) {
+        ...
+    }
+}
+</code></pre>
+
+<h2>显示与隐藏</h2>
+
+<p>MBRoundProgressView为我们提供了丰富的显示与隐藏HUD窗口的。在分析这些方法之前，我们先来看看MBProgressHUD为显示与隐藏提供的一些属性：</p>
+
+<pre><code>// HUD显示和隐藏的动画类型
+@property (assign) MBProgressHUDAnimation animationType;
+
+// HUD显示的最短时间。设置这个值是为了避免HUD显示后立即被隐藏。默认值为0
+@property (assign) float minShowTime;
+
+// 这个属性设置了一个宽限期，它是在没有显示HUD窗口前被调用方法可能运行的时间。
+// 如果被调用方法在宽限期内执行完，则HUD不会被显示。
+// 这主要是为了避免在执行很短的任务时，去显示一个HUD窗口。
+// 默认值是0。只有当任务状态是已知时，才支持宽限期。具体我们看实现代码。
+@property (assign) float graceTime;
+
+// 这是一个标识位，标明执行的操作正在处理中。这个属性是配合graceTime使用的。
+// 如果没有设置graceTime，则这个标识是没有太大意义的。在使用showWhileExecuting:onTarget:withObject:animated:方法时，
+// 会自动去设置这个属性为YES，其它情况下都需要我们自己手动设置。
+@property (assign) BOOL taskInProgress;
+
+// 隐藏时是否将HUD从父视图中移除，默认是NO。
+@property (assign) BOOL removeFromSuperViewOnHide;
+
+// 进度指示器，从0.0到1.0，默认值为0.0
+@property (assign) float progress;
+
+// 在HUD被隐藏后的回调
+@property (copy) MBProgressHUDCompletionBlock completionBlock;
+</code></pre>
+
+<p>以上这些属性都还好理解，可能需要注意的就是graceTime和taskInProgress的配合使用。在下面我们将会看看这两个属性的用法。</p>
+
+<p>对于显示操作，最基本的就是-show:方法(其它几个显示方法都会调用该方法来显示HUD窗口)，我们先来看看它的实现，</p>
+
+<pre><code>- (void)show:(BOOL)animated {
+    useAnimation = animated;
+    // If the grace time is set postpone the HUD display
+    if (self.graceTime &gt; 0.0) {
+        self.graceTimer = [NSTimer scheduledTimerWithTimeInterval:self.graceTime target:self 
+                           selector:@selector(handleGraceTimer:) userInfo:nil repeats:NO];
+    } 
+    // ... otherwise show the HUD imediately 
+    else {
+        [self showUsingAnimation:useAnimation];
+    }
+}
+</code></pre>
+
+<p>可以看到，如果我们没有设置graceTime属性，则会立即显示HUD；而如果设置了graceTime，则会创建一个定时器，并让显示操作延迟到graceTime所设定的时间再执行，而-handleGraceTimer:实现如下：</p>
+
+<pre><code>- (void)handleGraceTimer:(NSTimer *)theTimer {
+    // Show the HUD only if the task is still running
+    if (taskInProgress) {
+        [self showUsingAnimation:useAnimation];
+    }
+}
+</code></pre>
+
+<p>可以看到，只有在设置了taskInProgress标识位为YES的情况下，才会去显示HUD窗口。所以，如果我们要自己调用-show:方法的话，需要酌情考虑设置taskInProgress标识位。</p>
+
+<p>除了-show:方法以外，MBProgressHUD还为我们提供了一组显示方法，可以让我们在显示HUD的同时，执行一些后台任务，我们在此主要介绍两个。其中一个是-showWhileExecuting:onTarget:withObject:animated:，它是基于target-action方式的调用，在执行一个后台任务时显示HUD，等后台任务执行完成后再隐藏HUD，具体实现如下所示：</p>
+
+<pre><code>- (void)showWhileExecuting:(SEL)method onTarget:(id)target withObject:(id)object animated:(BOOL)animated {
+    methodForExecution = method;
+    targetForExecution = MB_RETAIN(target);
+    objectForExecution = MB_RETAIN(object); 
+    // Launch execution in new thread
+    self.taskInProgress = YES;
+    [NSThread detachNewThreadSelector:@selector(launchExecution) toTarget:self withObject:nil];
+    // Show HUD view
+    [self show:animated];
+}
+
+- (void)launchExecution {
+    @autoreleasepool {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
+        // Start executing the requested task
+        [targetForExecution performSelector:methodForExecution withObject:objectForExecution];
+#pragma clang diagnostic pop
+        // Task completed, update view in main thread (note: view operations should
+        // be done only in the main thread)
+        [self performSelectorOnMainThread:@selector(cleanUp) withObject:nil waitUntilDone:NO];
+    }
+}
+</code></pre>
+
+<p>可以看到，-showWhileExecuting:onTarget:withObject:animated:首先将taskInProgress属性设置为YES，这样在调用-show:方法时，即使设置了graceTime，也确保能在任务完成之前显示HUD。然后开启一个新线程，来异步执行我们的后台任务，最后去显示HUD。</p>
+
+<p>而在异步调用方法-launchExecution中，线程首先是维护了自己的一个@autoreleasepool，所以在我们自己的方法中，就不需要再去维护一个@autoreleasepool了。之后是去执行我们的任务，在任务完成之后，再回去主线程去执行清理操作，并隐藏HUD窗口。</p>
+
+<p>另一个显示方法是-showAnimated:whileExecutingBlock:onQueue:completionBlock:，它是基于GCD的调用，当block中的任务在指定的队列中执行时，显示HUD窗口，任务完成之后执行completionBlock操作，最后隐藏HUD窗口。我们来看看它的具体实现：</p>
+
+<pre><code>- (void)showAnimated:(BOOL)animated whileExecutingBlock:(dispatch_block_t)block onQueue:(dispatch_queue_t)queue
+     completionBlock:(MBProgressHUDCompletionBlock)completion {
+    self.taskInProgress = YES;
+    self.completionBlock = completion;
+    dispatch_async(queue, ^(void) {
+        block();
+        dispatch_async(dispatch_get_main_queue(), ^(void) {
+            [self cleanUp];
+        });
+    });
+    [self show:animated];
+}
+</code></pre>
+
+<p>这个方法也是首先将taskInProgress属性设置为YES，然后开启一个线程去执行block任务，最后主线程去执行清理操作，并隐藏HUD窗口。</p>
+
+<p>对于HUD的隐藏，MBProgressHUD提供了两个方法，一个是-hide:，另一个是-hide:afterDelay:，后者基于前者，所以我们主要来看看-hide:的实现：</p>
+
+<pre><code>- (void)hide:(BOOL)animated {
+    useAnimation = animated;
+    // If the minShow time is set, calculate how long the hud was shown,
+    // and pospone the hiding operation if necessary
+    if (self.minShowTime &gt; 0.0 &amp;&amp; showStarted) {
+        NSTimeInterval interv = [[NSDate date] timeIntervalSinceDate:showStarted];
+        if (interv &lt; self.minShowTime) {
+            self.minShowTimer = [NSTimer scheduledTimerWithTimeInterval:(self.minShowTime - interv) target:self 
+                                selector:@selector(handleMinShowTimer:) userInfo:nil repeats:NO];
+            return;
+        } 
+    }
+    // ... otherwise hide the HUD immediately
+    [self hideUsingAnimation:useAnimation];
+}
+</code></pre>
+
+<p>我们可以看到，在设置了minShowTime属性并且已经显示了HUD窗口的情况下，会去判断显示的时间是否小于minShowTime指定的时间，如果是，则会开启一个定时器，等到显示的时间到了minShowTime所指定的时间，才会去隐藏HUD窗口；否则会直接去隐藏HUD窗口。</p>
+
+<p>隐藏的实际操作主要是去做了些清理操作，包括根据设定的removeFromSuperViewOnHide值来执行是否从父视图移除HUD窗口，以及执行completionBlock操作，还有就是执行代理的hudWasHidden:方法。这些操作是在私有方法-done里面执行的，实现如下：</p>
+
+<pre><code>- (void)done {
+    [NSObject cancelPreviousPerformRequestsWithTarget:self];
+    isFinished = YES;
+    self.alpha = 0.0f;
+    if (removeFromSuperViewOnHide) {
+        [self removeFromSuperview];
+    }
+#if NS_BLOCKS_AVAILABLE
+    if (self.completionBlock) {
+        self.completionBlock();
+        self.completionBlock = NULL;
+    }
+#endif
+    if ([delegate respondsToSelector:@selector(hudWasHidden:)]) {
+        [delegate performSelector:@selector(hudWasHidden:) withObject:self];
+    }
+}
+</code></pre>
+
+<h2>其它</h2>
+
+<p>MBProgressHUD的一些主要的代码差不多已经分析完了，最后还有些边边角角的地方，一起来看看。</p>
+
+<h3>显示和隐藏的便捷方法</h3>
+
+<p>除了上面描述的实例方法之外，MBProgressHUD还为我们提供了几个便捷显示和隐藏HUD窗口的方法，如下所示：</p>
+
+<pre><code>+ (MB_INSTANCETYPE)showHUDAddedTo:(UIView *)view animated:(BOOL)animated
+
++ (BOOL)hideHUDForView:(UIView *)view animated:(BOOL)animated
+
++ (NSUInteger)hideAllHUDsForView:(UIView *)view animated:(BOOL)animated
+</code></pre>
+
+<p>方法的签名已经很能说明问题了，在此不多描述。</p>
+
+<h3>部分属性值的设置</h3>
+
+<p>对于部分属性(主要是"外观"一节中针对菊花、标题文本框和详情文本框的几个属性值)，为了在设置将这些属性时修改对应视图的属性，并没有直接为每个属性生成一个setter，而是通过KVO来监听这些属性值的变化，再将这些值赋值给视图的对应属性，如下所示：</p>
+
+<pre><code>// 监听的属性数组
+- (NSArray *)observableKeypaths {
+    return [NSArray arrayWithObjects:@"mode", @"customView", @"labelText", @"labelFont", @"labelColor", ..., nil];
+}
+
+// 注册KVO
+- (void)registerForKVO {
+    for (NSString *keyPath in [self observableKeypaths]) {
+        [self addObserver:self forKeyPath:keyPath options:NSKeyValueObservingOptionNew context:NULL];
+    }
+}
+
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
+    if (![NSThread isMainThread]) {
+        [self performSelectorOnMainThread:@selector(updateUIForKeypath:) withObject:keyPath waitUntilDone:NO];
+    } else {
+        [self updateUIForKeypath:keyPath];
+    }
+}
+
+- (void)updateUIForKeypath:(NSString *)keyPath {
+    if ([keyPath isEqualToString:@"mode"] || [keyPath isEqualToString:@"customView"] ||
+        [keyPath isEqualToString:@"activityIndicatorColor"]) {
+        [self updateIndicators];
+    } else if ([keyPath isEqualToString:@"labelText"]) {
+        label.text = self.labelText;
+    } 
+
+    ...
+
+    [self setNeedsLayout];
+    [self setNeedsDisplay];
+}
+</code></pre>
+
+<h3>代理</h3>
+
+<p>MBProgressHUD还为我们提供了一个代理MBProgressHUDDelegate，这个代理中只提供了一个方法，即：</p>
+
+<pre><code>- (void)hudWasHidden:(MBProgressHUD *)hud;
+</code></pre>
+
+<p>这个代理方法是在隐藏HUD窗口后调用，如果此时我们需要在我们自己的实现中执行某些操作，则可以实现这个方法。</p>
+
+<h2>问题</h2>
+
+<p>MBProgressHUD为我们提供了一个HUD窗口的很好的实现，不过个人在使用过程中，觉得它给我们提供的交互功能太少。其代理只提供了一个-hudWasHidden:方法，而且我们也无法通过点击HUD来执行一些操作。在现实的需求中，可能存在这种情况：比如一个网络操作，在发送请求等待响应的过程中，我们会显示一个HUD窗口以显示一个loading框。但如果我们想在等待响应的过程中，在当前视图中取消这个网络请求，就没有相应的处理方式，MBProgressHUD没有为我们提供这样的交互操作。当然这时候，我们可以根据自己的需求来修改源码。</p>
+
+<h2>与SVProgressHUD的对比</h2>
+
+<p>与MBProgressHUD类似，SVProgressHUD类库也为我们提供了在视图中显示一个HUD窗口的功能。两者的基本思路是差不多的，差别更多的是在实现细节上。相对于MBProgressHUD来说，SVProgressHUD的实现有以下几点不同：</p>
+
+<ol>
+<li>SVProgressHUD类对外提供的都是类方法，包括显示、隐藏、和视图属性设置都是使用类方法来操作。其内部实现为一个单例对象，类方法实际是针对这个单例对象来操作的。</li>
+<li>SVProgressHUD主要包含三部分：loading视图、提示文本框和背景框，没有详情文本框。</li>
+<li>SVProgressHUD默认提供了正确、错误和信息三种状态视图(与loading视图同一位置，根据需要来设置)。当然MBProgressHUD中，也可以自定义视图(customView)来显示相应的状态视图。</li>
+<li>SVProgressHUD为我们提供了更多的交互操作，包括点击事件、显示事件及隐藏事件。不过这些都是通过通知的形式向外发送，所以我们需要自己去监听这些事件。</li>
+<li>SVProgressHUD中一些loading动画是以Layer动画的形式来实现的。</li>
+</ol>
+
+
+<p>SVProgressHUD的实现细节还未详细去看，有兴趣的读者可以去研究一下。这两个HUD类库各有优点，大家在使用时，可根据自己的需要和喜好来选择。</p>
+
+<h2>小结</h2>
+
+<p>总体来说，MBProgressHUD的代码相对朴实，简单易懂，没有什么花哨难懂的东西。就技术点而言，也没有太多复杂的技术，都是我们常用的一些东西。就使用而言，也是挺方便的，参考一下github上的使用指南就能很快上手。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[NSNotificationCenter]]></title>
@@ -1678,137 +2165,6 @@ let ActivityVersionValue = "1.0"
 <p>如果喜欢这篇文章，则可以下载我们的书<a href="http://www.raywenderlich.com/store/ios-8-by-tutorials">iOS 8 by Tutorials</a>，这里塞满了这样的教程。</p>
 
 <p>如果有更多的总量或关于这篇文章的评论，那么可以加入下面的讨论。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[NSCache]]></title>
-    <link href="http://southpeak.github.io/blog/2015/02/11/nscache/"/>
-    <updated>2015-02-11T21:45:14+08:00</updated>
-    <id>http://southpeak.github.io/blog/2015/02/11/nscache</id>
-    <content type="html"><![CDATA[<p>NSCache是一个类似于集合的容器，即缓存。它存储key-value对，这一点类似于NSDictionary类。我们通常用使用缓存来临时存储短时间使用但创建昂贵的对象。重用这些对象可以优化性能，因为它们的值不需要重新计算。另外一方面，这些对象对于程序来说不是紧要的，在内存紧张时会被丢弃。如果对象被丢弃了，则下次使用时需要重新计算。</p>
-
-<p>当一个key-value对在缓存中时，缓存维护它的一个强引用。存储在NSCache中的通用数据类型通常是实现了NSDiscardableContent协议的对象。在缓存中存储这类对象是有好处的，因为当不再需要它时，可以丢弃这些内容，以节省内存。默认情况下，缓存中的NSDiscardableContent对象在其内容被丢弃时，会被移除出缓存，尽管我们可以改变这种缓存策略。如果一个NSDiscardableContent被放进缓存，则在对象被移除时，缓存会调用discardContentIfPossible方法。</p>
-
-<p>NSCache与可变集合有几点不同：</p>
-
-<ol>
-<li>NSCache类结合了各种自动删除策略，以确保不会占用过多的系统内存。如果其它应用需要内存时，系统自动执行这些策略。当调用这些策略时，会从缓存中删除一些对象，以最大限度减少内存的占用。</li>
-<li>NSCache是线程安全的，我们可以在不同的线程中添加、删除和查询缓存中的对象，而不需要锁定缓存区域。</li>
-<li>不像NSMutableDictionary对象，一个缓存对象不会拷贝key对象。</li>
-</ol>
-
-
-<p>这些特性对于NSCache类来说是必须的，因为在需要释放内存时，缓存必须异步地在幕后决定去自动修改自身。</p>
-
-<h2>缓存限制</h2>
-
-<p>NSCache提供了几个属性来限制缓存的大小，如属性countLimit限定了缓存最多维护的对象的个数。声明如下：</p>
-
-<pre><code>@property NSUInteger countLimit
-</code></pre>
-
-<p>默认值为0，表示不限制数量。但需要注意的是，这不是一个严格的限制。如果缓存的数量超过这个数量，缓存中的一个对象可能会被立即丢弃、或者稍后、也可能永远不会，具体依赖于缓存的实现细节。</p>
-
-<p>另外，NSCache提供了totalCostLimit属性来限定缓存能维持的最大内存。其声明如下：</p>
-
-<pre><code>@property NSUInteger totalCostLimit
-</code></pre>
-
-<p>默认值也是0，表示没有限制。当我们添加一个对象到缓存中时，我们可以为其指定一个消耗(cost)，如对象的字节大小。如果添加这个对象到缓存导致缓存总的消耗超过totalCostLimit的值，则缓存会自动丢弃一些对象，直到总消耗低于totalCostLimit值。不过被丢弃的对象的顺序无法保证。</p>
-
-<p>需要注意的是totalCostLimit也不是一个严格限制，其策略是与countLimit一样的。</p>
-
-<h2>存取方法</h2>
-
-<p>NSCache提供了一组方法来存取key-value对，类似于NSMutableDictionary类。如下所示：</p>
-
-<pre><code>- (id)objectForKey:(id)key
-
-- (void)setObject:(id)obj forKey:(id)key
-
-- (void)removeObjectForKey:(id)key
-
-- (void)removeAllObjects
-</code></pre>
-
-<p>如上所述，与NSMutableDictionary不同的就是它不会拷贝key对象。</p>
-
-<p>此外，我们在存储对象时，可以为对象指定一个消耗值，如下所示：</p>
-
-<pre><code>- (void)setObject:(id)obj forKey:(id)key cost:(NSUInteger)num
-</code></pre>
-
-<p>这个消耗值用于计算缓存中所有对象的一个消耗总和。当内存受限或者总消耗超过了限定的最大总消耗，则缓存应该开启一个丢弃过程以移除一些对象。不过，这个过程不能保证被丢弃对象的顺序。其结果是，如果我们试图操作这个消耗值来实现一些特殊的行为，则后果可能会损害我们的程序。通常情况下，这个消耗值是对象的字节大小。如果这些信息不是现成的，则我们不应该去计算它，因为这样会使增加使用缓存的成本。如果我们没有可用的值传递，则直接传递0，或者是使用-setObject:forKey:方法，这个方法不需要传入一个消耗值。</p>
-
-<h2>NSDiscardableContent协议</h2>
-
-<p>NSDiscardableContent是一个协议，实现这个协议的目的是为了让我们的对象在不被使用时，可以将其丢弃，以让程序占用更少的内存。</p>
-
-<p>一个NSDiscardableContent对象的生命周期依赖于一个“counter”变量。一个NSDiscardableContent对象实际是一个可清理内存块，这个内存记录了对象当前是否被其它对象使用。如果这块内存正在被读取，或者仍然被需要，则它的counter变量是大于或等于1的；当它不再被使用时，就可以丢弃，此时counter变量将等于0。当counter变量等于0时，如果当前时间点内存比较紧张的话，内存块就可能被丢弃。</p>
-
-<p>为了丢弃这些内容，可以调用对象的discardContentIfPossible方法，该方法的声明如下：</p>
-
-<pre><code>- (void)discardContentIfPossible
-</code></pre>
-
-<p>这样当counter变量等于0时将会释放相关的内存。而如果counter变量不为0，则该方法什么也不做。</p>
-
-<p>默认情况下，NSDiscardableContent对象的counter变量初始值为1，以确保对象不会被内存管理系统立即释放。从这个点开始，我们就需要去跟踪counter变量的状态。为此。协议声明了两个方法：beginContentAccess和endContentAccess。</p>
-
-<p>其中调用beginContentAccess方法会增加对象的counter变量(+1)，这样就可以确保对象不会被丢弃。该方法声明如下：</p>
-
-<pre><code>- (BOOL)beginContentAccess
-</code></pre>
-
-<p>通常我们在对象被需要或者将要使用时调用这个方法。具体的实现类可以决定在对象已经被丢弃的情况下是否重新创建这些内存，且重新创建成功后返回YES。协议的实现者在NSDiscardableContent对象被使用，而又没有调用它的beginContentAccess方法时，应该抛出一个异常。</p>
-
-<p>函数的返回值如果是YES，则表明可丢弃内存仍然可用且已被成功访问；否则返回NO。另外需要注意的是，该方法是在实现类中必须实现(required)。</p>
-
-<p>与beginContentAccess相对应的是endContentAccess。如果可丢弃内存不再被访问时调用。其声明如下：</p>
-
-<pre><code>- (void)endContentAccess
-</code></pre>
-
-<p>该方法会减少对象的counter变量，通常是让对象的counter值变回为0，这样在对象的内容不再被需要时，就要以将其丢弃。</p>
-
-<p>NSCache类提供了一个属性，来标识缓存是否自动舍弃那些内存已经被丢弃的对象(discardable-content object)，其声明如下：</p>
-
-<pre><code>@property BOOL evictsObjectsWithDiscardedContent
-</code></pre>
-
-<p>如果设置为YES，则在对象的内存被丢弃时舍弃对象。默认值为YES。</p>
-
-<h2>NSCacheDelegate代理</h2>
-
-<p>NSCache对象还有一个代理属性，其声明如下：</p>
-
-<pre><code>@property(assign) id&lt; NSCacheDelegate &gt; delegate
-</code></pre>
-
-<p>实现NSCacheDelegate代理的对象会在对象即将从缓存中移除时执行一些特定的操作，因此代理对象可以实现以下方法：</p>
-
-<pre><code>- (void)cache:(NSCache *)cache willEvictObject:(id)obj
-</code></pre>
-
-<p>需要注意的是在这个代理方法中不能修改cache对象。</p>
-
-<h2>小结</h2>
-
-<p>实际上，我们常用的SDWebImage图片下载库的缓存机制就是通过NSCache来实现的。《Effective Objective-C 2.0》中也专门用一小篇的内容来介绍NSCache的使用(第50条：构建缓存时选用NSCache而非NSDictionary)，里面有更精彩的内容。如果我们需要构建缓存机制，则应该使用NSCache，而不是NSDictionary，这样可以减少我们应用对内存的占用，从而达到优化内存的目标。</p>
-
-<p><em>题外话：最近好好久不用的微博整理了一下，重新开始混微博圈了，哈哈，还是个菜鸟。还望大家多提意见啊。微博号：南峰子_老驴(<a href="http://weibo.com/touristdiary">http://weibo.com/touristdiary</a>)</em></p>
-
-<h2>参考</h2>
-
-<ol>
-<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/NSCache_Class/">NSCache Class Reference</a></li>
-<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/NSDiscardableContent_Protocol/index.html">NSDiscardableContent Protocol Reference</a></li>
-<li><a href="https://developer.apple.com/library/mac/documentation/Cocoa/Reference/NSCacheDelegate_Protocol/index.html">NSCacheDelegate Protocol Reference</a></li>
-<li><a href="http://www.15yan.com/story/45toOUzFGlr/">Objective-C中的缓存: NSCache介绍</a></li>
-<li><a href="http://nshipster.cn/nscache/">NSCache</a></li>
-</ol>
-
 ]]></content>
   </entry>
   
