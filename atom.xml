@@ -4,7 +4,7 @@
   <title><![CDATA[南峰子的技术博客]]></title>
   <link href="http://southpeak.github.io/atom.xml" rel="self"/>
   <link href="http://southpeak.github.io/"/>
-  <updated>2015-03-24T20:44:57+08:00</updated>
+  <updated>2015-04-23T17:34:25+08:00</updated>
   <id>http://southpeak.github.io/</id>
   <author>
     <name><![CDATA[南峰子]]></name>
@@ -12,6 +12,807 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[NSKeyValueObserving(KVO)]]></title>
+    <link href="http://southpeak.github.io/blog/2015/04/23/nskeyvalueobserving-kvo/"/>
+    <updated>2015-04-23T17:31:16+08:00</updated>
+    <id>http://southpeak.github.io/blog/2015/04/23/nskeyvalueobserving-kvo</id>
+    <content type="html"><![CDATA[<p>NSKeyValueObserving非正式协议定义了一种机制，它允许对象去监听其它对象的某个属性的修改。</p>
+
+<p>我们可以监听一个对象的属性，包括简单属性，一对一的关系，和一对多的关系。一对多关系的监听者会被告知集合变更的类型，以及哪些对象参与了变化。</p>
+
+<p>NSObject提供了一个NSKeyValueObserving协议的默认实现，它为所有对象提供了一种自动发送修改通知的能力。我们可以通过禁用自动发送通知并使用这个协议提供的方法来手动实现通知的发送，以便更精确地去处理通知。</p>
+
+<p>在这里，我们将通过具体的实例来看看NSKeyValueObserving提供了哪些方法。我们的基础代码如代码清单1所示：</p>
+
+<p><strong>代码清单1：示例基础代码</strong></p>
+
+<pre><code>#pragma mark - PersonObject
+
+@interface PersonObject : NSObject
+
+@end
+
+@implementation PersonObject
+
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
+
+    NSLog(@"keyPath = %@, change = %@, context = %s", keyPath, change, (char *)context);
+}
+
+@end
+
+#pragma mark - BankObject
+
+@interface BankObject : NSObject
+
+@property (nonatomic, assign) int accountBalance;
+@property (nonatomic, copy) NSString *bankCodeEn;
+@property (nonatomic, strong) NSMutableArray *departments;
+
+@end
+</code></pre>
+
+<p>在这段代码中，我们定义一两个类，一个是PersonObject类，这个类的对象在下面将充当观察者的角色。另一个是BankObject类，我们在这个类中定义了三个属性，作为被监听的属性。由于NSObject类已经实现了NSKeyValueObserving协议，所以我们不需要再显式地去让我们的类实现这个协议。</p>
+
+<p>接下来，我们便来看看NSKeyValueObserving协议有哪些功能。</p>
+
+<h2>注册/移除观察者</h2>
+
+<p>要让一个对象监听另一个对象的属性的变化，首先需要将这个对象注册为相关属性的观察者，我们可以使用以下方法来实现：</p>
+
+<pre><code>- (void)addObserver:(NSObject *)anObserver
+         forKeyPath:(NSString *)keyPath
+            options:(NSKeyValueObservingOptions)options
+            context:(void *)context
+</code></pre>
+
+<p>这个方法带有四个参数，描述如下：</p>
+
+<ol>
+<li>anObserver：观察者对象，这个对象必须实现observeValueForKeyPath:ofObject:change:context:方法，以响应属性的修改通知。</li>
+<li>keyPath：被监听的属性。这个值不能为nil。</li>
+<li>options：监听选项，这个值可以是NSKeyValueObservingOptions选项的组合。关于监听选项，我们会在下面介绍。</li>
+<li>context：任意的额外数据，我们可以将这些数据作为上下文数据，它会传递给观察者对象的observeValueForKeyPath:ofObject:change:context:方法。这个参数的意义在于用于区分同一对象监听同一属性(从属于同一对象)的多个不同的监听。我们将在下面看到。</li>
+</ol>
+
+
+<p>监听选项是由枚举NSKeyValueObservingOptions定义的，是传入-addObserver:forKeyPath:options:context:方法中以确定哪些值将被传到-observeValueForKeyPath:ofObject:change:context:方法中。这个枚举的定义如下：</p>
+
+<pre><code>enum {
+    // 提供属性的新值
+    NSKeyValueObservingOptionNew = 0x01,
+
+    // 提供属性的旧值
+    NSKeyValueObservingOptionOld = 0x02,
+
+    // 如果指定，则在添加观察者的时候立即发送一个通知给观察者，
+    // 并且是在注册观察者方法返回之前
+    NSKeyValueObservingOptionInitial = 0x04,
+
+    // 如果指定，则在每次修改属性时，会在修改通知被发送之前预先发送一条通知给观察者，
+    // 这与-willChangeValueForKey:被触发的时间是相对应的。
+    // 这样，在每次修改属性时，实际上是会发送两条通知。
+    NSKeyValueObservingOptionPrior = 0x08 
+};
+typedef NSUInteger NSKeyValueObservingOptions;
+</code></pre>
+
+<p>需要注意的是，当设定了NSKeyValueObservingOptionPrior选项时，第一条通知不会包含NSKeyValueChangeNewKey。当观察者自身的KVO需要为自己的某个属性调用-willChange&hellip;方法，而这个属性的值又依赖于被观察对象的属性时，我们可以使用这个选项。</p>
+
+<p>另外，在添加观察者时还有两点需要注意的是：</p>
+
+<ol>
+<li>调用这个方法时，两个对象(即观察者对象及属性所属的对象)都不会被retain。</li>
+<li>可以多次调用这个方法，将同一个对象注册为同一属性的观察者(所有参数可以完全相同)。这时，即便在所有参数一致的情况下，新注册的观察者并不会替换原来观察者，而是会并存。这样，当属性被修改时，两次监听都会响应。</li>
+</ol>
+
+
+<p>对于第2点，我们在代码清单2中来验证一下：</p>
+
+<p><strong>代码清单2：验证多次使用相同参数来添加观察者的实际效果</strong></p>
+
+<pre><code>PersonObject *personInstance = [[PersonObject alloc] init];
+BankObject *bankInstance = [[BankObject alloc] init];
+
+[bankInstance addObserver:personInstance forKeyPath:@"accountBalance" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:NULL];
+[bankInstance addObserver:personInstance forKeyPath:@"accountBalance" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:NULL];
+
+[bankInstance addObserver:personInstance forKeyPath:@"accountBalance" options:NSKeyValueObservingOptionNew context:"person instance"];
+[bankInstance addObserver:personInstance forKeyPath:@"accountBalance" options:NSKeyValueObservingOptionNew context:"person instance 2"];
+
+bankInstance.accountBalance = 10;
+</code></pre>
+
+<p>(注，以上代码为在MRC环境下调用，确保personInstance和bankInstance不会被释放。)</p>
+
+<p>这段代码的输出如下所示：</p>
+
+<pre><code>keyPath = accountBalance, change = {
+    kind = 1;
+    new = 10;
+}, context = person instance 2
+keyPath = accountBalance, change = {
+    kind = 1;
+    new = 10;
+}, context = person instance
+keyPath = accountBalance, change = {
+    kind = 1;
+    new = 10;
+    old = 0;
+}, context = (null)
+keyPath = accountBalance, change = {
+    kind = 1;
+    new = 10;
+    old = 0;
+}, context = (null)
+</code></pre>
+
+<p>可以看到KVO为每次注册都调用了一次监听处理操作。所以多次调用同样的注册操作会产生多个观察者。另外，多个观察者之间的observeValueForKeyPath:ofObject:change:context:方法调用顺序是按照先进后出的顺序来的(所有的监听信息都是放在一个数组中的，我们将在下面了解到)。</p>
+
+<p>一个良好的实践是在观察者不再需要监听属性变化时，必须调用removeObserver:forKeyPath:或removeObserver:forKeyPath:context:方法来移除观察者，这两个方法的声明如下：</p>
+
+<pre><code>- (void)removeObserver:(NSObject *)anObserver
+            forKeyPath:(NSString *)keyPath
+
+- (void)removeObserver:(NSObject *)observer
+            forKeyPath:(NSString *)keyPath
+               context:(void *)context
+</code></pre>
+
+<p>这两个方法会根据传入的参数(主要是keyPath和context)来移除观察者。如果observer没有监听keyPath属性，则调用这两个方法会抛出异常。大家可以试一下，程序会果断的崩溃。并报类似于以下的错误：</p>
+
+<pre><code>*** Terminating app due to uncaught exception 'NSRangeException', reason: 'Cannot remove an observer &lt;PersonObject 0x7ff541534e20&gt; for the key path "accountBalance" from &lt;BankObject 0x7ff541528430&gt; because it is not registered as an observer.'
+</code></pre>
+
+<p>所以，我们必须确保先注册了观察者，才能调用移除方法。</p>
+
+<p>那如果我们忘记调用移除观察者方法，会怎么样呢？我们来制造一个场景，看看会是什么结果。还是使用上面的代码，只不过这次我们在ARC下来测试：</p>
+
+<p><strong>代码清单3：未移除观察者的影响</strong></p>
+
+<pre><code>- (void)testKVO {
+
+    PersonObject *personInstance = [[PersonObject alloc] init];
+    BankObject *bankInstance = [[BankObject alloc] init];
+
+    [bankInstance addObserver:personInstance forKeyPath:@"accountBalance" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:NULL];
+
+    bankInstance.accountBalance = 20;
+}
+</code></pre>
+
+<p>其输出结果如下所示：</p>
+
+<pre><code>keyPath = accountBalance, change = {
+    kind = 1;
+    new = 20;
+    old = 0;
+}, context = (null)
+*** Terminating app due to uncaught exception 'NSInternalInconsistencyException', reason: 'An instance 0x7fc88047e7e0 of class BankObject was deallocated while key value observers were still registered with it. Current observation info: &lt;NSKeyValueObservationInfo 0x7fc880770fa0&gt; (
+&lt;NSKeyValueObservance 0x7fc880771850: Observer: 0x7fc8804737a0, Key path: accountBalance, Options: &lt;New: YES, Old: YES, Prior: NO&gt; Context: 0x0, Property: 0x7fc88076edd0&gt;
+)'
+......
+</code></pre>
+
+<p>程序在调用一次KVO后，很爽快地崩溃了。给我们的解释是bankInstance被释放了，但KVO中仍然还有关于它的注册信息。实际上，我们上面说过，在添加观察者的时候，观察者对象与被观察属性所属的对象都不会被retain，然而在这些对象被释放后，相关的监听信息却还存在，KVO做的处理是直接让程序崩溃。</p>
+
+<h2>处理属性修改通知</h2>
+
+<p>当被监听的属性修改时，KVO会发出一个通知以告知所有监听这个属性的观察者对象。而观察者对象必须实现
+-observeValueForKeyPath:ofObject:change:context:方法，来对属性修改通知做相应的处理。这个方法的声明如下：</p>
+
+<pre><code>- (void)observeValueForKeyPath:(NSString *)keyPath
+                      ofObject:(id)object
+                        change:(NSDictionary *)change
+                       context:(void *)context
+</code></pre>
+
+<p>这个方法有四个参数，描述如下：</p>
+
+<ol>
+<li>keyPath：即被观察的属性，与参数object相关。</li>
+<li>object：keyPath所属的对象。</li>
+<li>change：这是一个字典，它包含了属性被修改的一些信息。这个字典中包含的值会根据我们在添加观察者时设置的options参数的不同而有所不同。</li>
+<li>context：这个值即是添加观察者时提供的上下文信息。</li>
+</ol>
+
+
+<p>在我们的示例中，这个方法的实现是打印一些基本的信息。如代码清单1所示。</p>
+
+<p>对于第三个参数，我们通常称之为<strong>变化字典(Change Dictionary)</strong>，它记录了被监听属性的变化情况。我们可以通过以下key来获取我们想要的信息：</p>
+
+<pre><code>// 属性变化的类型，是一个NSNumber对象，包含NSKeyValueChange枚举相关的值
+NSString *const NSKeyValueChangeKindKey;
+
+// 属性的新值。当NSKeyValueChangeKindKey是 NSKeyValueChangeSetting，
+// 且添加观察的方法设置了NSKeyValueObservingOptionNew时，我们能获取到属性的新值。
+// 如果NSKeyValueChangeKindKey是NSKeyValueChangeInsertion或者NSKeyValueChangeReplacement，
+// 且指定了NSKeyValueObservingOptionNew时，则我们能获取到一个NSArray对象，包含被插入的对象或
+// 用于替换其它对象的对象。
+NSString *const NSKeyValueChangeNewKey;
+
+// 属性的旧值。当NSKeyValueChangeKindKey是 NSKeyValueChangeSetting，
+// 且添加观察的方法设置了NSKeyValueObservingOptionOld时，我们能获取到属性的旧值。
+// 如果NSKeyValueChangeKindKey是NSKeyValueChangeRemoval或者NSKeyValueChangeReplacement，
+// 且指定了NSKeyValueObservingOptionOld时，则我们能获取到一个NSArray对象，包含被移除的对象或
+// 被替换的对象。
+NSString *const NSKeyValueChangeOldKey;
+
+// 如果NSKeyValueChangeKindKey的值是NSKeyValueChangeInsertion、NSKeyValueChangeRemoval
+// 或者NSKeyValueChangeReplacement，则这个key对应的值是一个NSIndexSet对象，
+// 包含了被插入、移除或替换的对象的索引
+NSString *const NSKeyValueChangeIndexesKey;
+
+// 当指定了NSKeyValueObservingOptionPrior选项时，在属性被修改的通知发送前，
+// 会先发送一条通知给观察者。我们可以使用NSKeyValueChangeNotificationIsPriorKey
+// 来获取到通知是否是预先发送的，如果是，获取到的值总是@(YES)
+NSString *const NSKeyValueChangeNotificationIsPriorKey;
+</code></pre>
+
+<p>其中，NSKeyValueChangeKindKey的值取自于NSKeyValueChange，它的值是由以下枚举定义的：</p>
+
+<pre><code>enum {
+
+    // 设置一个新值。被监听的属性可以是一个对象，也可以是一对一关系的属性或一对多关系的属性。
+    NSKeyValueChangeSetting = 1,
+
+    // 表示一个对象被插入到一对多关系的属性。
+    NSKeyValueChangeInsertion = 2,
+
+    // 表示一个对象被从一对多关系的属性中移除。
+    NSKeyValueChangeRemoval = 3,
+
+    // 表示一个对象在一对多的关系的属性中被替换
+    NSKeyValueChangeReplacement = 4
+};
+typedef NSUInteger NSKeyValueChange;
+</code></pre>
+
+<h2>通知观察者属性的变化</h2>
+
+<p>通知观察者的方式有自动与手动两种方式。</p>
+
+<p>默认情况下是自动发送通知，在这种模式下，当我们修改属性的值时，KVO会自动调用以下两个方法：</p>
+
+<pre><code>- (void)willChangeValueForKey:(NSString *)key
+- (void)didChangeValueForKey:(NSString *)key
+</code></pre>
+
+<p>这两个方法的任务是告诉接收者给定的属性将要或已经被修改。需要注意的是不应该在子类中去重写这两个方法。</p>
+
+<p>但如果我们希望自己控制通知发送的一些细节，则可以启用手动控制模式。手动控制通知提供了对KVO更精确控制，它可以控制通知如何以及何时被发送给观察者。采用这种方式可以减少不必要的通知，或者可以将多个修改组合到一个修改中。</p>
+
+<p>实现手动通知的类必须重写NSObject中对automaticallyNotifiesObserversForKey:方法的实现。这个方法是在NSKeyValueObserving协议中声明的，其声明如下：</p>
+
+<pre><code>+ (BOOL)automaticallyNotifiesObserversForKey:(NSString *)key
+</code></pre>
+
+<p>这个方法返回一个布尔值(默认是返回YES)，以标识参数key指定的属性是否支持自动KVO。如果我们希望手动去发送通知，则针对指定的属性返回NO。</p>
+
+<p>假设我们希望PersonObject对象去监听BankObject对象的bankCodeEn属性，并希望执行手动通知，则可以如下处理：</p>
+
+<p><strong>代码清单4：关闭属性的自动通知发送</strong></p>
+
+<pre><code>@implementation BankObject
+
++ (BOOL)automaticallyNotifiesObserversForKey:(NSString *)key {
+
+    BOOL automatic = YES;
+    if ([key isEqualToString:@"bankCodeEn"]) {
+        automatic = NO;
+    } else {
+        automatic = [super automaticallyNotifiesObserversForKey:key];
+    }
+
+    return automatic;
+}
+
+@end
+</code></pre>
+
+<p>这样我们便可以手动去发送属性修改通知了。需要注意的是，对于对象中其它没有处理的属性，我们需要调用[super automaticallyNotifiesObserversForKey:key]，以避免无意中修改了父类的属性的处理方式。</p>
+
+<p>现在我们已经通过+automaticallyNotifiesObserversForKey:方法设置了对象中哪些属性需要手动处理。接下来就是实际操作了。为了实现手动发送通知，我们需要在修改属性值前调用willChangeValueForKey:，然后在修改属性值之后调用didChangeValueForKey:方法。继续上面的示例，我们需要对bankCodeEn属性做如下处理：</p>
+
+<p><strong>代码清单5：手动控制通知发送</strong></p>
+
+<pre><code>@implementation BankObject
+
+- (void)setBankCodeEn:(NSString *)bankCodeEn {
+
+    [self willChangeValueForKey:@"bankCodeEn"];
+    _bankCodeEn = bankCodeEn;
+    [self didChangeValueForKey:@"bankCodeEn"];
+}
+
+@end
+</code></pre>
+
+<p>如果我们希望只有当bankCodeEn实际被修改时发送通知，以尽量减少不必要的通知，则可以如下实现：</p>
+
+<p><strong>代码清单6：在发送通知前测试值是否修改</strong></p>
+
+<pre><code>- (void)setBankCodeEn:(NSString *)bankCodeEn {
+
+    if (bankCodeEn != _bankCodeEn) {
+        [self willChangeValueForKey:@"bankCodeEn"];
+        _bankCodeEn = bankCodeEn;
+        [self didChangeValueForKey:@"bankCodeEn"];
+    }
+}
+</code></pre>
+
+<p>我们来测试一下上面这段代码的实际效果：</p>
+
+<p><strong>代码清单7：测试避免属性未实际修改下不发送通知</strong></p>
+
+<pre><code>PersonObject    *personInstance = [[PersonObject alloc] init];
+BankObject      *bankInstance = [[BankObject alloc] init];
+
+[bankInstance addObserver:personInstance forKeyPath:@"bankCodeEn" options:NSKeyValueObservingOptionNew context:NULL];
+
+NSString *bankCodeEn = @"CCB";
+bankInstance.bankCodeEn = bankCodeEn;
+bankInstance.bankCodeEn = bankCodeEn;
+</code></pre>
+
+<p>这段代码的输出结果如下所示：</p>
+
+<pre><code>keyPath = bankCodeEn, change = {
+    kind = 1;
+    new = CCB;
+}, context = (null)
+</code></pre>
+
+<p>我们可以看到只输出了一次，而不是两次。</p>
+
+<p>如果我们在setter方法之外改变了实例变量(如_bankCodeEn)，且希望这种修改被观察者监听到，则需要像在setter方法里面做一样的处理。这也涉及到我们通常会遇到的一个问题，在类的内部，对于一个属性值，何时用属性(self.bankCodeEn)访问而何时用实例变量(_bankCodeEn)访问。一般的建议是，在获取属性值时，可以用实例变量，在设置属性值时，尽量用setter方法，以保证属性的KVO特性。当然，性能也是一个考量，在设置值时，使用实例变量比使用属性设置值的性能高不少。</p>
+
+<p>另外，对于一对多关系的属性，如果想手动处理通知，则可以使用以下几个方法：</p>
+
+<pre><code>// 有序的一对多关系
+- (void)willChange:(NSKeyValueChange)change valuesAtIndexes:(NSIndexSet *)indexes forKey:(NSString *)key
+- (void)didChange:(NSKeyValueChange)change valuesAtIndexes:(NSIndexSet *)indexes forKey:(NSString *)key
+
+// 无序的一对多关系
+- (void)willChangeValueForKey:(NSString *)key withSetMutation:(NSKeyValueSetMutationKind)mutationKind usingObjects:(NSSet *)objects
+- (void)didChangeValueForKey:(NSString *)key withSetMutation:(NSKeyValueSetMutationKind)mutationKind usingObjects:(NSSet *)objects
+</code></pre>
+
+<p>同样，在子类中也不应该去重写这几个方法。</p>
+
+<h2>计算属性(注册依赖键)</h2>
+
+<p>有时候，我们的监听的某个属性可能会依赖于其它多个属性的变化(类似于swift，可以称之为计算属性)，不管所依赖的哪个属性发生了变化，都会导致计算属性的变化。对于这种一对一(To-one)的关系，我们需要做两步操作，首先是确定计算属性与所依赖属性的关系。如我们在BankObject类中定义一个accountForBank属性，其get方法定义如下：</p>
+
+<p><strong>代码清单8：计算属性</strong></p>
+
+<pre><code>@implementation BankObject
+
+- (NSString *)accountForBank {
+
+    return [NSString stringWithFormat:@"account for %@ is %d", self.bankCodeEn, self.accountBalance];
+}
+
+@end
+</code></pre>
+
+<p>定义了这种依赖关系后，我们就需要以某种方式告诉KVO，当我们的被依赖属性修改时，会发送accountForBank属性被修改的通知。此时，我们需要重写NSKeyValueObserving协议的keyPathsForValuesAffectingValueForKey:方法，该方法声明如下：</p>
+
+<pre><code>+ (NSSet *)keyPathsForValuesAffectingValueForKey:(NSString *)key
+</code></pre>
+
+<p>这个方法返回的是一个集合对象，包含了那些影响key指定的属性依赖的属性所对应的字符串。所以对于accountForBank属性，该方法的实现如下：</p>
+
+<p><strong>代码清单9：accountForBank属性的keyPathsForValuesAffectingValueForKey方法的实现</strong></p>
+
+<pre><code>@implementation BankObject
+
++ (NSSet *)keyPathsForValuesAffectingValueForKey:(NSString *)key {
+
+    NSSet *keyPaths = [super keyPathsForValuesAffectingValueForKey:key];
+
+    if ([key isEqualToString:@"accountForBank"]) {
+
+        keyPaths = [keyPaths setByAddingObjectsFromArray:@[@"accountBalance", @"bankCodeEn"]];
+    }
+
+    return keyPaths;
+}
+
+@end
+</code></pre>
+
+<p>我们来再来看看监听accountForBank属性是什么效果：</p>
+
+<p><strong>代码清单10：监听accountForBank属性</strong></p>
+
+<pre><code>PersonObject    *personInstance = [[PersonObject alloc] init];
+BankObject      *bankInstance = [[BankObject alloc] init];
+
+[bankInstance addObserver:personInstance forKeyPath:@"accountForBank" options:NSKeyValueObservingOptionNew context:NULL];
+
+bankInstance.accountBalance = 10;
+bankInstance.bankCodeEn = @"CCB";
+</code></pre>
+
+<p>其输出结果为：</p>
+
+<pre><code>keyPath = accountForBank, change = {
+    kind = 1;
+    new = "account for (null) is 10";
+}, context = (null)
+keyPath = accountForBank, change = {
+    kind = 1;
+    new = "account for CCB is 10";
+}, context = (null)
+</code></pre>
+
+<p>可以看到，不管是accountBalance还是bankCodeEn被修改了，都会发送accountForBank属性被修改的通知。</p>
+
+<p>需要注意的就是当我们重写+keyPathsForValuesAffectingValueForKey:时，需要去调用super的对应方法，并返回一个包含父类中可能会对key指定属性产生影响的属性集合。</p>
+
+<p>另外，我们还可以实现一个命名为keyPathsForValuesAffecting&lt;Key>的类方法来达到同样的目的，其中<Key>是我们计算属性的名称。所以对于accountForBank属性，还可以如下实现：</p>
+
+<pre><code>+ (NSSet *)keyPathsForValuesAffectingAccountForBank {
+
+    return [NSSet setWithObjects:@"accountBalance", @"bankCodeEn", nil];
+}
+</code></pre>
+
+<p>两种方法的实现效果是一样的。不过更建议使用后面一种方法，这种方法让依赖关系更加清晰明了。</p>
+
+<h2>集合属性的监听</h2>
+
+<p>keyPathsForValuesAffectingValueForKey:只支持一对一的关系，而不支持一对多的关系，即不支持对集合的处理。</p>
+
+<p>对于集合的KVO，我们需要了解的一点是，KVO旨在观察关系(relationship)而不是集合。对于不可变集合属性，我们更多的是把它当成一个整体来监听，而无法去监听集合中的某个元素的变化；对于可变集合属性，实际上也是当成一个整体，去监听它整体的变化，如添加、删除和替换元素。</p>
+
+<p>在KVC中，我们可以使用<strong>集合代理对象(collection proxy object)</strong>来处理集合相关的操作。我们以数组为例，在我们的BankObject类中有一个departments数组属性，如果我们希望通过集合代理对象来负责响应departments所有的方法，则需要实现以下方法：</p>
+
+<pre><code>-countOf&lt;Key&gt;
+
+// 以下两者二选一
+-objectIn&lt;Key&gt;AtIndex:
+-&lt;key&gt;AtIndexes:
+
+// 可选（增强性能）
+-get&lt;Key&gt;:range:
+</code></pre>
+
+<p>因此，我们的实现以下几个方法：</p>
+
+<p><strong>代码清单11：集合代码对象的实现</strong></p>
+
+<pre><code>@implementation BankObject
+
+#pragma mark - 集合代理对象
+
+- (NSUInteger)countOfDepartments {
+
+    return [_departments count];
+}
+
+- (id)objectInDepartmentsAtIndex:(NSUInteger)index {
+
+    return [_departments objectAtIndex:index];
+}
+
+@end
+</code></pre>
+
+<p>实现以上方法之后，对于不可变数组，当我们调用[bankInstance valueForKey:@&ldquo;departments”]的时候，便会返回一个由以上方法来代理所有调用方法的NSArray对象。这个代理数组对象支持所有正常的NSArray调用。换句话说，调用者并不知道返回的是一个真正的NSArray，还是一个代理的数组。</p>
+
+<p>另外，对于可变数组的代理对象，我们需要实现以下几个方法：</p>
+
+<pre><code>// 至少实现一个插入方法和一个删除方法
+-insertObject:in&lt;Key&gt;AtIndex:
+-removeObjectFrom&lt;Key&gt;AtIndex:
+-insert&lt;Key&gt;:atIndexes:
+-remove&lt;Key&gt;AtIndexes:
+
+// 可选（增强性能）以下方法二选一
+-replaceObjectIn&lt;Key&gt;AtIndex:withObject:
+-replace&lt;Key&gt;AtIndexes:with&lt;Key&gt;:
+</code></pre>
+
+<p>这些方法分别对应插入、删除和替换，有批量操作的，也有只改变一个对象的方法。可以根据实际需要来实现。</p>
+
+<p>另外，对于可变集合，我们通常不使用valueForKey:来获取代理对象，而是使用以下方法：</p>
+
+<pre><code>- (NSMutableArray *)mutableArrayValueForKey:(NSString *)key;
+</code></pre>
+
+<p>通过这个方法，我们便可以将可变数组与强大的KVO结合在一起。KVO机制能在集合改变的时候把详细的变化放进change字典中。</p>
+
+<p>我们先来看看下面的代码：</p>
+
+<p><strong>代码清单12：使用真正的数组对象监听可变数组属性</strong></p>
+
+<pre><code>BankObject *bankInstance = [[BankObject alloc] init];
+
+PersonObject    *personInstance = [[PersonObject alloc] init];
+[bankInstance addObserver:personInstance forKeyPath:@"departments" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:NULL];
+
+bankInstance.departments = [[NSMutableArray alloc] init];
+
+[bankInstance.departments addObject:@"departments"];
+</code></pre>
+
+<p>其输出为：</p>
+
+<pre><code>keyPath = departments, change = {
+    kind = 1;
+    new =     (
+    );
+    old =     (
+    );
+}, context = (null)
+</code></pre>
+
+<p>可以看到通过这种方法，我们获取的是真正的数组，只在departments属性整体被修改时，才会触发KVO，而在添加元素时，并没有触发KVO。</p>
+
+<p>现在我们通过代理集合对象来看看：</p>
+
+<p><strong>代码清单13：使用代理集合对象监听可变数组属性</strong></p>
+
+<pre><code>BankObject *bankInstance = [[BankObject alloc] init];
+
+PersonObject    *personInstance = [[PersonObject alloc] init];
+[bankInstance addObserver:personInstance forKeyPath:@"departments" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:NULL];
+
+bankInstance.departments = [[NSMutableArray alloc] init];
+
+NSMutableArray *departments = [bankInstance mutableArrayValueForKey:@"departments"];
+[departments insertObject:@"departments 0" atIndex:0];
+</code></pre>
+
+<p>其输出是：</p>
+
+<pre><code>keyPath = departments, change = {
+    kind = 1;
+    new =     (
+    );
+    old =     (
+    );
+}, context = (null)
+keyPath = departments, change = {
+    indexes = "&lt;NSIndexSet: 0x7fcd18673150&gt;[number of indexes: 1 (in 1 ranges), indexes: (0)]";
+    kind = 2;
+    new =     (
+        "departments 0"
+    );
+}, context = (null)
+</code></pre>
+
+<p>可以看到，在往数组中添加对象时，也触发了KVO，并将改变的详细信息也写进了change字典。在第二个消息中，kind的值为2，即表示这是一次插入操作。同样，可变数组的删除，替换操作也是一样的。</p>
+
+<p>集合(Set)也有一套对应的方法来实现集合代理对象，包括无序集合与有序集合；而字典则没有，对于字典属性的监听，还是只能作为一个整理来处理。</p>
+
+<p>如果我们想到手动控制集合属性消息的发送，则可以使用上面提到的几个方法，即：</p>
+
+<pre><code>-willChange:valuesAtIndexes:forKey:
+-didChange:valuesAtIndexes:forKey:
+
+或
+
+-willChangeValueForKey:withSetMutation:usingObjects:
+-didChangeValueForKey:withSetMutation:usingObjects:
+</code></pre>
+
+<p>不过得先保证把自动通知关闭，否则每次改变KVO都会被发送两次。</p>
+
+<h2>监听信息</h2>
+
+<p>如果我们想获取一个对象上有哪些观察者正在监听其属性的修改，则可以查看对象的observationInfo属性，其声明如下：</p>
+
+<pre><code>@property void *observationInfo
+</code></pre>
+
+<p>可以看到它是一个void指针，指向一个包含所有观察者的一个标识信息对象，这些信息包含了每个监听的观察者，注册时设定的选项等等。我们还是用示例来看看。</p>
+
+<p><strong>代码清单14：observationInfo的使用</strong></p>
+
+<pre><code>PersonObject    *personInstance = [[PersonObject alloc] init];
+BankObject      *bankInstance = [[BankObject alloc] init];
+
+[bankInstance addObserver:personInstance forKeyPath:@"bankCodeEn" options:NSKeyValueObservingOptionNew context:NULL];
+[bankInstance addObserver:personInstance forKeyPath:@"accountBalance" options:NSKeyValueObservingOptionOld context:NULL];
+
+NSLog(@"%p", personInstance);
+NSLog(@"%p", bankInstance);
+
+id info = bankInstance.observationInfo;
+NSLog(@"%@", [info description]);
+</code></pre>
+
+<p>其输出结果如下：</p>
+
+<pre><code>personInstance = 0x7fdc2369e5e0
+bankInstance = 0x7fdc2369d8f0
+&lt;NSKeyValueObservationInfo 0x7fdc236a19d0&gt; (
+&lt;NSKeyValueObservance 0x7fdc236a17a0: Observer: 0x7fdc2369e5e0, Key path: bankCodeEn, Options: &lt;New: YES, Old: NO, Prior: NO&gt; Context: 0x0, Property: 0x7fdc236a15c0&gt;
+&lt;NSKeyValueObservance 0x7fdc236a1960: Observer: 0x7fdc2369e5e0, Key path: accountBalance, Options: &lt;New: NO, Old: YES, Prior: NO&gt; Context: 0x0, Property: 0x7fdc236a1880&gt;
+)
+</code></pre>
+
+<p>我们可以看到observationInfo指针实际上是指向一个NSKeyValueObservationInfo对象，它包含了指定对象上的所有的监听信息。而每条监听信息而是封装在一个NSKeyValueObservance对象中，从上面可以看到，这个对象中包含消息的观察者、被监听的属性、添加观察者时所设置的一些选项、上下文信息等。</p>
+
+<p>NSKeyValueObservationInfo类及NSKeyValueObservance类都是私有类，我们无法在官方文档中找到这两个类的实现。不过从一些对系统库dump出来的头文件，我们可以对这两个类有一些初步的了解。<a href="https://github.com/a1anyip/iOS-SDK-4.3-Framework-Header-Dump/tree/master/Frameworks/Foundation.framework">这里</a>有一个对iOS SKD 4.3的Foundation.framework的dump头文件，可以找到这两个类的头文件，其中NSKeyValueObservationInfo的头文件信息如下所示：</p>
+
+<pre><code>#import &lt;XXUnknownSuperclass.h&gt; // Unknown library
+
+@class NSArray, NSHashTable;
+
+__attribute__((visibility("hidden")))
+@interface NSKeyValueObservationInfo : XXUnknownSuperclass {
+@private
+    int _retainCountMinusOne;
+    NSArray* _observances;
+    unsigned _cachedHash;
+    BOOL _cachedIsShareable;
+    NSHashTable* _observables;
+}
+-(id)_initWithObservances:(id*)observances count:(unsigned)count;
+-(id)retain;
+-(oneway void)release;
+-(unsigned)retainCount;
+-(void)dealloc;
+-(unsigned)hash;
+-(BOOL)isEqual:(id)equal;
+-(id)description;
+@end
+</code></pre>
+
+<p>可以看到其中有一个数组来存储NSKeyValueObservance对象。</p>
+
+<p>NSKeyValueObservance类的头文件信息如下：</p>
+
+<pre><code>#import "Foundation-Structs.h"
+#import &lt;XXUnknownSuperclass.h&gt; // Unknown library
+
+@class NSPointerArray, NSKeyValueProperty, NSObject;
+
+__attribute__((visibility("hidden")))
+@interface NSKeyValueObservance : XXUnknownSuperclass {
+@private
+    int _retainCountMinusOne;
+    NSObject* _observer;
+    NSKeyValueProperty* _property;
+    unsigned _options;
+    void* _context;
+    NSObject* _originalObservable;
+    unsigned _cachedUnrotatedHashComponent;
+    BOOL _cachedIsShareable;
+    NSPointerArray* _observationInfos;
+    auto_weak_callback_block _observerWentAwayCallback;
+}
+-(id)_initWithObserver:(id)observer property:(id)property options:(unsigned)options context:(void*)context originalObservable:(id)observable;
+-(id)retain;
+-(oneway void)release;
+-(unsigned)retainCount;
+-(void)dealloc;
+-(unsigned)hash;
+-(BOOL)isEqual:(id)equal;
+-(id)description;
+-(void)observeValueForKeyPath:(id)keyPath ofObject:(id)object change:(id)change context:(void*)context;
+@end
+</code></pre>
+
+<p>可以看到其中包含了一个监听的基本要素。在此不再做深入分析(没有源代码，深入不下去了啊)。</p>
+
+<p>我们再回到observationInfo属性本身来。在文档中，对这个属性的描述有这样一段话：</p>
+
+<pre><code>The default implementation of this method retrieves the information from a global
+dictionary keyed by the receiver’s pointers.
+</code></pre>
+
+<p>即这个方法的默认实现是以对象的指针作为key，从一个全局的字典中获取信息。由此，我们可以理解为，KVO的信息是存储在一个全局字典中，而不是存储在对象本身。这类似于Notification，所有关于通知的信息都是放在NSNotificationCenter中。</p>
+
+<p>不过，为了提高效率，我们可以重写observationInfo属性的set和get方法，以将这个不透明的数据指针存储到一个实例变量中。但是，在重写时，我们不应该尝试去向这些数据发送一个Objective-C消息，包括retain和release。</p>
+
+<h2>KVO的实现机制</h2>
+
+<p>【本来这一小节是想放在另一篇总结中来写的，但后来觉得还是放在这里比较合适，所以就此添加上】</p>
+
+<p>了解了NSKeyValueObserving所提供的功能后，我们再来看看KVO的实现机制，以便更深入地的理解KVO。</p>
+
+<p>KVO据我所查还没有开源(若哪位大大有查到源代码，还烦请告知)，所以我们无法从源代码的层面来分析它的实现。不过<a href="https://www.mikeash.com/pyblog/friday-qa-2009-01-23.html">Mike Ash</a>的博文(译文见参考文献4)为我们解开了一些谜团。</p>
+
+<p>基本的思路是：Objective-C依托于强大的run time机制来实现KVO。当我们第一次观察某个对象的属性时，run time会创建一个新的继承自这个对象的class的subclass。在这个新的subclass中，它会重写所有被观察的key的setter，然后将object的isa指针指向新创建的class(这个指针告诉Objective-C运行时某个object到底是什么类型的)。所以object神奇地变成了新的子类的实例。</p>
+
+<p>嗯，让我们通过代码来看看实际的实现：</p>
+
+<p><strong>代码清单15：探究KVO的实现机制</strong></p>
+
+<pre><code>// 辅助方法
+static NSArray *ClassMethodNames(Class c) {
+
+    NSMutableArray *array = [NSMutableArray array];
+
+    unsigned int methodCount = 0;
+    Method *methodList = class_copyMethodList(c, &amp;methodCount);
+    unsigned int i;
+    for (i = 0; i &lt; methodCount; i++) {
+        [array addObject:NSStringFromSelector(method_getName(methodList[i]))];
+    }
+
+    free(methodList);
+
+    return array;
+}
+
+static void PrintDescription(NSString *name, id obj) {
+
+    struct objc_object *objcet = (__bridge struct objc_object *)obj;
+
+    Class cls = objcet-&gt;isa;
+
+    NSString *str = [NSString stringWithFormat:@"%@: %@\n\tNSObject class %s\n\tlibobjc class %s : super class %s\n\timplements methods &lt;%@&gt;",
+                     name,
+                     obj,
+                     class_getName([obj class]),
+                     class_getName(cls),
+                     class_getName(class_getSuperclass(cls)),
+                     [ClassMethodNames(cls) componentsJoinedByString:@", "]];
+    printf("%s\n", [str UTF8String]);
+}
+
+// 测试代码
+BankObject *bankInstance1 = [[BankObject alloc] init];
+BankObject *bankInstance2 = [[BankObject alloc] init];
+
+PersonObject *personInstance = [[PersonObject alloc] init];
+
+[bankInstance2 addObserver:personInstance forKeyPath:@"accountBalance" options:NSKeyValueObservingOptionNew context:NULL];
+
+PrintDescription(@"bankInstance1", bankInstance1);
+PrintDescription(@"bankInstance2", bankInstance2);
+
+printf("Using libobjc functions, normal setAccountBalance: is %p, overridden setAccountBalance: is %p", method_getImplementation(class_getInstanceMethod(object_getClass(bankInstance2), @selector(setAccountBalance:))),
+       method_getImplementation(class_getInstanceMethod(object_getClass(bankInstance1), @selector(setAccountBalance:))));
+</code></pre>
+
+<p>这段代码的输出如下：</p>
+
+<pre><code>bankInstance1: &lt;BankObject: 0x7f9e8ae3cf60&gt;
+    NSObject class BankObject
+    libobjc class BankObject : super class NSObject
+    implements methods &lt;accountBalance, setAccountBalance:, bankCodeEn, setBankCodeEn:, departments, setDepartments:&gt;
+
+bankInstance2: &lt;BankObject: 0x7f9e8ae3cfc0&gt;
+    NSObject class BankObject
+    libobjc class NSKVONotifying_BankObject : super class BankObject
+    implements methods &lt;setAccountBalance:, class, dealloc, _isKVOA&gt;
+
+Using libobjc functions, normal setAccountBalance: is 0x1013cec17, overridden setAccountBalance: is 0x10129fe50
+</code></pre>
+
+<p>从输出中可以看到，bankInstance2监听accountBalance属性后，其实际上所属的类已经不是BankObject了，而是继承自BankObject的NSKVONotifying_BankObject类。同时，NSKVONotifying_BankObject类重写了setAccountBalance方法，这个方法将实现如何通知观察者们的操作。当改变accountBalance属性时，就会调用被重写的setAccountBalance方法，并通过这个方法来发送通知。</p>
+
+<p>另外我们也可以看到bankInstance2对象的打印[bankInstance2 class]时，返回的仍然是BankObject。这是苹果故意而为之，他们不希望这个机制暴露在外面。所以除了重写相应的setter，所以动态生成的NSKVONotifying_BankObject类还重写了class方法，让它返回原先的类。</p>
+
+<h2>小结</h2>
+
+<p>KVO作为Objective-C中两个对象间通信机制中的一种，提供了一种非常强大的机制。在经典的MVC架构中，控制器需要确保视图与模型的同步，当model对象改变时，视图应该随之改变以反映模型的变化；当用户和控制器交互的时候，模型也应该做出相应的改变。而KVO便为我们提供了这样一种同步机制：我们让控制器去监听一个model对象属性的改变，并根据这种改变来更新我们的视图。所有，有效地使用KVO，对我们应用的开发意义重大。</p>
+
+<p>别话：对KVO的总结感觉还是意犹未尽，总感觉缺少点什么，特别是在对集合这一块的处理。还请大家多多提供指点。</p>
+
+<h2>参考</h2>
+
+<ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/Foundation/Protocols/NSKeyValueObserving_Protocol/#//apple_ref/occ/instm/NSObject/observationInfo">NSKeyValueObserving Protocol Reference</a></li>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/KeyValueObserving/KeyValueObserving.html">Key-Value Observing Programming Guide</a></li>
+<li><a href="https://github.com/a1anyip/iOS-SDK-4.3-Framework-Header-Dump">iOS-SDK-4.3-Framework-Header-Dump</a></li>
+<li><a href="http://objccn.io/issue-7-3/">KVC 和 KVO</a></li>
+<li><a href="http://www.appcoda.com/understanding-key-value-observing-coding/">Understanding Key-Value Observing and Coding</a></li>
+<li><a href="http://www.cocoachina.com/ios/20140107/7667.html">KVO的内部实现</a></li>
+</ol>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[源码篇：MBProgressHUD]]></title>
@@ -6736,425 +7537,6 @@ CGFunctionRelease (myFunctionObject);
     CGColorSpaceRelease (myColorSpace); 
 
     CGContextRestoreGState(myContext);
-}
-</code></pre>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Quartz 2D编程指南之六：模式(Pattern)]]></title>
-    <link href="http://southpeak.github.io/blog/2014/12/05/quartz-2dbian-cheng-zhi-nan-zhi-liu-:mo-shi-pattern/"/>
-    <updated>2014-12-05T16:35:04+08:00</updated>
-    <id>http://southpeak.github.io/blog/2014/12/05/quartz-2dbian-cheng-zhi-nan-zhi-liu-:mo-shi-pattern</id>
-    <content type="html"><![CDATA[<p>模式(Pattern)是绘制操作的一个序列，这些绘制操作可以重复地绘制到一个图形上下文上。我们可以像使用颜色一样使用这些模式。当我们使用pattern来绘制时，Quartz将Page分割成模式单元格的集合，其中每个单元格的大小不是模式图片的大小，并使用我们提供的回调函数来绘制这些单元格。图6-1演示了一个绘制到window图形上下文的模式。</p>
-
-<p>Figure 6-1  A pattern drawn to a window</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/patterned_window.gif" alt="image" /></p>
-
-<h2>模式的骨架(Anatomy)</h2>
-
-<p>模式单元格是模式的基础组件。图6-1中的模式的单元格如图6-2所示。其中黑色边框不是模式单元格的一部分；之所以画出来是为了显示模式单元格的边界。</p>
-
-<p>Figure 6-2  A pattern cell</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_cell_wborder.gif" alt="image" /></p>
-
-<p>该模式单元格的大小包含四个带颜色的矩形以及这些矩形上部及右侧的白色区域，如图6-3所示。每个模式单元格的黑色边框不是单元格的一部分；画出来只是为是标明单元格的边界。当我们创建一个模式单元格时，我们需要定义单元格的边界并在这个范围内进行绘制。</p>
-
-<p>Figure 6-3  Pattern cells with black rectangles drawn to show the bounds of each cell</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_parts_1.gif" alt="image" /></p>
-
-<p>我们可以指定水平和竖直方向上两个单元格之间的间距。图6-3所绘制的单元格是相互紧挨着的。而图6-4在两个方向上都指定了单元格之间的间距。我们可以为两个方向指定不同的间距。我们亦可以指定间距为负数，这样单元格便会重叠。</p>
-
-<p>Figure 6-4  Spacing between pattern cells</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_part_2.gif" alt="image" /></p>
-
-<p>当我们绘制一个模式单元格时，Quartz使用<strong>模式空间(pattern space)</strong>作为坐标系统。模式空间是一个抽象空间，它会使用我们创建模式时指定的变换矩阵(pattern matrix)来映射到默认用户空间。</p>
-
-<pre><code>注意：模式空间与用户空间是分开的。未转换的模式空间映射到基础的用户空间(未转换的)，而不管当前转换矩阵(CTM)。当我们在模式空间上应用转换时，Quartz只将转换应用于模式空间。
-</code></pre>
-
-<p>如果我们不想要Quartz来转换模式单元格，我们可以指定单位矩阵。然而，我们可以使用转换矩阵来达到有趣的效果。图6-5显示了缩放6-2中的模式单元格的效果。图6-6旋转了这些单元格。图6-7则平移了这些单元格。
-Figure 6-5  A scaled pattern cell</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_halfbyonehalf.gif" alt="image" /></p>
-
-<p>Figure 6-6  A rotated pattern cell</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_2PIdiv6.gif" alt="image" /><br/>
-Figure 6-7  A translated pattern cell</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_5_5_translate.gif" alt="image" /></p>
-
-<h2>着色模式(Colored Patterns)和模板模式(Stencil Patterns)</h2>
-
-<p>着色模式有与其相关的固有颜色。如果修改了创建模式单元格的颜色，则模式也便失去了意义。图6-8中显示的苏格兰格子就是着色模式的一个例子。着色模式中的颜色是模式单元格创建流程的一部分，而不是绘制流程的一部分。</p>
-
-<p>Figure 6-8  A colored pattern has inherent color</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/tartan.gif" alt="image" /></p>
-
-<p>而其它模式只限定了形状，因此可以认为是模板模式(或者是非着色模式、甚至可以作为图像蒙板)。图6-9中展示的红色和黑色星星就是使用相同的模式单元格。单元格由一个五角星组成。当定义模式单元格时，没有与之相关的颜色。颜色值是在绘制过程中指定的，而不是创建过程的一部分。</p>
-
-<p>Figure 6-9  A stencil pattern does not have inherent color</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/star_patterns.gif" alt="image" /></p>
-
-<p>在Quartz 2D中，我们可以创建这两种模式。</p>
-
-<h2>平铺(Tiling)</h2>
-
-<p>平铺(Tiling)是将模式单元格绘制到页面(Page)的某个部分的过程。当Quartz将模式渲染到一个设备时，Quartz可能需要调整模式以适应设备空间。即，在用户空间定义的模式单元格在渲染到设备时可能无法精确匹配，这是由用户空间单元和设备像素之间的差异导致的。</p>
-
-<p>Quartz有三个平铺选项，以在必要时调整模式：</p>
-
-<ol>
-<li>没有失真(no distortion): 以细微调整模式单元格之间的间距为代价，但通常不超过一个设备像素。</li>
-<li>最小的失真的恒定间距：设定单元格之间的间距，以细微调整单元大小为代价，但通常不超过一个设备像素。</li>
-<li>恒定间距：设定单元格之间间距，以调整单元格大小为代价，以求尽快的平铺</li>
-</ol>
-
-
-<h2>模式如何工作</h2>
-
-<p>模式操作类似于颜色，我们设置一个填充或描边(stroke)模式，然后调用绘制函数。Quartz使用我们设置的模式作为“涂料”。例如，如果我们要使用纯色绘制一个填充的的矩形，我们首先调用函数(如CGContextSetFillColor)来设置填充颜色。然后调用函数CGContextFillRect以使用我们指定的颜色来填充矩形。为了绘制一个模式，颜色调用函数CGContextSetFillPattern来设置指定的模式。绘制颜色和绘制模式的不同之处在于我们必须先定义一个模式。我们为函数CGContextSetFillPattern提供模式和颜色信息。我们将在下面的绘制着色模式和绘制模板模式章节看到如何创建、设置和绘制模式。</p>
-
-<p>这里有个例子说明Quartz在幕后是如何绘制一个模式的。当我们填充或描边一个模式时，Quartz会按照以下指令来绘制每一个模式单元格：</p>
-
-<ol>
-<li>保存图形状态</li>
-<li>将当前转换矩阵应用到原始的模式单元格上</li>
-<li>连接CTM与模式矩阵</li>
-<li>裁剪模式单元格的边界矩形</li>
-<li>调用绘制回调函数来绘制单元格</li>
-<li>恢复图形状态</li>
-</ol>
-
-
-<p>Quartz会执行所有平铺操作，重复绘制模式单元格到绘制空间，直到渲染满整个空间。我们可以填充和描边一个模式。模式单元格可以是指定的任何大小。如果我们想要看到模式，我们需要确保模式单元格与绘制空间匹配。例如，如果我们的模式单元格是8*10个单位的，而我们用这个模式来描边一个只有2个单位的直线，则这个模式单元格将会被裁剪。这种情况下，我们可能无法辨认出我们的模式。</p>
-
-<h2>绘制着色模式</h2>
-
-<p>绘制着色模式需要执行以下五步操作：</p>
-
-<ol>
-<li>写一个绘制着色模式单元格的回调函数</li>
-<li>设置着色模式的颜色空间</li>
-<li>设置着色模式的骨架(Anatomy)</li>
-<li>指定着色模式作为填充或描边模式</li>
-<li>使用着色模式绘制</li>
-</ol>
-
-
-<p>绘制模板模式也是类似这几步。两者之间的区别在于如何设置颜色信息。</p>
-
-<h3>写一个绘制着色模式单元格的回调函数</h3>
-
-<p>一个模式单元格看起来是什么样的完全取决于我们。在这个例子中，代码清单6-1绘制了图6-2所示的模式单元格。</p>
-
-<p>Listing 6-1  A drawing callback that draws a colored pattern cell</p>
-
-<pre><code>#define H_PATTERN_SIZE 16
-#define V_PATTERN_SIZE 18
-
-void MyDrawColoredPattern (void *info, CGContextRef myContext)
-{
-    CGFloat subunit = 5; 
-
-    CGSize size = {subunit, subunit};
-    CGPoint point1 = {0,0}, point2 = {subunit, subunit}, point3 = {0,subunit}, point4 = {subunit,0};
-    CGRect myRect1 = {point1, size}, myRect2 = {point2, size}, myRect3 = {point3, size}, myRect4 = {point4, size};
-
-    CGContextSetRGBFillColor (myContext, 0, 0, 1, 0.5);
-    CGContextFillRect (myContext, myRect1);
-    CGContextSetRGBFillColor (myContext, 1, 0, 0, 0.5);
-    CGContextFillRect (myContext, myRect2);
-    CGContextSetRGBFillColor (myContext, 0, 1, 0, 0.5);
-    CGContextFillRect (myContext, myRect3);
-    CGContextSetRGBFillColor (myContext, .5, 0, .5, 0.5);
-    CGContextFillRect (myContext, myRect4);
-}
-</code></pre>
-
-<p>模式单元格绘制函数是类似于下面这种格式的一个回调函数</p>
-
-<pre><code>typedef void (*CGPatternDrawPatternCallback) (
-                        void *info,
-                        CGContextRef context
-    );
-</code></pre>
-
-<p>我们可以随意命名我们的回调函数。代码清单6-1中命名为MyDrawColoredPattern。这个回调函数带有两个参数：</p>
-
-<ol>
-<li>info: 一个指向模式相关数据的指针。这个参数是可选的，可以传递NULL。传递给回调的数据与后面创建模式的数据是一样的。</li>
-<li>context: 绘制模式单元格的图形上下文</li>
-</ol>
-
-
-<p>代码清单6-1中绘制的模式单元格是随意的。以下是一些关于绘制代码的重要信息：</p>
-
-<ol>
-<li>需要声明模式大小。在绘制时我们需要记住模式大小。在这个例子中，大小是全局声明的，绘制函数没有具体提到大小，除了在注释中。然后，我们将模式大小指定给Quartz 2D。</li>
-<li>绘制函数后面是由CGPatternDrawPatternCallback回调函数类型定义定义的原型</li>
-<li>代码中执行的绘制设置了颜色，让其成为一个着色模式。</li>
-</ol>
-
-
-<h3>设置着色模式的颜色空间</h3>
-
-<p>代码清单6-1中的代码使用颜色来绘制模式单元格。我们必须设置基本的模式颜色空间为NULL，以确保Quartz使用绘制路径指定的颜色来绘制，如代码清单6-2所示。</p>
-
-<p>Listing 6-2  Creating a base pattern color space</p>
-
-<pre><code>CGColorSpaceRef patternSpace;
-
-// 创建模式颜色空间，并传递NULL作为参数
-patternSpace = CGColorSpaceCreatePattern (NULL);
-
-// 在模式颜色空间中设置填充颜色
-CGContextSetFillColorSpace (myContext, patternSpace);
-
-// 释放模式颜色空间
-CGColorSpaceRelease (patternSpace);
-</code></pre>
-
-<h3>设置着色模式的骨架</h3>
-
-<p>一个模式的骨架基本信息保存在CGPattern对象中。我们调用CGPatternCreate函数来创建一个CGPattern对象，其原型如代码清单6-3所示：</p>
-
-<p>Listing 6-3  The CGPatternCreate function prototype</p>
-
-<pre><code>CGPatternRef CGPatternCreate (  void *info,
-                                CGRect bounds,
-                                CGAffineTransform matrix,
-                                CGFloat xStep,
-                                CGFloat yStep,
-                                CGPatternTiling tiling,
-                                bool isColored,
-                                const CGPatternCallbacks *callbacks );
-</code></pre>
-
-<p>其中，</p>
-
-<ol>
-<li>info：是一个指针，指向我们要传递给绘制回调函数的数据</li>
-<li>bound：指定模式单元格的大小</li>
-<li>matrix：指定模式矩阵，它将模式坐标系统映射到图形上下文的默认坐标系统。如果希望两个坐标系统是一样的，则可以使用单位矩阵。</li>
-<li>xStep, yStep：指定单元格之间的水平和竖直间距。</li>
-<li>tiling：平铺模式，可以是kCGPatternTilingNoDistortion、kCGPatternTilingConstantSpacingMinimalDistortion、kCGPatternTilingConstantSpacing</li>
-<li>isColored：指定模式单元格是着色模式(true)还是模板模式(false)</li>
-<li><p>callbacks：是一个指向CGPatternCallbacks结构体的指针，则定义如下：</p>
-
-<p> struct CGPatternCallbacks
- {
-     unsigned int version;
-     CGPatternDrawPatternCallback drawPattern;
-     CGPatternReleaseInfoCallback releaseInfo;
- };</p></li>
-</ol>
-
-
-<p>我们可以设置version为0。drawPattern是指向绘制回调的指针。releaseInfo是指向一个回调函数，该回调在释放CGPattern对象时被调用，以释放存储在我们传递给绘制回调的info参数中的数据。如果在这个参数中没有传递任何数据，则设置该域为NULL。</p>
-
-<h3>指定着色模式作为填充或描边模式</h3>
-
-<p>我们可以调用CGContextSetFillPattern或者CGContextSetStrokePattern函数来使用模式进行填充或描边。Quartz可以将模式用于任何填充或描边流程。</p>
-
-<p>这两个函数包含以下几个参数：</p>
-
-<ol>
-<li>图形上下文</li>
-<li>先前创建的CGPattern对象</li>
-<li>颜色组件的数组</li>
-</ol>
-
-
-<p>虽然着色模式提供了自己的颜色，我们仍然需要传递一个单一的alpha值来告诉Quartz在绘制时着色模式的透明度。alpha值的范围在0到1中。可以如以下代码来设置着色模式的透明度：</p>
-
-<pre><code>CGFloat alpha = 1;
-
-CGContextSetFillPattern (myContext, myPattern, &amp;alpha);
-</code></pre>
-
-<h3>使用颜色模式绘制</h3>
-
-<p>在完成前面的步骤之后，我们就可以调用Quartz 2D函数来绘制了。我们的模式被当作“涂料”。例如，可以调用CGContextStrokePath, CGContextFillPath, CGContextFillRect或其它函数来绘制。</p>
-
-<h3>完整示例</h3>
-
-<p>代码清单6-4包含一个绘制着色模式的函数。这个函数包含了前面讨论的所有步骤。</p>
-
-<p>Listing 6-4  A function that paints a colored pattern</p>
-
-<pre><code>void MyColoredPatternPainting (CGContextRef myContext,
-                 CGRect rect)
-{
-    CGPatternRef    pattern;
-    CGColorSpaceRef patternSpace;
-    CGFloat         alpha = 1,
-                    width, height;
-    static const    CGPatternCallbacks callbacks = {0, 
-                                        &amp;MyDrawPattern,
-                                        NULL};
-
-    CGContextSaveGState (myContext);
-    patternSpace = CGColorSpaceCreatePattern (NULL);
-    CGContextSetFillColorSpace (myContext, patternSpace);
-    CGColorSpaceRelease (patternSpace);
-
-    pattern = CGPatternCreate (NULL, 
-                    CGRectMake (0, 0, H_PSIZE, V_PSIZE),
-                    CGAffineTransformMake (1, 0, 0, 1, 0, 0),
-                    H_PATTERN_SIZE, 
-                    V_PATTERN_SIZE, 
-                    kCGPatternTilingConstantSpacing,
-                    true, 
-                    &amp;callbacks);
-
-    CGContextSetFillPattern (myContext, pattern, &amp;alpha);
-    CGPatternRelease (pattern);
-    CGContextFillRect (myContext, rect);
-    CGContextRestoreGState (myContext);
-}
-</code></pre>
-
-<h2>绘制模板模式</h2>
-
-<p>与绘制着色模式类似，绘制模板模式也有5个步骤：</p>
-
-<ol>
-<li>写一个绘制模板模式单元格的回调函数</li>
-<li>设置模板模式的颜色空间</li>
-<li>设置模板模式的骨架(Anatomy)</li>
-<li>指定模板模式作为填充或描边模式</li>
-<li>使用模板模式绘制</li>
-</ol>
-
-
-<p>绘制模板模式与绘制着色模式的区别在于设置颜色信息。</p>
-
-<h3>写一个绘制模板模式单元格的回调函数</h3>
-
-<p>绘制模板模式单元格的回调与前面描述的绘制颜色模式单元格类似。不同的是绘制模式单元格回调不需要指定颜色值。图6-10中显示的模式单元格即没有从绘制回调中获取颜色。</p>
-
-<p>Figure 6-10  A stencil pattern cell</p>
-
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/star_stencil.gif" alt="image" /></p>
-
-<p>代码清单6-5绘制了图6-10中的模式单元格。可以看到代码只是简单地创建并填充了一个路径，而没有设置颜色。</p>
-
-<p>Listing 6-5  A drawing callback that draws a stencil pattern cell</p>
-
-<pre><code>#define PSIZE 16    // size of the pattern cell
-
-static void MyDrawStencilStar (void *info, CGContextRef myContext)
-{
-    int k;
-    double r, theta;
-
-    r = 0.8 * PSIZE / 2;
-    theta = 2 * M_PI * (2.0 / 5.0); // 144 degrees
-
-    CGContextTranslateCTM (myContext, PSIZE/2, PSIZE/2);
-
-    CGContextMoveToPoint(myContext, 0, r);
-    for (k = 1; k &lt; 5; k++) {
-        CGContextAddLineToPoint (myContext,
-                    r * sin(k * theta),
-                    r * cos(k * theta));
-    }
-    CGContextClosePath(myContext);
-    CGContextFillPath(myContext);
-}
-</code></pre>
-
-<h3>设置模板模式的颜色空间</h3>
-
-<p>模板模式要求我们设置一个模式颜色空间用于Quartz的绘制，如代码清单6-6所示。</p>
-
-<p>Listing 6-6  Code that creates a pattern color space for a stencil pattern</p>
-
-<pre><code>CGPatternRef pattern;
-CGColorSpaceRef baseSpace;
-CGColorSpaceRef patternSpace;
-
-// 创建一个通用RGB颜色空间。 
-baseSpace = CGColorSpaceCreateWithName (kCGColorSpaceGenericRGB);
-
-// 创建一个模式颜色空间。该颜色空间指定如何表示模式的颜色。后面要设置模式的颜色时，必须使用这个颜色空间来进行设置
-patternSpace = CGColorSpaceCreatePattern (baseSpace);
-
-// 设置颜色空间来在填充模式时使用
-CGContextSetFillColorSpace (myContext, patternSpace);
-
-// 释放模式颜色空间
-CGColorSpaceRelease(patternSpace);
-
-// 释放基础颜色空间
-CGColorSpaceRelease(baseSpace);
-</code></pre>
-
-<h3>设置模板模式的骨架(Anatomy)</h3>
-
-<p>这一步与上面设置着色模式是一样的，不同的是isColored参数需要传递false。</p>
-
-<h3>指定模板模式作为填充或描边模式</h3>
-
-<p>我们可以调用CGContextSetFillPattern或者CGContextSetStrokePattern函数来使用模式进行填充或描边。Quartz可以将模式用于任何填充或描边流程。</p>
-
-<p>这两个函数包含以下几个参数：</p>
-
-<ol>
-<li>图形上下文</li>
-<li>先前创建的CGPattern对象</li>
-<li>颜色组件的数组</li>
-</ol>
-
-
-<p>由于模板模式在绘制回调中不提供颜色值，所以我们必须传递一个颜色给填充或描边函数来告诉Quartz使用什么颜色。代码清单6-7显示了为模板模式设置颜色的例子。</p>
-
-<p>Listing 6-7  Code that sets opacity for a colored pattern</p>
-
-<pre><code>static const CGFloat color[4] = { 0, 1, 1, 0.5 }; //cyan, 50% transparent
-
-CGContextSetFillPattern (myContext, myPattern, color);
-</code></pre>
-
-<h3>使用模板模式绘制</h3>
-
-<p>在完成前面的步骤之后，我们就可以调用Quartz 2D函数来绘制了。我们的模式被当作“涂料”。例如，可以调用CGContextStrokePath, CGContextFillPath, CGContextFillRect或其它函数来绘制。</p>
-
-<h3>完整示例</h3>
-
-<p>代码清单6-8包含一个绘制模板模式的函数。这个函数包含了前面讨论的所有步骤。</p>
-
-<pre><code>#define PSIZE 16
-
-void MyStencilPatternPainting (CGContextRef myContext,
-                                const Rect *windowRect)
-{
-    CGPatternRef pattern;
-    CGColorSpaceRef baseSpace;
-    CGColorSpaceRef patternSpace;
-    static const CGFloat color[4] = { 0, 1, 0, 1 };
-    static const CGPatternCallbacks callbacks = {0, &amp;drawStar, NULL};
-
-    baseSpace = CGColorSpaceCreateDeviceRGB ();
-    patternSpace = CGColorSpaceCreatePattern (baseSpace);
-    CGContextSetFillColorSpace (myContext, patternSpace);
-    CGColorSpaceRelease (patternSpace);
-    CGColorSpaceRelease (baseSpace);
-    pattern = CGPatternCreate(NULL, CGRectMake(0, 0, PSIZE, PSIZE),
-                  CGAffineTransformIdentity, PSIZE, PSIZE,
-                  kCGPatternTilingConstantSpacing,
-                  false, &amp;callbacks);
-    CGContextSetFillPattern (myContext, pattern, color);
-    CGPatternRelease (pattern);
-    CGContextFillRect (myContext,CGRectMake (0,0,PSIZE*20,PSIZE*20));
 }
 </code></pre>
 ]]></content>

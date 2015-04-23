@@ -11,7 +11,7 @@
   <meta name="baidu-site-verification" content="HoscFhWICI" />
 
   
-  <meta name="description" content="英文作者Colin Eberhardt，原文可查看BINDING TO A UITABLEVIEW FROM A REACTIVECOCOA VIEWMODEL 这篇博客介绍了一个工具类，这个类将ReactiveCocoa中的ViewModels绑定到UITableView， &hellip;">
+  <meta name="description" content="原文链接：http://www.macresearch.org/tutorial_performance_and_time 在讨论性能之前，先讨论一个重要的话题：时间。为了理解代码中的变化如何影响性能，我们需要一个排序的指标。有许多方法用于时间例程，一些比另一些合适。在本教程中我们将讨论Mach &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -70,6 +70,238 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/09/23/xing-neng-yu-shi-jian/">性能与时间</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-09-23T23:55:35+08:00" pubdate data-updated="true">Sep 23<sup>rd</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/09/23/xing-neng-yu-shi-jian/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>原文链接：<a href="http://www.macresearch.org/tutorial_performance_and_time">http://www.macresearch.org/tutorial_performance_and_time</a></p>
+
+<p>在讨论性能之前，先讨论一个重要的话题：时间。为了理解代码中的变化如何影响性能，我们需要一个排序的指标。有许多方法用于时间例程，一些比另一些合适。在本教程中我们将讨论Mach Absolute Time。</p>
+
+<h2>为什么是Mach?</h2>
+
+<p>时间例程依赖于所需要测量的时间域。某些情况下使用诸如clock()或getrusage()函数来做些简单的数学运算就足够了。如果时间例程将用于实际的开发框架之外，可移植性就很重要了。我不使用这些。为什么？</p>
+
+<p>对于我来说，调试代码的典型问题是：</p>
+
+<ol>
+<li>我只需要在即时测试时使用时间例程</li>
+<li>我不喜欢依赖于多种函数来包含不同的时间域。它们的行为可能不一致</li>
+<li>有时我需要一个高精度定时器</li>
+</ol>
+
+
+<h2>欢迎了解mach_absolute_time</h2>
+
+<p>mach_absolute_time是一个CPU/总线依赖函数，返回一个基于系统启动后的时钟”嘀嗒”数。它没有很好的文档定义，但这不应该成为使用它的障碍，因为在MAC OS X上可以确保它的行为，并且，它包含系统时钟包含的所有时间区域。那是否应该在产品代码中使用它呢？可能不应该。但是对于测试，它却恰到好处。</p>
+
+<p>使用mach_absolute_time时需要考虑两个因素：</p>
+
+<ol>
+<li>如何获取当前的Mach绝对时间</li>
+<li>如何将其转换为有意义的数字</li>
+</ol>
+
+
+<h2>获取mach_absolute_time</h2>
+
+<p>这非常简单</p>
+
+<pre><code>#include &lt;stdint.h&gt; 
+uint64_t start = mach_absolute_time();
+uint64_t stop = mach_absolute_time(); 
+</code></pre>
+
+<p>这样就可以了。我们通常获取两个值，以得到这两个时间的时间差。</p>
+
+<h2>将mach_absolute_time时间差转换为秒数</h2>
+
+<p>这稍微有点复杂，因为我们需要获取mach_absolute_time所基于的系统时间基准。如下代码：</p>
+
+<pre><code>#include &lt;stdint.h&gt;
+#include&lt;mach/mach_time.h&gt; 
+//Raw mach_absolute_times going in,difference in seconds out
+double subtractTimes( uint64_tendTime, uint64_t startTime )
+{
+    uint64_t difference = endTime - startTime;
+    static double conversion = 0.0;
+
+    if( conversion == 0.0 )
+    {
+        mach_timebase_info_data_t info;
+        kern_return_t err =mach_timebase_info( &amp;info );
+
+        //Convert the timebase into seconds
+        if( err == 0  )
+            conversion= 1e-9 * (double) info.numer / (double) info.denom;
+    }
+
+    return conversion * (double)difference;
+} 
+</code></pre>
+
+<p>这里最重要的是调用mach_timebase_info。我们传递一个结构体以返回时间基准值。最后，一旦我们获取到系统的心跳，我们便能生成一个转换因子。通常，转换是通过分子(info.numer)除以分母(info.denom)。这里我乘了一个1e-9来获取秒数。最后，我们获取两个时间的差值，并乘以转换因子，便得到真实的时间差。</p>
+
+<p>现在我们可能会想，为什么这比用clock好？看起来做了更多的事情。确实是有点，这便是为什么它在一个函数中。我们只需要传递我们的值到函数中并取得答案。</p>
+
+<h2>例子</h2>
+
+<p>让我们写个例子。下面是完整的代码清单(包括mach函数)。可以使用gcc mach.c –o mach来编译它：</p>
+
+<pre><code>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;math.h&gt;
+#include&lt;mach/mach_time.h&gt; 
+
+//Raw mach_absolute_times going in,difference in seconds out
+double subtractTimes( uint64_tendTime, uint64_t startTime )
+{
+    uint64_t difference = endTime -startTime;
+    static double conversion = 0.0;
+
+    if( conversion == 0.0 )
+    {        
+        mach_timebase_info_data_tinfo;        
+        kern_return_terr = mach_timebase_info( &amp;info );                       //Convert the timebaseinto seconds        
+
+        if(err == 0  )                       
+            conversion= 1e-9 * (double) info.numer / (double) info.denom;    
+    }
+
+    return conversion * (double)difference;
+} 
+
+int main()
+{
+    inti, j, count;
+    uint64_t start,stop;
+    doublecurrent = 0.0;
+    doubleanswer = 0.0;
+    doubleelapsed = 0.0;
+    intdim1 = 256;
+    intdim2 = 256;
+    intsize = 4*dim1*dim2;
+
+    //Allocatesome memory and warm it up
+    double *array =(double*)malloc(size*sizeof(double));       
+    for(i=0;i&lt;size;i++)array = (double)i;
+
+    count= 5;     
+    for(i=0;i&lt;count;i++)
+    {              
+        start = mach_absolute_time();                                 
+        //dosome work
+        for(j=0;j&lt;size;j++)
+        {
+            answer+= sqrt(array[j]);
+        }
+        stop = mach_absolute_time();
+        current= subtractTimes(stop,start);
+        printf("Timefor iteration: %1.12lf for answer: %1.12lf\n",current, answer);
+        elapsed+= current;
+    } 
+
+    printf("\nTotaltime in seconds = %1.12lf for answer: %1.12lf\n",elapsed/count,answer);
+    free(array);
+    return 0;
+} 
+</code></pre>
+
+<p>我们在这里做了什么？在这个例子中，我们有一个适当大小的double数组，当中存放了一些数字，然后获取这些数值的和的开方。为了测试，我们迭代了5次这个计算。每次迭代后我们打印花费的时间，并总结了计算所需的运行时间。在我的PowerMac G5(2.5)机器上，我获得如下结果：</p>
+
+<pre><code>[bigmac:~/misc] macresearch% gcc mach.c -omach
+[bigmac:~/misc] macresearch%./mach 
+Time for iteration: 0.006717496412for answer: 89478229.125529855490
+Time for iteration: 0.007274204955for answer: 178956458.251062750816
+Time for iteration: 0.006669191332for answer: 268434687.376589745283
+Time for iteration: 0.006953711252for answer: 357912916.502135872841
+Time for iteration: 0.007582157340for answer: 447391145.627681851387 
+Average time in seconds =0.007039352258 for answer: 447391145.627681851387
+</code></pre>
+
+<p>注意，在这里我没有进行优化，因为编译器有方法避开这样的无脑循环。另外，这只是一个例子。如果是真正的代码，我们会进行优化。</p>
+
+<p>好了，这就是这个例子的两个目的。</p>
+
+<p>首先，我使用的数组大小比我的缓存大。我这样做的目的是因为我们需要注意到数据溢出缓存的情况(正如这个例子一样，至少在我的系统中是这样。如果是在MacPro中，不会出现这种情况)。我们将在以后讨论缓存的事宜。当然，这是一个做作的例子，但有一些东西可供思考。其次，你注意到在内存分配之前我写了一句注释，这是什么意思呢？</p>
+
+<p>这在实际情况下是不需要关心的事情，因为内存总是在需要时已准备好使用。但当做一些小测试时来测试函数的性能时，它却可能是会影响到测试结果的实际问题。</p>
+
+<p>当动态分配内存时，第一次访问内存管理时会将其清0(在OS X中不管使用哪种动态分配函数:malloc, calloc…所有内存在用户使用前都会清0)。内存清零是一种安全预防措施(我们不需要递交一些包含安全信息的内容，如解密密钥)</p>
+
+<p>清零过程产生一个副作用(被系统标记为零填充页面故障)。所以为了让我们的计时更精确些，我们在使用内存之前一次性填充数据，以确保我们不会获取到零填充页面故障的处理时间。</p>
+
+<p>让我们来测试一下，注释下面这行代码</p>
+
+<pre><code>for(i=0;i&lt;size;i++) array =(double)i;
+</code></pre>
+
+<p>为:</p>
+
+<pre><code>//for(i=0;i&lt;size;i++) array =(double)i;
+</code></pre>
+
+<p>再次运行测试</p>
+
+<pre><code>[bigmac:~/misc] macresearch% ./mach
+Time for iteration: 0.009478866798for answer: 0.000000000000
+Time for iteration: 0.004756880234for answer: 0.000000000000
+Time for iteration: 0.004927868215for answer: 0.000000000000
+Time for iteration: 0.005227029674for answer: 0.000000000000
+Time for iteration: 0.004891864428for answer: 0.000000000000 
+Average time in seconds =0.005856501870 for answer: 0.000000000000
+</code></pre>
+
+<p>注意第一次迭代的时间比后序的时间多了将近一倍。同时还需要注意所有的answer都是0。再次说明内存被清零了。如果我们从堆上获取了内存，我们获取到的是无意义的数值。</p>
+
+<p>最后，但很重要的一点。不要依赖于内存的清零操作。很有可能获取到的内存是从一个静态分配区而来，那么可能会导致如下这样的问题</p>
+
+<pre><code>double array[3][3];
+</code></pre>
+
+<p>在我的系统上的打印结果是：</p>
+
+<pre><code>-1.99844 -1.29321e-231 -1.99844
+-3.30953e-232 -5.31401e+303 0
+1.79209e-313 3.3146e-314 0
+</code></pre>
+
+<p>所以需要特别注意</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1431,778 +1663,6 @@ RACSignal *fetchMetadata = [[visibleSignal delay:1.0f]
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/08/08/mvvmzhi-nan-yi-:flickrsou-suo-shi-li/">MVVM指南一：Flickr搜索实例</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-08-08T18:54:42+08:00" pubdate data-updated="true">Aug 8<sup>th</sup>, 2014</time>
-        
-        
-           | <a href="/blog/2014/08/08/mvvmzhi-nan-yi-:flickrsou-suo-shi-li/#comments">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>本文由Colin Eberhardt发表于raywenderlich，原文可查看<a href="http://www.raywenderlich.com/74106/mvvm-tutorial-with-reactivecocoa-part-1">MVVM Tutorial with ReactiveCocoa: Part &frac12;</a></p>
-
-<p>你可能已经在Twitter上听过这个这个笑话了：</p>
-
-<p>“iOS Architecture, where MVC stands for Massive View Controller”</p>
-
-<p>当然这在iOS开发圈内，这是个轻松的笑话，但我敢确定你大实践中遇到过这个问题：即视图控制器太大且难以管理。</p>
-
-<p>这篇文章将介绍另一种构建应用程序的模式&mdash;MVVM(Model-View-ViewModel)。通过结合ReactiveCocoa便利性，这个模式提供了一个很好的代替MVC的方案，它保证了让视图控制器的轻量性。</p>
-
-<p>在本文我，我们将通过构建一个简单的Flickr查询程序来一步步了解MVVM，这个程序的效果图如下所示：</p>
-
-<p><img src="http://cdn5.raywenderlich.com/wp-content/uploads/2014/06/FinishedApp.png" alt="image" /></p>
-
-<p>在开始写代码之前，我们先来了解一些基本的原理。</p>
-
-<p>原文简要介绍了一下ReactiveCocoa，在此不在翻译，可以查看以下文章：</p>
-
-<p><a href="http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-%5B%3F%5D-:xin-hao/">ReactiveCocoa指南一：信号</a></p>
-
-<p><a href="http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-er-:twittersou-suo-shi-li/">ReactiveCocoa指南二：Twitter搜索实例</a></p>
-
-<h2>MVVM模式介绍</h2>
-
-<p>正如其名称一下，MVVM是一个UI设计模式。它是MV*模式集合中的一员。MV*模式还包含MVC(Model View Controller)、MVP(Model View Presenter)等。这些模式的目的在于将UI逻辑与业务逻辑分离，以让程序更容易开发和测试。为了更好的理解MVVM模式，我们可以看看其来源。</p>
-
-<p>MVC是最初的UI设计模式，最早出现在Smalltalk语言中。下图展示了MVC模式的主要组成：</p>
-
-<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/06/MVCPattern-2.png" alt="image" /></p>
-
-<p>这个模式将UI分成Model(表示程序状态)、View(由UI控件组成)、Controller(处理用户交互与更新model)。MVC模式的最大问题是其令人相当困惑。它的概念看起来很好，但当我们实现MVC时，就会产生上图这种Model-View-Controller之间的环状关系。这种相互关系将会导致可怕的混乱。</p>
-
-<p>最近Martin Fowler介绍了MVC模式的一个变种，这种模式命名为MVVM，并被微软广泛采用并推广。</p>
-
-<p><img src="http://cdn5.raywenderlich.com/wp-content/uploads/2014/06/MVVMPattern.png" alt="image" /></p>
-
-<p>这个模式的核心是ViewModel，它是一种特殊的model类型，用于表示程序的UI状态。它包含描述每个UI控件的状态的属性。例如，文本输入域的当前文本，或者一个特定按钮是否可用。它同样暴露了视图可以执行哪些行为，如按钮点击或手势。</p>
-
-<p>我们可以将ViewModel看作是视图的模型(model-of-the-view)。MVVM模式中的三部分比MVC更加简洁，下面是一些严格的限制</p>
-
-<ol>
-<li>View引用了ViewModel，但反过来不行。</li>
-<li>ViewModel引用了Model，但反过来不行。</li>
-</ol>
-
-
-<p>如果我们破坏了这些规则，便无法正确地使用MVVM。</p>
-
-<p>这个模式有以下一些立竿见影的优势：</p>
-
-<ol>
-<li>轻量的视图：所有的UI逻辑都在ViewModel中。</li>
-<li>便于测试：我们可以在没有视图的情况下运行整个程序，这样大大地增加了它的可测试性。</li>
-</ol>
-
-
-<p>现在你可能注意到一个问题。如果View引用了ViewModel，但ViewModel没有引用View，那ViewModel如何更新视图呢？哈哈，这就得靠MVVM模式的私密武器了。</p>
-
-<h2>MVVM和数据绑定</h2>
-
-<p>MVVM模式依赖于数据绑定，它是一个框架级别的特性，用于自动连接对象属性和UI控件。例如，在微软的WPF框架中，下面的标签将一个TextField的Text属性绑定到ViewModel的Username属性中。</p>
-
-<pre><code>&lt;TextField Text=”{DataBinding Path=Username, Mode=TwoWay}”/&gt;
-</code></pre>
-
-<p>WPF框架将这两个属性绑定到一起。</p>
-
-<p>不过可惜的是，iOS没有数据绑定框架，幸运的是我们可以通过ReactiveCocoa来实现这一功能。我们从iOS开发的角度来看看MVVM模式，ViewController及其相关的UI(nib, stroyboard或纯代码的View)组成了View:</p>
-
-<p><img src="http://cdn5.raywenderlich.com/wp-content/uploads/2014/06/MVVMReactiveCocoa.png" alt="image" /></p>
-
-<p>&hellip;&hellip;而ReactiveCocoa绑定了View和ViewModel。</p>
-
-<p>理论讲得差不多了，我们可以开始新的历程了。</p>
-
-<h2>启动项目结构</h2>
-
-<p>可以从<a href="http://cdn5.raywenderlich.com/wp-content/uploads/2014/06/FlickrSearchStarterProject1.zip">FlickrSearchStarterProject.zip</a>中下载启动项目。我们使用Cocoapods来管理第三方库，在对应目录下执行pod install命令生成依赖库后，我们就可以打开生成的RWTFlickrSearch.xcworkspace来运行我们的项目了，初始运行效果如下图：</p>
-
-<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/06/first-launch.jpg" alt="image" /></p>
-
-<p>我们行熟悉下工程的结构：</p>
-
-<p><img src="http://cdn2.raywenderlich.com/wp-content/uploads/2014/06/EmptyInterface.png" alt="image" /></p>
-
-<p>Model和ViewModel分组目前是空的，我们会慢慢往里面添加东西。View分组包含以下几个类</p>
-
-<ol>
-<li>RWTFlickSearchViewController：程序的主屏幕，包含一个搜索输入域和一个GO按钮。</li>
-<li>RWTRecentSearchItemTableViewCell：用于在主页中显示搜索结果的table cell</li>
-<li>RWTSearchResultsViewController：搜索结果页，显示来自Flickr的tableview</li>
-<li>RWTSearchResultsTableViewCell：渲染来自Flickr的单个图片的table cell。</li>
-</ol>
-
-
-<p>现在来写我们的第一个ViewModel吧。</p>
-
-<h2>第一个ViewModel</h2>
-
-<p>在ViewModel分组中添加一个继承自NSObject的新类RWTFlickrSearchViewModel。然后在该类的头文件中，添加以下两行代码：</p>
-
-<pre><code>@property (nonatomic, strong) NSString *searchText;
-@property (nonatomic, strong) NSString *title;
-</code></pre>
-
-<p>searchText属性表示文本域中显示文本，title属性表示导航条上的标题。</p>
-
-<p>打开RWTFlickrSearchViewModel.m文件添加以下代码：</p>
-
-<pre><code>@implementation RWTFlickrSearchViewModel
-
-- (instancetype)init
-{
-    self = [super init];
-
-    if (self)
-    {
-        [self initialize];
-    }
-
-    return self;
-}
-
-- (void)initialize
-{
-    self.searchText = @"search text";
-    self.title = @"Flickr Search";
-}
-
-@end
-</code></pre>
-
-<p>这段代码简单地设置了ViewModel的初始状态。</p>
-
-<p>接下来我们将连接ViewModel到View。记住View保存了一个ViewModel的引用。在这种情况下，添加一个给定ViewModel的初始化方法来构造View是很有必要的。打开RWTFlickrSearchViewController.h，并导入ViewModel头文件：</p>
-
-<pre><code>#import "RWTFlickrSearchViewModel.h"
-</code></pre>
-
-<p>并添加以下初始化方法：</p>
-
-<pre><code>@interface RWTFlickrSearchViewController : UIViewController
-
-- (instancetype)initWithViewModel:(RWTFlickrSearchViewModel *)viewModel;
-
-@end
-</code></pre>
-
-<p>在RWTFlickrSearchViewController.m中，在类的扩展中添加以下私有属性：</p>
-
-<pre><code>@property (weak, nonatomic) RWTFlickrSearchViewModel *viewModel;
-</code></pre>
-
-<p>然后添加以下方法：</p>
-
-<pre><code>- (instancetype)initWithViewModel:(RWTFlickrSearchViewModel *)viewModel
-{
-    self = [super init];
-
-    if (self)
-    {
-        _viewModel = viewModel;
-    }
-
-    return self;
-}
-</code></pre>
-
-<p>这就在view中存储了一个到ViewModel的引用。<em>注意这是一个弱引用，这样View引用了ViewModel，但没有拥有它。</em></p>
-
-<p>接下来在viewDidLoad里面添加下面代码：</p>
-
-<pre><code>[self bindViewModel];
-</code></pre>
-
-<p>该方法的实现如下：</p>
-
-<pre><code>- (void)bindViewModel
-{
-    self.title = self.viewModel.title;
-    self.searchTextField.text = self.viewModel.searchText;
-}
-</code></pre>
-
-<p>最后我们需要创建ViewModel，并将其提供给View。在RWTAppDelegate.m中，添加以下头文件：</p>
-
-<pre><code>#import "RWTFlickrSearchViewModel.h"
-</code></pre>
-
-<p>同时添加一个私有属性：</p>
-
-<pre><code>@property (nonatomic, strong) RWTFlickrSearchViewModel *viewModel;
-</code></pre>
-
-<p>我们会发现这个类中已以有一个createInitialViewController方法了，我们用以下代码来更新它：</p>
-
-<pre><code>- (UIViewController *)createInitialViewController {
-    self.viewModel = [RWTFlickrSearchViewModel new];
-    return [[RWTFlickrSearchViewController alloc] initWithViewModel:self.viewModel];
-}
-</code></pre>
-
-<p>这个方法创建了一个ViewModel实例，然后构造并返回了View。这个视图作程序导航控制器的初始视图。</p>
-
-<p>运行后的状态如下：</p>
-
-<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/06/ViewWithState-333x500.png" alt="image" /></p>
-
-<p>这样我们就得到了第一个ViewModel。不过仍然有许多东西要学的。你可能已经发现了我们还没有使用ReactiveCocoa。到目前为止，用户在输入框上的输入操作不会影响到ViewModel。</p>
-
-<h2>检测可用的搜索状态</h2>
-
-<p>现在，我们来看看如何用ReactiveCocoa来绑定ViewModel和View，以将搜索输入框和按钮连接到ViewModel。</p>
-
-<p>在RWTFlickrSearchViewController.m中，我们使用如下代码更新bindViewModel方法。</p>
-
-<pre><code>- (void)bindViewModel
-{
-    self.title = self.viewModel.title;
-    RAC(self.viewModel, searchText) = self.searchTextField.rac_textSignal;
-}
-</code></pre>
-
-<p>在ReactiveCocoa中，使用了分类将rac_textSignal属性添加到UITextField类中。它是一个信号，在文本域每次更新时会发送一个包含当前文本的next事件。</p>
-
-<p>RAC是一个用于做绑定操作的宏，上面的代码会使用rac_textSignal发出的next信号来更新viewModel的searchText属性。</p>
-
-<p>搜索按钮应该只有在用户输入有效时才可点击。为了方便起见，我们以输入字符大于3时输入有效为准。在RWTFlickrSearchViewModel.m中导入以下头文件。</p>
-
-<pre><code>#import &lt;ReactiveCocoa/ReactiveCocoa.h&gt;
-</code></pre>
-
-<p>然后更新初始化方法：</p>
-
-<pre><code>- (void)initialize
-{
-    self.title = @"Flickr Search";
-
-    RACSignal *validSearchSignal =
-    [[RACObserve(self, searchText)
-      map:^id(NSString *text) {
-        return @(text.length &gt; 3);
-    }]
-     distinctUntilChanged];
-
-    [validSearchSignal subscribeNext:^(id x) {
-        NSLog(@"search text is valid %@", x);
-    }];
-}
-</code></pre>
-
-<p>运行程序并在输入框中输入一些字符，在控制台中我们可以看到以下输出：</p>
-
-<pre><code>2014-08-07 21:50:44.078 RWTFlickrSearch[3116:60b] search text is valid 0
-2014-08-07 21:50:59.493 RWTFlickrSearch[3116:60b] search text is valid 1
-2014-08-07 21:51:02.594 RWTFlickrSearch[3116:60b] search text is valid 0
-</code></pre>
-
-<p>上面的代码使用RACObserve宏来从ViewModel的searchText属性创建一个信号。map操作将文本转化为一个true或false值的流。</p>
-
-<p>最后，distinctUntilChanges确保信号只有在状态改变时才发出值。</p>
-
-<p>到目前为止，我们可以看到ReactiveCocoa被用于将绑定View绑定到ViewModel，确保了这两者是同步的。另进一步地，ViewModel内部的ReactiveCocoa代码用于观察自己的状态及执行其它操作。</p>
-
-<p>这就是MVVM模式的基本处理过程。ReactiveCocoa通常用于绑定View和ViewModel，但在程序的其它层也非常有用。</p>
-
-<h2>添加搜索命令</h2>
-
-<p>本节将上面创建的validSearchSignal来创建绑定到View的操作。打开RWTFlickrSearchViewModel.h并添加以下头文件</p>
-
-<pre><code>#import &lt;ReactiveCocoa/ReactiveCocoa.h&gt;
-</code></pre>
-
-<p>同时添加以下属性</p>
-
-<pre><code>@property (strong, nonatomic) RACCommand *executeSearch;
-</code></pre>
-
-<p>RACCommand是ReactiveCocoa中用于表示UI操作的一个类。它包含一个代表了UI操作的结果的信号以及标识操作当前是否被执行的一个状态。</p>
-
-<p>在RWTFlickrSearchViewModel.m的initialize方法的最后添加以下代码：</p>
-
-<pre><code>self.executeSearch = [[RACCommand alloc] initWithEnabled:validSearchSignal
-                                             signalBlock:^RACSignal *(id input) {
-                                                 return [self executeSearchSignal];
-                                             }];
-</code></pre>
-
-<p>这创建了一个在validSearchSignal发送true时可用的命令。另外，需要在下面实现executeSearchSignal方法，它提供了命令所执行的操作。</p>
-
-<pre><code>- (RACSignal *)executeSearchSignal
-{
-    return [[[[RACSignal empty] logAll] delay:2.0] logAll];
-}
-</code></pre>
-
-<p>在这个方法中，我们执行一些业务逻辑操作，以作为命令执行的结果，并通过信号异步返回结果。</p>
-
-<p>到目前为止，上述代码只提供了一个简单的实现：空信号会立即完成。delay操作会将其所接收到的next或complete事件延迟两秒执行。</p>
-
-<p>最后一步是将这个命令连接到View中。打开RWTFlickrSearchViewController.m并在bindViewModel方法的结尾中添加以下代码：</p>
-
-<pre><code>self.searchButton.rac_command = self.viewModel.executeSearch;
-</code></pre>
-
-<p>rac_command属性是UIButton的ReactiveCocoa分类中添加的属性。上面的代码确保点击按钮执行给定的命令，且按钮的可点击状态反应了命令的可用状态。</p>
-
-<p>运行代码，输入一些字符并点击GO，得到如下结果：</p>
-
-<p><img src="http://cdn3.raywenderlich.com/wp-content/uploads/2014/06/GoButtonEnabled-333x500.png" alt="image" /></p>
-
-<p>可以看到，当输入有效点击按钮时，按钮会置灰2秒钟，当执行的信号完成时又可点击。我们可以看下控制台的输出，可以发现空信号会立即完成，而延迟操作会在2秒后发出事件：</p>
-
-<pre><code>2014-08-07 22:21:25.128 RWTFlickrSearch[3161:60b] &lt;RACDynamicSignal: 0x17005ba20&gt; name: +empty completed
-2014-08-07 22:21:27.329 RWTFlickrSearch[3161:60b] &lt;RACDynamicSignal: 0x17005dd30&gt; name: [+empty] -delay: 2.000000 completed
-</code></pre>
-
-<p>是不是很酷？</p>
-
-<h2>绑定、绑定还是绑定</h2>
-
-<p>RACCommand监听了搜索按钮状态的更新，但处理activity indicator的可见性则由我们负责。RACCommand暴露了一个executing属性，它是一个信号，发送true或false来标明命令开始和结束执行的时间。我们可以用这个来影响当前命令的状态。</p>
-
-<p>在RWTFlickrSearchViewController.m中的bindViewModel方法结尾处添加以下代码：</p>
-
-<pre><code>RAC([UIApplication sharedApplication], networkActivityIndicatorVisible) = self.viewModel.executeSearch.executing;
-</code></pre>
-
-<p>这将UIApplication的networkActivityIndicatorVisible属性绑定到命令的executing信号中。这确保了不管命令什么时候执行，状态栏中的网络activity indicator都会显示。</p>
-
-<p>接下来添加以下代码：</p>
-
-<pre><code>RAC(self.loadingIndicator, hidden) = [self.viewModel.executeSearch.executing not];
-</code></pre>
-
-<p>当命令执行时，应该隐藏加载indicator。这可以通过not操作来反转信号。</p>
-
-<p>最后，添加以下代码：</p>
-
-<pre><code>[self.viewModel.executeSearch.executionSignals subscribeNext:^(id x) {
-    [self.searchTextField resignFirstResponder];
-}];
-</code></pre>
-
-<p>这段代码确保命令执行时隐藏键盘。executionSignals属性发送由命令每次执行时生成的信号。这个属性是信号的信号(见<a href="http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-%5B%3F%5D-:xin-hao/">ReactiveCocoa指南一：信号</a>)。当创建和发出一个新的命令执行信号时，隐藏键盘。</p>
-
-<p>运行程序看看效果如何吧。</p>
-
-<h2>Model在哪？</h2>
-
-<p>到目前为止，我们已经有了一个清晰的View(RWTFlickrSearchViewController)和ViewModel(RWTFlickrSearchViewModel)，但是Model在哪呢？</p>
-
-<p>答案很简单：没有！</p>
-
-<p>当前的程序执行一个命令来响应用户点击搜索按钮的操作，但是实现不做任何值的处理。ViewModel真正需要做的是使用当前的searchText来搜索Flickr，并返回一个匹配的列表。</p>
-
-<p>我们应该可以直接在ViewModel添加业务逻辑，但相信我，你不希望这么做。如果这是一个viewcontroller，我打赌你一定会直接这么做。</p>
-
-<p>ViewModel暴露属性来表示UI状态，它同样暴露命令来表示UI操作(通常是方法)。ViewModel负责管理基于用户交互的UI状态的改变。然而它不负责实际执行这些交互产生的的业务逻辑，那是Model的工作。</p>
-
-<p>接下来，我们将在程序中添加Model层。</p>
-
-<p>在Model分组中，添加RWTFlickrSearch协议并提供以下实现</p>
-
-<pre><code>#import &lt;ReactiveCocoa/ReactiveCocoa.h&gt;
-
-@protocol RWTFlickrSearch &lt;NSObject&gt;
-
-- (RACSignal *)flickrSearchSignal:(NSString *)searchString;
-
-@end
-</code></pre>
-
-<p>这个协议定义了Model层的初始接口，并将搜索Flickr的责任移出ViewModel。</p>
-
-<p>接下来在Model分组中添加RWTFlickrSearchImpl类，其继承自NSObject，并实现了RWTFlickrSearch协议，如下代码所示：</p>
-
-<pre><code>#import "RWTFlickrSearch.h"
-
-@interface RWTFlickrSearchImpl : NSObject &lt;RWTFlickrSearch&gt;
-
-@end
-</code></pre>
-
-<p>打开RWTFlickrSearchImpl.m文件，提供以下实现：</p>
-
-<p>@implementation RWTFlickrSearchImpl</p>
-
-<pre><code>- (RACSignal *)flickrSearchSignal:(NSString *)searchString
-{
-    return [[[[RACSignal empty] logAll] delay:2.0] logAll];
-}
-
-@end
-</code></pre>
-
-<p>看着是不是有hkko眼熟？没错，我们在上面的ViewModel中有相同的实现。</p>
-
-<p>接下来我们需要在ViewModel层中使用Model层。在ViewModel分组中添加RWTViewModelServices协议并如下实现：</p>
-
-<pre><code>#import "RWTFlickrSearch.h"
-
-@protocol RWTViewModelServices &lt;NSObject&gt;
-
-- (id&lt;RWTFlickrSearch&gt;)getFlickrSearchService;
-
-@end
-</code></pre>
-
-<p>这个协议定义了唯一的一个方法，以允许ViewModel获取一个引用，以指向RWTFlickrSearch协议的实现对象。</p>
-
-<p>打开RWTFlickrSearchViewModel.h并导入头文件</p>
-
-<pre><code>#import "RWTViewModelServices.h"
-</code></pre>
-
-<p>更新初始化方法并将RWTViewModelServices作为一个参数：</p>
-
-<pre><code>- (instancetype)initWithServices:(id&lt;RWTViewModelServices&gt;)services;
-</code></pre>
-
-<p>在RWTFlickrSearchViewModel.m中，添加类的分类并提供一个私有属性来维护一个到RWTViewModelServices的引用：</p>
-
-<pre><code>@interface RWTFlickrSearchViewModel ()
-
-@property (nonatomic, weak) id&lt;RWTViewModelServices&gt; services;
-
-@end
-</code></pre>
-
-<p>在该文件下面，添加初始化方法的实现：</p>
-
-<pre><code>- (instancetype)initWithServices:(id&lt;RWTViewModelServices&gt;)services
-{
-    self = [super init];
-
-    if (self)
-    {
-        _services = services;
-        [self initialize];
-    }
-
-    return self;
-}
-</code></pre>
-
-<p>这只是简单的存储了services的引用。</p>
-
-<p>最后，更新executeSearchSignal方法：</p>
-
-<pre><code>- (RACSignal *)executeSearchSignal
-{
-    return [[self.services getFlickrSearchService] flickrSearchSignal:self.searchText];
-}
-</code></pre>
-
-<p>最后是连接Model和ViewModel。</p>
-
-<p>在工程的根分组中，添加一个NSObject的子类RWTViewModelServicesImpl。打开RWTViewModelServicesImpl.h并实现RWTViewModelServices协议：</p>
-
-<pre><code>#import "RWTViewModelServices.h"
-
-@interface RWTViewModelServicesImpl : NSObject &lt;RWTViewModelServices&gt;
-
-@end
-</code></pre>
-
-<p>打开RWTViewModelServicesImpl.m，并添加实现：</p>
-
-<pre><code>#import "RWTFlickrSearchImpl.h"
-
-@interface RWTViewModelServicesImpl ()
-
-@property (strong, nonatomic) RWTFlickrSearchImpl *searchService;
-
-@end
-
-@implementation RWTViewModelServicesImpl
-
-- (instancetype)init
-{
-    if (self = [super init])
-    {
-        _searchService = [RWTFlickrSearchImpl new];
-    }
-
-    return self;
-}
-
-- (id&lt;RWTFlickrSearch&gt;)getFlickrSearchService
-{
-    return self.searchService;
-}
-
-@end
-</code></pre>
-
-<p>这个类简单创建了一个RWTFlickrSearchImpl实例，用于Model层搜索Flickr服务，并将其提供给ViewModel的请求。</p>
-
-<p>最后，在RWTAppDelegate.m中添加以下头文件</p>
-
-<pre><code>#import "RWTViewModelServicesImpl.h"
-</code></pre>
-
-<p>并添加一个新的私有属性</p>
-
-<pre><code>@property (nonatomic, strong) RWTViewModelServicesImpl *viewModelServices;
-</code></pre>
-
-<p>再更新createInitialViewController方法：</p>
-
-<pre><code>- (UIViewController *)createInitialViewController {
-    self.viewModelServices = [RWTViewModelServicesImpl new];
-    self.viewModel = [[RWTFlickrSearchViewModel alloc] initWithServices:self.viewModelServices];
-    return [[RWTFlickrSearchViewController alloc] initWithViewModel:self.viewModel];
-}
-</code></pre>
-
-<p>运行程序，验证程序有没有按之前的方式来工作。当然，这不是最有趣的变化，不过，可以看看新代码的形状了。</p>
-
-<p>Model层暴露了一个ViewModel层使用的&#8217;服务&#8217;。一个协议定义了这个服务的接口，提供了松散的组合。</p>
-
-<p>我们可以使用这种方式来为单元测试提供一个类似的服务实现。程序现在有了正确的MVVM结构，让我们小结一下：</p>
-
-<ol>
-<li>Model层暴露服务并负责提供程序的业务逻辑实现。</li>
-<li>ViewModel层表示程序的视图状态(view-state)。同时响应用户交互及来自Model层的事件，两者都受view-state变化的影响。</li>
-<li>View层很薄，只提供ViewModel状态的显示及输出用户交互事件。</li>
-</ol>
-
-
-<h2>搜索Flickr</h2>
-
-<p>我们继续来完成Flickr的搜索实现，事情变得越来越有趣了。</p>
-
-<p>首先我们创建表示搜索结果的模型对象。在Model分组中，添加RWTFlickrPhoto类，并为其添加三个属性。</p>
-
-<pre><code>@interface RWTFlickrPhoto : NSObject
-
-@property (nonatomic, strong) NSString *title;
-@property (nonatomic, strong) NSURL *url;
-@property (nonatomic, strong) NSString *identifier;
-
-@end
-</code></pre>
-
-<p>这个模型对象表示由Flickr搜索API返回一个图片。</p>
-
-<p>打开RWTFlickrPhoto.m，并添加以下描述方法的实现：</p>
-
-<pre><code>- (NSString *)description
-{
-    return self.title;
-}
-</code></pre>
-
-<p>接下来，新建一个新的模型对象类RWTFlickrSearchResults，并添加以下属性：</p>
-
-<pre><code>@interface RWTFlickrSearchResults : NSObject
-
-@property (strong, nonatomic) NSString *searchString;
-@property (strong, nonatomic) NSArray *photos;
-@property (nonatomic) NSInteger totalResults;
-
-@end
-</code></pre>
-
-<p>这个类表示由Flickr搜索返回的照片集合。</p>
-
-<p>是时候实现搜索Flickr了。打开RWTFlickrSearchImpl.m并导入以下头文件：</p>
-
-<pre><code>#import "RWTFlickrSearchResults.h"
-#import "RWTFlickrPhoto.h"
-#import &lt;objectiveflickr/ObjectiveFlickr.h&gt;
-#import &lt;LinqToObjectiveC/NSArray+LinqExtensions.h&gt;
-</code></pre>
-
-<p>然后添加以下类扩展：</p>
-
-<pre><code>@interface RWTFlickrSearchImpl () &lt;OFFlickrAPIRequestDelegate&gt;
-
-@property (strong, nonatomic) NSMutableSet *requests;
-@property (strong, nonatomic) OFFlickrAPIContext *flickrContext;
-
-@end
-</code></pre>
-
-<p>这个类实现了OFFlickrAPIRequestDelegate协议，并添加了两个私有属性。我们会很快看到如何使用这些值。</p>
-
-<p>继续添加代码：</p>
-
-<pre><code>- (instancetype)init
-{
-    self = [super init];
-
-    if (self)
-    {
-        NSString *OFSampleAppAPIKey = @"YOUR_API_KEY_GOES_HERE";
-        NSString *OFSampleAppAPISharedSecret = @"YOUR_SECRET_GOES_HERE";
-
-        _flickrContext = [[OFFlickrAPIContext alloc] initWithAPIKey:OFSampleAppAPIKey sharedSecret:OFSampleAppAPISharedSecret];
-
-        _requests = [NSMutableSet new];
-    }
-
-    return self;
-}
-</code></pre>
-
-<p>这段代码创建了一个Flickr的上下文，用于存储ObjectiveFlickr请求的数据。</p>
-
-<p>当前Model层服务类提供的API有一个单独的方法，用于查找基于文本搜索字符的图片。不过我们一会会添加更多的方法。</p>
-
-<p>在RWTFlickrSearchImpl.m中添加以下方法：</p>
-
-<pre><code>- (RACSignal *)signalFromAPIMethod:(NSString *)method arguments:(NSDictionary *)args transform:(id (^)(NSDictionary *response))block
-{
-    // 1. 创建请求信号
-    return [RACSignal createSignal:^RACDisposable *(id&lt;RACSubscriber&gt; subscriber) {
-
-        // 2. 创建一个Flick请求对象
-        OFFlickrAPIRequest *flickrRequest = [[OFFlickrAPIRequest alloc] initWithAPIContext:self.flickrContext];
-        flickrRequest.delegate = self;
-        [self.requests addObject:flickrRequest];
-
-        // 3. 从代理方法中创建一个信号
-        RACSignal *successSignal = [self rac_signalForSelector:@selector(flickrAPIRequest:didCompleteWithResponse:)
-                                                  fromProtocol:@protocol(OFFlickrAPIRequestDelegate)];
-
-        // 4. 处理响应
-        [[[successSignal
-         map:^id(RACTuple *tuple) {
-             return tuple.second;
-         }]
-         map:block]
-         subscribeNext:^(id x) {
-             [subscriber sendNext:x];
-             [subscriber sendCompleted];
-         }];
-
-        // 5. 开始请求
-        [flickrRequest callAPIMethodWithGET:method arguments:args];
-
-        // 6. 完成后，移除请求的引用
-        return [RACDisposable disposableWithBlock:^{
-            [self.requests removeObject:flickrRequest];
-        }];
-    }];
-}
-</code></pre>
-
-<p>这个方法需要传入请求方法及请求参数，然后使用block参数来转换响应对象。我们重点看一下第4步：</p>
-
-<pre><code>[[[successSignal
-  // 1. 从flickrAPIRequest:didCompleteWithResponse:代理方法中提取第二个参数
-  map:^id(RACTuple *tuple) {
-    return tuple.second;
-  }]
-  // 2. 转换结果
-  map:block]
-  subscribeNext:^(id x) {
-    // 3. 将结果发送给订阅者
-    [subscriber sendNext:x];
-    [subscriber sendCompleted];
-  }];
-</code></pre>
-
-<p>rac_signalForSelector:fromProtocol: 方法创建了successSignal，同样也在代理方法的调用中创建了信号。</p>
-
-<p>代理方法每次调用时，发出的next事件会附带包含方法参数的RACTuple。</p>
-
-<p>实现Flickr搜索的最后一步如下：</p>
-
-<pre><code>- (RACSignal *)flickrSearchSignal:(NSString *)searchString {
-  return [self signalFromAPIMethod:@"flickr.photos.search"
-                         arguments:@{@"text": searchString,
-                                     @"sort": @"interestingness-desc"}
-                         transform:^id(NSDictionary *response) {
-
-    RWTFlickrSearchResults *results = [RWTFlickrSearchResults new];
-    results.searchString = searchString;
-    results.totalResults = [[response valueForKeyPath:@"photos.total"] integerValue];
-
-    NSArray *photos = [response valueForKeyPath:@"photos.photo"];
-    results.photos = [photos linq_select:^id(NSDictionary *jsonPhoto) {
-      RWTFlickrPhoto *photo = [RWTFlickrPhoto new];
-      photo.title = [jsonPhoto objectForKey:@"title"];
-      photo.identifier = [jsonPhoto objectForKey:@"id"];
-      photo.url = [self.flickrContext photoSourceURLFromDictionary:jsonPhoto
-                                                              size:OFFlickrSmallSize];
-      return photo;
-    }];
-
-    return results;
-  }];
-}
-</code></pre>
-
-<p>上面的方法使用signalFromAPIMethod:arguments:transform:方法。flickr.photos.search方法提供的字典来搜索照片。</p>
-
-<p>传递给transform参数的block简单地将NSDictionary响应转化为一个等价的模型对象，让它在ViewModel中更容易使用。</p>
-
-<p>最后一步是打开RWTFlickrSearchViewModel.m方法，然后更新搜索信号来记录日志：</p>
-
-<pre><code>- (RACSignal *)executeSearchSignal {
-  return [[[self.services getFlickrSearchService]
-           flickrSearchSignal:self.searchText]
-           logAll];
-}
-</code></pre>
-
-<p>编译，运行并输入一些字符后可在控制台看到以下日志：</p>
-
-<pre><code>2014-06-03 [...] &lt;RACDynamicSignal: 0x8c368a0&gt; name: +createSignal: next: searchString=wibble, totalresults=1973, photos=(
-    "Wibble, wobble, wibble, wobble",
-    "unoa-army",
-    "Day 277: Cheers to the freakin' weekend!",
-    [...]
-    "Angry sky",
-    Nemesis
-)
-</code></pre>
-
-<p>这样我们MVVM指南的第一部分就差不多结束了，但在结束之前，让我们先看看内存问题吧。</p>
-
-<h2>内存管理</h2>
-
-<p>正如在<a href="http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-er-:twittersou-suo-shi-li/">ReactiveCocoa指南二：Twitter搜索实例</a>中所讲的一样，我们在block中使用了self，这可能会导致循环引用的问题。而为了避免此问题，我们需要使用@weakify和@strongify宏来打破这种循环引用。</p>
-
-<p>不过看看signalFromAPIMethod:arguments:transform:方法，你可能会迷惑为什么没有使用这两个宏来引用self？这是因为block是作为createSignal:方法的一个参数，它不会在self和block之间建立一个强引用关系。迷茫了吧？不相信的话只需要测试一样这段代码有没有内存泄露就行。当然这时候就得用Instruments了，自己去看吧。哈哈。</p>
-
-<h2>何去何从？</h2>
-
-<p>例子工程的完整代码可以在<a href="http://cdn4.raywenderlich.com/wp-content/uploads/2014/06/FlickrSearchPart1Project1.zip">这里</a>下载。在下一部分中，我们将看看如何从ViewModel中初始化一个视图控制器并实现更多的Flickr请求操作。</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/9">&larr; Older</a>
@@ -2219,7 +1679,7 @@ RACSignal *fetchMetadata = [[visibleSignal delay:1.0f]
 <section>
 <h1>分类</h1>
 <ul>
-  <li><a href='/blog/categories/ios'>ios (62)</a></li>
+  <li><a href='/blog/categories/ios'>ios (63)</a></li>
   <li><a href='/blog/categories/network'>network (3)</a></li>
   <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
   <li><a href='/blog/categories/swift'>swift (7)</a></li>
@@ -2231,6 +1691,10 @@ RACSignal *fetchMetadata = [[visibleSignal delay:1.0f]
 <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/04/23/nskeyvalueobserving-kvo/">NSKeyValueObserving(KVO)</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2015/03/24/yuan-ma-pian-:mbprogresshud/">源码篇：MBProgressHUD</a>
@@ -2266,10 +1730,6 @@ RACSignal *fetchMetadata = [[visibleSignal delay:1.0f]
     
       <li class="post">
         <a href="/blog/2015/01/31/nsobjectzhi-%5B%3F%5D/">NSObject之一</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/01/25/gong-ju-pian-:lldbdiao-shi-qi/">工具篇：LLDB调试器</a>
       </li>
     
   </ul>

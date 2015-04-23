@@ -4,7 +4,7 @@
   <title><![CDATA[Category: ios | 南峰子的技术博客]]></title>
   <link href="http://southpeak.github.io/blog/categories/ios/atom.xml" rel="self"/>
   <link href="http://southpeak.github.io/"/>
-  <updated>2015-03-24T20:44:57+08:00</updated>
+  <updated>2015-04-23T17:34:25+08:00</updated>
   <id>http://southpeak.github.io/</id>
   <author>
     <name><![CDATA[南峰子]]></name>
@@ -12,6 +12,807 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[NSKeyValueObserving(KVO)]]></title>
+    <link href="http://southpeak.github.io/blog/2015/04/23/nskeyvalueobserving-kvo/"/>
+    <updated>2015-04-23T17:31:16+08:00</updated>
+    <id>http://southpeak.github.io/blog/2015/04/23/nskeyvalueobserving-kvo</id>
+    <content type="html"><![CDATA[<p>NSKeyValueObserving非正式协议定义了一种机制，它允许对象去监听其它对象的某个属性的修改。</p>
+
+<p>我们可以监听一个对象的属性，包括简单属性，一对一的关系，和一对多的关系。一对多关系的监听者会被告知集合变更的类型，以及哪些对象参与了变化。</p>
+
+<p>NSObject提供了一个NSKeyValueObserving协议的默认实现，它为所有对象提供了一种自动发送修改通知的能力。我们可以通过禁用自动发送通知并使用这个协议提供的方法来手动实现通知的发送，以便更精确地去处理通知。</p>
+
+<p>在这里，我们将通过具体的实例来看看NSKeyValueObserving提供了哪些方法。我们的基础代码如代码清单1所示：</p>
+
+<p><strong>代码清单1：示例基础代码</strong></p>
+
+<pre><code>#pragma mark - PersonObject
+
+@interface PersonObject : NSObject
+
+@end
+
+@implementation PersonObject
+
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
+
+    NSLog(@"keyPath = %@, change = %@, context = %s", keyPath, change, (char *)context);
+}
+
+@end
+
+#pragma mark - BankObject
+
+@interface BankObject : NSObject
+
+@property (nonatomic, assign) int accountBalance;
+@property (nonatomic, copy) NSString *bankCodeEn;
+@property (nonatomic, strong) NSMutableArray *departments;
+
+@end
+</code></pre>
+
+<p>在这段代码中，我们定义一两个类，一个是PersonObject类，这个类的对象在下面将充当观察者的角色。另一个是BankObject类，我们在这个类中定义了三个属性，作为被监听的属性。由于NSObject类已经实现了NSKeyValueObserving协议，所以我们不需要再显式地去让我们的类实现这个协议。</p>
+
+<p>接下来，我们便来看看NSKeyValueObserving协议有哪些功能。</p>
+
+<h2>注册/移除观察者</h2>
+
+<p>要让一个对象监听另一个对象的属性的变化，首先需要将这个对象注册为相关属性的观察者，我们可以使用以下方法来实现：</p>
+
+<pre><code>- (void)addObserver:(NSObject *)anObserver
+         forKeyPath:(NSString *)keyPath
+            options:(NSKeyValueObservingOptions)options
+            context:(void *)context
+</code></pre>
+
+<p>这个方法带有四个参数，描述如下：</p>
+
+<ol>
+<li>anObserver：观察者对象，这个对象必须实现observeValueForKeyPath:ofObject:change:context:方法，以响应属性的修改通知。</li>
+<li>keyPath：被监听的属性。这个值不能为nil。</li>
+<li>options：监听选项，这个值可以是NSKeyValueObservingOptions选项的组合。关于监听选项，我们会在下面介绍。</li>
+<li>context：任意的额外数据，我们可以将这些数据作为上下文数据，它会传递给观察者对象的observeValueForKeyPath:ofObject:change:context:方法。这个参数的意义在于用于区分同一对象监听同一属性(从属于同一对象)的多个不同的监听。我们将在下面看到。</li>
+</ol>
+
+
+<p>监听选项是由枚举NSKeyValueObservingOptions定义的，是传入-addObserver:forKeyPath:options:context:方法中以确定哪些值将被传到-observeValueForKeyPath:ofObject:change:context:方法中。这个枚举的定义如下：</p>
+
+<pre><code>enum {
+    // 提供属性的新值
+    NSKeyValueObservingOptionNew = 0x01,
+
+    // 提供属性的旧值
+    NSKeyValueObservingOptionOld = 0x02,
+
+    // 如果指定，则在添加观察者的时候立即发送一个通知给观察者，
+    // 并且是在注册观察者方法返回之前
+    NSKeyValueObservingOptionInitial = 0x04,
+
+    // 如果指定，则在每次修改属性时，会在修改通知被发送之前预先发送一条通知给观察者，
+    // 这与-willChangeValueForKey:被触发的时间是相对应的。
+    // 这样，在每次修改属性时，实际上是会发送两条通知。
+    NSKeyValueObservingOptionPrior = 0x08 
+};
+typedef NSUInteger NSKeyValueObservingOptions;
+</code></pre>
+
+<p>需要注意的是，当设定了NSKeyValueObservingOptionPrior选项时，第一条通知不会包含NSKeyValueChangeNewKey。当观察者自身的KVO需要为自己的某个属性调用-willChange&hellip;方法，而这个属性的值又依赖于被观察对象的属性时，我们可以使用这个选项。</p>
+
+<p>另外，在添加观察者时还有两点需要注意的是：</p>
+
+<ol>
+<li>调用这个方法时，两个对象(即观察者对象及属性所属的对象)都不会被retain。</li>
+<li>可以多次调用这个方法，将同一个对象注册为同一属性的观察者(所有参数可以完全相同)。这时，即便在所有参数一致的情况下，新注册的观察者并不会替换原来观察者，而是会并存。这样，当属性被修改时，两次监听都会响应。</li>
+</ol>
+
+
+<p>对于第2点，我们在代码清单2中来验证一下：</p>
+
+<p><strong>代码清单2：验证多次使用相同参数来添加观察者的实际效果</strong></p>
+
+<pre><code>PersonObject *personInstance = [[PersonObject alloc] init];
+BankObject *bankInstance = [[BankObject alloc] init];
+
+[bankInstance addObserver:personInstance forKeyPath:@"accountBalance" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:NULL];
+[bankInstance addObserver:personInstance forKeyPath:@"accountBalance" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:NULL];
+
+[bankInstance addObserver:personInstance forKeyPath:@"accountBalance" options:NSKeyValueObservingOptionNew context:"person instance"];
+[bankInstance addObserver:personInstance forKeyPath:@"accountBalance" options:NSKeyValueObservingOptionNew context:"person instance 2"];
+
+bankInstance.accountBalance = 10;
+</code></pre>
+
+<p>(注，以上代码为在MRC环境下调用，确保personInstance和bankInstance不会被释放。)</p>
+
+<p>这段代码的输出如下所示：</p>
+
+<pre><code>keyPath = accountBalance, change = {
+    kind = 1;
+    new = 10;
+}, context = person instance 2
+keyPath = accountBalance, change = {
+    kind = 1;
+    new = 10;
+}, context = person instance
+keyPath = accountBalance, change = {
+    kind = 1;
+    new = 10;
+    old = 0;
+}, context = (null)
+keyPath = accountBalance, change = {
+    kind = 1;
+    new = 10;
+    old = 0;
+}, context = (null)
+</code></pre>
+
+<p>可以看到KVO为每次注册都调用了一次监听处理操作。所以多次调用同样的注册操作会产生多个观察者。另外，多个观察者之间的observeValueForKeyPath:ofObject:change:context:方法调用顺序是按照先进后出的顺序来的(所有的监听信息都是放在一个数组中的，我们将在下面了解到)。</p>
+
+<p>一个良好的实践是在观察者不再需要监听属性变化时，必须调用removeObserver:forKeyPath:或removeObserver:forKeyPath:context:方法来移除观察者，这两个方法的声明如下：</p>
+
+<pre><code>- (void)removeObserver:(NSObject *)anObserver
+            forKeyPath:(NSString *)keyPath
+
+- (void)removeObserver:(NSObject *)observer
+            forKeyPath:(NSString *)keyPath
+               context:(void *)context
+</code></pre>
+
+<p>这两个方法会根据传入的参数(主要是keyPath和context)来移除观察者。如果observer没有监听keyPath属性，则调用这两个方法会抛出异常。大家可以试一下，程序会果断的崩溃。并报类似于以下的错误：</p>
+
+<pre><code>*** Terminating app due to uncaught exception 'NSRangeException', reason: 'Cannot remove an observer &lt;PersonObject 0x7ff541534e20&gt; for the key path "accountBalance" from &lt;BankObject 0x7ff541528430&gt; because it is not registered as an observer.'
+</code></pre>
+
+<p>所以，我们必须确保先注册了观察者，才能调用移除方法。</p>
+
+<p>那如果我们忘记调用移除观察者方法，会怎么样呢？我们来制造一个场景，看看会是什么结果。还是使用上面的代码，只不过这次我们在ARC下来测试：</p>
+
+<p><strong>代码清单3：未移除观察者的影响</strong></p>
+
+<pre><code>- (void)testKVO {
+
+    PersonObject *personInstance = [[PersonObject alloc] init];
+    BankObject *bankInstance = [[BankObject alloc] init];
+
+    [bankInstance addObserver:personInstance forKeyPath:@"accountBalance" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:NULL];
+
+    bankInstance.accountBalance = 20;
+}
+</code></pre>
+
+<p>其输出结果如下所示：</p>
+
+<pre><code>keyPath = accountBalance, change = {
+    kind = 1;
+    new = 20;
+    old = 0;
+}, context = (null)
+*** Terminating app due to uncaught exception 'NSInternalInconsistencyException', reason: 'An instance 0x7fc88047e7e0 of class BankObject was deallocated while key value observers were still registered with it. Current observation info: &lt;NSKeyValueObservationInfo 0x7fc880770fa0&gt; (
+&lt;NSKeyValueObservance 0x7fc880771850: Observer: 0x7fc8804737a0, Key path: accountBalance, Options: &lt;New: YES, Old: YES, Prior: NO&gt; Context: 0x0, Property: 0x7fc88076edd0&gt;
+)'
+......
+</code></pre>
+
+<p>程序在调用一次KVO后，很爽快地崩溃了。给我们的解释是bankInstance被释放了，但KVO中仍然还有关于它的注册信息。实际上，我们上面说过，在添加观察者的时候，观察者对象与被观察属性所属的对象都不会被retain，然而在这些对象被释放后，相关的监听信息却还存在，KVO做的处理是直接让程序崩溃。</p>
+
+<h2>处理属性修改通知</h2>
+
+<p>当被监听的属性修改时，KVO会发出一个通知以告知所有监听这个属性的观察者对象。而观察者对象必须实现
+-observeValueForKeyPath:ofObject:change:context:方法，来对属性修改通知做相应的处理。这个方法的声明如下：</p>
+
+<pre><code>- (void)observeValueForKeyPath:(NSString *)keyPath
+                      ofObject:(id)object
+                        change:(NSDictionary *)change
+                       context:(void *)context
+</code></pre>
+
+<p>这个方法有四个参数，描述如下：</p>
+
+<ol>
+<li>keyPath：即被观察的属性，与参数object相关。</li>
+<li>object：keyPath所属的对象。</li>
+<li>change：这是一个字典，它包含了属性被修改的一些信息。这个字典中包含的值会根据我们在添加观察者时设置的options参数的不同而有所不同。</li>
+<li>context：这个值即是添加观察者时提供的上下文信息。</li>
+</ol>
+
+
+<p>在我们的示例中，这个方法的实现是打印一些基本的信息。如代码清单1所示。</p>
+
+<p>对于第三个参数，我们通常称之为<strong>变化字典(Change Dictionary)</strong>，它记录了被监听属性的变化情况。我们可以通过以下key来获取我们想要的信息：</p>
+
+<pre><code>// 属性变化的类型，是一个NSNumber对象，包含NSKeyValueChange枚举相关的值
+NSString *const NSKeyValueChangeKindKey;
+
+// 属性的新值。当NSKeyValueChangeKindKey是 NSKeyValueChangeSetting，
+// 且添加观察的方法设置了NSKeyValueObservingOptionNew时，我们能获取到属性的新值。
+// 如果NSKeyValueChangeKindKey是NSKeyValueChangeInsertion或者NSKeyValueChangeReplacement，
+// 且指定了NSKeyValueObservingOptionNew时，则我们能获取到一个NSArray对象，包含被插入的对象或
+// 用于替换其它对象的对象。
+NSString *const NSKeyValueChangeNewKey;
+
+// 属性的旧值。当NSKeyValueChangeKindKey是 NSKeyValueChangeSetting，
+// 且添加观察的方法设置了NSKeyValueObservingOptionOld时，我们能获取到属性的旧值。
+// 如果NSKeyValueChangeKindKey是NSKeyValueChangeRemoval或者NSKeyValueChangeReplacement，
+// 且指定了NSKeyValueObservingOptionOld时，则我们能获取到一个NSArray对象，包含被移除的对象或
+// 被替换的对象。
+NSString *const NSKeyValueChangeOldKey;
+
+// 如果NSKeyValueChangeKindKey的值是NSKeyValueChangeInsertion、NSKeyValueChangeRemoval
+// 或者NSKeyValueChangeReplacement，则这个key对应的值是一个NSIndexSet对象，
+// 包含了被插入、移除或替换的对象的索引
+NSString *const NSKeyValueChangeIndexesKey;
+
+// 当指定了NSKeyValueObservingOptionPrior选项时，在属性被修改的通知发送前，
+// 会先发送一条通知给观察者。我们可以使用NSKeyValueChangeNotificationIsPriorKey
+// 来获取到通知是否是预先发送的，如果是，获取到的值总是@(YES)
+NSString *const NSKeyValueChangeNotificationIsPriorKey;
+</code></pre>
+
+<p>其中，NSKeyValueChangeKindKey的值取自于NSKeyValueChange，它的值是由以下枚举定义的：</p>
+
+<pre><code>enum {
+
+    // 设置一个新值。被监听的属性可以是一个对象，也可以是一对一关系的属性或一对多关系的属性。
+    NSKeyValueChangeSetting = 1,
+
+    // 表示一个对象被插入到一对多关系的属性。
+    NSKeyValueChangeInsertion = 2,
+
+    // 表示一个对象被从一对多关系的属性中移除。
+    NSKeyValueChangeRemoval = 3,
+
+    // 表示一个对象在一对多的关系的属性中被替换
+    NSKeyValueChangeReplacement = 4
+};
+typedef NSUInteger NSKeyValueChange;
+</code></pre>
+
+<h2>通知观察者属性的变化</h2>
+
+<p>通知观察者的方式有自动与手动两种方式。</p>
+
+<p>默认情况下是自动发送通知，在这种模式下，当我们修改属性的值时，KVO会自动调用以下两个方法：</p>
+
+<pre><code>- (void)willChangeValueForKey:(NSString *)key
+- (void)didChangeValueForKey:(NSString *)key
+</code></pre>
+
+<p>这两个方法的任务是告诉接收者给定的属性将要或已经被修改。需要注意的是不应该在子类中去重写这两个方法。</p>
+
+<p>但如果我们希望自己控制通知发送的一些细节，则可以启用手动控制模式。手动控制通知提供了对KVO更精确控制，它可以控制通知如何以及何时被发送给观察者。采用这种方式可以减少不必要的通知，或者可以将多个修改组合到一个修改中。</p>
+
+<p>实现手动通知的类必须重写NSObject中对automaticallyNotifiesObserversForKey:方法的实现。这个方法是在NSKeyValueObserving协议中声明的，其声明如下：</p>
+
+<pre><code>+ (BOOL)automaticallyNotifiesObserversForKey:(NSString *)key
+</code></pre>
+
+<p>这个方法返回一个布尔值(默认是返回YES)，以标识参数key指定的属性是否支持自动KVO。如果我们希望手动去发送通知，则针对指定的属性返回NO。</p>
+
+<p>假设我们希望PersonObject对象去监听BankObject对象的bankCodeEn属性，并希望执行手动通知，则可以如下处理：</p>
+
+<p><strong>代码清单4：关闭属性的自动通知发送</strong></p>
+
+<pre><code>@implementation BankObject
+
++ (BOOL)automaticallyNotifiesObserversForKey:(NSString *)key {
+
+    BOOL automatic = YES;
+    if ([key isEqualToString:@"bankCodeEn"]) {
+        automatic = NO;
+    } else {
+        automatic = [super automaticallyNotifiesObserversForKey:key];
+    }
+
+    return automatic;
+}
+
+@end
+</code></pre>
+
+<p>这样我们便可以手动去发送属性修改通知了。需要注意的是，对于对象中其它没有处理的属性，我们需要调用[super automaticallyNotifiesObserversForKey:key]，以避免无意中修改了父类的属性的处理方式。</p>
+
+<p>现在我们已经通过+automaticallyNotifiesObserversForKey:方法设置了对象中哪些属性需要手动处理。接下来就是实际操作了。为了实现手动发送通知，我们需要在修改属性值前调用willChangeValueForKey:，然后在修改属性值之后调用didChangeValueForKey:方法。继续上面的示例，我们需要对bankCodeEn属性做如下处理：</p>
+
+<p><strong>代码清单5：手动控制通知发送</strong></p>
+
+<pre><code>@implementation BankObject
+
+- (void)setBankCodeEn:(NSString *)bankCodeEn {
+
+    [self willChangeValueForKey:@"bankCodeEn"];
+    _bankCodeEn = bankCodeEn;
+    [self didChangeValueForKey:@"bankCodeEn"];
+}
+
+@end
+</code></pre>
+
+<p>如果我们希望只有当bankCodeEn实际被修改时发送通知，以尽量减少不必要的通知，则可以如下实现：</p>
+
+<p><strong>代码清单6：在发送通知前测试值是否修改</strong></p>
+
+<pre><code>- (void)setBankCodeEn:(NSString *)bankCodeEn {
+
+    if (bankCodeEn != _bankCodeEn) {
+        [self willChangeValueForKey:@"bankCodeEn"];
+        _bankCodeEn = bankCodeEn;
+        [self didChangeValueForKey:@"bankCodeEn"];
+    }
+}
+</code></pre>
+
+<p>我们来测试一下上面这段代码的实际效果：</p>
+
+<p><strong>代码清单7：测试避免属性未实际修改下不发送通知</strong></p>
+
+<pre><code>PersonObject    *personInstance = [[PersonObject alloc] init];
+BankObject      *bankInstance = [[BankObject alloc] init];
+
+[bankInstance addObserver:personInstance forKeyPath:@"bankCodeEn" options:NSKeyValueObservingOptionNew context:NULL];
+
+NSString *bankCodeEn = @"CCB";
+bankInstance.bankCodeEn = bankCodeEn;
+bankInstance.bankCodeEn = bankCodeEn;
+</code></pre>
+
+<p>这段代码的输出结果如下所示：</p>
+
+<pre><code>keyPath = bankCodeEn, change = {
+    kind = 1;
+    new = CCB;
+}, context = (null)
+</code></pre>
+
+<p>我们可以看到只输出了一次，而不是两次。</p>
+
+<p>如果我们在setter方法之外改变了实例变量(如_bankCodeEn)，且希望这种修改被观察者监听到，则需要像在setter方法里面做一样的处理。这也涉及到我们通常会遇到的一个问题，在类的内部，对于一个属性值，何时用属性(self.bankCodeEn)访问而何时用实例变量(_bankCodeEn)访问。一般的建议是，在获取属性值时，可以用实例变量，在设置属性值时，尽量用setter方法，以保证属性的KVO特性。当然，性能也是一个考量，在设置值时，使用实例变量比使用属性设置值的性能高不少。</p>
+
+<p>另外，对于一对多关系的属性，如果想手动处理通知，则可以使用以下几个方法：</p>
+
+<pre><code>// 有序的一对多关系
+- (void)willChange:(NSKeyValueChange)change valuesAtIndexes:(NSIndexSet *)indexes forKey:(NSString *)key
+- (void)didChange:(NSKeyValueChange)change valuesAtIndexes:(NSIndexSet *)indexes forKey:(NSString *)key
+
+// 无序的一对多关系
+- (void)willChangeValueForKey:(NSString *)key withSetMutation:(NSKeyValueSetMutationKind)mutationKind usingObjects:(NSSet *)objects
+- (void)didChangeValueForKey:(NSString *)key withSetMutation:(NSKeyValueSetMutationKind)mutationKind usingObjects:(NSSet *)objects
+</code></pre>
+
+<p>同样，在子类中也不应该去重写这几个方法。</p>
+
+<h2>计算属性(注册依赖键)</h2>
+
+<p>有时候，我们的监听的某个属性可能会依赖于其它多个属性的变化(类似于swift，可以称之为计算属性)，不管所依赖的哪个属性发生了变化，都会导致计算属性的变化。对于这种一对一(To-one)的关系，我们需要做两步操作，首先是确定计算属性与所依赖属性的关系。如我们在BankObject类中定义一个accountForBank属性，其get方法定义如下：</p>
+
+<p><strong>代码清单8：计算属性</strong></p>
+
+<pre><code>@implementation BankObject
+
+- (NSString *)accountForBank {
+
+    return [NSString stringWithFormat:@"account for %@ is %d", self.bankCodeEn, self.accountBalance];
+}
+
+@end
+</code></pre>
+
+<p>定义了这种依赖关系后，我们就需要以某种方式告诉KVO，当我们的被依赖属性修改时，会发送accountForBank属性被修改的通知。此时，我们需要重写NSKeyValueObserving协议的keyPathsForValuesAffectingValueForKey:方法，该方法声明如下：</p>
+
+<pre><code>+ (NSSet *)keyPathsForValuesAffectingValueForKey:(NSString *)key
+</code></pre>
+
+<p>这个方法返回的是一个集合对象，包含了那些影响key指定的属性依赖的属性所对应的字符串。所以对于accountForBank属性，该方法的实现如下：</p>
+
+<p><strong>代码清单9：accountForBank属性的keyPathsForValuesAffectingValueForKey方法的实现</strong></p>
+
+<pre><code>@implementation BankObject
+
++ (NSSet *)keyPathsForValuesAffectingValueForKey:(NSString *)key {
+
+    NSSet *keyPaths = [super keyPathsForValuesAffectingValueForKey:key];
+
+    if ([key isEqualToString:@"accountForBank"]) {
+
+        keyPaths = [keyPaths setByAddingObjectsFromArray:@[@"accountBalance", @"bankCodeEn"]];
+    }
+
+    return keyPaths;
+}
+
+@end
+</code></pre>
+
+<p>我们来再来看看监听accountForBank属性是什么效果：</p>
+
+<p><strong>代码清单10：监听accountForBank属性</strong></p>
+
+<pre><code>PersonObject    *personInstance = [[PersonObject alloc] init];
+BankObject      *bankInstance = [[BankObject alloc] init];
+
+[bankInstance addObserver:personInstance forKeyPath:@"accountForBank" options:NSKeyValueObservingOptionNew context:NULL];
+
+bankInstance.accountBalance = 10;
+bankInstance.bankCodeEn = @"CCB";
+</code></pre>
+
+<p>其输出结果为：</p>
+
+<pre><code>keyPath = accountForBank, change = {
+    kind = 1;
+    new = "account for (null) is 10";
+}, context = (null)
+keyPath = accountForBank, change = {
+    kind = 1;
+    new = "account for CCB is 10";
+}, context = (null)
+</code></pre>
+
+<p>可以看到，不管是accountBalance还是bankCodeEn被修改了，都会发送accountForBank属性被修改的通知。</p>
+
+<p>需要注意的就是当我们重写+keyPathsForValuesAffectingValueForKey:时，需要去调用super的对应方法，并返回一个包含父类中可能会对key指定属性产生影响的属性集合。</p>
+
+<p>另外，我们还可以实现一个命名为keyPathsForValuesAffecting&lt;Key>的类方法来达到同样的目的，其中<Key>是我们计算属性的名称。所以对于accountForBank属性，还可以如下实现：</p>
+
+<pre><code>+ (NSSet *)keyPathsForValuesAffectingAccountForBank {
+
+    return [NSSet setWithObjects:@"accountBalance", @"bankCodeEn", nil];
+}
+</code></pre>
+
+<p>两种方法的实现效果是一样的。不过更建议使用后面一种方法，这种方法让依赖关系更加清晰明了。</p>
+
+<h2>集合属性的监听</h2>
+
+<p>keyPathsForValuesAffectingValueForKey:只支持一对一的关系，而不支持一对多的关系，即不支持对集合的处理。</p>
+
+<p>对于集合的KVO，我们需要了解的一点是，KVO旨在观察关系(relationship)而不是集合。对于不可变集合属性，我们更多的是把它当成一个整体来监听，而无法去监听集合中的某个元素的变化；对于可变集合属性，实际上也是当成一个整体，去监听它整体的变化，如添加、删除和替换元素。</p>
+
+<p>在KVC中，我们可以使用<strong>集合代理对象(collection proxy object)</strong>来处理集合相关的操作。我们以数组为例，在我们的BankObject类中有一个departments数组属性，如果我们希望通过集合代理对象来负责响应departments所有的方法，则需要实现以下方法：</p>
+
+<pre><code>-countOf&lt;Key&gt;
+
+// 以下两者二选一
+-objectIn&lt;Key&gt;AtIndex:
+-&lt;key&gt;AtIndexes:
+
+// 可选（增强性能）
+-get&lt;Key&gt;:range:
+</code></pre>
+
+<p>因此，我们的实现以下几个方法：</p>
+
+<p><strong>代码清单11：集合代码对象的实现</strong></p>
+
+<pre><code>@implementation BankObject
+
+#pragma mark - 集合代理对象
+
+- (NSUInteger)countOfDepartments {
+
+    return [_departments count];
+}
+
+- (id)objectInDepartmentsAtIndex:(NSUInteger)index {
+
+    return [_departments objectAtIndex:index];
+}
+
+@end
+</code></pre>
+
+<p>实现以上方法之后，对于不可变数组，当我们调用[bankInstance valueForKey:@&ldquo;departments”]的时候，便会返回一个由以上方法来代理所有调用方法的NSArray对象。这个代理数组对象支持所有正常的NSArray调用。换句话说，调用者并不知道返回的是一个真正的NSArray，还是一个代理的数组。</p>
+
+<p>另外，对于可变数组的代理对象，我们需要实现以下几个方法：</p>
+
+<pre><code>// 至少实现一个插入方法和一个删除方法
+-insertObject:in&lt;Key&gt;AtIndex:
+-removeObjectFrom&lt;Key&gt;AtIndex:
+-insert&lt;Key&gt;:atIndexes:
+-remove&lt;Key&gt;AtIndexes:
+
+// 可选（增强性能）以下方法二选一
+-replaceObjectIn&lt;Key&gt;AtIndex:withObject:
+-replace&lt;Key&gt;AtIndexes:with&lt;Key&gt;:
+</code></pre>
+
+<p>这些方法分别对应插入、删除和替换，有批量操作的，也有只改变一个对象的方法。可以根据实际需要来实现。</p>
+
+<p>另外，对于可变集合，我们通常不使用valueForKey:来获取代理对象，而是使用以下方法：</p>
+
+<pre><code>- (NSMutableArray *)mutableArrayValueForKey:(NSString *)key;
+</code></pre>
+
+<p>通过这个方法，我们便可以将可变数组与强大的KVO结合在一起。KVO机制能在集合改变的时候把详细的变化放进change字典中。</p>
+
+<p>我们先来看看下面的代码：</p>
+
+<p><strong>代码清单12：使用真正的数组对象监听可变数组属性</strong></p>
+
+<pre><code>BankObject *bankInstance = [[BankObject alloc] init];
+
+PersonObject    *personInstance = [[PersonObject alloc] init];
+[bankInstance addObserver:personInstance forKeyPath:@"departments" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:NULL];
+
+bankInstance.departments = [[NSMutableArray alloc] init];
+
+[bankInstance.departments addObject:@"departments"];
+</code></pre>
+
+<p>其输出为：</p>
+
+<pre><code>keyPath = departments, change = {
+    kind = 1;
+    new =     (
+    );
+    old =     (
+    );
+}, context = (null)
+</code></pre>
+
+<p>可以看到通过这种方法，我们获取的是真正的数组，只在departments属性整体被修改时，才会触发KVO，而在添加元素时，并没有触发KVO。</p>
+
+<p>现在我们通过代理集合对象来看看：</p>
+
+<p><strong>代码清单13：使用代理集合对象监听可变数组属性</strong></p>
+
+<pre><code>BankObject *bankInstance = [[BankObject alloc] init];
+
+PersonObject    *personInstance = [[PersonObject alloc] init];
+[bankInstance addObserver:personInstance forKeyPath:@"departments" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:NULL];
+
+bankInstance.departments = [[NSMutableArray alloc] init];
+
+NSMutableArray *departments = [bankInstance mutableArrayValueForKey:@"departments"];
+[departments insertObject:@"departments 0" atIndex:0];
+</code></pre>
+
+<p>其输出是：</p>
+
+<pre><code>keyPath = departments, change = {
+    kind = 1;
+    new =     (
+    );
+    old =     (
+    );
+}, context = (null)
+keyPath = departments, change = {
+    indexes = "&lt;NSIndexSet: 0x7fcd18673150&gt;[number of indexes: 1 (in 1 ranges), indexes: (0)]";
+    kind = 2;
+    new =     (
+        "departments 0"
+    );
+}, context = (null)
+</code></pre>
+
+<p>可以看到，在往数组中添加对象时，也触发了KVO，并将改变的详细信息也写进了change字典。在第二个消息中，kind的值为2，即表示这是一次插入操作。同样，可变数组的删除，替换操作也是一样的。</p>
+
+<p>集合(Set)也有一套对应的方法来实现集合代理对象，包括无序集合与有序集合；而字典则没有，对于字典属性的监听，还是只能作为一个整理来处理。</p>
+
+<p>如果我们想到手动控制集合属性消息的发送，则可以使用上面提到的几个方法，即：</p>
+
+<pre><code>-willChange:valuesAtIndexes:forKey:
+-didChange:valuesAtIndexes:forKey:
+
+或
+
+-willChangeValueForKey:withSetMutation:usingObjects:
+-didChangeValueForKey:withSetMutation:usingObjects:
+</code></pre>
+
+<p>不过得先保证把自动通知关闭，否则每次改变KVO都会被发送两次。</p>
+
+<h2>监听信息</h2>
+
+<p>如果我们想获取一个对象上有哪些观察者正在监听其属性的修改，则可以查看对象的observationInfo属性，其声明如下：</p>
+
+<pre><code>@property void *observationInfo
+</code></pre>
+
+<p>可以看到它是一个void指针，指向一个包含所有观察者的一个标识信息对象，这些信息包含了每个监听的观察者，注册时设定的选项等等。我们还是用示例来看看。</p>
+
+<p><strong>代码清单14：observationInfo的使用</strong></p>
+
+<pre><code>PersonObject    *personInstance = [[PersonObject alloc] init];
+BankObject      *bankInstance = [[BankObject alloc] init];
+
+[bankInstance addObserver:personInstance forKeyPath:@"bankCodeEn" options:NSKeyValueObservingOptionNew context:NULL];
+[bankInstance addObserver:personInstance forKeyPath:@"accountBalance" options:NSKeyValueObservingOptionOld context:NULL];
+
+NSLog(@"%p", personInstance);
+NSLog(@"%p", bankInstance);
+
+id info = bankInstance.observationInfo;
+NSLog(@"%@", [info description]);
+</code></pre>
+
+<p>其输出结果如下：</p>
+
+<pre><code>personInstance = 0x7fdc2369e5e0
+bankInstance = 0x7fdc2369d8f0
+&lt;NSKeyValueObservationInfo 0x7fdc236a19d0&gt; (
+&lt;NSKeyValueObservance 0x7fdc236a17a0: Observer: 0x7fdc2369e5e0, Key path: bankCodeEn, Options: &lt;New: YES, Old: NO, Prior: NO&gt; Context: 0x0, Property: 0x7fdc236a15c0&gt;
+&lt;NSKeyValueObservance 0x7fdc236a1960: Observer: 0x7fdc2369e5e0, Key path: accountBalance, Options: &lt;New: NO, Old: YES, Prior: NO&gt; Context: 0x0, Property: 0x7fdc236a1880&gt;
+)
+</code></pre>
+
+<p>我们可以看到observationInfo指针实际上是指向一个NSKeyValueObservationInfo对象，它包含了指定对象上的所有的监听信息。而每条监听信息而是封装在一个NSKeyValueObservance对象中，从上面可以看到，这个对象中包含消息的观察者、被监听的属性、添加观察者时所设置的一些选项、上下文信息等。</p>
+
+<p>NSKeyValueObservationInfo类及NSKeyValueObservance类都是私有类，我们无法在官方文档中找到这两个类的实现。不过从一些对系统库dump出来的头文件，我们可以对这两个类有一些初步的了解。<a href="https://github.com/a1anyip/iOS-SDK-4.3-Framework-Header-Dump/tree/master/Frameworks/Foundation.framework">这里</a>有一个对iOS SKD 4.3的Foundation.framework的dump头文件，可以找到这两个类的头文件，其中NSKeyValueObservationInfo的头文件信息如下所示：</p>
+
+<pre><code>#import &lt;XXUnknownSuperclass.h&gt; // Unknown library
+
+@class NSArray, NSHashTable;
+
+__attribute__((visibility("hidden")))
+@interface NSKeyValueObservationInfo : XXUnknownSuperclass {
+@private
+    int _retainCountMinusOne;
+    NSArray* _observances;
+    unsigned _cachedHash;
+    BOOL _cachedIsShareable;
+    NSHashTable* _observables;
+}
+-(id)_initWithObservances:(id*)observances count:(unsigned)count;
+-(id)retain;
+-(oneway void)release;
+-(unsigned)retainCount;
+-(void)dealloc;
+-(unsigned)hash;
+-(BOOL)isEqual:(id)equal;
+-(id)description;
+@end
+</code></pre>
+
+<p>可以看到其中有一个数组来存储NSKeyValueObservance对象。</p>
+
+<p>NSKeyValueObservance类的头文件信息如下：</p>
+
+<pre><code>#import "Foundation-Structs.h"
+#import &lt;XXUnknownSuperclass.h&gt; // Unknown library
+
+@class NSPointerArray, NSKeyValueProperty, NSObject;
+
+__attribute__((visibility("hidden")))
+@interface NSKeyValueObservance : XXUnknownSuperclass {
+@private
+    int _retainCountMinusOne;
+    NSObject* _observer;
+    NSKeyValueProperty* _property;
+    unsigned _options;
+    void* _context;
+    NSObject* _originalObservable;
+    unsigned _cachedUnrotatedHashComponent;
+    BOOL _cachedIsShareable;
+    NSPointerArray* _observationInfos;
+    auto_weak_callback_block _observerWentAwayCallback;
+}
+-(id)_initWithObserver:(id)observer property:(id)property options:(unsigned)options context:(void*)context originalObservable:(id)observable;
+-(id)retain;
+-(oneway void)release;
+-(unsigned)retainCount;
+-(void)dealloc;
+-(unsigned)hash;
+-(BOOL)isEqual:(id)equal;
+-(id)description;
+-(void)observeValueForKeyPath:(id)keyPath ofObject:(id)object change:(id)change context:(void*)context;
+@end
+</code></pre>
+
+<p>可以看到其中包含了一个监听的基本要素。在此不再做深入分析(没有源代码，深入不下去了啊)。</p>
+
+<p>我们再回到observationInfo属性本身来。在文档中，对这个属性的描述有这样一段话：</p>
+
+<pre><code>The default implementation of this method retrieves the information from a global
+dictionary keyed by the receiver’s pointers.
+</code></pre>
+
+<p>即这个方法的默认实现是以对象的指针作为key，从一个全局的字典中获取信息。由此，我们可以理解为，KVO的信息是存储在一个全局字典中，而不是存储在对象本身。这类似于Notification，所有关于通知的信息都是放在NSNotificationCenter中。</p>
+
+<p>不过，为了提高效率，我们可以重写observationInfo属性的set和get方法，以将这个不透明的数据指针存储到一个实例变量中。但是，在重写时，我们不应该尝试去向这些数据发送一个Objective-C消息，包括retain和release。</p>
+
+<h2>KVO的实现机制</h2>
+
+<p>【本来这一小节是想放在另一篇总结中来写的，但后来觉得还是放在这里比较合适，所以就此添加上】</p>
+
+<p>了解了NSKeyValueObserving所提供的功能后，我们再来看看KVO的实现机制，以便更深入地的理解KVO。</p>
+
+<p>KVO据我所查还没有开源(若哪位大大有查到源代码，还烦请告知)，所以我们无法从源代码的层面来分析它的实现。不过<a href="https://www.mikeash.com/pyblog/friday-qa-2009-01-23.html">Mike Ash</a>的博文(译文见参考文献4)为我们解开了一些谜团。</p>
+
+<p>基本的思路是：Objective-C依托于强大的run time机制来实现KVO。当我们第一次观察某个对象的属性时，run time会创建一个新的继承自这个对象的class的subclass。在这个新的subclass中，它会重写所有被观察的key的setter，然后将object的isa指针指向新创建的class(这个指针告诉Objective-C运行时某个object到底是什么类型的)。所以object神奇地变成了新的子类的实例。</p>
+
+<p>嗯，让我们通过代码来看看实际的实现：</p>
+
+<p><strong>代码清单15：探究KVO的实现机制</strong></p>
+
+<pre><code>// 辅助方法
+static NSArray *ClassMethodNames(Class c) {
+
+    NSMutableArray *array = [NSMutableArray array];
+
+    unsigned int methodCount = 0;
+    Method *methodList = class_copyMethodList(c, &amp;methodCount);
+    unsigned int i;
+    for (i = 0; i &lt; methodCount; i++) {
+        [array addObject:NSStringFromSelector(method_getName(methodList[i]))];
+    }
+
+    free(methodList);
+
+    return array;
+}
+
+static void PrintDescription(NSString *name, id obj) {
+
+    struct objc_object *objcet = (__bridge struct objc_object *)obj;
+
+    Class cls = objcet-&gt;isa;
+
+    NSString *str = [NSString stringWithFormat:@"%@: %@\n\tNSObject class %s\n\tlibobjc class %s : super class %s\n\timplements methods &lt;%@&gt;",
+                     name,
+                     obj,
+                     class_getName([obj class]),
+                     class_getName(cls),
+                     class_getName(class_getSuperclass(cls)),
+                     [ClassMethodNames(cls) componentsJoinedByString:@", "]];
+    printf("%s\n", [str UTF8String]);
+}
+
+// 测试代码
+BankObject *bankInstance1 = [[BankObject alloc] init];
+BankObject *bankInstance2 = [[BankObject alloc] init];
+
+PersonObject *personInstance = [[PersonObject alloc] init];
+
+[bankInstance2 addObserver:personInstance forKeyPath:@"accountBalance" options:NSKeyValueObservingOptionNew context:NULL];
+
+PrintDescription(@"bankInstance1", bankInstance1);
+PrintDescription(@"bankInstance2", bankInstance2);
+
+printf("Using libobjc functions, normal setAccountBalance: is %p, overridden setAccountBalance: is %p", method_getImplementation(class_getInstanceMethod(object_getClass(bankInstance2), @selector(setAccountBalance:))),
+       method_getImplementation(class_getInstanceMethod(object_getClass(bankInstance1), @selector(setAccountBalance:))));
+</code></pre>
+
+<p>这段代码的输出如下：</p>
+
+<pre><code>bankInstance1: &lt;BankObject: 0x7f9e8ae3cf60&gt;
+    NSObject class BankObject
+    libobjc class BankObject : super class NSObject
+    implements methods &lt;accountBalance, setAccountBalance:, bankCodeEn, setBankCodeEn:, departments, setDepartments:&gt;
+
+bankInstance2: &lt;BankObject: 0x7f9e8ae3cfc0&gt;
+    NSObject class BankObject
+    libobjc class NSKVONotifying_BankObject : super class BankObject
+    implements methods &lt;setAccountBalance:, class, dealloc, _isKVOA&gt;
+
+Using libobjc functions, normal setAccountBalance: is 0x1013cec17, overridden setAccountBalance: is 0x10129fe50
+</code></pre>
+
+<p>从输出中可以看到，bankInstance2监听accountBalance属性后，其实际上所属的类已经不是BankObject了，而是继承自BankObject的NSKVONotifying_BankObject类。同时，NSKVONotifying_BankObject类重写了setAccountBalance方法，这个方法将实现如何通知观察者们的操作。当改变accountBalance属性时，就会调用被重写的setAccountBalance方法，并通过这个方法来发送通知。</p>
+
+<p>另外我们也可以看到bankInstance2对象的打印[bankInstance2 class]时，返回的仍然是BankObject。这是苹果故意而为之，他们不希望这个机制暴露在外面。所以除了重写相应的setter，所以动态生成的NSKVONotifying_BankObject类还重写了class方法，让它返回原先的类。</p>
+
+<h2>小结</h2>
+
+<p>KVO作为Objective-C中两个对象间通信机制中的一种，提供了一种非常强大的机制。在经典的MVC架构中，控制器需要确保视图与模型的同步，当model对象改变时，视图应该随之改变以反映模型的变化；当用户和控制器交互的时候，模型也应该做出相应的改变。而KVO便为我们提供了这样一种同步机制：我们让控制器去监听一个model对象属性的改变，并根据这种改变来更新我们的视图。所有，有效地使用KVO，对我们应用的开发意义重大。</p>
+
+<p>别话：对KVO的总结感觉还是意犹未尽，总感觉缺少点什么，特别是在对集合这一块的处理。还请大家多多提供指点。</p>
+
+<h2>参考</h2>
+
+<ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/Foundation/Protocols/NSKeyValueObserving_Protocol/#//apple_ref/occ/instm/NSObject/observationInfo">NSKeyValueObserving Protocol Reference</a></li>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/KeyValueObserving/KeyValueObserving.html">Key-Value Observing Programming Guide</a></li>
+<li><a href="https://github.com/a1anyip/iOS-SDK-4.3-Framework-Header-Dump">iOS-SDK-4.3-Framework-Header-Dump</a></li>
+<li><a href="http://objccn.io/issue-7-3/">KVC 和 KVO</a></li>
+<li><a href="http://www.appcoda.com/understanding-key-value-observing-coding/">Understanding Key-Value Observing and Coding</a></li>
+<li><a href="http://www.cocoachina.com/ios/20140107/7667.html">KVO的内部实现</a></li>
+</ol>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[源码篇：MBProgressHUD]]></title>
@@ -1534,637 +2335,6 @@ NSNotificationCenter
 <li><a href="http://southpeak.github.io/blog/2015/03/01/fan-yi-pian-:ios-8-handoff-tutorial/">iOS 8 Handoff Tutorial</a></li>
 </ol>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[翻译篇：iOS 8 Handoff Tutorial]]></title>
-    <link href="http://southpeak.github.io/blog/2015/03/01/fan-yi-pian-:ios-8-handoff-tutorial/"/>
-    <updated>2015-03-01T12:33:51+08:00</updated>
-    <id>http://southpeak.github.io/blog/2015/03/01/fan-yi-pian-:ios-8-handoff-tutorial</id>
-    <content type="html"><![CDATA[<p>原文由Soheil Azarpour发表于raywenderlich，地址是<a href="http://www.raywenderlich.com/84174/ios-8-handoff-tutorial">iOS 8 Handoff Tutorial</a></p>
-
-<p>Handoff是iOS 8和OS X Yosemite中的一个新特性。它让我们在不同的设备间切换时，可以不间断地继续一个Activity，而不需要重新配置任何设备。</p>
-
-<p>我们可以为在iOS 8和Yosemite上的应用添加Handoff特性。在这篇指南中，我们将学习Handoff的基本功能和如何在非基于文档的app中使用Handoff。</p>
-
-<h2>Handoff概览</h2>
-
-<p>在开始写代码前，我们需要先来了解一下handoff的一些基本概念。</p>
-
-<h3>起步</h3>
-
-<p>Handoff不仅可以将当前的activity从一个iOS设备传递到OS X设备，还可以将activity在不同的iOS设备传递。目前在模拟器上还不能使用Handoff功能，所以需要在iOS设备上运行我们的实例。</p>
-
-<h4>设备兼容性：iOS</h4>
-
-<p>为了查看我们的iOS设备是否支持handoff功能，我们可以查看“设置”->“通用”列表。如果在列表中看到“Handoff与建议的应用程序”，则设备具备Handoff功能。以下截图显示了iPhone 5s(具备Handoff功能)和iPad3(不具备Handoff功能)的对比：</p>
-
-<p><img src="http://cdn5.raywenderlich.com/wp-content/uploads/2014/10/settings_screenshots-436x320.jpg" alt="image" /></p>
-
-<p>Handoff功能依赖于以下几点：</p>
-
-<ol>
-<li>一个iCloud账户：我们必须在希望使用Handoff功能的多台设备上登录同一个iCloud账户。</li>
-<li>低功耗蓝牙(Bluetooth LE 4.0)：Handoff是通过低功耗蓝牙来广播activities的，所以广播设备和接收设备都必须支持Bluetooth LE 4.0。</li>
-<li>iCloud配对：设备必须已经通过iCloud配对。当在支持Handoff的设备上登录iCloud账户后，每台设备都会与其它支持Handoff的设备进行配对。</li>
-</ol>
-
-
-<p>此时，我们需要确保已经使用同一iCloud账号在两台支持Handoff功能且运行iOS 8+系统的设备上登录了。(译者注：具体配置可以参考<a href="https://support.google.com/chrome/answer/6153783?hl=zh-Hans">在 Chrome（iOS 版）中使用 Handoff</a>)</p>
-
-<h3>User Activities</h3>
-
-<p>Handoff是基于User Activity的。User Activity是一个独立的信息集合单位，可以不依赖于任何其它信息而进行传输(be handed off)。</p>
-
-<p>NSUserActivity对象表示一个User Activity实例。它封装了程序的一些状态，这些状态可以在其它设备相关的程序中继续使用。</p>
-
-<p>有三种方法和一个NSUserActivity对象交互：</p>
-
-<p>1) 创建一个user activity：原始应用程序创建一个NSUserActivity实例并调用becomeCurrent()以开启一个广播进程。下面是一个实例：</p>
-
-<pre><code>let activity = NSUserActivity(activityType: "com.razeware.shopsnap.view")
-activity.title = "Viewing"
-activity.userInfo = ["shopsnap.item.key": ["Apple", "Orange", "Banana"]]
-self.userActivity = activity;
-self.userActivity?.becomeCurrent()
-</code></pre>
-
-<p>我们可以使用NSUserActivity的userInfo字典来传递本地数据类型对象或可编码的自定义对象以将其传输到接收设备。本地数据类型包括NSArray, NSData, NSDate, NSDictionary, NSNull, NSNumber, NSSet, NSString, NSUUID和NSURL。通过NSURL可能会有点棘手。在使用NSURL前可以先参考一下下面的“最佳实践”一节。</p>
-
-<p>2) 更新user activity：一旦一个NSUserActivity成为当前的activity，则iOS会在最上层的视图控制器中调用updateUserActivityState(activity:)方法，以让我们有机会来更新user activity。下面是一个实例：</p>
-
-<pre><code>override func updateUserActivityState(activity: NSUserActivity) {
-  let activityListItems = // ... get updated list of items
-  activity.addUserInfoEntriesFromDictionary(["shopsnap.item.key": activityListItems])
-  super.updateUserActivityState(activity)
-}
-</code></pre>
-
-<p>注意我们不要将userInfo设置为一个新的字典或直接更新它，而是应该使用便捷方法addUserInfoEntriesFromDictionary()。</p>
-
-<p>在下文中，我们将学习如何按需求强制刷新user activity，或者是在程序的app delegate级别来获取一个相似功能的回调。</p>
-
-<p>3) 接收user activity：当我们的接收程序以Handoff的方式启动时，程序代理会调用application(:willContinueUserActivityWithType:)方法。注意这个方法的参数不是NSUserActivity对象，因为接收程序在下载并传递NSUserActivity数据需要花费一定的时间。在user activity已经被下载完成后，会调用以下的回调函数：</p>
-
-<pre><code>func application(application: UIApplication!, 
-                 continueUserActivity userActivity: NSUserActivity!,
-                 restorationHandler: (([AnyObject]!) -&gt; Void)!) 
-                 -&gt; Bool {
-
-  // Do some checks to make sure you can proceed
-  if let window = self.window {
-    window.rootViewController?.restoreUserActivityState(userActivity)
-  }
-  return true
-}
-</code></pre>
-
-<p>然后我们可以使用存储在NSUserActivity对象中的数据来重新创建用户的activity。在这里，我们更新我们的应用以继续相关的activity。</p>
-
-<h3>Activity类型</h3>
-
-<p>当创建一个user activity后，我们必须为其指定一个activity类型。一个activity类型是一个简单的唯一字符串，通常使用反转DNS语义，如com.razeware.shopsnap.view。</p>
-
-<p>每一个可以接收user activity的程序都必须声明其可接收的activity类型。这类似于在程序中声明支持的URL方案(URL scheme)。对于非基于文本的程序，activity类型需要在Info.plist文件中定义，其键值为NSUserActivityTypes，如下所示：</p>
-
-<p><img src="http://cdn5.raywenderlich.com/wp-content/uploads/2014/10/image10-38-480x259.png" alt="image" /></p>
-
-<p>对于支持一个给定activity的程序来说，需要满足三个要求：</p>
-
-<ol>
-<li>相同的组：两个程序都必须源于使用同一开发者组ID(developer Team ID)的开发者。</li>
-<li>相同的activity类型：发送程序创建某一activity类型的user activity，接收程序必须有相应类型的NSUserActivityTypes入口。</li>
-<li>签约：两个程序必须通过App store来发布或使用同一开发者账号来签约。</li>
-</ol>
-
-
-<p>现在我们已经学习了user activities和activity类型的基础知识，接下来让我们来看一个实例。</p>
-
-<h2>启动工程</h2>
-
-<p>本指南的启动工程可以在“<a href="http://cdn2.raywenderlich.com/wp-content/uploads/2014/10/ShopSnap-Starter.zip">启动工程</a>”中下载。下载后，使用Xcode打开工程并在iPhone模拟器中运行。</p>
-
-<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/10/App_Screenshots-700x412.jpg" alt="image" /></p>
-
-<p>工程名是ShopSnap，我们可以在这个程序中构建一个简单的购物清单。一个购物项由一个字符串表示，然后我们将购物项存储在一个字符串的数组中。点击+按钮添加一个新的项目到清单中，而轻扫可以移除项目。</p>
-
-<p>我们将在程序中定义两个独立的user activity：</p>
-
-<ol>
-<li>查看清单。如果用户当前正在查看清单，我们将传输整个数组。</li>
-<li>添加或编译项目。如果用户当前正在添加新的项目，我们将传递一个单一项目的“编辑”activity。</li>
-</ol>
-
-
-<h3>设置开发组</h3>
-
-<p>为了让Handoff工作，发送和接收app都必须使用相同的开发组来签约。由于这个示例程序即是发送者也是接收者，所以这很简单！</p>
-
-<p>选择ShopSnap工程，在“通用”选项卡中，在"Team"中选择自己的开发组：</p>
-
-<p><img src="http://cdn2.raywenderlich.com/wp-content/uploads/2014/10/image15-49-700x232.png" alt="image" /></p>
-
-<p>在支持Handoff的设备中编译并运行程序，以确保运行正常，然后继续。</p>
-
-<h3>配置activity类型</h3>
-
-<p>接下来是配置程序所支持的activity类型。打开"Supporting Files\Info.plist"，点击"Information Property List"旁边的"+&ldquo;按钮，在"Information Property List"中添加一个新的选项：</p>
-
-<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/10/image16-52-480x268.png" alt="image" /></p>
-
-<p>键名为"NSUserActivityTypes"，类型设备为数组类型，如下所示：</p>
-
-<p><img src="http://cdn1.raywenderlich.com/wp-content/uploads/2014/10/image17-55-480x233.png" alt="image" /></p>
-
-<p>在NSUserActivityTypes下添加两项并设置类型为字符串。Item 0的值为com.razeware.shopsnap.view，Item 1的值为com.razeware.shopsnap.edit。</p>
-
-<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/10/image18-58-480x85.png" alt="image" /></p>
-
-<p>这些任意的activity类型对于我们的程序来说是特定和唯一的。因为我们将在程序的不同地方引用它们，所以在独立的文件中将其添加为常量是一种好的实践。</p>
-
-<p>在工程导航中右键点击ShopSnap组，选择"New File \ iOS \ Source \ Swift File"。将文件命名为Constants.swift并确保新类被添加到ShopSnap target中。</p>
-
-<p>在类中添加以下代码：</p>
-
-<pre><code>let ActivityTypeView = "com.razeware.shopsnap.view"
-let ActivityTypeEdit = "com.razeware.shopsnap.edit"
-
-let ActivityItemsKey = "shopsnap.items.key"
-let ActivityItemKey  = "shopsnap.item.key"
-</code></pre>
-
-<p>然后我们就可以使用这两个activity类型的常量。同时我们定义一些用于user activity的userInfo字典的键名字符串。</p>
-
-<h3>快速端到端测试</h3>
-
-<p>让我们来运行一个快速端到端测试以确保设备可以正确地通信。</p>
-
-<p>打开ListViewController.swift并添加以下两个函数：</p>
-
-<pre><code>// 1.
-func startUserActivity() {
-  let activity = NSUserActivity(activityType: ActivityTypeView)
-  activity.title = "Viewing Shopping List"
-  activity.userInfo = [ActivityItemsKey: ["Ice cream", "Apple", "Nuts"]]
-  userActivity = activity
-  userActivity?.becomeCurrent()
-}
-
-// 2.
-override func updateUserActivityState(activity: NSUserActivity) {
-  activity.addUserInfoEntriesFromDictionary([ActivityItemsKey: ["Ice cream", "Apple", "Nuts"]])
-  super.updateUserActivityState(activity)
-}
-</code></pre>
-
-<p>我们通过硬编码一个user activity来快速测试，以确保我们可以在另一端正常接收。</p>
-
-<p>上面的代码做了以下两件事：</p>
-
-<ol>
-<li>startUserActivity()是一个辅助函数，它使用一个硬编码的购物清单来创建了一个NSUserActivity实例。然后调用becomeCurrent()来广播这个activity。</li>
-<li>在调用becomeCurrent()后，系统将定期调用updateUserActivityState()。UIViewController从UIResponder类中继承了这个方法，我们应该重写它来更新我们的userActivity的状态。在这里，我们像前面一样使用硬编码来更新购物清单。注意，我们应该使用addUserInfoEntriesFromDictionary方法来修改NSUserActivity的userInfo字典。我们应该总是在方法的结尾调用super.updateUserActivityState()。</li>
-</ol>
-
-
-<p>注意，我们只需要调用上面的起始方法。在viewDidLoad()起始行下面添加以下代码</p>
-
-<pre><code>startUserActivity()
-</code></pre>
-
-<p>开始广播至少需要以上步骤。现在来看看接收者。打开AppDelegate.swift并添加以下代码：</p>
-
-<pre><code>func application(application: UIApplication!, 
-                 continueUserActivity userActivity: NSUserActivity!, 
-                 restorationHandler: (([AnyObject]!) -&gt; Void)!) 
-                 -&gt; Bool {
-
-  let userInfo = userActivity.userInfo as NSDictionary
-  println("Received a payload via handoff: \(userInfo)")
-  return true
-}
-</code></pre>
-
-<p>AppDelegate中的这个方法在所有事情都准备好，且一个userActivity被成功传送后调用。在这里我们简单打印userActivity中的userInfo字典。我们返回true来标识我们处理了user activity。</p>
-
-<p>让我们来试试！要想在两台设备中正常工作，还需要做一些协调工作，所以还得仔细跟着。</p>
-
-<ol>
-<li>在第一台设备上安装并运行程序。</li>
-<li>在第二台设备上安装并运行程序。确保在Xcode中调用程序以便我们能看到打印输出。</li>
-<li><p>按下电源按钮让第二台设备休眠。在同一台设备上，按下Home键。如果所有事件都正常运行，我们应该可以看到ShopSnap程序的icon显示在屏幕的左下角上。从这里我们可以启动程序，然后在Xcode控制台可以看到以下的日志信息：</p>
-
-<p> Received a payload via handoff: {
-     &ldquo;shopsnap.items.key&rdquo; = (
-     &ldquo;Ice cream&rdquo;,
-     Apple,
-     Nuts
-   );
- }</p></li>
-</ol>
-
-
-<p>如果在锁屏下没有看到程序的icon，则在源设备上关闭并重新打开程序。这将强制系统重新广播信息。同时确认一下设备的控制台以查看是否有来自于Handoff的错误消息。</p>
-
-<p><img src="http://cdn1.raywenderlich.com/wp-content/uploads/2014/10/image20-63-180x320.png" alt="image" /></p>
-
-<h2>创建一个新的Activity</h2>
-
-<p>现在我们有一个基本上可以工作的Handoff程序，是时候来扩展它了。打开ListViewController.swift，更新startUserActivity()方法，这次我们传入实际的购物清单以代码硬编码。使用以下代码来更新方法：</p>
-
-<pre><code>func startUserActivity() {
-  let activity = NSUserActivity(activityType: ActivityTypeView)
-  activity.title = "Viewing Shopping List"
-  activity.userInfo = [ActivityItemsKey: items]
-  userActivity = activity
-  userActivity?.becomeCurrent()
-}
-</code></pre>
-
-<p>同样，更新ListViewController.swift的updateUserActivityState(activity:)方法，传递购物清单数组：</p>
-
-<pre><code>override func updateUserActivityState(activity: NSUserActivity) {
-  activity.addUserInfoEntriesFromDictionary([ActivityItemsKey: items])
-  super.updateUserActivityState(activity)
-}
-</code></pre>
-
-<p>现在，更新ListViewController.swift中的viewDidLoad()，在从前面的代码中成功获取到清单后开启userActivity，如下所示：</p>
-
-<pre><code>override func viewDidLoad() {
-  title = "Shopping List"
-  weak var weakSelf = self
-  PersistentStore.defaultStore().fetchItems({ (items:[String]) in
-    if let unwrapped = weakSelf {
-      unwrapped.items = items
-      unwrapped.tableView.reloadData()
-      if items.isEmpty == false {
-        unwrapped.startUserActivity()
-      }
-    }
-  })
-  super.viewDidLoad()
-}
-</code></pre>
-
-<p>当然，如果程序开始时，清单是空的，则程序不会去广播user activity。我们需要解决这个问题：在用户第一次添加一个购物项到列表时开启user activity。</p>
-
-<p>为了做到这一点，更新ListViewController.swift中代理回调detailViewController(controller:didFinishWithUpdatedItem:)的实现，如下所示：</p>
-
-<pre><code>func detailViewController(#controller: DetailViewController,
-                          didFinishWithUpdatedItem item: String) {
-    // ... some code
-    if !items.isEmpty {
-      startUserActivity()
-    }
-}
-</code></pre>
-
-<p>在此有三种可能：</p>
-
-<ol>
-<li>用于更新一个已存在的购物项</li>
-<li>用户删除一个存在的购物项</li>
-<li>用户添加一个新的购物项</li>
-</ol>
-
-
-<p>现存的代码处理了所有的可能性；我们只需要添加一些检测代码，以在有一个非空的清单时开始一个activity。</p>
-
-<p>在两台设备上编译并运行。此时，我们应该可以在一台设备上添加新的项目，然后将其发送给另外一台设备。</p>
-
-<h3>收尾</h3>
-
-<p>当用户开始添加一个新的项目或编辑一个已存在的项目时，用户可能不是在查看购物清单。所以我们需要停止广播当前activity。同样，当清单中的所有项目被删除时，没有理由去继续广播当前activiry。在ListViewController.swift中添加以下辅助方法：</p>
-
-<pre><code>func stopUserActivity() {
-  userActivity?.invalidate()
-}
-</code></pre>
-
-<p>在stopUserActivity()中，我们废止已存在的NSUserActivity。这让handoff停止广播。</p>
-
-<p>现在有了stopUserActivity()，是时候在适当的地方调用它了。</p>
-
-<p>在ListViewController.swift中，更新prepareForSegue(segue:, sender:)方法的实现，如下所示：</p>
-
-<pre><code>override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject!) {
-    // ... some code
-    stopUserActivity()
-}
-</code></pre>
-
-<p>当用户选择一行或者点击添加按钮时，ListViewController准备导航到详情视图。我们废弃当前的清单查看activity。</p>
-
-<p>在同一文件中，更新tableView(_:commitEditingStyle:forRowAtIndexPath:)的实现，如下所示：</p>
-
-<pre><code>override func tableView(tableView: UITableView, 
-                        commitEditingStyle editingStyle: UITableViewCellEditingStyle,
-                        forRowAtIndexPath indexPath: NSIndexPath) {
-  // ... some code
-  if items.isEmpty {
-    stopUserActivity()
-  } else {
-    userActivity?.needsSave = true
-  }
-}
-</code></pre>
-
-<p>当用户从清单中删除一项时，我们需要相应地更新user activity。如果移除清单中的所有项目，我们停止广播。否则，我们设置userActivity的needsSave属性为true。当我们这样做时，系统会立即回调updateUserActivityState(activity:)，在这里我们会更新userActivity。</p>
-
-<p>结束这一节之前，还有一种情况需要考虑，用户点击取消按钮，然后从DetailViewController中返回。这触发了一个已存在的场景。我们需要重新开始userActivity。更新unwindDetailViewController(unwindSegue:)的实现，如下所示：</p>
-
-<pre><code>@IBAction func unwindDetailViewController(unwindSegue: UIStoryboardSegue) {
-  // ... some code
-  startUserActivity()
-}
-</code></pre>
-
-<p>编译并运行，确保所有事情运行正常。尝试添加一些项目到清单中，确保它们在设备间传输。</p>
-
-<h2>创建一个编辑Activity</h2>
-
-<p>接下来，我们以类似的方式来处理DetailViewController。这一次，我们广播另一个activity类型。</p>
-
-<p>打开DetailViewController.swift并修改textFieldDidBeginEditing(textField:)，如下所示：</p>
-
-<pre><code>func textFieldDidBeginEditing(textField: UITextField!) {
-  // Broadcast what we have, if there is anything!
-  let activity = NSUserActivity(activityType: ActivityTypeEdit)
-  activity.title = "Editing Shopping List Item"
-  let activityItem = (countElements(textField.text!) &gt; 0) ? textField.text : ""
-  activity.userInfo = [ActivityItemKey: activityItem]
-  userActivity = activity
-  userActivity?.becomeCurrent()
-}
-</code></pre>
-
-<p>上面的方法使用项目的字符串的当前内容创建一个“编辑”activity。</p>
-
-<p>当用户继续编辑项目时，我们需要更新user activity。仍然是在DetailViewController.swift中，更新textFieldTextDidChange(notification:)的实现，如下所示：</p>
-
-<pre><code>func textFieldTextDidChange(notification: NSNotification) {
-  if let text = textField!.text {
-    item = text
-  }
-
-  userActivity?.needsSave = true
-}
-</code></pre>
-
-<p>现在我们已经标记了activity需要更新，接下来实现updateUserActivityState(activity:)，以备系统的更新需求：</p>
-
-<pre><code>override func updateUserActivityState(activity: NSUserActivity) {
-  let activityListItem = (countElements(textField!.text!) &gt; 0) ? textField!.text : ""
-  activity.addUserInfoEntriesFromDictionary([ActivityItemKey: activityListItem])
-  super.updateUserActivityState(activity)
-}
-</code></pre>
-
-<p>这里我们简单地更新了当前项为文本输入框中的文本。</p>
-
-<p>编译并运行。此时，如果我们在一个设备中开始添加一个新项或编辑已存在的项目，我们可以将编辑进程同步给另一个设备。</p>
-
-<h3>收尾</h3>
-
-<p>因为needsSave是一个轻量级的操作，在上面的代码中，你可以根据需要来设置它，然后在每次按键时更新userInfo。</p>
-
-<p>这里有一个小细节你可能已经注意到了。视图控制器在iPad和iPhone的景观模式下中是一个分离视图。这样可以在清单的项目间切换而不需要收起键盘。这种情况发生时，textFieldDidBeginEditing(textField:)方法不会被调用，导致我们的user activity不会更新为新的文本。</p>
-
-<p>为了解决这个问题，更新DetailViewController.swift中item属性的didSet观察者，如下所示：</p>
-
-<pre><code>var item: String? {
-  didSet {
-    if let textField = self.textField {
-      textField.text = item
-    }
-    if let activity = userActivity {
-      activity.needsSave = true
-    }
-  }
-}
-</code></pre>
-
-<p>当用户点击ListViewController中的一个项目时，DetailViewController的item属性被设置。一个简单解决方案是让视图控制器知道，在项目更新时它必须更新activity。</p>
-
-<p>最后，当用户离开DetailViewController时，我们需要废止userActivity，以让编辑activity不再被广播。</p>
-
-<p>在DetailViewController.swift的textFieldShouldReturn(_:)方法的起始位置添加以下代码：</p>
-
-<pre><code>userActivity?.invalidate()
-</code></pre>
-
-<p>编译并运行程序，确保程序工作正常。接下来，我们将处理接收的activity。</p>
-
-<h2>接收Activity</h2>
-
-<p>当用户通过Handoff启动程序时，处理接收的NSUserActivity的任务大部分是由程序的delegate来完成的。</p>
-
-<p>假设所有事情运行正常，数据成功传输，iOS会调用application(_:continueUserActivity:restorationHandler:)方法。这是我们与NSUserActivity实例交互的第一次机会。</p>
-
-<p>我们在前面的章节中已经有一个该方法的实现了。现在，我们做如下修改：</p>
-
-<pre><code>func application(application: UIApplication!, 
-                 continueUserActivity userActivity: NSUserActivity!,
-                 restorationHandler: (([AnyObject]!) -&gt; Void)!)
-                 -&gt; Bool {
-
-  if let window = self.window {
-    window.rootViewController?.restoreUserActivityState(userActivity)
-  }
-  return true
-}
-</code></pre>
-
-<p>我们将userActivity传递给程序的window对象的rootViewController，然后返回true。这告诉系统成功处理了Handoff行为。从这里开始，我们将自己转发调用并恢复activity。</p>
-
-<p>我们在rootViewController中调用的方法是restoreUserActivityState(activity:)。这是在UIResponder中声明的一个标准方法。系统使用这个方法来告诉接收者恢复一个NSUserActivivty实例。</p>
-
-<p>我们现在的任务是沿着视图控制器架构往下，将activity从父视图控制器传递到子视图控制器，直到到达需要使用activity的地方：</p>
-
-<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/10/image22-691-700x360.png" alt="image" /></p>
-
-<p>根视图控制器是一个TraitOverrideViewController对象，它的任务是管理程序的size classes；它对我们的user activity不感兴趣。打开TraitOverrideViewController.swift并添加以下代码：</p>
-
-<pre><code>override func restoreUserActivityState(activity: NSUserActivity) {
-  let nextViewController = childViewControllers.first as UIViewController
-  nextViewController.restoreUserActivityState(activity)
-  super.restoreUserActivityState(activity)
-}
-</code></pre>
-
-<p>在这里，我们获取TraitOverrideViewController的第一个子视图控制器，然后将activity往下传递。这样做是安全的，因为我们知道程序的视图控制器只包含一个子视图控制器。</p>
-
-<p>层级架构中的下一个视图控制器是SplitViewController，在这里事情会变得更有趣一些。</p>
-
-<p>打开SplitViewController.swift并添加以下代码：</p>
-
-<pre><code>override func restoreUserActivityState(activity: NSUserActivity) {
-  // What type of activity is it?
-  let activityType = activity.activityType
-
-  // This is an activity for ListViewController.
-  if activityType == ActivityTypeView {
-    let controller = viewControllerForViewing()
-    controller.restoreUserActivityState(activity)
-
-  } else if activityType == ActivityTypeEdit {
-    // This is an activity for DetailViewController.
-    let controller = viewControllerForEditing()
-    controller.restoreUserActivityState(activity)
-  }
-
-  super.restoreUserActivityState(activity)
-}
-</code></pre>
-
-<p>SplitViewController知道ListViewController和DetailViewController。如果NSUserActivity是一个列表查看activity类型，则将其传递给ListViewController；否则，如果是一个编辑activity类型，则传递给DetailViewController。</p>
-
-<p>我们将所有的activity传递给正确的对象，现在是时候从这些activity中获取数据了。</p>
-
-<p>打开ListViewController.swift并实现restoreUserActivityState(activity:)，如下所示：</p>
-
-<pre><code>override func restoreUserActivityState(activity: NSUserActivity) {
-  // Get the list of items.
-  if let userInfo = activity.userInfo {
-    if let importedItems = userInfo[ActivityItemsKey] as? NSArray {
-      // Merge it with what we have locally and update UI.
-      for anItem in importedItems {
-        addItemToItemsIfUnique(anItem as String)
-      }
-      PersistentStore.defaultStore().updateStoreWithItems(items)
-      PersistentStore.defaultStore().commit()
-      tableView.reloadData()
-    }
-  }
-  super.restoreUserActivityState(activity)
-}
-</code></pre>
-
-<p>在上面的方法中，我们终于可以继续一个查看activity了。因为我们需要维护一个唯一的购物清单时，我们只需要将这些唯一的项目添加到本地列表中，然后保存并更新UI。</p>
-
-<p>编译并运行。现在我们可以看到通过Handoff从另一台设备上同步过来的清单数据了。</p>
-
-<p>编辑activity以类似的方法来处理。打开DetailViewController.swift并实现restoreUserActivityState(activity:)，如下所示：</p>
-
-<pre><code>override func restoreUserActivityState(activity: NSUserActivity) {
-  if let userInfo = activity.userInfo {
-    var activityItem: AnyObject? = userInfo[ActivityItemKey]
-    if let itemToRestore = activityItem as? String {
-      item = itemToRestore
-      textField?.text = item
-    }
-  }
-  super.restoreUserActivityState(activity)
-}
-</code></pre>
-
-<p>这里获取编辑activity的信息并更新文本域的内容。</p>
-
-<p>编译并运行，查看运行结果！</p>
-
-<h3>收尾</h3>
-
-<p>当用户在另一台设备上点击程序的icon以表明他们想要继续一个user activity时，系统启动相应的程序。一旦程序启动后，系统调用application(_, willContinueUserActivityWithType:)方法。打开AppDelegate.swift并添加以下方法：</p>
-
-<pre><code>func application(application: UIApplication,
-                 willContinueUserActivityWithType userActivityType: String!)
-                 -&gt; Bool {
-  return true
-}
-</code></pre>
-
-<p>到这里，我们的程序已经下载了NSUserActivity实例及其userInfo有效载荷。现在我们只是简单返回true。这强制程序在每次用户初始Handoff进程时接收activity。如果想要通知用户activity正在处理，则这是个好地方。</p>
-
-<p>到这里，系统开始将数据从一台设备同步到另一台设备上。我们已经覆盖了任务正常运行的所有情况。但是可以想象Handoff的activity在某些情况下会失败。</p>
-
-<p>将以下方法添加到AppDelegate.swift中来处理这种情况：</p>
-
-<pre><code>func application(application: UIApplication!, 
-                 didFailToContinueUserActivityWithType userActivityType: String!,
-                 error: NSError!) {
-
-  if error.code != NSUserCancelledError {
-    let message = "The connection to your other device may have been interrupted. Please try again. \(error.localizedDescription)"
-    let alertView = UIAlertView(title: "Handoff Error", message: message, delegate: nil, cancelButtonTitle: "Dismiss")
-    alertView.show()
-  }
-}
-</code></pre>
-
-<p>如果我们接收到除了NSUserCancelledError之外的任何信息，则发生了某些错误，且我们不能恢复activity。在这种情况下，我们显示一个适当的消息给用户。然而，如果用户显示取消Handoff行为，则在这里我们不需要做任何事情，只需要放弃操作。</p>
-
-<h2>版本支持</h2>
-
-<p>使用Handoff的最佳实践之一是版本化。处理这的一个策略是为每个发送的Handoff添加一个版本号，并且只接收来自这个版本号(或者更早的)handoff。让我们来试试。</p>
-
-<p>打开Constants.swift并添加以下常量：</p>
-
-<pre><code>let ActivityVersionKey = "shopsnap.version.key"
-let ActivityVersionValue = "1.0"
-</code></pre>
-
-<p>上面的版本键名和值是我们为这个版本的程序随意挑选的键值对。</p>
-
-<p>如果我们回顾一下上面的章节，系统会定期并自动调用restoreUserActivityState(activity:)方法。这个方法的实现聚集于并限定于实现它的对象的范围内。例如，ListViewController重写了这个方法来更新带有购物清单的userActivity，而DetailViewController的实现是更新当前正在被编辑的项目。</p>
-
-<p>如果涉及到的东西对于userActivity来说是通用的，可用于所有的user activity，如版本号，则处理它的最好的地方就是在AppDelegate中了。</p>
-
-<p>任何时候调用restoreUserActivityState(activity:)，系统都会紧接着调用程序delegate的application(application:, didUpdateUserActivity userActivity:)方法。我们使用这个方法来为我们的Handoff添加版本支持。</p>
-
-<p>打开AppDelegate.swift并添加以下代码：</p>
-
-<pre><code>func application(application: UIApplication, 
-                 didUpdateUserActivity userActivity: NSUserActivity) {
-  userActivity.addUserInfoEntriesFromDictionary([ActivityVersionKey: ActivityVersionValue])
-}
-</code></pre>
-
-<p>在这里我们简单地使用了程序的版本号来更新了userInfo字典。</p>
-
-<p>仍然是在AppDelegate.swift中，更新application(_:, continueUserActivity: restorationHandler:)的实现，如下所示：</p>
-
-<pre><code>func application(application: UIApplication!,
-                 continueUserActivity userActivity: NSUserActivity!,
-                 restorationHandler: (([AnyObject]!) -&gt; Void)!)
-                 -&gt; Bool {
-
-  if let userInfo: NSDictionary = userActivity.userInfo {
-    if let version = userInfo[ActivityVersionKey] as? String {
-      // Pass it on.
-      if let window = self.window {
-        window.rootViewController?.restoreUserActivityState(userActivity)
-      }
-      return true
-    }
-  }
-  return false
-}
-</code></pre>
-
-<p>在这里我们检查userAcitivty的版本，只有当版本号与我们知道的相匹配时才传递。编译并运行，确保程序运行正常。</p>
-
-<h2>Handoff最佳实践</h2>
-
-<p>在结束之前，我们来看看Handoff的最佳实践：</p>
-
-<ol>
-<li><p>NSURL：在NSUserActivity的userInfo字典中使用NSURL有点棘手。唯一可以安全地在Handoff中传输的NSURLs是使用HTTP/HTTPS和iCloud文档的web网址。我们不能传递本地文件的URL，因为在接收者端，接收者不能正确地转换并映射这些URL。传输文件链接的最好的方式是传递相对路径，然后在接收者端重新构建我们的URL。</p></li>
-<li><p>平台特定值：避免使用平台特定值，如滑动视图的内容偏移量；更好的方法是使用相对位置。例如，如果用户查看table view中的一些项目时，在我们的user activity中传递table view最上面的可视项的index path，而不是传递table view可视区域的内容偏移量。</p></li>
-<li><p>版本：想想在程序中使用版本和将来的更新。我们可以在程序的未来版本中添加一些新数据格式或者从userInfo字典中移除值。版本让我们可以理好地控制我们的user activity在当前和将来版本的程序中的行为。</p></li>
-</ol>
-
-
-<h2>下一步是哪</h2>
-
-<p>这里是<a href="http://cdn5.raywenderlich.com/wp-content/uploads/2014/10/ShopSnap-Final.zip">示例工程</a>的最终版本。</p>
-
-<p>如果想了解更多的关于Handoff，流和基于文档的Handoff，则可以查看Handoff的开发文档<a href="https://developer.apple.com/library/prerelease/ios/documentation/UserExperience/Conceptual/Handoff/HandoffFundamentals/HandoffFundamentals.html">Apple’s Handoff Programming Guide</a>以获取更多的信息。</p>
-
-<p>如果喜欢这篇文章，则可以下载我们的书<a href="http://www.raywenderlich.com/store/ios-8-by-tutorials">iOS 8 by Tutorials</a>，这里塞满了这样的教程。</p>
-
-<p>如果有更多的总量或关于这篇文章的评论，那么可以加入下面的讨论。</p>
 ]]></content>
   </entry>
   
