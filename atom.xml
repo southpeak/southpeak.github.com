@@ -4,7 +4,7 @@
   <title><![CDATA[南峰子的技术博客]]></title>
   <link href="http://southpeak.github.io/atom.xml" rel="self"/>
   <link href="http://southpeak.github.io/"/>
-  <updated>2015-05-10T22:07:53+08:00</updated>
+  <updated>2015-05-31T23:52:04+08:00</updated>
   <id>http://southpeak.github.io/</id>
   <author>
     <name><![CDATA[南峰子]]></name>
@@ -12,6 +12,552 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[iOS知识小集 第二期(2015.05.31)]]></title>
+    <link href="http://southpeak.github.io/blog/2015/05/31/ioszhi-shi-xiao-ji-di-er-qi-2015-dot-05-dot-31/"/>
+    <updated>2015-05-31T23:50:54+08:00</updated>
+    <id>http://southpeak.github.io/blog/2015/05/31/ioszhi-shi-xiao-ji-di-er-qi-2015-dot-05-dot-31</id>
+    <content type="html"><![CDATA[<p>换了个厂子，还不到1个月。哎，着实是累啊，基本上是996.5的节奏，只会更多。加班把我快加吐了，但人在江湖，身不由已啊。为了讨口饭吃，命也不要了。谁让咱只是个臭写代码的呢。不过加班是多，只是长得太丑，所有没办法，没时间也得抽时间来学习。不然，饭都没得吃了，还得养家糊口呢。</p>
+
+<p>本期总结的内容不是很多，主要有以下几个问题：</p>
+
+<ol>
+<li>使用UIVisualEffectView为视图添加特殊效果</li>
+<li>Nullability Annotations</li>
+<li>weak的生命周期</li>
+</ol>
+
+
+<h2>使用UIVisualEffectView为视图添加特殊效果</h2>
+
+<p>在iOS 8后，苹果开放了不少创建特效的接口，其中就包括创建毛玻璃(blur)的接口。</p>
+
+<p>通常要想创建一个特殊效果(如blur效果)，可以创建一个UIVisualEffectView视图对象，这个对象提供了一种简单的方式来实现复杂的视觉效果。这个可以把这个对象看作是效果的一个容器，实际的效果会影响到该视图对象底下的内容，或者是添加到该视图对象的contentView中的内容。</p>
+
+<p>我们举个例子来看看如果使用UIVisualEffectView：</p>
+
+<pre><code>let bgView: UIImageView = UIImageView(image: UIImage(named: "visual"))
+bgView.frame = self.view.bounds
+self.view.addSubview(bgView)
+
+let blurEffect: UIBlurEffect = UIBlurEffect(style: .Light)
+let blurView: UIVisualEffectView = UIVisualEffectView(effect: blurEffect)
+blurView.frame = CGRectMake(50.0, 50.0, self.view.frame.width - 100.0, 200.0)
+self.view.addSubview(blurView)
+</code></pre>
+
+<p>这段代码是在当前视图控制器上添加了一个UIImageView作为背景图。然后在视图的一小部分中使用了blur效果。其效果如下所示：</p>
+
+<p><img src="http://d.pcs.baidu.com/thumbnail/09b0f2cc826eda249faa3c323a0ace53?fid=742964286-250528-1028873691191491&amp;time=1433084400&amp;sign=FDTAER-DCb740ccc5511e5e8fedcff06b081203-c2ezBV5xH9W7KlZF3li%2B12fJtgc%3D&amp;rt=sh&amp;expires=2h&amp;r=567337996&amp;sharesign=unknown&amp;size=c710_u500&amp;quality=100" alt="image" /></p>
+
+<p>我们可以看到UIVisualEffectView还是非常简单的。需要注意是的，不应该直接添加子视图到UIVisualEffectView视图中，而是应该添加到UIVisualEffectView对象的contentView中。</p>
+
+<p>另外，尽量避免将UIVisualEffectView对象的alpha值设置为小于1.0的值，因为创建半透明的视图会导致系统在离屏渲染时去对UIVisualEffectView对象及所有的相关的子视图做混合操作。这不但消耗CPU/GPU，也可能会导致许多效果显示不正确或者根本不显示。</p>
+
+<p>我们在上面看到，初始化一个UIVisualEffectView对象的方法是UIVisualEffectView(effect: blurEffect)，其定义如下：</p>
+
+<pre><code>init(effect effect: UIVisualEffect)
+</code></pre>
+
+<p>这个方法的参数是一个UIVisualEffect对象。我们查看官方文档，可以看到在UIKit中，定义了几个专门用来创建视觉特效的，它们分别是UIVisualEffect、UIBlurEffect和UIVibrancyEffect。它们的继承层次如下所示：</p>
+
+<pre><code>NSObject
+| -- UIVisualEffect
+    | -- UIBlurEffect
+    | -- UIVibrancyEffect
+</code></pre>
+
+<p>UIVisualEffect是一个继承自NSObject的创建视觉效果的基类，然而这个类除了继承自NSObject的属性和方法外，没有提供任何新的属性和方法。其主要目的是用于初始化UIVisualEffectView，在这个初始化方法中可以传入UIBlurEffect或者UIVibrancyEffect对象。</p>
+
+<p>一个UIBlurEffect对象用于将blur(毛玻璃)效果应用于UIVisualEffectView视图下面的内容。如上面的示例所示。不过，这个对象的效果并不影响UIVisualEffectView对象的contentView中的内容。</p>
+
+<p>UIBlurEffect主要定义了三种效果，这些效果由枚举UIBlurEffectStyle来确定，该枚举的定义如下：</p>
+
+<pre><code>enum UIBlurEffectStyle : Int {
+    case ExtraLight
+    case Light
+    case Dark
+}
+</code></pre>
+
+<p>其主要是根据色调(hue)来确定特效视图与底部视图的混合。</p>
+
+<p>与UIBlurEffect不同的是，UIVibrancyEffect主要用于放大和调整UIVisualEffectView视图下面的内容的颜色，同时让UIVisualEffectView的contentView中的内容看起来更加生动。通常UIVibrancyEffect对象是与UIBlurEffect一起使用，主要用于处理在UIBlurEffect特效上的一些显示效果。接上面的代码，我们看看在blur的视图上添加一些新的特效，如下代码所示：</p>
+
+<pre><code>let vibrancyView: UIVisualEffectView = UIVisualEffectView(effect: UIVibrancyEffect(forBlurEffect: blurEffect))
+vibrancyView.setTranslatesAutoresizingMaskIntoConstraints(false)
+blurView.contentView.addSubview(vibrancyView)
+
+var label: UILabel = UILabel()
+label.setTranslatesAutoresizingMaskIntoConstraints(false)
+label.text = "Vibrancy Effect"
+label.font = UIFont(name: "HelveticaNeue-Bold", size: 30)
+label.textAlignment = .Center
+label.textColor = UIColor.whiteColor()
+vibrancyView.contentView.addSubview(label)
+</code></pre>
+
+<p>其效果如下图所示：</p>
+
+<p><img src="http://d.pcs.baidu.com/thumbnail/a4b788b4c24154d2b5919f714c945d18?fid=742964286-250528-985603568872796&amp;time=1433084400&amp;sign=FDTAER-DCb740ccc5511e5e8fedcff06b081203-bm2CevqtZpV0v9tRi%2F%2BuovzF78w%3D&amp;rt=sh&amp;expires=2h&amp;r=516566080&amp;sharesign=unknown&amp;size=c710_u500&amp;quality=100" alt="image" /></p>
+
+<p>vibrancy特效是取决于颜色值的。所有添加到contentView的子视图都必须实现tintColorDidChange方法并更新自己。需要注意的是，我们使用UIVibrancyEffect(forBlurEffect:)方法创建UIVibrancyEffect时，参数blurEffect必须是我们想加效果的那个blurEffect，否则可能不是我们想要的效果。</p>
+
+<p>另外，UIVibrancyEffect还提供了一个类方法notificationCenterVibrancyEffect，其声明如下：</p>
+
+<pre><code>class func notificationCenterVibrancyEffect() -&gt; UIVibrancyEffect!
+</code></pre>
+
+<p>这个方法创建一个用于通知中心的Today扩展的vibrancy特效。</p>
+
+<h3>参考</h3>
+
+<ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/UIKit/Reference/UIVisualEffectView/">UIVisualEffectView Class Reference</a></li>
+<li><a href="https://developer.apple.com/library/ios/documentation/UIKit/Reference/UIVisualEffect_class/index.html#//apple_ref/occ/cl/UIVisualEffect">UIVisualEffect Class Reference</a></li>
+<li><a href="https://developer.apple.com/library/ios/documentation/UIKit/Reference/UIVisualEffect_class/index.html#//apple_ref/occ/cl/UIVisualEffect">UIBlurEffect Class Reference</a></li>
+<li><a href="https://developer.apple.com/library/ios/documentation/UIKit/Reference/UIVibrancyEffect/">UIVibrancyEffect Class Reference</a></li>
+<li><a href="http://swiftoverload.com/tag/uivisualeffectview/">UIVisualEffect – Swift Tutorial</a></li>
+<li><a href="http://idrawcode.tumblr.com/post/101925733632/ios-8-uivisualeffect">iOS 8: UIVisualEffect</a></li>
+</ol>
+
+
+<h2>Pointer is missing a nullability type specifier (<strong>nonnull or </strong>nullable)问题的处理 &mdash; Nullability Annotations</h2>
+
+<p>最近在用Xcode 6.3写代码，一些涉及到对象的代码会报如下编译器警告：</p>
+
+<pre><code>Pointer is missing a nullability type specifier (__nonnull or __nullable)
+</code></pre>
+
+<p>于是google了一下，发现这是Xcode 6.3的一个新特性，即<strong>nullability annotations</strong>。</p>
+
+<h3>Nullability Annotations</h3>
+
+<p>我们都知道在swift中，可以使用!和?来表示一个对象是optional的还是non-optional，如view?和view!。而在Objective-C中则没有这一区分，view即可表示这个对象是optional，也可表示是non-optioanl。这样就会造成一个问题：在Swift与Objective-C混编时，Swift编译器并不知道一个Objective-C对象到底是optional还是non-optional，因此这种情况下编译器会隐式地将Objective-C的对象当成是non-optional。</p>
+
+<p>为了解决这个问题，苹果在Xcode 6.3引入了一个Objective-C的新特性：nullability annotations。这一新特性的核心是两个新的类型注释：<strong>__nullable</strong>和<strong>__nonnull</strong>。从字面上我们可以猜到，<strong>__nullable</strong>表示对象可以是NULL或nil，而<strong>__nonnull</strong>表示对象不应该为空。当我们不遵循这一规则时，编译器就会给出警告。</p>
+
+<p>我们来看看以下的实例，</p>
+
+<pre><code>@interface TestNullabilityClass ()
+
+@property (nonatomic, copy) NSArray * items;
+
+- (id)itemWithName:(NSString * __nonnull)name;
+
+@end
+
+@implementation TestNullabilityClass
+
+...
+
+- (void)testNullability {
+
+    [self itemWithName:nil];    // 编译器警告：Null passed to a callee that requires a non-null argument
+}
+
+- (id)itemWithName:(NSString * __nonnull)name {
+    return nil;
+}
+
+@end
+</code></pre>
+
+<p>不过这只是一个警告，程序还是能编译通过并运行。</p>
+
+<p>事实上，在任何可以使用const关键字的地方都可以使用__nullable和__nonnull，不过这两个关键字仅限于使用在指针类型上。而在方法的声明中，我们还可以使用不带下划线的nullable和nonnull，如下所示：</p>
+
+<pre><code>- (nullable id)itemWithName:(NSString * nonnull)name
+</code></pre>
+
+<p>在属性声明中，也增加了两个相应的特性，因此上例中的items属性可以如下声明：</p>
+
+<pre><code>@property (nonatomic, copy, nonnull) NSArray * items;
+</code></pre>
+
+<p>当然也可以用以下这种方式：</p>
+
+<pre><code>@property (nonatomic, copy) NSArray * __nonnull items;
+</code></pre>
+
+<p>推荐使用nonnull这种方式，这样可以让属性声明看起来更清晰。</p>
+
+<h3>Nonnull区域设置(Audited Regions)</h3>
+
+<p>如果需要每个属性或每个方法都去指定nonnull和nullable，是一件非常繁琐的事。苹果为了减轻我们的工作量，专门提供了两个宏：NS_ASSUME_NONNULL_BEGIN和NS_ASSUME_NONNULL_END。在这两个宏之间的代码，所有简单指针对象都被假定为nonnull，因此我们只需要去指定那些nullable的指针。如下代码所示：</p>
+
+<pre><code>NS_ASSUME_NONNULL_BEGIN
+
+@interface TestNullabilityClass ()
+
+@property (nonatomic, copy) NSArray * items;
+
+
+- (id)itemWithName:(nullable NSString *)name;
+
+@end
+
+NS_ASSUME_NONNULL_END
+</code></pre>
+
+<p>在上面的代码中，items属性默认是nonnull的，itemWithName:方法的返回值也是nonnull，而参数是指定为nullable的。</p>
+
+<p>不过，为了安全起见，苹果还制定了几条规则：</p>
+
+<ol>
+<li>typedef定义的类型的nullability特性通常依赖于上下文，即使是在Audited Regions中，也不能假定它为nonnull。</li>
+<li>复杂的指针类型(如id *)必须显示去指定是nonnull还是nullable。例如，指定一个指向nullable对象的nonnull指针，可以使用&#8221;__nullable id * __nonnull&#8221;。</li>
+<li>我们经常使用的NSError **通常是被假定为一个指向nullable NSError对象的nullable指针。</li>
+</ol>
+
+
+<h3>兼容性</h3>
+
+<p>因为Nullability Annotations是Xcode 6.3新加入的，所以我们需要考虑之前的老代码。实际上，苹果已以帮我们处理好了这种兼容问题，我们可以安全地使用它们：</p>
+
+<ol>
+<li>老代码仍然能正常工作，即使对nonnull对象使用了nil也没有问题。</li>
+<li>老代码在需要和swift混编时，在新的swift编译器下会给出一个警告。</li>
+<li>nonnull不会影响性能。事实上，我们仍然可以在运行时去判断我们的对象是否为nil。</li>
+</ol>
+
+
+<p>事实上，我们可以将nonnull/nullable与我们的断言和异常一起看待，其需要处理的问题都是同一个：违反约定是一个程序员的错误。特别是，返回值是我们可控的东西，如果返回值是nonnull的，则我们不应该返回nil，除非是为了向后兼容。</p>
+
+<h3>参考</h3>
+
+<ol>
+<li><a href="https://developer.apple.com/swift/blog/?id=25">Nullability and Objective-C</a></li>
+</ol>
+
+
+<h2>weak的生命周期</h2>
+
+<p>我们都知道weak表示的是一个弱引用，这个引用不会增加对象的引用计数，并且在所指向的对象被释放之后，weak指针会被设置的为nil。weak引用通常是用于处理循环引用的问题，如代理及block的使用中，相对会较多的使用到weak。</p>
+
+<p>之前对weak的实现略有了解，知道它的一个基本的生命周期，但具体是怎么实现的，了解得不是太清晰。今天又翻了翻《Objective-C高级编程》关于__weak的讲解，在此做个笔记。</p>
+
+<p>我们以下面这行代码为例：</p>
+
+<p><strong>代码清单1：示例代码</strong></p>
+
+<pre><code>{
+    id __weak obj1 = obj;
+}
+</code></pre>
+
+<p>当我们初始化一个weak变量时，runtime会调用objc_initWeak函数。这个函数在Clang中的声明如下：</p>
+
+<pre><code>id objc_initWeak(id *object, id value);
+</code></pre>
+
+<p>其具体实现如下：</p>
+
+<pre><code>id objc_initWeak(id *object, id value)
+{
+    *object = 0;
+    return objc_storeWeak(object, value);
+}
+</code></pre>
+
+<p>示例代码轮换成编译器的模拟代码如下：</p>
+
+<pre><code>id obj1;
+objc_initWeak(&amp;obj1, obj);
+</code></pre>
+
+<p>因此，这里所做的事是先将obj1初始化为0(nil)，然后将obj1的地址及obj作为参数传递给objc_storeWeak函数。</p>
+
+<p>objc_initWeak函数有一个前提条件：就是object必须是一个没有被注册为__weak对象的有效指针。而value则可以是null，或者指向一个有效的对象。</p>
+
+<p>如果value是一个空指针或者其指向的对象已经被释放了，则object是zero-initialized的。否则，object将被注册为一个指向value的__weak对象。而这事应该是objc_storeWeak函数干的。objc_storeWeak的函数声明如下：</p>
+
+<pre><code>id objc_storeWeak(id *location, id value);
+</code></pre>
+
+<p>其具体实现如下：</p>
+
+<pre><code>id objc_storeWeak(id *location, id newObj)
+{
+    id oldObj;
+    SideTable *oldTable;
+    SideTable *newTable;
+
+    ......
+
+    // Acquire locks for old and new values.
+    // Order by lock address to prevent lock ordering problems. 
+    // Retry if the old value changes underneath us.
+ retry:
+    oldObj = *location;
+
+    oldTable = SideTable::tableForPointer(oldObj);
+    newTable = SideTable::tableForPointer(newObj);
+
+    ......
+
+    if (*location != oldObj) {
+        OSSpinLockUnlock(lock1);
+#if SIDE_TABLE_STRIPE &gt; 1
+        if (lock1 != lock2) OSSpinLockUnlock(lock2);
+#endif
+        goto retry;
+    }
+
+    if (oldObj) {
+        weak_unregister_no_lock(&amp;oldTable-&gt;weak_table, oldObj, location);
+    }
+    if (newObj) {
+        newObj = weak_register_no_lock(&amp;newTable-&gt;weak_table, newObj,location);
+        // weak_register_no_lock returns NULL if weak store should be rejected
+    }
+    // Do not set *location anywhere else. That would introduce a race.
+    *location = newObj;
+
+    ......
+
+    return newObj;
+}
+</code></pre>
+
+<p>我们撇开源码中各种锁操作，来看看这段代码都做了些什么。在此之前，我们先来了解下weak表和SideTable。</p>
+
+<p>weak表是一个弱引用表，实现为一个weak_table_t结构体，存储了某个对象相关的的所有的弱引用信息。其定义如下(具体定义在<a href="http://www.opensource.apple.com/source/objc4/objc4-646/runtime/objc-weak.h">objc-weak.h</a>中)：</p>
+
+<pre><code>struct weak_table_t {
+    weak_entry_t *weak_entries;
+    size_t    num_entries;
+    ......
+};
+</code></pre>
+
+<p>其中weak_entry_t是存储在弱引用表中的一个内部结构体，它负责维护和存储指向一个对象的所有弱引用hash表。其定义如下：</p>
+
+<pre><code>struct weak_entry_t {
+    DisguisedPtr&lt;objc_object&gt; referent;
+    union {
+        struct {
+            weak_referrer_t *referrers;
+            uintptr_t        out_of_line : 1;
+            ......
+        };
+        struct {
+            // out_of_line=0 is LSB of one of these (don't care which)
+            weak_referrer_t  inline_referrers[WEAK_INLINE_COUNT];
+        };
+    };
+};
+</code></pre>
+
+<p>其中referent是被引用的对象，即示例代码中的obj对象。下面的union即存储了所有指向该对象的弱引用。由注释可以看到，当out_of_line等于0时，hash表被一个数组所代替。另外，所有的弱引用对象的地址都是存储在weak_referrer_t指针的地址中。其定义如下：</p>
+
+<pre><code>typedef objc_object ** weak_referrer_t;
+</code></pre>
+
+<p>SideTable是一个用C++实现的类，它的具体定义在<a href="http://opensource.apple.com/source/objc4/objc4-532.2/runtime/NSObject.mm">NSObject.mm</a>中，我们来看看它的一些成员变量的定义：</p>
+
+<pre><code>class SideTable {
+private:
+    static uint8_t table_buf[SIDE_TABLE_STRIPE * SIDE_TABLE_SIZE];
+
+public:
+
+    RefcountMap refcnts;
+    weak_table_t weak_table;
+
+    ......
+
+}
+</code></pre>
+
+<p>RefcountMap refcnts，大家应该能猜到这个做什么用的吧？看着像是引用计数什么的。哈哈，貌似就是啊，这东东存储了一个对象的引用计数的信息。当然，我们在这里不去探究它，我们关注的是weak_table。这个成员变量指向的就是一个对象的weak表。</p>
+
+<p>了解了weak表和SideTable，让我们再回过头来看看objc_storeWeak。首先是根据weak指针找到其指向的老的对象：</p>
+
+<pre><code>oldObj = *location;
+</code></pre>
+
+<p>然后获取到与新旧对象相关的SideTable对象：</p>
+
+<pre><code>oldTable = SideTable::tableForPointer(oldObj);
+newTable = SideTable::tableForPointer(newObj);
+</code></pre>
+
+<p>下面要做的就是在老对象的weak表中移除指向信息，而在新对象的weak表中建立关联信息：</p>
+
+<pre><code>if (oldObj) {
+    weak_unregister_no_lock(&amp;oldTable-&gt;weak_table, oldObj, location);
+}
+if (newObj) {
+    newObj = weak_register_no_lock(&amp;newTable-&gt;weak_table, newObj,location);
+    // weak_register_no_lock returns NULL if weak store should be rejected
+}
+</code></pre>
+
+<p>接下来让弱引用指针指向新的对象：</p>
+
+<pre><code>*location = newObj;
+</code></pre>
+
+<p>最后会返回这个新对象：</p>
+
+<pre><code>return newObj;
+</code></pre>
+
+<p>objc_storeWeak的基本实现就是这样。当然，在objc_initWeak中调用objc_storeWeak时，老对象是空的，所有不会执行weak_unregister_no_lock操作。</p>
+
+<p>而当weak引用指向的对象被释放时，又是如何去处理weak指针的呢？当释放对象时，其基本流程如下：</p>
+
+<ol>
+<li>调用objc_release</li>
+<li>因为对象的引用计数为0，所以执行dealloc</li>
+<li>在dealloc中，调用了_objc_rootDealloc函数</li>
+<li>在_objc_rootDealloc中，调用了object_dispose函数</li>
+<li>调用objc_destructInstance</li>
+<li>最后调用objc_clear_deallocating</li>
+</ol>
+
+
+<p>我们重点关注一下最后一步，objc_clear_deallocating的具体实现如下：</p>
+
+<pre><code>void objc_clear_deallocating(id obj) 
+{
+    ......
+
+    SideTable *table = SideTable::tableForPointer(obj);
+
+    // clear any weak table items
+    // clear extra retain count and deallocating bit
+    // (fixme warn or abort if extra retain count == 0 ?)
+    OSSpinLockLock(&amp;table-&gt;slock);
+    if (seen_weak_refs) {
+        arr_clear_deallocating(&amp;table-&gt;weak_table, obj);
+    }
+    ......
+}
+</code></pre>
+
+<p>我们可以看到，在这个函数中，首先取出对象对应的SideTable实例，如果这个对象有关联的弱引用，则调用arr_clear_deallocating来清除对象的弱引用信息。我们来看看arr_clear_deallocating具体实现：</p>
+
+<pre><code>PRIVATE_EXTERN void arr_clear_deallocating(weak_table_t *weak_table, id referent) {
+    {
+        weak_entry_t *entry = weak_entry_for_referent(weak_table, referent);
+        if (entry == NULL) {
+            ......
+            return;
+        }
+        // zero out references
+        for (int i = 0; i &lt; entry-&gt;referrers.num_allocated; ++i) {
+            id *referrer = entry-&gt;referrers.refs[i].referrer;
+            if (referrer) {
+                if (*referrer == referent) {
+                    *referrer = nil;
+                }
+                else if (*referrer) {
+                    _objc_inform("__weak variable @ %p holds %p instead of %p\n", referrer, *referrer, referent);
+                }
+            }
+        }
+
+        weak_entry_remove_no_lock(weak_table, entry);
+        weak_table-&gt;num_weak_refs--;
+    }
+}
+</code></pre>
+
+<p>这个函数首先是找出对象对应的weak_entry_t链表，然后挨个将弱引用置为nil。最后清理对象的记录。</p>
+
+<p>通过上面的描述，我们基本能了解一个weak引用从生到死的过程。从这个流程可以看出，一个weak引用的处理涉及各种查表、添加与删除操作，还是有一定消耗的。所以如果大量使用__weak变量的话，会对性能造成一定的影响。那么，我们应该在什么时候去使用weak呢？《Objective-C高级编程》给我们的建议是只在避免循环引用的时候使用__weak修饰符。</p>
+
+<p>另外，在clang中，还提供了不少关于weak引用的处理函数。如objc_loadWeak, objc_destroyWeak, objc_moveWeak等，我们可以在苹果的开源代码中找到相关的实现。等有时间，我再好好研究研究。</p>
+
+<h3>参考</h3>
+
+<ol>
+<li>《Objective-C高级编程》1.4: __weak修饰符</li>
+<li><a href="http://clang.llvm.org/docs/AutomaticReferenceCounting.html">Clang 3.7 documentation &ndash; Objective-C Automatic Reference Counting (ARC)</a></li>
+<li><a href="http://opensource.apple.com/source/objc4/objc4-532.2/runtime/NSObject.mm">apple opensource &ndash; NSObject.mm</a></li>
+</ol>
+
+
+<h2>零碎</h2>
+
+<h3>CAGradientLayer</h3>
+
+<p>CAGradientLayer类是用于在其背景色上绘制一个颜色渐变，以填充层的整个形状，包括圆角。这个类继承自CALayer类，使用起来还是很方便的。</p>
+
+<p>与Quartz 2D中的渐变处理类似，一个渐变有一个起始位置(startPoint)和一个结束位置(endPoint)，在这两个位置之间，我们可以指定一组颜色值(colors，元素是CGColorRef对象)，可以是两个，也可以是多个，每个颜色值会对应一个位置(locations)。另外，渐变还分为轴向渐变和径向渐变。</p>
+
+<p>我们写个实例来看看CAGradientLayer的具体使用：</p>
+
+<pre><code>CAGradientLayer *layer = [CAGradientLayer layer];
+layer.startPoint = (CGPoint){0.5f, 0.0f};
+layer.endPoint = (CGPoint){0.5f, 1.0f};
+layer.colors = [NSArray arrayWithObjects:(id)[UIColor blueColor].CGColor, (id)[UIColor redColor].CGColor, (id)[UIColor greenColor].CGColor, nil];
+layer.locations = @[@0.0f, @0.6f, @1.0f];
+layer.frame = self.view.layer.bounds;
+
+[self.view.layer insertSublayer:layer atIndex:0];
+</code></pre>
+
+<h4>参考</h4>
+
+<ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Reference/CAGradientLayer_class/">CAGradientLayer Class Reference</a></li>
+</ol>
+
+
+<h3>Xcode中Ineligible Devices的处理</h3>
+
+<p>换了台新电脑，装了个Xcode 6.3，整了个新证书和profile，然后打开Xcode，连上手机。额，然后发现设备居然被标识为Ineligible Devices，没认出来。情况类似于下图：</p>
+
+<p><img src="http://i.stack.imgur.com/CFOSG.png" alt="image" /></p>
+
+<p>电脑是受信任的，证书和profile也都是OK的。试了几次重启Xcode和重新连接手机，无效。设备就是选不了。最后是在Product->Destination里面才选中这个设备的。不过在工具栏还是不能选择，郁闷，求解。</p>
+
+<h3>iOS 7后隐藏UITextField的光标</h3>
+
+<p>新项目只支持iOS 7后，很多事情变得简单多了，就像隐藏UITextField的光标一样，就简单的一句话：</p>
+
+<pre><code>textFiled.tintColor = [UIColor clearColor];
+</code></pre>
+
+<p>通常我们用UIPickerView作为我们的UITextField的inputView时，我们是需要隐藏光标的。当然，如果想换个光标颜色，也是这么处理。</p>
+
+<p>这么处理的有个遗留问题是：通常我们使用UIPickerView作为UITextField的inputView时， 并不希望去执行各种菜单操作(全选、复制、粘帖)，但只是去设置UITextField的tintColor时，我们仍然可以执行这边操作，所以需要加额外的处理。这个问题，我们可以这样处理：在textFieldShouldBeginEditing:中，我们把UITextField的userInteractionEnabled设置为NO，然后在textFieldShouldEndEditing:，将将这个值设置回来。如下：</p>
+
+<pre><code>- (BOOL)textFieldShouldBeginEditing:(UITextField *)textField {
+
+    textField.userInteractionEnabled = NO;
+
+    return YES;
+}
+
+- (BOOL)textFieldShouldEndEditing:(UITextField *)textField {
+
+    textField.userInteractionEnabled = YES;
+
+    return YES;
+}
+</code></pre>
+
+<p>这样就OK了。当然这只是我们当前使用的一种处理方式，还有其它的方法，直接google或者stackoverflow吧。</p>
+
+<h3>iOS 7后UIAlertView中文字左对齐问题</h3>
+
+<p>在iOS 7之前，如果我们想要让UIAlertView中的文字居左显示的话，可以使用以下这段代码来处理：</p>
+
+<pre><code>for (UIView *view in alert.subviews) {
+    if([[view class] isSubclassOfClass:[UILabel class]]) {
+       ((UILabel*)view).textAlignment = NSTextAlignmentLeft;
+    }
+}
+</code></pre>
+
+<p>但很遗憾的是，在iOS 7之后，苹果不让我们这么干了。我们去取UIAlertView的subviews时，获得的只是一个空数组，我们没有办法获取到我们想要的label。怎么办？三条路：告诉产品经理和UED说这个实现不了(当然，这个是会被鄙视的，人家会说你能力差)；自己写；找第三方开源代码。嘿嘿，不过由于最近时间紧，所以我决定跟他们说实现不了，哈哈。不过在github上找了一个开源的，<a href="https://github.com/wimagguc/ios-custom-alertview">Custom iOS AlertView</a>，star的数量也不少，看来不错，回头好好研究研究。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[iOS知识小集 第一期(2015.05.10)]]></title>
@@ -7451,538 +7997,6 @@ CGContextDrawImage(context, rect, myColorMaskedImage);
     CGContextSetRGBFillColor (myContext, 1, 0, 0, 1);
     CGContextFillRect (myContext, CGRectMake (wd/3,ht/2-50,wd/4,ht/4));
     CGContextEndTransparencyLayer (myContext);
-}
-</code></pre>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Quartz 2D编程指南之八：渐变]]></title>
-    <link href="http://southpeak.github.io/blog/2014/12/10/quartz-2dbian-cheng-zhi-nan-zhi-ba-:jian-bian/"/>
-    <updated>2014-12-10T09:00:26+08:00</updated>
-    <id>http://southpeak.github.io/blog/2014/12/10/quartz-2dbian-cheng-zhi-nan-zhi-ba-:jian-bian</id>
-    <content type="html"><![CDATA[<p>Quartz提供了两个不透明数据odgago创建渐变：CGShadingRef和CGGradientRef。我们可以使用任何一个来创建轴向(axial)或径向(radial)渐变。一个渐变是从一个颜色到另外一种颜色的填充。</p>
-
-<p>一个轴向渐变(也称为线性渐变)沿着由两个端点连接的轴线渐变。所有位于垂直于轴线的某条线上的点都具有相同的颜色值。</p>
-
-<p>一个径向渐变也是沿着两个端点连接的轴线渐变，不过路径通常由两个圆来定义。</p>
-
-<p>本章提供了一些我们使用Quartz能够创建的轴向和径向渐变的类型的例子，并比较绘制渐变的两种方法，然后演示了如何使用每种不透明数据类型来创建渐变。</p>
-
-<h2>轴向和径向渐变实例</h2>
-
-<p>Quartz函数提供了一个丰富的功能来创建渐变效果。这一部分显示了一些我们能达到的效果。图8-1中的轴向渐变由橙色向黄色渐变。在这个例子中，渐变轴相对于原点倾斜了45度角。</p>
-
-<p>Figure 8-1  An axial gradient along a 45 degree axis</p>
-
-<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/two_color_gradient.jpg" alt="image" /></p>
-
-<p>Quartz也允许我们指定一系列的颜色和位置值，以沿着轴来创建更复杂的轴向渐变，如图8-2所示。起始点的颜色值是红色，结束点的颜色是紫罗兰色。同时，在轴上有五个位置，它们的颜色值分别被设置为橙、黄、绿、蓝和靛蓝。我们可以把它看成沿着同一轴线的六段连续的线性渐变。虽然这里的轴线与图8-1是一样的，但这不是必须的。轴线的角度由我们提供的两个端点定义。</p>
-
-<p>Figure 8-2  An axial gradient created with seven locations and colors</p>
-
-<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rainbow_gradient.jpg" alt="image" /></p>
-
-<p>图8-3显示了一个径向渐变，它从一个小的明亮的红色圆渐变到一个大小黑色的圆。</p>
-
-<p>Figure 8-3  A radial gradient that varies between two circles</p>
-
-<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/cylinder6.gif" alt="image" /></p>
-
-<p>使用Quartz，我们不局限于创建颜色值改变的渐变；我们可以只修改alpha值，或者创建alpha值与其它颜色组件一起改变的渐变。图8-4显示了一个渐变，其红、绿、蓝组件的值是不变的，但alpha值从1.0渐变到0.1。</p>
-
-<p>注意：如果我们使用alpha值来改变一个渐变，则在绘制一个PDF内容时我们不能捕获这个渐变。因此，这样的渐变无法打印。如果需要绘制一个渐变到PDF，则需要让alpha值为1.0。</p>
-
-<p>Figure 8-4  A radial gradient created by varying only the alpha component</p>
-
-<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/alpha_only.jpg" alt="image" /></p>
-
-<p>我们可以把一个圆放置到一个径向渐变中来创建各种形状。如果一个圆是另一个的一部分或者完全在另一个的外面，则Quartz创建了圆锥和一个圆柱。径向渐变的一个通常用法就是创建一个球体阴影，如图8-5所示。在这种情况下，一个单一的点(半径为0的圆)位于一个大圆以内。</p>
-
-<p>Figure 8-5  A radial gradient that varies between a point and a circle</p>
-
-<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/shaded_sphere.gif" alt="image" /></p>
-
-<p>我们可以像图8-6一样通过内嵌几个径向渐变来创建更复杂的效果。它使用同心圆来创建图形中的各环形部分。</p>
-
-<p>Figure 8-6  Nested radial gradients</p>
-
-<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/torus.gif" alt="image" /></p>
-
-<h2>CGShading和CGGradient对象的对比</h2>
-
-<p>我们有两个对象类型用于创建渐变，你可能想知道哪一个更好用。本节就来回答这个问题。</p>
-
-<p>CGShadingRef这个不透明数据类型给我们更多的控制权，以确定如何计算每个端点的颜色。在我们创建CGShading对象之前，我们必须创建一个CGFunction对象(CGFunctionRef)，这个对象定义了一个用于计算渐变颜色的函数。写一个自定义的函数让我们能够创建平滑的渐变，如图8-3，8-3和8-5及更多非传统的效果，如图8-12所示。</p>
-
-<p>当创建一个CGShading对象时，我们指定其是轴向还是径向。除了计算函数外，我们还需要提供一个颜色空间、起始点和结束点或者是半径，这取决于是绘制轴向还是径向渐变。在绘制时，我们只是简单地传递CGShading对象及绘制上下文给CGContextDrawShading函数。Quartz为渐变上的每个点调用渐变计算函数。</p>
-
-<p>一个CGGradient对象是CGShading对象的子集，其更易于使用。CGGradientRef不透明类型易于作用，因为Quartz在渐变的每一个顶点上计算颜色值。我们不需要提供一个渐变计算函数。当创建一个渐变对象时，我们提供一个位置和颜色的数组。Quartz使用对应的颜色值来计算每个梯度的渐变，。我们可以使用单一的起始与结束点来设置一个渐变对象，如图8-1所示，或者提供一组端点来创建一个类似于图8-2的的效果。使用CGShading对象可以提供多于两个位置的能力。</p>
-
-<p>当我们创建一个CGGradient对象时，我们需要设置一个颜色空间、位置、和每个位置对应的颜色值。当使用一个渐变对象绘制上下文时，我们指定Quartz是绘制一个轴向还是径向渐变。在绘制时，我们指定开始结束点或半径，这取决于我们是绘制轴向还是径向渐变。而CGShading的几何形状是在创建时定义的，而不是绘制时。</p>
-
-<p>表8-1总结了两种不透明数据类型之间的区别。</p>
-
-<p><img src="http://a1.qpic.cn/psb?/V130i6W71atwfr/AaDaf5N2GhcgG29GukC4bGMrQsPTL35OU4kjfjH2tZo!/b/dDOyEHb5CAAA&amp;bo=ggckAgAAAAADB4E!&amp;rf=viewer_4" alt="image" /></p>
-
-<h2>扩展渐变端点外部的颜色</h2>
-
-<p>当我们创建一个渐变时，我们可以选择使用纯色来填充渐变端点外部的空间。Quartz使用使用渐变边界上的颜色作为填充颜色。我们可以扩展渐变起点、终点或两端的颜色。我们可以扩展使用CGShading对象或CGGradient对象创建的轴向或径向渐变。</p>
-
-<p>图8-7演示了一个轴向渐变，它扩展了起点和终点两侧的区域。图片中的线段显示了渐变的轴线。我们可以看到，填充颜色与起点和终点的颜色是对应的。</p>
-
-<p>Figure 8-7  Extending an axial gradient</p>
-
-<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/extend_axial2.gif" alt="image" /></p>
-
-<p>图8-8对比了一个未使用扩展的径向渐变和一个在起点和终点两侧使用扩展的径向渐变。Quartz获取了起点和终点的颜色值，并使用这边纯色值来扩展立面。</p>
-
-<p>Figure 8-8  Extending a radial gradient</p>
-
-<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/extend_radial.gif" alt="image" /></p>
-
-<h2>使用CGGradient对象</h2>
-
-<p>一个CGGradient对象是一个渐变的抽象定义&mdash;它简单地指定了颜色值和位置，但没有指定几何形状。我们可以在轴向和径向几何形状中使用这个对象。作为一个抽象定义，CGGradient对象可能比CGShading对象更容易重用。没有将几何形状存储在CGGradient对象中，这样允许我们使用相同的颜色方案来绘制不同的几何图形，而不需要为多个图形创建多个CGGradient对象。</p>
-
-<p>因为Quartz为我们计算渐变，使用一个CGGradient对象来创建和绘制一个渐变则更直接，只需要以下几步：</p>
-
-<ol>
-<li>创建一个CGGradient对象，提供一个颜色空间，一个饱含两个或更多颜色组件的数组，一个包含两个或多个位置的数组，和两个数组中元素的个数。</li>
-<li>调用CGContextDrawLinearGradient或CGContextDrawRadialGradient函数并提供一个上下文、一个CGGradient对象、绘制选项和开始结束几何图形来绘制渐变。</li>
-<li>当不再需要时释放CGGradient对象。</li>
-</ol>
-
-
-<p>一个位置是一个值区间在0.0到1.0之间的CGFloat值，它指定了沿着渐变的轴线的标准化距离。值0.0指定的轴线的起点，1.0指定了轴线的终点。其它的值指定了一个距离的比例。最低限度情况下，Quartz使用两个位置值。如果我们传递NULL值作为位置数组参数，则Quartz使用0作为第一个位置，1作为第二个位置。</p>
-
-<p>每个颜色的颜色组件的数目取决于颜色空间。对于离屏绘制，我们使用一个RGB颜色空间。因为Quartz使用alpha来绘制，每个离屏颜色都有四个组件&mdash;红、绿、蓝和alpha。所以，对于离屏绘制，我们提供的颜色组件数组的元素的数目必须是位置数目的4倍。Quartz的RGBA颜色组件可以在0.0到1.0之间改变。</p>
-
-<p>代码清单8-1是创建一个CGGradient对象的代码片断。在声明了必须的变量后，代码设置了位置和颜色组件数组。然后创建了一个通用的RGB颜色空间。(在iOS中，不管RGB颜色空间是否可用，我们都应该调用CGColorSpaceCreateDeviceRGB)。然后，它传递必要的参数到CGGradientCreateWithColorComponents函数。我们同样可以使用CGGradientCreateWithColors，如果我们的程序设置了CGColor对象，这是一种便捷的方法。</p>
-
-<p>Listing 8-1  Creating a CGGradient object</p>
-
-<pre><code>CGGradientRef myGradient;
-CGColorSpaceRef myColorspace;
-size_t num_locations = 2;
-CGFloat locations[2] = { 0.0, 1.0 };
-CGFloat components[8] = { 1.0, 0.5, 0.4, 1.0,  // Start color
-                          0.8, 0.8, 0.3, 1.0 }; // End color
-
-myColorspace = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
-myGradient = CGGradientCreateWithColorComponents (myColorspace, components,
-                          locations, num_locations);
-</code></pre>
-
-<p>在创建了CGGradient对象后，我们可以使用它来绘制一个轴向或线性渐变。代码清单8-2声明并设置了线性渐变的起始点然后绘制渐变。图8-1显示了结果。代码没有演示如何获取CGContext对象。</p>
-
-<p>Listing 8-2  Painting an axial gradient using a CGGradient object</p>
-
-<pre><code>CGPoint myStartPoint, myEndPoint;
-myStartPoint.x = 0.0;
-myStartPoint.y = 0.0;
-myEndPoint.x = 1.0;
-myEndPoint.y = 1.0;
-CGContextDrawLinearGradient (myContext, myGradient, myStartPoint, myEndPoint, 0);
-</code></pre>
-
-<p>代码清单8-3使用代码清单8-1中创建的CGGradient对象来绘制图8-9中径向渐变。这个例子同时也演示了使用纯色来填充渐变的扩展区域。</p>
-
-<p>Listing 8-3  Painting a radial gradient using a CGGradient object</p>
-
-<pre><code>CGPoint myStartPoint, myEndPoint;
-CGFloat myStartRadius, myEndRadius;
-myStartPoint.x = 0.15;
-myStartPoint.y = 0.15;
-myEndPoint.x = 0.5;
-myEndPoint.y = 0.5;
-myStartRadius = 0.1;
-myEndRadius = 0.25;
-CGContextDrawRadialGradient (myContext, myGradient, myStartPoint,
-                         myStartRadius, myEndPoint, myEndRadius,
-                         kCGGradientDrawsAfterEndLocation);
-</code></pre>
-
-<p>Figure 8-9  A radial gradient painted using a CGGradient object</p>
-
-<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/radial_cggradient.jpg" alt="image" /></p>
-
-<p>图8-4中的径向渐变使用代码清单8-4中的变量来创建。</p>
-
-<p>Listing 8-4  The variables used to create a radial gradient by varying alpha</p>
-
-<pre><code>CGPoint myStartPoint, myEndPoint;
-CGFloat myStartRadius, myEndRadius;
-myStartPoint.x = 0.2;
-myStartPoint.y = 0.5;
-myEndPoint.x = 0.65;
-myEndPoint.y = 0.5;
-myStartRadius = 0.1;
-myEndRadius = 0.25;
-size_t num_locations = 2;
-CGFloat locations[2] = { 0, 1.0 };
-CGFloat components[8] = { 0.95, 0.3, 0.4, 1.0,
-                          0.95, 0.3, 0.4, 0.1 };
-</code></pre>
-
-<p>代码清单8-5显示了用于创建图8-10中的灰色渐变的变量，其中有3个位置。</p>
-
-<p>Listing 8-5  The variables used to create a gray gradient</p>
-
-<pre><code>size_t num_locations = 3;
-CGFloat locations[3] = { 0.0, 0.5, 1.0};
-CGFloat components[12] = {  1.0, 1.0, 1.0, 1.0,
-                            0.5, 0.5, 0.5, 1.0,
-                            1.0, 1.0, 1.0, 1.0 };
-</code></pre>
-
-<p>Figure 8-10  An axial gradient with three locations</p>
-
-<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/gray_gradient_3.jpg" alt="image" /></p>
-
-<h2>使用CGShading对象</h2>
-
-<p>我们通过调用函数CGShadingCreateAxial或CGShadingCreateRadial创建一个CGShading对象来设置一个渐变，调用这些函数需要提供以下参数：</p>
-
-<ol>
-<li>CGColorSpace对象：颜色空间</li>
-<li>起始点和终点。对于轴向渐变，有轴线的起始点和终点的坐标。对于径向渐变，有起始圆和终点圆中心的坐标。</li>
-<li>用于定义渐变区域的圆的起始半径与终止半径。</li>
-<li>一个CGFunction对象，可以通过CGFunctionCreate函数来获取。这个回调例程必须返回绘制到特定点的颜色值。</li>
-<li>一个布尔值，用于指定是否使用纯色来绘制起始点与终点的扩展区域。</li>
-</ol>
-
-
-<p>我们提供给CGShading创建函数的CGFunction对象包含一个回调结构体，及Quartz需要实现这个回调的所有信息。也许设置CGShasing对象的最棘手的部分是创建CGFunction对象。当我们调用CGFunctionCreate函数时，我们提供以下参数：</p>
-
-<ol>
-<li>指向回调所需要的数据的指针</li>
-<li>回调的输入值的个数。Quartz要求回调携带一个输入值。</li>
-<li>一个浮点数的数组。Quartz只会提供数组中的一个元素给回调函数。一个转入值的范围是0(渐变的开始点的颜色)到1(渐变的结束点的颜色)。</li>
-<li>回调提供的输出值的数目。对于每一个输入值，我们的回调必须为每个颜色组件提供一个值，以及一个alpha值来指定透明度。颜色组件值由Quartz提供的颜色空间来解释，并会提供给CGShading创建函数。例如，如果我们使用RGB颜色空间，则我们提供值4作为输出值(R,G,B,A)的数目。</li>
-<li>一个浮点数的数组，用于指定每个颜色组件的值及alpha值。</li>
-<li><p>一个回调数据结构，包含结构体的版本(设置为0)、生成颜色组件值的回调、一个可选的用于释放回调中info参数表示的数据。该回调类似于以下格式：</p>
-
-<p> void myCalculateShadingValues (void <em>info, const CGFloat </em>in, CGFloat *out)</p></li>
-</ol>
-
-
-<p>在创建CGShading对象后，如果需要我们可以设置额外的裁减操作。然后调用CGContextDrawShading函数来使用渐变来绘制上下文的裁减区域。当调用这个函数时，Quartz调用回调函数来获取从起点到终点这个范围内的颜色值。</p>
-
-<p>当不再需要CGShading对象时，我们调用CGShadingRelease来释放它。</p>
-
-<p>下面我们将一步步地通过代码来看看如何使用CGShading对象来绘制渐变。</p>
-
-<h3>使用CGShading对象绘制一个轴向渐变</h3>
-
-<p>绘制轴向和径向渐变的步骤是差不多的。这个例子演示了如何使用一个CGShading对象来绘制一个轴向渐变，并在图形上下文中绘制一个半圆形的裁减路径，然后将渐变绘制到裁减区域来达到图8-11的效果。</p>
-
-<p>Figure 8-11  An axial gradient that is clipped and painted</p>
-
-<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/axial_shading_arc.gif" alt="image" /></p>
-
-<p>为了绘制图中的轴向渐变，需要按以下步骤来处理：</p>
-
-<ol>
-<li>设置CGFunction对象来计算颜色值</li>
-<li>创建轴向渐变的CGShading对象</li>
-<li>裁减上下文</li>
-<li>使用CGShading对象来绘制轴向渐变</li>
-<li>释放对象</li>
-</ol>
-
-
-<h4>设置CGFunction对象来计算颜色值</h4>
-
-<p>我们可以以我们想要的方式来计算颜色值，我们的颜色计算函数包含以下三个参数：</p>
-
-<ol>
-<li>void *info：这个值可以为NULL或者是一个指向传递给CGShading创建函数的数据。</li>
-<li>const CGFloat *in：Quartz传递in数组给回调。数组中的值必须在为CGFunction对象定义的输入值范围内。例如，输入范围是0到1；看代码清单8-7</li>
-<li>CGFloat *out：我们的回调函数传递out数组给Quartz。它包含用于颜色空间中每个颜色组件的元素及一个alpha值。输出值应该在CGFunction对象中定义的输出值的范围内，例如，输出范围是0到1；看代码清单8-7。</li>
-</ol>
-
-
-<p>更多关于参数的信息可以查看CGFunctionEvaluateCallback。</p>
-
-<p>代码清单8-6演示了一个函数，它通过将一个常数数组中的值乘以输入值来计算颜色组件值。因为输入值在0到1之间，所以输入值位于黑色(对于RGB来说值为0, 0, 0)和紫色(1, 0, 0.5)之间。注意最后一个组件通常设置为1，表示颜色总是完全不透明的。</p>
-
-<p>Listing 8-6  Computing color component values</p>
-
-<pre><code>static void myCalculateShadingValues (void *info,
-                            const CGFloat *in,
-                            CGFloat *out)
-{
-    CGFloat v;
-    size_t k, components;
-    static const CGFloat c[] = {1, 0, .5, 0 };
-
-    components = (size_t)info;
-
-    v = *in;
-    for (k = 0; k &lt; components -1; k++)
-        *out++ = c[k] * v;
-     *out++ = 1;
-}
-</code></pre>
-
-<p>在写完回调计算颜色值后，我们将其打包以作为CGFunction对象的一部分。代码清单显示了一个函数，它创建了一个包含代码清单8-6中的回调函数的CGFunction对象。</p>
-
-<p>Listing 8-7  Creating a CGFunction object</p>
-
-<pre><code>static CGFunctionRef myGetFunction (CGColorSpaceRef colorspace)
-{
-    size_t numComponents;
-    static const CGFloat input_value_range [2] = { 0, 1 };
-    static const CGFloat output_value_ranges [8] = { 0, 1, 0, 1, 0, 1, 0, 1 };
-    static const CGFunctionCallbacks callbacks = { 0,
-                                &amp;myCalculateShadingValues,
-                                NULL };
-
-    numComponents = 1 + CGColorSpaceGetNumberOfComponents (colorspace);
-    return CGFunctionCreate ((void *) numComponents,
-                                1, 
-                                input_value_range, 
-                                numComponents, 
-                                output_value_ranges, 
-                                &amp;callbacks);
-}
-</code></pre>
-
-<h4>创建一个轴向渐变的CGShading对象</h4>
-
-<p>为了创建一个CGShading对象，我们调用CGShadingCreateAxial函数，如代码清单8-8所示。我们传递一个颜色空间，开始点和结束点，一个CGFunction对象，和一个用于指定是否填充渐变的开始点和结束点扩展的布尔值。</p>
-
-<p>Listing 8-8  Creating a CGShading object for an axial gradient</p>
-
-<pre><code>CGPoint     startPoint,
-            endPoint;
-CGFunctionRef myFunctionObject;
-CGShadingRef myShading;
-
-startPoint = CGPointMake(0,0.5);
-endPoint = CGPointMake(1,0.5);
-colorspace = CGColorSpaceCreateDeviceRGB();
-myFunctionObject = myGetFunction (colorspace);
-
-myShading = CGShadingCreateAxial (colorspace,
-                        startPoint, endPoint,
-                        myFunctionObject,
-                        false, false);
-</code></pre>
-
-<h4>裁减上下文</h4>
-
-<p>当绘制一个渐变时，Quartz填充当前上下文。绘制一个渐变与操作颜色和模式不同，后者是用于描边或填充一个路径对象。因此，如果要我们的渐变出现在一个特定形状中，我们需要裁减上下文。代码清单8-9的代码添加了一个半圆形到当前上下文，以便渐变绘制到这个裁减区域，如图8-11。</p>
-
-<p>如果我们仔细看，会发现代码绘制的是一个半圆，而图中显示的是一个半椭圆形。为什么呢？我们会看到，当我们查看后面完整的绘制代码时，上下文被缩放了。稍后会详细说明。虽然我们不需要使用缩放或裁减，这些在Quartz 2D中的选项可以帮助我们达到有趣的效果。</p>
-
-<p>Listing 8-9  Adding a semicircle clip to the graphics context</p>
-
-<pre><code>CGContextBeginPath (myContext);
-CGContextAddArc (myContext, .5, .5, .3, 0,
-                my_convert_to_radians (180), 0);
-CGContextClosePath (myContext);
-CGContextClip (myContext);
-</code></pre>
-
-<h4>使用CGShading对象来绘制轴向渐变</h4>
-
-<p>调用函数CGContextDrawShading使用CGShading对象为指定的颜色渐变来填充当前上下文：</p>
-
-<pre><code>CGContextDrawShading (myContext, myShading);
-</code></pre>
-
-<h4>释放对象</h4>
-
-<p>当我们不再需要CGShading对象时，可以调用函数CGShadingRelease来释放它。我们需要同时释放CGColorSpace对象和CGFunction对象，如代码清单8-10所示：</p>
-
-<p>Listing 8-10  Releasing objects</p>
-
-<pre><code>CGShadingRelease (myShading);
-CGColorSpaceRelease (colorspace);
-CGFunctionRelease (myFunctionObject);
-</code></pre>
-
-<h4>使用CGShading对象绘制轴向渐变的完整例程</h4>
-
-<p>代码清单8-11显示了绘制一个轴向渐变的完整例程，使用8-7中的CGFunction对象和8-6中的回调函数。</p>
-
-<p>Listing 8-11  Painting an axial gradient using a CGShading object</p>
-
-<pre><code>void myPaintAxialShading (CGContextRef myContext,
-                            CGRect bounds)
-{
-    CGPoint     startPoint,
-                endPoint;
-    CGAffineTransform myTransform;
-    CGFloat width = bounds.size.width;
-    CGFloat height = bounds.size.height;
-
-
-    startPoint = CGPointMake(0,0.5); 
-    endPoint = CGPointMake(1,0.5);
-
-    colorspace = CGColorSpaceCreateDeviceRGB();
-    myShadingFunction = myGetFunction(colorspace);
-
-    shading = CGShadingCreateAxial (colorspace, 
-                                 startPoint, endPoint,
-                                 myShadingFunction,
-                                 false, false);
-
-    myTransform = CGAffineTransformMakeScale (width, height);
-    CGContextConcatCTM (myContext, myTransform);
-    CGContextSaveGState (myContext);
-
-    CGContextClipToRect (myContext, CGRectMake(0, 0, 1, 1));
-    CGContextSetRGBFillColor (myContext, 1, 1, 1, 1);
-    CGContextFillRect (myContext, CGRectMake(0, 0, 1, 1));
-
-    CGContextBeginPath (myContext);
-    CGContextAddArc (myContext, .5, .5, .3, 0,
-                        my_convert_to_radians (180), 0);
-    CGContextClosePath (myContext);
-    CGContextClip (myContext);
-
-    CGContextDrawShading (myContext, shading);
-    CGColorSpaceRelease (colorspace);
-    CGShadingRelease (shading);
-    CGFunctionRelease (myShadingFunction);
-
-    CGContextRestoreGState (myContext); 
-}
-</code></pre>
-
-<h3>使用CGShading对象绘制一个径向渐变</h3>
-
-<p>这个例子演示了如何使用CGShading对象来生成如图8-12所示的输出</p>
-
-<p>Figure 8-12  A radial gradient created using a CGShading object</p>
-
-<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/radial_shading.gif" alt="image" /></p>
-
-<p>为了绘制一个径向渐变，我们需要按以下步骤来处理：</p>
-
-<ol>
-<li>设置CGFunction对象来计算颜色值</li>
-<li>创建径向渐变的CGShading对象</li>
-<li>使用CGShading对象来绘制径向渐变</li>
-<li>释放对象</li>
-</ol>
-
-
-<h4>设置CGFunction对象来计算颜色值</h4>
-
-<p>计算径向渐变和轴向渐变颜色值的函数没有什么区别。事实上，我们可以依照上面的轴向的&#8221;设置CGFunction对象来计算颜色值&#8221;。代码清单8-12用于计算颜色，使用颜色按正弦变化。图8-12与图8-11的结果非常不同。虽然颜色输出值不同，代码清单8-12的代码与8-6中的函数遵循相同的原型。每个函数获取一个输入值并计算N个值，即颜色空间的每个颜色组件加一个alpha值。</p>
-
-<p>Listing 8-12  Computing color component values</p>
-
-<pre><code>static void  myCalculateShadingValues (void *info,
-                                const CGFloat *in,
-                                CGFloat *out)
-{
-    size_t k, components;
-    double frequency[4] = { 55, 220, 110, 0 };
-    components = (size_t)info;
-    for (k = 0; k &lt; components - 1; k++)
-        *out++ = (1 + sin(*in * frequency[k]))/2;
-     *out++ = 1; // alpha
-}
-</code></pre>
-
-<p>在写完颜色计算函数后调用它，我们需要创建一个CGFunction对象，如在轴向中&#8221;设置CGFunction对象来计算颜色值&#8221;所描述的一样。</p>
-
-<h4>创建径向渐变的CGShading对象</h4>
-
-<p>为了创建一个CGShading对象或者一个径向渐变，我们调用CGShadingCreateRadial函数，如代码清单8-13所求，传递一个颜色空间、开始点和结束点，开始半径和结束半径，一个CGFunction对象，和一个用于指定是否填充渐变的开始点和结束点扩展的布尔值。</p>
-
-<p>Listing 8-13  Creating a CGShading object for a radial gradient</p>
-
-<pre><code>CGPoint startPoint, endPoint;
-CGFloat startRadius, endRadius;
-
-startPoint = CGPointMake(0.25,0.3);
-startRadius = .1;
-endPoint = CGPointMake(.7,0.7);
-endRadius = .25;
-colorspace = CGColorSpaceCreateDeviceRGB();
-myShadingFunction = myGetFunction (colorspace);
-CGShadingCreateRadial (colorspace,
-                startPoint,
-                startRadius,
-                endPoint,
-                endRadius,
-                myShadingFunction,
-                false,
-                false);
-</code></pre>
-
-<h4>使用CGShading对象来绘制径向渐变</h4>
-
-<p>调用函数CGContextDrawShading使用CGShading对象为指定的颜色渐变来填充当前上下文：</p>
-
-<pre><code>CGContextDrawShading (myContext, myShading);
-</code></pre>
-
-<p>注意我们使用相同的函数来绘制渐变，而不管它是轴向还是径向。</p>
-
-<h4>释放对象</h4>
-
-<p>当我们不再需要CGShading对象时，可以调用函数CGShadingRelease来释放它。我们需要同时释放CGColorSpace对象和CGFunction对象，如代码清单8-14所示：</p>
-
-<p>Listing 8-10  Releasing objects</p>
-
-<pre><code>CGShadingRelease (myShading);
-CGColorSpaceRelease (colorspace);
-CGFunctionRelease (myFunctionObject);
-</code></pre>
-
-<h4>使用CGShading对象绘制径向渐变的完整例程</h4>
-
-<p>代码清单8-15显示了绘制一个轴径向渐变的完整例程，使用8-7中的CGFunction对象和8-12中的回调函数。</p>
-
-<p>Listing 8-15  A routine that paints a radial gradient using a CGShading object</p>
-
-<pre><code>void myPaintRadialShading (CGContextRef myContext,
-                            CGRect bounds);
-{
-    CGPoint startPoint,
-            endPoint;
-    CGFloat startRadius,
-            endRadius;
-    CGAffineTransform myTransform;
-    CGFloat width = bounds.size.width;
-    CGFloat height = bounds.size.height;
-
-    startPoint = CGPointMake(0.25,0.3); 
-    startRadius = .1;  
-    endPoint = CGPointMake(.7,0.7); 
-    endRadius = .25; 
-
-    colorspace = CGColorSpaceCreateDeviceRGB(); 
-    myShadingFunction = myGetFunction (colorspace);
-
-    shading = CGShadingCreateRadial (colorspace, 
-                            startPoint, startRadius,
-                            endPoint, endRadius,
-                            myShadingFunction,
-                            false, false);
-
-    myTransform = CGAffineTransformMakeScale (width, height); 
-    CGContextConcatCTM (myContext, myTransform); 
-    CGContextSaveGState (myContext); 
-
-    CGContextClipToRect (myContext, CGRectMake(0, 0, 1, 1)); 
-    CGContextSetRGBFillColor (myContext, 1, 1, 1, 1);
-    CGContextFillRect (myContext, CGRectMake(0, 0, 1, 1));
-
-    CGContextDrawShading (myContext, shading); 
-    CGColorSpaceRelease (colorspace); 
-    CGShadingRelease (shading);
-    CGFunctionRelease (myShadingFunction);
-
-    CGContextRestoreGState (myContext); 
 }
 </code></pre>
 ]]></content>
