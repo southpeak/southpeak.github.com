@@ -484,10 +484,11 @@ self.passwordTextField.backgroundColor = self.passwordIsValid ? [UIColor clearCo
 
 <p>运行程序，点击按钮，可以看到以下输出：</p>
 
-<pre><code>2014-07-31 18:29:27.134 RWReactivePlayground[9749:60b] Sign in result: &lt;UIButton: 0x13651ed40; frame = (192 201; 76 30); opaque = NO; autoresize = RM+BM; layer = &lt;CALayer: 0x178224c00&gt;&gt;
+<pre><code>2014-01-08 21:00:25.919 RWReactivePlayground[33818:a0b] Sign in result:<br>
+                                   &lt;RACDynamicSignal: 0xa068a00&gt; name: +createSignal:
 </code></pre>
 
-<p>可以看到subscribeNext:块传递了一个正确的信号，但结果不是登录信号。我们用图来展示这个管道操作：</p>
+<p>可以看到subscribeNext:的执行结果，可能并不是你真正想要的，这里输出的是一个信号，而不是期望的登陆成功与否的状态值。我们用图来展示这个管道操作：</p>
 
 <p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/01/SignalOfSignals.png" alt="image" /></p>
 
