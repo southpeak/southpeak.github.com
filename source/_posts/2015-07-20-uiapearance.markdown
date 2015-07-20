@@ -278,7 +278,7 @@ Swift的实现就简单多了，我们只需要如下处理：
 	
 但实际上，此时程序没有到在此断住。我们再进到Label所在的视图控制器，这时程序在断点处停住了。在这里，我们可以看看方法的调用栈。
 
-![image](http://a2.qpic.cn/psb?/V130i6W71atwfr/zvCjuu0CPc6iekXtdNtrAVBFz*dIoWt.RJszsxFSYBk!/b/dA7ptm1gFgAA&bo=IAPxAQAAAAADB*E!&rf=viewer_4)
+![image](https://raw.githubusercontent.com/southpeak/Blog-images/master/UIAppearance-Example-01.png)
 
 在调用栈里面，我们可以看到_UIAppearance这个东东，我们从[iOS-Runtime-Headers](https://github.com/nst/iOS-Runtime-Headers/blob/master/Frameworks/UIKit.framework/_UIAppearance.h)可以找到这个类的定义：
 
