@@ -87,7 +87,7 @@ double subtractTimes(uint64_t endTime, uint64_t startTime) {
 
 多运行几组测试，然后挑两组吧来看看，数据如下：
 
-``` 
+``` objective-c
 // A组
 ARC total time in seconds = 0.077761
 MRC total time in seconds = 0.072469
@@ -248,7 +248,7 @@ typedef NS_ENUM(NSInteger, UICollectionViewScrollDirection) {
 
 而在Swift中，其定义如下：
 
-``` swift
+``` objective-c
 enum UICollectionViewScrollDirection : Int {
 	case Vertical
 	case Horizontal
@@ -280,7 +280,7 @@ typedef NS_OPTIONS(NSUInteger, UICollectionViewScrollPosition) {
 
 而在Swift 2.0中，其定义如下：
 
-``` swift
+``` objective-c
 struct UICollectionViewScrollPosition : OptionSetType {
     init(rawValue: UInt)
 
@@ -309,7 +309,7 @@ struct UICollectionViewScrollPosition : OptionSetType {
 
 为了支持类NS_OPTIONS的枚举，Swift 2.0中定义了OptionSetType协议【在Swift 1.2中是使用RawOptionSetType，相比较而言已经改进了不少】，它的声明如下：
 
-``` swift
+``` objective-c
 /// Supplies convenient conformance to `SetAlgebraType` for any type
 /// whose `RawValue` is a `BitwiseOperationsType`.  For example:
 ///
@@ -342,7 +342,7 @@ protocol OptionSetType : SetAlgebraType, RawRepresentable {
 
 作为示例，我们来定义一个表示方向的选项集合，通常我们是定义一个实现OptionSetType协议的结构体，如下所示：
 
-``` swift
+``` objective-c
 struct Directions: OptionSetType {
 
     var rawValue:Int
@@ -359,7 +359,7 @@ struct Directions: OptionSetType {
 
 所需要做的基本上就是这些。然后我们就可以创建Directions的实例了，如下所示：
 
-``` swift
+``` objective-c
 let direction: Directions = Directions.Left
 if direction == Directions.Left {
     // ...
@@ -368,7 +368,7 @@ if direction == Directions.Left {
 
 如果想同时支持两个方向，则可以如上处理：
 
-``` swift
+``` objective-c
 let leftUp: Directions = [Directions.Left, Directions.Up]
 if leftUp.contains(Directions.Left) && leftUp.contains(Directions.Up) {
     // ...
@@ -379,7 +379,7 @@ if leftUp.contains(Directions.Left) && leftUp.contains(Directions.Up) {
 
 这里还有另外一种方法来达到这个目的，就是我们在Directions结构体中直接声明声明Left和Up的静态常量，如下所示：
 
-``` swift
+``` objective-c
 struct Directions: OptionSetType {
     
     // ...
@@ -391,7 +391,7 @@ struct Directions: OptionSetType {
 
 这样，我们就可以以如下方式来执行上面的操作：
 
-``` swift
+``` objective-c
 if leftUp == Directions.LeftUp {
     // ...
 }
@@ -401,7 +401,7 @@ if leftUp == Directions.LeftUp {
 
 总体来说，Swift中的对选项的支持没有Objective-C中的NS_OPTIONS来得简洁方便。而且在Swift 1.2的时候，我们还是可以使用"&"和"|”操作符的。下面这段代码在Swift 1.2上是OK的：
 
-``` swift
+``` objective-c
 UIView.animateWithDuration(0.3, delay: 1.0, options: UIViewAnimationOptions.CurveEaseIn | UIViewAnimationOptions.CurveEaseOut, animations: { () -> Void in
     // ...
 }, completion: nil)
@@ -409,7 +409,7 @@ UIView.animateWithDuration(0.3, delay: 1.0, options: UIViewAnimationOptions.Curv
 
 但到了Swift 2.0时，OptionSetType已经不再支持"&"和"|”操作了，因此，上面这段代码需要修改成：
 
-``` swift
+``` objective-c
 UIView.animateWithDuration(0.3, delay: 1.0, options: [UIViewAnimationOptions.CurveEaseIn, UIViewAnimationOptions.CurveEaseInOut], animations: { () -> Void in
         // ...
 }, completion: nil)
