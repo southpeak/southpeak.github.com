@@ -3,7 +3,7 @@ layout: post
 title: "翻译篇：10 Things You Need to Know About Cocoa Auto Layout"
 date: 2015-08-31 22:49:30 +0800
 comments: true
-categories: 
+categories: iOS
 ---
 
 
