@@ -115,12 +115,3 @@ Apple提出App Transport Security这一特性，是为了保证用户数据的�
 3. [WWDC 2015视频：Networking with NSURLSession](https://developer.apple.com/videos/wwdc/2015/?id=711)
 4. [App Transport Security](http://willowtreeapps.com/blog/app-transport-security/)
 5. [iOS9AdaptationTips](https://github.com/ChenYilong/iOS9AdaptationTips)
-
-
-
-------
-
-Hi，我是南峰子，最近开通了微信公众号：iOS知识小集，将会分享工作学习中的一些总结、心得。另外也会分享一些旅行户外的小知识，求关注ing。
-
-![image](https://github.com/southpeak/Blog-images/blob/master/weimin_header.jpg?raw=true)
-
