@@ -24,7 +24,7 @@ categories: iOS
 
 `MMTweenFunction`类主要是实现各种插值算法。这些插值算法分别10类，即上面列出的10套动画。而每套根据不同的缓动方式，又分为`EaseIn`、`EaseOut`、`EaseInOut`三种，因此`MMTweenAnimation`库实际上是实现了30种动画。每个插值算法都实现为一个闭包函数，其定义如下：
 
-``` swift
+``` objective-c
 typealias MMTweenFunctionBlock = (t: CFTimeInterval,            // 当前时间与起始时间的差值
                                   b: Double,                    // 起点
                                   c: Double,                    // 起点与终点的差值
@@ -33,7 +33,7 @@ typealias MMTweenFunctionBlock = (t: CFTimeInterval,            // 当前时间�
 
 而每个动画的插值都是根据数学公式算法出来的，我们以图例中的`Bounce-EaseOut`动画为例，其实现如下：
 
-``` swift
+``` objective-c
 let bounceOut: MMTweenFunctionBlock = { (t, b, c, d) -> Double in
     let k: Double = 2.75
     var t1 = t / d
@@ -60,7 +60,7 @@ let bounceOut: MMTweenFunctionBlock = { (t, b, c, d) -> Double in
 
 `MMTweenAnimation`定义了几个基本属性，如下所示：
 
-``` swift
+``` objective-c
 class MMTweenAnimation: POPCustomAnimation {
     var animationBlock: MMTweenAnimationBlock?          // 动画回调
     var fromValue: [CGFloat]?                           // 起点数组
@@ -83,13 +83,13 @@ class MMTweenAnimation: POPCustomAnimation {
 
 而`MMTweenAnimation`类最关键的是定义它的回调`block`。`MMTweenAnimation`类定义了一个类方法`animation()`，在这个方法中，通过调用从父类继承来的便捷初始化方法
 
-``` swift
+``` objective-c
 public convenience init!(block: POPCustomAnimationBlock!)
 ```
 
 来创建一个`MMTweenAnimation`对象。其实现如下所示：
 
-``` swift
+``` objective-c
 class func animation() -> MMTweenAnimation? {
 
         let tweaner: MMTweenAnimation = MMTweenAnimation { (target, animation) -> Bool in
@@ -127,7 +127,7 @@ class func animation() -> MMTweenAnimation? {
 
 其中动画回调的定义如下：
 
-``` swift
+``` objective-c
 typealias MMTweenAnimationBlock = (time: CFTimeInterval, duration: CFTimeInterval, values: [CGFloat], target: AnyObject, animation: MMTweenAnimation) -> Void
 ```
 
@@ -137,7 +137,7 @@ typealias MMTweenAnimationBlock = (time: CFTimeInterval, duration: CFTimeInterva
 
 有了主要部件，我们就来看看怎么去使用它。`MMTweenAnimation`给了一个示例，其效果就是开头的图例。为此，`MMTweenAnimation`定义了类`MMPaintView`，这个类的主要目的就是绘制上面的曲线，其主要操作如下：
 
-``` swift
+``` objective-c
 func addDot(point: CGPoint) {
     __dots.append(point)
     // __path = __interpolateCGPointsWithHermite(__dots)
@@ -150,7 +150,7 @@ func addDot(point: CGPoint) {
 
 我们先来看看这个点是如何获取到的。在`MMAnimationController`类，我们定义动画对象时，设置了其动画回调，如下所示：
 
-``` swift
+``` objective-c
 __anim!.animationBlock = { [unowned self] (diff: CFTimeInterval, duration: CFTimeInterval, values: [CGFloat], target: AnyObject, animation: MMTweenAnimation) -> Void in
     let value: CGFloat = values[0]          // 获取当前时间结束点的值
 
@@ -173,7 +173,7 @@ __anim!.animationBlock = { [unowned self] (diff: CFTimeInterval, duration: CFTim
 
 我们再从代码入手，来看看动画执行代码是什么时候添加到Run Loop中的。在`MMAnimationController`的`viewDidAppear`方法中，有如下调用：
 
-``` swift
+``` objective-c
 __dummy!.pop_addAnimation(__anim, forKey: "center")
 ```
 
