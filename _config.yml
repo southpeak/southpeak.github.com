@@ -100,7 +100,7 @@ duoshuo_comments: true
 duoshuo_short_name: southpeak
 
 # Google Analytics
-google_analytics_tracking_id:UA-68856508-1
+google_analytics_tracking_id: UA-68856508-1
 
 # Facebook Like
 facebook_like: false
