@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "iOS知识小集 第五期(2015.9.26)"
+title: "iOS知识小集 第五期(2015.09.26)"
 date: 2015-09-26 23:42:33 +0800
 comments: true
 categories: techset ios
