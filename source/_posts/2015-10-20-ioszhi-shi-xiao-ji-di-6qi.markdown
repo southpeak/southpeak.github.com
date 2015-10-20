@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "iOS知识小集 第6期"
+title: "iOS知识小集 第6期(2015.10.20)"
 date: 2015-10-20 17:45:14 +0800
 comments: true
 categories: 知识小集
