@@ -1,14 +1,14 @@
 ---
 layout: post
-title: "iOS知识小集 第6期(2015.10.20)"
+title: "iOS知识小集 第六期(2015.10.20)"
 date: 2015-10-20 17:45:14 +0800
 comments: true
-categories: techset
+categories: techset ios
 ---
 
 
 
-天气有点冷啊，冬天快来了～～然后貌似互联网的冬天也来了啊。阿里缩减校招名额，美团融资失败，大众点评与美团报团，一丝丝的凉意啊～～再然后就是网易邮箱密码泄漏，这又是要搞哪样？不过话说我都不记得自己是不是有网易邮箱啊。额，不知道这个冬天的第一场雪什么时候会来。不管怎样，这个冬天还是窝一窝，等来年春暖花开之时再出去浪了。
+天气有点冷啊，冬天快来了～～然后貌似互联网的冬天也来了啊。阿里缩减校招名额，美团融资失败，大众点评与美团报团，百度腾讯调整招聘，一丝丝的凉意啊～～再然后就是网易邮箱密码泄漏，这又是要搞哪样？不过话说我都不记得自己是不是有网易邮箱啊。额，不知道这个冬天的第一场雪什么时候会来。不管怎样，这个冬天还是窝一窝，等来年春暖花开之时再出去浪了。
 
 这一期的主要内容还是三点：
 
@@ -148,7 +148,7 @@ self.view.addSubview(imageView)
 
 ## CAEmitterLayer实现粒子动画
 
-前段时间@MartinRGB做了个带粒子效果的删除单元格动画，今天问他具体的实现方式，然后他把参考的原始工程发我看了一下。于是就找到了这个：[UIEffectDesignerView](https://github.com/icanzilb/UIEffectDesignerView)。是`github`上的一个粒子动画的开源代码。其效果如下图所示：
+前段时间[@MartinRGB](http://weibo.com/u/1956547962)做了个带粒子效果的删除单元格动画，今天问他具体的实现方式，然后他把参考的原始工程发我看了一下。于是就找到了这个：[UIEffectDesignerView](https://github.com/icanzilb/UIEffectDesignerView)。是`github`上的一个粒子动画的开源代码。其效果如下图所示：
 
 ![image](https://github.com/southpeak/Blog-images/blob/master/CAEmitterLayer%201.jpg?raw=true)
 
