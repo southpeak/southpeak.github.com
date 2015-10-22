@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "iOS知识小集 第三期 (2015.06.30)"
+title: "iOS知识小集 第三期(2015.06.30)"
 date: 2015-06-30 00:15:14 +0800
 comments: true
 categories: techset ios
@@ -433,7 +433,7 @@ if let controllers = myViewControllers {
 }
 ```
 
-	
+​	
 
 #### 参考
 
