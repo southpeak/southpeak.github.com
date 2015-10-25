@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "性能与时间"
+title: "Tutorial performance and time"
 date: 2014-09-23 23:55:35 +0800
 comments: true
 categories: translate
