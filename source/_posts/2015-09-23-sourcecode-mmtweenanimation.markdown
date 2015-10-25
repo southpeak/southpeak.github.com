@@ -3,7 +3,7 @@ layout: post
 title: "源码篇：MMTweenAnimation实现简要分析"
 date: 2015-09-23 20:18:24 +0800
 comments: true
-categories: iOS
+categories: sourcecode iOS
 ---
 
 先来个效果图吧：
