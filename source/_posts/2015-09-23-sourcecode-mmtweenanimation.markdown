@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "源码篇：MMTweenAnimation实现简要分析"
+title: "MMTweenAnimation实现分析"
 date: 2015-09-23 20:18:24 +0800
 comments: true
 categories: sourcecode iOS
