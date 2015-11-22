@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "UIKit:UIImage"
+title: "UIKit: UIImage"
 date: 2015-11-22 09:20:56 +0800
 comments: true
 categories: cocoa iOS
