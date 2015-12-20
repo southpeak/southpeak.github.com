@@ -8,10 +8,6 @@ categories: cocoa iOS
 
 
 
-> 本系列主要基于`Apple`官方文档，更多的是对参考文档重点内容的翻译与补充。该系列中的每篇文章会持续更新与补充。如有问题，欢迎通过微博告诉我，我将及时进行更正，谢谢！！！
-
-
-
 我们在开发应用的时候，经常会用到各种各样的控件，诸如按钮(`UIButton`)、滑块(`UISlider`)、分页控件(`UIPageControl`)等。这些控件用来与用户进行交互，响应用户的操作。我们查看这些类的继承体系，可以看到它们都是继承于`UIControl`类。`UIControl`是控件类的基类，它是一个抽象基类，我们不能直接使用`UIControl`类来实例化控件，它只是为控件子类定义一些通用的接口，并提供一些基础实现，以在事件发生时，预处理这些消息并将它们发送到指定目标对象上。
 
 本文将通过一个自定义的`UIControl`子类来看看`UIControl`的基本使用方法。不过在开始之前，让我们先来了解一下`Target-Action`机制。
@@ -215,4 +211,3 @@ categories: cocoa iOS
 3. [Cocoa Application Competencies for iOS - Target Action](https://developer.apple.com/library/prerelease/ios/documentation/General/Conceptual/Devpedia-CocoaApp/TargetAction.html)
 4. [iOS-Runtime-Header: UIControlTargetAction](https://github.com/nst/iOS-Runtime-Headers/blob/master/Frameworks/UIKit.framework/UIControlTargetAction.h)
 5. [SVSegmentedControl](https://github.com/samvermette/SVSegmentedControl)
-
