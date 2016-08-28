@@ -92,25 +92,25 @@
 <meta property="og:site_name" content="南峰子的技术博客">
 <meta property="og:description" content="原文由Alexander Orlov发表于medium，地址为https://medium.com/ios-os-x-development/perfect-smooth-scrolling-in-uitableviews-fd609d5275a5#.so9tpnlk1
 这篇文章是前两周@叶孤城 叶大在微信群里面的分享，一直到这两天才翻出来研究。很多实用的东西，不过由于水平有限，有些地方没能翻译">
-<meta property="og:image" content="https://cdn-images-1.medium.com/max/2000/1*l_1bUrp8OzZcS5cHdnaGvw.png">
-<meta property="og:image" content="https://cdn-images-1.medium.com/max/2000/1*keqsdc6XFmEOdmI4w10zrA.png">
-<meta property="og:image" content="https://cdn-images-1.medium.com/max/1200/1*m3WEuOgVhSEs5KdqCHzgTA.png">
-<meta property="og:image" content="https://cdn-images-1.medium.com/max/1200/1*X1QSvtNaWSwrnvIk8Eidiw.png">
-<meta property="og:image" content="https://cdn-images-1.medium.com/max/1200/1*2A_Ux40OUG27V-h7YGL4pQ.png">
-<meta property="og:image" content="https://cdn-images-1.medium.com/max/1200/1*RxYJW_xd4nUgfZP5E1RSZg.png">
-<meta property="og:image" content="https://cdn-images-1.medium.com/max/1600/1*VXaKFBhgWjhNbpZtwQG0_w.png">
-<meta property="og:image" content="https://cdn-images-1.medium.com/max/2000/1*QIsPebLqQ9mJFU2cQ0VDcg.png">
-<meta property="og:image" content="https://cdn-images-1.medium.com/max/1600/1*P3g0HtD5LFzWJXQjsNDbUg.jpeg">
-<meta property="og:image" content="https://cdn-images-1.medium.com/max/1200/1*wyhCSoZBdQ_tP_Dkq4RXfQ.png">
-<meta property="og:image" content="https://cdn-images-1.medium.com/max/1200/1*ZkN_5mz_NxDFEvZZMAq6Tw.png">
-<meta property="og:image" content="https://cdn-images-1.medium.com/max/1200/1*2zcnaJYsfX9IMk87EGZ_Jg.png">
-<meta property="og:image" content="https://cdn-images-1.medium.com/max/1200/1*sdBXh2Ulhc4M92VvdzVEzQ.png">
-<meta property="og:updated_time" content="2016-08-28T04:39:02.000Z">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/Perfect%20smooth%20scrolling%20in%20UITableViews%201.jpg?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/Perfect%20smooth%20scrolling%20in%20UITableViews%202.jpg?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/Perfect%20smooth%20scrolling%20in%20UITableViews%203.jpg?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/Perfect%20smooth%20scrolling%20in%20UITableViews%204.jpg?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/Perfect%20smooth%20scrolling%20in%20UITableViews%205.jpg?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/Perfect%20smooth%20scrolling%20in%20UITableViews%206.jpg?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/Perfect%20smooth%20scrolling%20in%20UITableViews%207.jpg?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/Perfect%20smooth%20scrolling%20in%20UITableViews%208.jpg?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/Perfect%20smooth%20scrolling%20in%20UITableViews%209.jpeg?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/Perfect%20smooth%20scrolling%20in%20UITableViews%2010.jpg?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/Perfect%20smooth%20scrolling%20in%20UITableViews%2011.jpg?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/Perfect%20smooth%20scrolling%20in%20UITableViews%2012.jpg?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/Perfect%20smooth%20scrolling%20in%20UITableViews%2013.jpg?raw=true">
+<meta property="og:updated_time" content="2016-08-28T09:42:30.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Perfect smooth scrolling in UITableViews">
 <meta name="twitter:description" content="原文由Alexander Orlov发表于medium，地址为https://medium.com/ios-os-x-development/perfect-smooth-scrolling-in-uitableviews-fd609d5275a5#.so9tpnlk1
 这篇文章是前两周@叶孤城 叶大在微信群里面的分享，一直到这两天才翻出来研究。很多实用的东西，不过由于水平有限，有些地方没能翻译">
-<meta name="twitter:image" content="https://cdn-images-1.medium.com/max/2000/1*l_1bUrp8OzZcS5cHdnaGvw.png">
+<meta name="twitter:image" content="https://github.com/southpeak/Blog-images/blob/master/Perfect%20smooth%20scrolling%20in%20UITableViews%201.jpg?raw=true">
 
 
 
@@ -413,9 +413,9 @@
 <p><code>UITableView</code>的<code>delegate</code>方法<code>tableView:heightForRowAtIndexPath:</code>会为每个<code>cell</code>调用一次，所以你应该非常快地返回高度值。</p>
 <p>很多人会犯一个错误，他们会在布局初始化<code>cell</code>实例并绑定数据后去获取它们的高度。如果你想优化滑动的性能，就不应该以这种方式来计算<code>cell</code>的高度，因为这事难以置信的低效，iOS设备标准的<code>60 FPS</code>将会降低到<code>15-20 FPS</code>，滑动会变得很慢。</p>
 <p>如果我们没有一个<code>cell</code>的实例，那如何去计算它的高度呢？这里有一段示例代码，它使用类方法，并基于传入的宽度及显示的数据来计算高度值:</p>
-<p><img src="https://cdn-images-1.medium.com/max/2000/1*l_1bUrp8OzZcS5cHdnaGvw.png" alt="image"></p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/Perfect%20smooth%20scrolling%20in%20UITableViews%201.jpg?raw=true" alt="image"></p>
 <p>可以用以下方式来使用上面这个方法返回高度值给<code>UITableView</code>:</p>
-<p><img src="https://cdn-images-1.medium.com/max/2000/1*keqsdc6XFmEOdmI4w10zrA.png" alt="image"></p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/Perfect%20smooth%20scrolling%20in%20UITableViews%202.jpg?raw=true" alt="image"></p>
 <p>你在实现这一切的时候能获得了多少乐趣呢？大多数人会说没有。我没有保证过这事很容易。当然，我们可以构建我们自己的类来手动布局和计算高度，但有时候我们没有足够的时间来做这件事。你可以在<a href="https://telegram.org/apps" target="_blank" rel="external">Telegram</a>的iOS应用代码中找到这种实现的例子。</p>
 <p>从iOS 8开始，我们可以在<code>UITableView</code>的<code>delegate</code>中使用自动高度计算，而不需要实现上面提到的方法。为了实现这一功能，你可能会使用<code>AutoLayout</code>，并将<code>rowHeight</code>变量设置为<code>UITableViewAutomaticDimension</code>。可以在<a href="http://stackoverflow.com/a/18746930" target="_blank" rel="external">StackOverflow</a>中找到更多详细的信息。</p>
 <p>尽管可以使用这些方法，但我强烈建议不要使用它们。另外，我也不建议使用复杂的数学计算来获取<code>cell</code>的高度，如果可能，只使用加、减、乘、除就可以。</p>
@@ -438,23 +438,23 @@
 <p>你可能已经猜到，提高性能的方法是减少混合操作的次数。但在此之前，我们需要找到它。让我们来试试。</p>
 <p>在iOS模拟器上运行App，在模拟器的菜单中选择’<code>Debug</code>‘，然后选中’<code>Color Blended Layers</code>‘。然后iOS模拟器就会将全部区域显示为两种颜色：绿色和红色。</p>
 <p>绿色区域没有混合，但红色区域表示有混合操作。</p>
-<p><img src="https://cdn-images-1.medium.com/max/1200/1*m3WEuOgVhSEs5KdqCHzgTA.png" alt="image"></p>
-<p><img src="https://cdn-images-1.medium.com/max/1200/1*X1QSvtNaWSwrnvIk8Eidiw.png" alt="image"></p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/Perfect%20smooth%20scrolling%20in%20UITableViews%203.jpg?raw=true" alt="image"></p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/Perfect%20smooth%20scrolling%20in%20UITableViews%204.jpg?raw=true" alt="image"></p>
 <p>正如你所看到的一样，在<code>cell</code>中至少有两处执行了混合操作，但你可能看不出差别来（这个混合操作是不必要的）。</p>
 <p>每种情况都应该仔细研究，不同的情况需要使用不同的方法来避免混合。在我这里，我需要做的只是设置<code>backgroundColor</code>来实现非透明。</p>
 <p>但有时候可能更复杂。看看这个：我们有一个渐变，但是没有混合。</p>
-<p><img src="https://cdn-images-1.medium.com/max/1200/1*2A_Ux40OUG27V-h7YGL4pQ.png" alt="image"></p>
-<p><img src="https://cdn-images-1.medium.com/max/1200/1*RxYJW_xd4nUgfZP5E1RSZg.png" alt="image"></p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/Perfect%20smooth%20scrolling%20in%20UITableViews%205.jpg?raw=true" alt="image"></p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/Perfect%20smooth%20scrolling%20in%20UITableViews%206.jpg?raw=true" alt="image"></p>
 <p>如果想要使用<code>CAGradientLayer</code>来实现这个效果，你将会很失望：在iPhone 6中FPS将会降到<code>25-30</code>，快速滑动变得不可能。</p>
 <p>这确实发生了，因为我们混合了两个不同层的内容：<code>UILabel</code>的<code>CATextLayer</code>和我们的<code>CAGradientLayer</code>。</p>
 <p>如果能正确地利用了<code>CPU</code>和<code>GPU</code>资源，它们将会均匀地负载，FPS保持在<code>60</code>帧。看起来就像下面这样：</p>
-<p><img src="https://cdn-images-1.medium.com/max/1600/1*VXaKFBhgWjhNbpZtwQG0_w.png" alt="image"></p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/Perfect%20smooth%20scrolling%20in%20UITableViews%207.jpg?raw=true" alt="image"></p>
 <p>当设备需要执行很多混合操作时，问题就出现了：<code>GPU</code>是满载的，但<code>CPU</code>却保持低负载，而显得没有太大用处。</p>
 <p>大多数工程师在2010年夏季末时都面临这个问题，当时发布了iPhone 4。Apple发布了革命性的<code>Retina</code>显示屏和…非常普通的<code>GPU</code>。然而，通常情况下它仍然有足够的能力，但上面描述的问题却变得越来越频繁。</p>
 <p>你可以在当前运行iOS 7系统的iPhone 4上看到这一现象–所有的应用都变得很慢，即使是最简单的应用。不过，应用这篇文章中的介绍的方法，即使是在这种情况下，你的应用也能达到<code>60 FPS</code>，尽管会有些困难。</p>
 <p>所以，需要怎么做呢？事实上，解决方案是：使用<code>CPU</code>来渲染！这将不会加载GPU，这样就无法执行混合操作。例如，在执行动画的<code>CALayer</code>上。</p>
 <p>我们可以在<code>UIView</code>的<code>drawRect:</code>方法中使用<code>CoreGraphics</code>操作来执行<code>CPU</code>渲染，如下所示：</p>
-<p><img src="https://cdn-images-1.medium.com/max/2000/1*QIsPebLqQ9mJFU2cQ0VDcg.png" alt="image"></p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/Perfect%20smooth%20scrolling%20in%20UITableViews%208.jpg?raw=true" alt="image"></p>
 <p>这段代码nice么？我会告诉你并非如此。甚至通过这种方式，你会撤销在一些<code>UIView</code>上(在任何情况下，它们都是不必要的)的所有缓存优化操作。但是，这种方法禁用了一些混合操作，卸载<code>GPU</code>，从而使<code>UITableView</code>的更顺畅。</p>
 <p>但是记住：这提高了渲染性能，不是因为<code>CPU</code>比<code>GPU</code>更快！它可以让我们通过为让<code>CPU</code>来执行某些渲染任务，从而卸载<code>GPU</code>，因为在很多情况下，<code>CPU</code>可能不是100%负载的。</p>
 <p>优化混合操作的关键点是在平衡<code>CPU</code>和<code>GPU</code>的负载。</p>
@@ -466,7 +466,7 @@
 <li>为特殊的<code>cell</code>类型编写特殊的代码。</li>
 </ul>
 <h2 id="像素获取"><a href="#像素获取" class="headerlink" title="像素获取"></a>像素获取</h2><p>你知道像素看起来是什么样的么？我的意思是，屏幕上的物理像素是什么样的？我肯定你知道，但我还是想让你看一下：</p>
-<p><img src="https://cdn-images-1.medium.com/max/1600/1*P3g0HtD5LFzWJXQjsNDbUg.jpeg" alt="image"></p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/Perfect%20smooth%20scrolling%20in%20UITableViews%209.jpeg?raw=true" alt="image"></p>
 <p>不同的屏幕有不同的制作工艺，但有一件事是一样的。事实上，每个物理像素由三个颜色的子像素组成：红、绿、蓝。</p>
 <p>基于这一事实，像素不是原子单位，虽然对于应用来说它是。或者仍然不是？</p>
 <p>直到带有<code>Retina</code>屏的iPhone 4发布前，物理像素都可以用整型点坐标来描述。自从有了<code>Retina</code>屏后，在<code>Cocoa Touch</code>环境下，我们就可以用屏幕点来取代像素了，同时屏幕点可以是浮点值。</p>
@@ -477,8 +477,8 @@
 <p>什么情况下会出现这种不必要的子像素抗锯齿操作呢？最常发生的情况是通过代码计算而变成浮点值的视图坐标，或者是一些不正确的图片资源，这些图片的大小不是对齐到屏幕的物理像素上的（例如，你有一张在<code>Retina</code>显示屏上的大小为<code>60*61</code>的图片，而不是<code>60*60</code>的）。</p>
 <p>在前面我们讲到，要解决问题，首先需要找到问题在哪。在iOS模拟器上运行程序，在”<code>Debug</code>“菜单中选中”<code>Color Misaligned Image</code>“。</p>
 <p>这一次有两种高亮区域：品红色区域会执行子像素渲染，而黄色区域是图片大小没有对齐的情况。</p>
-<p><img src="https://cdn-images-1.medium.com/max/1200/1*wyhCSoZBdQ_tP_Dkq4RXfQ.png" alt="image"></p>
-<p><img src="https://cdn-images-1.medium.com/max/1200/1*ZkN_5mz_NxDFEvZZMAq6Tw.png" alt="image"></p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/Perfect%20smooth%20scrolling%20in%20UITableViews%2010.jpg?raw=true" alt="image"></p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/Perfect%20smooth%20scrolling%20in%20UITableViews%2011.jpg?raw=true" alt="image"></p>
 <p>那如何在代码中找到对应的位置呢？我总是使用手动布局，并且部分会自定义绘制，所以通常找到这些地方没有任何问题。如果你使用<code>Interface Builder</code>，那我对此深表同情。</p>
 <p>通常，为了解决这个问题，你只要简单地使用<code>ceilf</code>, <code>floorf</code>和<code>CGRectIntegral</code>方法来对坐标做四舍五入处理。就是这样！</p>
 <p>✻ ✻ ✻ ✻ ✻</p>
@@ -505,8 +505,8 @@
 <p>我们来看看<code>Facebook</code>的应用。为了检测这些，你可能需要往下滑足够的高度，然后点击状态栏。列表会往上滑动，因此你可以清楚地看到此时没有渲染<code>cell</code>。如果想要更精确，则不能及时获得。</p>
 <p>这很简单，所以你可以自己试试。这时，你需要设置<code>CALayer</code>的<code>drawsAsynchronously</code>属性为YES。</p>
 <p>但是我们可以检查这些行为的必要性。在iOS模拟器上运行程序，然后选择“<code>Debug</code>”菜单中的”<code>Color Offscreen-Rendered</code>“。现在所有在后台渲染的区域都被高亮为黄色。</p>
-<p><img src="https://cdn-images-1.medium.com/max/1200/1*2zcnaJYsfX9IMk87EGZ_Jg.png" alt="image"></p>
-<p><img src="https://cdn-images-1.medium.com/max/1200/1*sdBXh2Ulhc4M92VvdzVEzQ.png" alt="image"></p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/Perfect%20smooth%20scrolling%20in%20UITableViews%2012.jpg?raw=true" alt="image"></p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/Perfect%20smooth%20scrolling%20in%20UITableViews%2013.jpg?raw=true" alt="image"></p>
 <p>如果你为某些层开启了这一模式，但是它没有高亮显示，那么它就不够慢。</p>
 <p>为了在<code>CALyaer</code>层找到瓶颈并进一步减少它，你可以使用<code>Instruments</code>里面的<code>Time Profiler</code>。</p>
 <p>✻ ✻ ✻ ✻ ✻</p>
