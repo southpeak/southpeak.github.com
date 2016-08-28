@@ -1,0 +1,698 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="透明层(TransparencyLayers)通过组合两个或多个对象来生成一个组合图形。组合图形被看成是单一对象。当需要在一组对象上使用特效时，透明层非常有用，如图9-1所示的给三个圆使用阴影的效果。
+Figure 9-1  Three circles as a composite in a transparency layer
+
+如果没有使用透明层来渲染图9-1中的三个圆，对它们使用阴影的效果将">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Quartz 2D编程指南之九：透明层">
+<meta property="og:url" content="http://southpeak.github.io/2014/12/10/quartz2d-9/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="透明层(TransparencyLayers)通过组合两个或多个对象来生成一个组合图形。组合图形被看成是单一对象。当需要在一组对象上使用特效时，透明层非常有用，如图9-1所示的给三个圆使用阴影的效果。
+Figure 9-1  Three circles as a composite in a transparency layer
+
+如果没有使用透明层来渲染图9-1中的三个圆，对它们使用阴影的效果将">
+<meta property="og:image" content="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/trans_layer1.gif">
+<meta property="og:image" content="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/trans_layer2.gif">
+<meta property="og:image" content="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/trans_code.gif">
+<meta property="og:updated_time" content="2016-08-27T08:37:49.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Quartz 2D编程指南之九：透明层">
+<meta name="twitter:description" content="透明层(TransparencyLayers)通过组合两个或多个对象来生成一个组合图形。组合图形被看成是单一对象。当需要在一组对象上使用特效时，透明层非常有用，如图9-1所示的给三个圆使用阴影的效果。
+Figure 9-1  Three circles as a composite in a transparency layer
+
+如果没有使用透明层来渲染图9-1中的三个圆，对它们使用阴影的效果将">
+<meta name="twitter:image" content="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/trans_layer1.gif">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2014/12/10/quartz2d-9/"/>
+
+  <title> Quartz 2D编程指南之九：透明层 | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Quartz 2D编程指南之九：透明层
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-12-10T09:13:04+08:00" content="2014-12-10">
+              2014-12-10
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/translate/" itemprop="url" rel="index">
+                    <span itemprop="name">翻译</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>透明层(TransparencyLayers)通过组合两个或多个对象来生成一个组合图形。组合图形被看成是单一对象。当需要在一组对象上使用特效时，透明层非常有用，如图9-1所示的给三个圆使用阴影的效果。</p>
+<p><strong>Figure 9-1  Three circles as a composite in a transparency layer</strong></p>
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/trans_layer1.gif" alt="image"></p>
+<p>如果没有使用透明层来渲染图9-1中的三个圆，对它们使用阴影的效果将是如图9-2所示：</p>
+<p><strong>Figure 9-2  Three circles painted as separate entities</strong></p>
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/trans_layer2.gif" alt="image"> </p>
+<h2 id="透明层的工作方式"><a href="#透明层的工作方式" class="headerlink" title="透明层的工作方式"></a>透明层的工作方式</h2><p>Quartz的透明层类似于许多流行的图形应用中的层。层是独立的实体。Quartz维护为每个上下文维护一个透明层栈，并且透明层是可以嵌套的。但由于层通常是栈的一部分，所以我们不能单独操作它们。</p>
+<p>我们通过调用函数CGContextBeginTransparencyLayer来开始一个透明层，该函数需要两个参数：图形上下文与CFDictionary对象。字典中包含我们所提供的指定层额外信息的选项，但由于Quartz 2D API中没有使用字典，所以我们传递一个NULL。在调用这个函数后，图形状态参数保持不变，除了alpha值[默认设置为1]、阴影[默认关闭]、混合模式[默认设置为normal]、及其它影响最终组合的参数。</p>
+<p>在开始透明层操作后，我们可以绘制任何想显示在层上的对象。指定上下文中的绘制操作将被当成一个组合对象绘制到一个透明背景上。这个背景被当作一个独立于图形上下文的目标缓存。</p>
+<p>当绘制完成后，我们调用函数CGContextEndTransparencyLayer。Quartz将结合对象放入上下文，并使用上下文的全局alpha值、阴影状态及裁减区域作用于组合对象。</p>
+<h2 id="在透明层中进行绘制"><a href="#在透明层中进行绘制" class="headerlink" title="在透明层中进行绘制"></a>在透明层中进行绘制</h2><p>在透明层中绘制需要三步：</p>
+<ol>
+<li>调用函数CGContextBeginTransparencyLayer</li>
+<li>在透明层中绘制需要组合的对象</li>
+<li>调用函数CGContextEndTransparencyLayer</li>
+</ol>
+<p>图9-3显示了在透明层中绘制三个矩形，其中将这三个矩形当成一个整体来渲染阴影。</p>
+<p><strong>Figure 9-3  Three rectangles painted to a transparency layer</strong></p>
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/trans_code.gif" alt="image"></p>
+<p>代码清单9-1显示了如何利用透明层生成图9-3所示的矩形。</p>
+<p><strong>Listing 9-1  Painting to a transparency layer</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">MyDrawTransparencyLayer</span> <span class="params">(CGContext myContext, <span class="keyword">float</span> wd,<span class="keyword">float</span> ht)</span></span></div><div class="line">&#123;</div><div class="line">    CGSize myShadowOffset = CGSizeMake (<span class="number">10</span>, <span class="number">-20</span>);</div><div class="line">    CGContextSetShadow (myContext, myShadowOffset, <span class="number">10</span>);   </div><div class="line">    CGContextBeginTransparencyLayer (myContext, <span class="literal">NULL</span>);</div><div class="line">    </div><div class="line">    <span class="comment">// Your drawing code here</span></div><div class="line">    CGContextSetRGBFillColor (myContext, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">1</span>);</div><div class="line">    CGContextFillRect (myContext, CGRectMake (wd/<span class="number">3</span>+ <span class="number">50</span>,ht/<span class="number">2</span> ,wd/<span class="number">4</span>,ht/<span class="number">4</span>));</div><div class="line">    CGContextSetRGBFillColor (myContext, <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">1</span>);</div><div class="line">    CGContextFillRect (myContext, CGRectMake (wd/<span class="number">3</span><span class="number">-50</span>,ht/<span class="number">2</span><span class="number">-100</span>,wd/<span class="number">4</span>,ht/<span class="number">4</span>));</div><div class="line">    CGContextSetRGBFillColor (myContext, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>);</div><div class="line">    CGContextFillRect (myContext, CGRectMake (wd/<span class="number">3</span>,ht/<span class="number">2</span><span class="number">-50</span>,wd/<span class="number">4</span>,ht/<span class="number">4</span>));</div><div class="line">    CGContextEndTransparencyLayer (myContext);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2014/12/10/quartz2d-8/" rel="next" title="Quartz 2D编程指南之八：渐变">
+                <i class="fa fa-chevron-left"></i> Quartz 2D编程指南之八：渐变
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2014/12/11/quartz2d-10/" rel="prev" title="Quartz 2D编程指南之十：Quartz 2D中的数据管理">
+                Quartz 2D编程指南之十：Quartz 2D中的数据管理 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#透明层的工作方式"><span class="nav-number">1.</span> <span class="nav-text">透明层的工作方式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#在透明层中进行绘制"><span class="nav-number">2.</span> <span class="nav-text">在透明层中进行绘制</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

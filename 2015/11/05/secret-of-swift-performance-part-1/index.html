@@ -1,0 +1,690 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="原文由Kostiantyn Koval发表于Medium，地址为Secret of Swift Performance ：Part 1 — Measure
+Swift性能方面的讨论已经很多了。如：它真的比C快么？它怎样才能更快？ 去Google一下吧。
+但是作为一个App开发者，我们需要知道如何以更简单的方式让我们的App更快。那加速App的银弹又是什么呢？
+找出性能瓶颈找出App的性能瓶颈是很重">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Secret of Swift Performance Part 1 - Measure">
+<meta property="og:url" content="http://southpeak.github.io/2015/11/05/secret-of-swift-performance-part-1/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="原文由Kostiantyn Koval发表于Medium，地址为Secret of Swift Performance ：Part 1 — Measure
+Swift性能方面的讨论已经很多了。如：它真的比C快么？它怎样才能更快？ 去Google一下吧。
+但是作为一个App开发者，我们需要知道如何以更简单的方式让我们的App更快。那加速App的银弹又是什么呢？
+找出性能瓶颈找出App的性能瓶颈是很重">
+<meta property="og:image" content="https://d262ilb51hltx0.cloudfront.net/max/600/1*zCF2DX5VqNOmxgg8qs7z2w.png">
+<meta property="og:image" content="https://d262ilb51hltx0.cloudfront.net/max/800/1*Ea6yWoxe99jG_-kSAVd8eA.png">
+<meta property="og:updated_time" content="2016-08-28T04:25:34.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Secret of Swift Performance Part 1 - Measure">
+<meta name="twitter:description" content="原文由Kostiantyn Koval发表于Medium，地址为Secret of Swift Performance ：Part 1 — Measure
+Swift性能方面的讨论已经很多了。如：它真的比C快么？它怎样才能更快？ 去Google一下吧。
+但是作为一个App开发者，我们需要知道如何以更简单的方式让我们的App更快。那加速App的银弹又是什么呢？
+找出性能瓶颈找出App的性能瓶颈是很重">
+<meta name="twitter:image" content="https://d262ilb51hltx0.cloudfront.net/max/600/1*zCF2DX5VqNOmxgg8qs7z2w.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2015/11/05/secret-of-swift-performance-part-1/"/>
+
+  <title> Secret of Swift Performance Part 1 - Measure | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Secret of Swift Performance Part 1 - Measure
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-11-05T22:54:01+08:00" content="2015-11-05">
+              2015-11-05
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/translate/" itemprop="url" rel="index">
+                    <span itemprop="name">翻译</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>原文由<code>Kostiantyn Koval</code>发表于<code>Medium</code>，地址为<a href="https://medium.com/swift-programming/secret-of-swift-performance-a8ee86060843" target="_blank" rel="external">Secret of Swift Performance ：Part 1 — Measure</a></p>
+<p><code>Swift</code>性能方面的讨论已经很多了。如：它真的比<code>C</code>快么？它怎样才能更快？ 去<code>Google</code>一下吧。</p>
+<p>但是作为一个<code>App</code>开发者，我们需要知道如何以更简单的方式让我们的<code>App</code>更快。那加速<code>App</code>的银弹又是什么呢？</p>
+<h2 id="找出性能瓶颈"><a href="#找出性能瓶颈" class="headerlink" title="找出性能瓶颈"></a>找出性能瓶颈</h2><p>找出<code>App</code>的性能瓶颈是很重要的。按照<code>80/20</code>的原则来说，“大约<code>20%</code>的代码占用了<code>80%</code>的运行速度”，这意味着我们需要找出这<code>20%</code>的代码并优化它，而不用关心剩余的<code>80%</code>。</p>
+<p>我写了个简单的带有一个闭包参数的测试函数，它的主要功能是测试闭包代码的运行速度。让我们来分析一下这段代码。</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">measure</span><span class="params">(title: String!, call: <span class="params">()</span></span></span> -&gt; <span class="type">Void</span>) &#123;</div><div class="line">    <span class="keyword">let</span> startTime = <span class="type">CACurrentMediaTime</span>()</div><div class="line">    call()</div><div class="line">    <span class="keyword">let</span> endTime = <span class="type">CACurrentMediaTime</span>()</div><div class="line">    <span class="keyword">if</span> <span class="keyword">let</span> title = title &#123;</div><div class="line">        <span class="built_in">print</span>(<span class="string">"\(title): "</span>)</div><div class="line">    &#125;</div><div class="line">    <span class="built_in">println</span>(<span class="string">"Time - \(endTime - startTime)"</span>)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这个测试函数的参数有两个：辅助分析的可选名称(<code>title</code>)和类型为<code>()-&gt;()</code>的闭包函数。相当简单吧。它在调用<code>call()</code>的前后分别获取了当前时间，并打印出<code>call()</code>执行所花费的时间。</p>
+<p>让我们来试一下吧。我有一个函数，它的职责是迭代一个数组，并加载图片。我想看看它需要花费多少时间。我们简单地包装一下这个代码块以方便测试函数调用。在这里我们使用了尾随闭包语义，看上去非常棒。</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">doSomeWork</span><span class="params">()</span></span> &#123;</div><div class="line"></div><div class="line">    measure(<span class="string">"Array"</span>) &#123;</div><div class="line">        <span class="keyword">var</span> ar = [<span class="type">String</span>]()</div><div class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="number">0</span>...<span class="number">10000</span> &#123;</div><div class="line">            ar.append(<span class="string">"New elem \(i)"</span>)</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    measure(<span class="string">"Image"</span>) &#123;</div><div class="line">        <span class="keyword">let</span> url = <span class="type">NSURL</span>(string: <span class="string">"http://lorempixel.com/1920/1920/"</span>)</div><div class="line">        <span class="keyword">let</span> image = <span class="type">UIImage</span>(data:<span class="type">NSData</span>(contentsOfURL:url!)!)</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>测试结果是</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="type">Array</span>: <span class="type">Time</span> — <span class="number">0.0845723639995413</span></div><div class="line"><span class="type">Image</span>: <span class="type">Time</span> — <span class="number">1.77442857499955</span></div></pre></td></tr></table></figure>
+<p><img src="https://d262ilb51hltx0.cloudfront.net/max/600/1*zCF2DX5VqNOmxgg8qs7z2w.png" alt="image"></p>
+<p>现在你知道了哪块代码占用了更多时间，然后就需要去优化它或者将其移到二级线程中处理。</p>
+<h2 id="提醒"><a href="#提醒" class="headerlink" title="提醒"></a>提醒</h2><p>应该总是在<code>Release</code>模式且<code>Optimization Level</code>设置为<code>[-Os]</code>或<code>[-Ofast]</code>的情况下去测试运行速度。</p>
+<p><img src="https://d262ilb51hltx0.cloudfront.net/max/800/1*Ea6yWoxe99jG_-kSAVd8eA.png" alt="image"></p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/10/26/objectivecbridgeable-protocol-for-objectivec-class-and-swift-struct/" rel="next" title="使用_ObjectiveCBridgeable协议实现Objective-C类与Swift结构体的无缝互转">
+                <i class="fa fa-chevron-left"></i> 使用_ObjectiveCBridgeable协议实现Objective-C类与Swift结构体的无缝互转
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/11/05/secret-of-swift-performance-part-2/" rel="prev" title="Secret of Swift Performance Part 2 - Look under the hood">
+                Secret of Swift Performance Part 2 - Look under the hood <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#找出性能瓶颈"><span class="nav-number">1.</span> <span class="nav-text">找出性能瓶颈</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#提醒"><span class="nav-number">2.</span> <span class="nav-text">提醒</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

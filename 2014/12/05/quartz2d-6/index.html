@@ -1,0 +1,813 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="模式(Pattern)是绘制操作的一个序列，这些绘制操作可以重复地绘制到一个图形上下文上。我们可以像使用颜色一样使用这些模式。当我们使用pattern来绘制时，Quartz将Page分割成模式单元格的集合，其中每个单元格的大小不是模式图片的大小，并使用我们提供的回调函数来绘制这些单元格。图6-1演示了一个绘制到window图形上下文的模式。
+Figure 6-1  A pattern drawn">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Quartz 2D编程指南之六：模式(Pattern)">
+<meta property="og:url" content="http://southpeak.github.io/2014/12/05/quartz2d-6/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="模式(Pattern)是绘制操作的一个序列，这些绘制操作可以重复地绘制到一个图形上下文上。我们可以像使用颜色一样使用这些模式。当我们使用pattern来绘制时，Quartz将Page分割成模式单元格的集合，其中每个单元格的大小不是模式图片的大小，并使用我们提供的回调函数来绘制这些单元格。图6-1演示了一个绘制到window图形上下文的模式。
+Figure 6-1  A pattern drawn">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/patterned_window.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_cell_wborder.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_parts_1.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_part_2.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_halfbyonehalf.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_2PIdiv6.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_5_5_translate.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/tartan.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/star_patterns.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/star_stencil.gif">
+<meta property="og:updated_time" content="2016-08-27T08:24:51.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Quartz 2D编程指南之六：模式(Pattern)">
+<meta name="twitter:description" content="模式(Pattern)是绘制操作的一个序列，这些绘制操作可以重复地绘制到一个图形上下文上。我们可以像使用颜色一样使用这些模式。当我们使用pattern来绘制时，Quartz将Page分割成模式单元格的集合，其中每个单元格的大小不是模式图片的大小，并使用我们提供的回调函数来绘制这些单元格。图6-1演示了一个绘制到window图形上下文的模式。
+Figure 6-1  A pattern drawn">
+<meta name="twitter:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/patterned_window.gif">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2014/12/05/quartz2d-6/"/>
+
+  <title> Quartz 2D编程指南之六：模式(Pattern) | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Quartz 2D编程指南之六：模式(Pattern)
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-12-05T16:35:04+08:00" content="2014-12-05">
+              2014-12-05
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/translate/" itemprop="url" rel="index">
+                    <span itemprop="name">翻译</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>模式(Pattern)是绘制操作的一个序列，这些绘制操作可以重复地绘制到一个图形上下文上。我们可以像使用颜色一样使用这些模式。当我们使用pattern来绘制时，Quartz将Page分割成模式单元格的集合，其中每个单元格的大小不是模式图片的大小，并使用我们提供的回调函数来绘制这些单元格。图6-1演示了一个绘制到window图形上下文的模式。</p>
+<p><strong>Figure 6-1  A pattern drawn to a window</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/patterned_window.gif" alt="image"></p>
+<h2 id="模式的骨架-Anatomy"><a href="#模式的骨架-Anatomy" class="headerlink" title="模式的骨架(Anatomy)"></a>模式的骨架(Anatomy)</h2><p>模式单元格是模式的基础组件。图6-1中的模式的单元格如图6-2所示。其中黑色边框不是模式单元格的一部分；之所以画出来是为了显示模式单元格的边界。</p>
+<p><strong>Figure 6-2  A pattern cell</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_cell_wborder.gif" alt="image"></p>
+<p>该模式单元格的大小包含四个带颜色的矩形以及这些矩形上部及右侧的白色区域，如图6-3所示。每个模式单元格的黑色边框不是单元格的一部分；画出来只是为是标明单元格的边界。当我们创建一个模式单元格时，我们需要定义单元格的边界并在这个范围内进行绘制。</p>
+<p><strong>Figure 6-3  Pattern cells with black rectangles drawn to show the bounds of each cell</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_parts_1.gif" alt="image"></p>
+<p>我们可以指定水平和竖直方向上两个单元格之间的间距。图6-3所绘制的单元格是相互紧挨着的。而图6-4在两个方向上都指定了单元格之间的间距。我们可以为两个方向指定不同的间距。我们亦可以指定间距为负数，这样单元格便会重叠。</p>
+<p><strong>Figure 6-4  Spacing between pattern cells</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_part_2.gif" alt="image"></p>
+<p>当我们绘制一个模式单元格时，Quartz使用<strong>模式空间(pattern space)</strong>作为坐标系统。模式空间是一个抽象空间，它会使用我们创建模式时指定的变换矩阵(pattern matrix)来映射到默认用户空间。</p>
+<blockquote>
+<p>注意：模式空间与用户空间是分开的。未转换的模式空间映射到基础的用户空间(未转换的)，而不管当前转换矩阵(CTM)。当我们在模式空间上应用转换时，Quartz只将转换应用于模式空间。</p>
+</blockquote>
+<p>如果我们不想要Quartz来转换模式单元格，我们可以指定单位矩阵。然而，我们可以使用转换矩阵来达到有趣的效果。图6-5显示了缩放6-2中的模式单元格的效果。图6-6旋转了这些单元格。图6-7则平移了这些单元格。    </p>
+<p><strong>Figure 6-5  A scaled pattern cell</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_halfbyonehalf.gif" alt="image"></p>
+<p><strong>Figure 6-6  A rotated pattern cell</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_2PIdiv6.gif" alt="image"><br><strong>Figure 6-7  A translated pattern cell</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_5_5_translate.gif" alt="image"></p>
+<h2 id="着色模式-Colored-Patterns-和模板模式-Stencil-Patterns"><a href="#着色模式-Colored-Patterns-和模板模式-Stencil-Patterns" class="headerlink" title="着色模式(Colored Patterns)和模板模式(Stencil Patterns)"></a>着色模式(Colored Patterns)和模板模式(Stencil Patterns)</h2><p>着色模式有与其相关的固有颜色。如果修改了创建模式单元格的颜色，则模式也便失去了意义。图6-8中显示的苏格兰格子就是着色模式的一个例子。着色模式中的颜色是模式单元格创建流程的一部分，而不是绘制流程的一部分。</p>
+<p><strong>Figure 6-8  A colored pattern has inherent color</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/tartan.gif" alt="image"></p>
+<p>而其它模式只限定了形状，因此可以认为是模板模式(或者是非着色模式、甚至可以作为图像蒙板)。图6-9中展示的红色和黑色星星就是使用相同的模式单元格。单元格由一个五角星组成。当定义模式单元格时，没有与之相关的颜色。颜色值是在绘制过程中指定的，而不是创建过程的一部分。</p>
+<p><strong>Figure 6-9  A stencil pattern does not have inherent color</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/star_patterns.gif" alt="image"></p>
+<p>在Quartz 2D中，我们可以创建这两种模式。</p>
+<h2 id="平铺-Tiling"><a href="#平铺-Tiling" class="headerlink" title="平铺(Tiling)"></a>平铺(Tiling)</h2><p>平铺(Tiling)是将模式单元格绘制到页面(Page)的某个部分的过程。当Quartz将模式渲染到一个设备时，Quartz可能需要调整模式以适应设备空间。即，在用户空间定义的模式单元格在渲染到设备时可能无法精确匹配，这是由用户空间单元和设备像素之间的差异导致的。</p>
+<p>Quartz有三个平铺选项，以在必要时调整模式：</p>
+<ol>
+<li>没有失真(no distortion): 以细微调整模式单元格之间的间距为代价，但通常不超过一个设备像素。</li>
+<li>最小的失真的恒定间距：设定单元格之间的间距，以细微调整单元大小为代价，但通常不超过一个设备像素。</li>
+<li>恒定间距：设定单元格之间间距，以调整单元格大小为代价，以求尽快的平铺</li>
+</ol>
+<h2 id="模式如何工作"><a href="#模式如何工作" class="headerlink" title="模式如何工作"></a>模式如何工作</h2><p>模式操作类似于颜色，我们设置一个填充或描边(stroke)模式，然后调用绘制函数。Quartz使用我们设置的模式作为“涂料”。例如，如果我们要使用纯色绘制一个填充的的矩形，我们首先调用函数(如CGContextSetFillColor)来设置填充颜色。然后调用函数CGContextFillRect以使用我们指定的颜色来填充矩形。为了绘制一个模式，颜色调用函数CGContextSetFillPattern来设置指定的模式。绘制颜色和绘制模式的不同之处在于我们必须先定义一个模式。我们为函数CGContextSetFillPattern提供模式和颜色信息。我们将在下面的绘制着色模式和绘制模板模式章节看到如何创建、设置和绘制模式。</p>
+<p>这里有个例子说明Quartz在幕后是如何绘制一个模式的。当我们填充或描边一个模式时，Quartz会按照以下指令来绘制每一个模式单元格：</p>
+<ol>
+<li>保存图形状态</li>
+<li>将当前转换矩阵应用到原始的模式单元格上</li>
+<li>连接CTM与模式矩阵</li>
+<li>裁剪模式单元格的边界矩形</li>
+<li>调用绘制回调函数来绘制单元格</li>
+<li>恢复图形状态</li>
+</ol>
+<p>Quartz会执行所有平铺操作，重复绘制模式单元格到绘制空间，直到渲染满整个空间。我们可以填充和描边一个模式。模式单元格可以是指定的任何大小。如果我们想要看到模式，我们需要确保模式单元格与绘制空间匹配。例如，如果我们的模式单元格是8*10个单位的，而我们用这个模式来描边一个只有2个单位的直线，则这个模式单元格将会被裁剪。这种情况下，我们可能无法辨认出我们的模式。</p>
+<h2 id="绘制着色模式"><a href="#绘制着色模式" class="headerlink" title="绘制着色模式"></a>绘制着色模式</h2><p>绘制着色模式需要执行以下五步操作：</p>
+<ol>
+<li>写一个绘制着色模式单元格的回调函数</li>
+<li>设置着色模式的颜色空间</li>
+<li>设置着色模式的骨架(Anatomy)</li>
+<li>指定着色模式作为填充或描边模式</li>
+<li>使用着色模式绘制</li>
+</ol>
+<p>绘制模板模式也是类似这几步。两者之间的区别在于如何设置颜色信息。</p>
+<h3 id="写一个绘制着色模式单元格的回调函数"><a href="#写一个绘制着色模式单元格的回调函数" class="headerlink" title="写一个绘制着色模式单元格的回调函数"></a>写一个绘制着色模式单元格的回调函数</h3><p>一个模式单元格看起来是什么样的完全取决于我们。在这个例子中，代码清单6-1绘制了图6-2所示的模式单元格。</p>
+<p><strong>Listing 6-1  A drawing callback that draws a colored pattern cell</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">define</span> H_PATTERN_SIZE 16</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> V_PATTERN_SIZE 18</span></div><div class="line"> </div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">MyDrawColoredPattern</span> <span class="params">(<span class="keyword">void</span> *info, CGContextRef myContext)</span></span></div><div class="line">&#123;</div><div class="line">    CGFloat subunit = <span class="number">5</span>; </div><div class="line"> </div><div class="line"> 	CGSize size = &#123;subunit, subunit&#125;;</div><div class="line"> 	CGPoint point1 = &#123;<span class="number">0</span>,<span class="number">0</span>&#125;, point2 = &#123;subunit, subunit&#125;, point3 = &#123;<span class="number">0</span>,subunit&#125;, point4 = &#123;subunit,<span class="number">0</span>&#125;;</div><div class="line">    CGRect myRect1 = &#123;point1, size&#125;, myRect2 = &#123;point2, size&#125;, myRect3 = &#123;point3, size&#125;, myRect4 = &#123;point4, size&#125;;</div><div class="line">    </div><div class="line">    CGContextSetRGBFillColor (myContext, <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0.5</span>);</div><div class="line">    CGContextFillRect (myContext, myRect1);</div><div class="line">    CGContextSetRGBFillColor (myContext, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0.5</span>);</div><div class="line">    CGContextFillRect (myContext, myRect2);</div><div class="line">    CGContextSetRGBFillColor (myContext, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0.5</span>);</div><div class="line">    CGContextFillRect (myContext, myRect3);</div><div class="line">    CGContextSetRGBFillColor (myContext, <span class="number">.5</span>, <span class="number">0</span>, <span class="number">.5</span>, <span class="number">0.5</span>);</div><div class="line">    CGContextFillRect (myContext, myRect4);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>模式单元格绘制函数是类似于下面这种格式的一个回调函数</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">typedef</span> <span class="title">void</span> <span class="params">(*CGPatternDrawPatternCallback)</span> <span class="params">(</span></span></div><div class="line">                        <span class="keyword">void</span> *info,</div><div class="line">                        CGContextRef context</div><div class="line">);</div></pre></td></tr></table></figure>
+<p>我们可以随意命名我们的回调函数。代码清单6-1中命名为MyDrawColoredPattern。这个回调函数带有两个参数：</p>
+<ol>
+<li>info: 一个指向模式相关数据的指针。这个参数是可选的，可以传递NULL。传递给回调的数据与后面创建模式的数据是一样的。</li>
+<li>context: 绘制模式单元格的图形上下文</li>
+</ol>
+<p>代码清单6-1中绘制的模式单元格是随意的。以下是一些关于绘制代码的重要信息：</p>
+<ol>
+<li>需要声明模式大小。在绘制时我们需要记住模式大小。在这个例子中，大小是全局声明的，绘制函数没有具体提到大小，除了在注释中。然后，我们将模式大小指定给Quartz 2D。</li>
+<li>绘制函数后面是由CGPatternDrawPatternCallback回调函数类型定义定义的原型</li>
+<li>代码中执行的绘制设置了颜色，让其成为一个着色模式。</li>
+</ol>
+<h3 id="设置着色模式的颜色空间"><a href="#设置着色模式的颜色空间" class="headerlink" title="设置着色模式的颜色空间"></a>设置着色模式的颜色空间</h3><p>代码清单6-1中的代码使用颜色来绘制模式单元格。我们必须设置基本的模式颜色空间为NULL，以确保Quartz使用绘制路径指定的颜色来绘制，如代码清单6-2所示。</p>
+<p><strong>Listing 6-2  Creating a base pattern color space</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">CGColorSpaceRef patternSpace;</div><div class="line"> </div><div class="line"><span class="comment">// 创建模式颜色空间，并传递NULL作为参数</span></div><div class="line">patternSpace = CGColorSpaceCreatePattern (<span class="literal">NULL</span>);</div><div class="line">	</div><div class="line"><span class="comment">// 在模式颜色空间中设置填充颜色</span></div><div class="line">CGContextSetFillColorSpace (myContext, patternSpace);</div><div class="line">	</div><div class="line"><span class="comment">// 释放模式颜色空间</span></div><div class="line">CGColorSpaceRelease (patternSpace);</div></pre></td></tr></table></figure>
+<h3 id="设置着色模式的骨架"><a href="#设置着色模式的骨架" class="headerlink" title="设置着色模式的骨架"></a>设置着色模式的骨架</h3><p>一个模式的骨架基本信息保存在CGPattern对象中。我们调用CGPatternCreate函数来创建一个CGPattern对象，其原型如代码清单6-3所示：</p>
+<p><strong>Listing 6-3  The CGPatternCreate function prototype</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">CGPatternRef CGPatternCreate (  void *info,</div><div class="line">                                CGRect bounds,</div><div class="line">                                CGAffineTransform matrix,</div><div class="line">                                CGFloat xStep,</div><div class="line">                                CGFloat yStep,</div><div class="line">                                CGPatternTiling tiling,</div><div class="line">                                bool isColored,</div><div class="line">                                const CGPatternCallbacks *callbacks );</div></pre></td></tr></table></figure>
+<p>其中，</p>
+<ol>
+<li>info：是一个指针，指向我们要传递给绘制回调函数的数据</li>
+<li>bound：指定模式单元格的大小</li>
+<li>matrix：指定模式矩阵，它将模式坐标系统映射到图形上下文的默认坐标系统。如果希望两个坐标系统是一样的，则可以使用单位矩阵。</li>
+<li>xStep, yStep：指定单元格之间的水平和竖直间距。</li>
+<li>tiling：平铺模式，可以是kCGPatternTilingNoDistortion、kCGPatternTilingConstantSpacingMinimalDistortion、kCGPatternTilingConstantSpacing</li>
+<li>isColored：指定模式单元格是着色模式(true)还是模板模式(false)</li>
+<li>callbacks：是一个指向CGPatternCallbacks结构体的指针，则定义如下：</li>
+</ol>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">struct</span> CGPatternCallbacks</div><div class="line">&#123;</div><div class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> version;</div><div class="line">    CGPatternDrawPatternCallback drawPattern;</div><div class="line">    CGPatternReleaseInfoCallback releaseInfo;</div><div class="line">&#125;;</div></pre></td></tr></table></figure>
+<p>我们可以设置version为0。drawPattern是指向绘制回调的指针。releaseInfo是指向一个回调函数，该回调在释放CGPattern对象时被调用，以释放存储在我们传递给绘制回调的info参数中的数据。如果在这个参数中没有传递任何数据，则设置该域为NULL。</p>
+<h3 id="指定着色模式作为填充或描边模式"><a href="#指定着色模式作为填充或描边模式" class="headerlink" title="指定着色模式作为填充或描边模式"></a>指定着色模式作为填充或描边模式</h3><p>我们可以调用CGContextSetFillPattern或者CGContextSetStrokePattern函数来使用模式进行填充或描边。Quartz可以将模式用于任何填充或描边流程。</p>
+<p>这两个函数包含以下几个参数：</p>
+<ol>
+<li>图形上下文</li>
+<li>先前创建的CGPattern对象</li>
+<li>颜色组件的数组</li>
+</ol>
+<p>虽然着色模式提供了自己的颜色，我们仍然需要传递一个单一的alpha值来告诉Quartz在绘制时着色模式的透明度。alpha值的范围在0到1中。可以如以下代码来设置着色模式的透明度：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">CGFloat alpha = <span class="number">1</span>;</div><div class="line"> </div><div class="line">CGContextSetFillPattern (myContext, myPattern, &amp;alpha);</div></pre></td></tr></table></figure>
+<h3 id="使用颜色模式绘制"><a href="#使用颜色模式绘制" class="headerlink" title="使用颜色模式绘制"></a>使用颜色模式绘制</h3><p>在完成前面的步骤之后，我们就可以调用Quartz 2D函数来绘制了。我们的模式被当作“涂料”。例如，可以调用CGContextStrokePath, CGContextFillPath, CGContextFillRect或其它函数来绘制。</p>
+<h3 id="完整示例"><a href="#完整示例" class="headerlink" title="完整示例"></a>完整示例</h3><p>代码清单6-4包含一个绘制着色模式的函数。这个函数包含了前面讨论的所有步骤。</p>
+<p><strong>Listing 6-4  A function that paints a colored pattern</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">MyColoredPatternPainting</span> <span class="params">(CGContextRef myContext,</span></span></div><div class="line">                 CGRect rect)</div><div class="line">&#123;</div><div class="line">    CGPatternRef    pattern;</div><div class="line">    CGColorSpaceRef patternSpace;</div><div class="line">    CGFloat         alpha = <span class="number">1</span>,</div><div class="line">                    width, height;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">const</span>    CGPatternCallbacks callbacks = &#123;<span class="number">0</span>, </div><div class="line">                                        &amp;MyDrawPattern,</div><div class="line">                                        <span class="literal">NULL</span>&#125;;</div><div class="line"> </div><div class="line">    CGContextSaveGState (myContext);</div><div class="line">    patternSpace = CGColorSpaceCreatePattern (<span class="literal">NULL</span>);</div><div class="line">    CGContextSetFillColorSpace (myContext, patternSpace);</div><div class="line">    CGColorSpaceRelease (patternSpace);</div><div class="line"> </div><div class="line">    pattern = CGPatternCreate (<span class="literal">NULL</span>, </div><div class="line">                    CGRectMake (<span class="number">0</span>, <span class="number">0</span>, H_PSIZE, V_PSIZE),</div><div class="line">                    CGAffineTransformMake (<span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>),</div><div class="line">                    H_PATTERN_SIZE, </div><div class="line">                    V_PATTERN_SIZE, </div><div class="line">                    kCGPatternTilingConstantSpacing,</div><div class="line">                    <span class="literal">true</span>, </div><div class="line">                    &amp;callbacks);</div><div class="line"> </div><div class="line">    CGContextSetFillPattern (myContext, pattern, &amp;alpha);</div><div class="line">    CGPatternRelease (pattern);</div><div class="line">    CGContextFillRect (myContext, rect);</div><div class="line">    CGContextRestoreGState (myContext);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="绘制模板模式"><a href="#绘制模板模式" class="headerlink" title="绘制模板模式"></a>绘制模板模式</h2><p>与绘制着色模式类似，绘制模板模式也有5个步骤：</p>
+<ol>
+<li>写一个绘制模板模式单元格的回调函数</li>
+<li>设置模板模式的颜色空间</li>
+<li>设置模板模式的骨架(Anatomy)</li>
+<li>指定模板模式作为填充或描边模式</li>
+<li>使用模板模式绘制</li>
+</ol>
+<p>绘制模板模式与绘制着色模式的区别在于设置颜色信息。</p>
+<h3 id="写一个绘制模板模式单元格的回调函数"><a href="#写一个绘制模板模式单元格的回调函数" class="headerlink" title="写一个绘制模板模式单元格的回调函数"></a>写一个绘制模板模式单元格的回调函数</h3><p>绘制模板模式单元格的回调与前面描述的绘制颜色模式单元格类似。不同的是绘制模式单元格回调不需要指定颜色值。图6-10中显示的模式单元格即没有从绘制回调中获取颜色。</p>
+<p><strong>Figure 6-10  A stencil pattern cell</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/star_stencil.gif" alt="image"></p>
+<p>代码清单6-5绘制了图6-10中的模式单元格。可以看到代码只是简单地创建并填充了一个路径，而没有设置颜色。</p>
+<p><strong>Listing 6-5  A drawing callback that draws a stencil pattern cell</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">define</span> PSIZE 16    <span class="comment">// size of the pattern cell</span></span></div><div class="line"> </div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">MyDrawStencilStar</span> <span class="params">(<span class="keyword">void</span> *info, CGContextRef myContext)</span></span></div><div class="line">&#123;</div><div class="line">    <span class="keyword">int</span> k;</div><div class="line">    <span class="keyword">double</span> r, theta;</div><div class="line"> </div><div class="line">    r = <span class="number">0.8</span> * PSIZE / <span class="number">2</span>;</div><div class="line">    theta = <span class="number">2</span> * M_PI * (<span class="number">2.0</span> / <span class="number">5.0</span>); <span class="comment">// 144 degrees</span></div><div class="line"> </div><div class="line">    CGContextTranslateCTM (myContext, PSIZE/<span class="number">2</span>, PSIZE/<span class="number">2</span>);</div><div class="line"> </div><div class="line">    CGContextMoveToPoint(myContext, <span class="number">0</span>, r);</div><div class="line">    <span class="keyword">for</span> (k = <span class="number">1</span>; k &lt; <span class="number">5</span>; k++) &#123;</div><div class="line">        CGContextAddLineToPoint (myContext,</div><div class="line">                    r * <span class="built_in">sin</span>(k * theta),</div><div class="line">                    r * <span class="built_in">cos</span>(k * theta));</div><div class="line">    &#125;</div><div class="line">    CGContextClosePath(myContext);</div><div class="line">    CGContextFillPath(myContext);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="设置模板模式的颜色空间"><a href="#设置模板模式的颜色空间" class="headerlink" title="设置模板模式的颜色空间"></a>设置模板模式的颜色空间</h3><p>模板模式要求我们设置一个模式颜色空间用于Quartz的绘制，如代码清单6-6所示。</p>
+<p><strong>Listing 6-6  Code that creates a pattern color space for a stencil pattern</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line">CGPatternRef pattern;</div><div class="line">CGColorSpaceRef baseSpace;</div><div class="line">CGColorSpaceRef patternSpace;</div><div class="line"></div><div class="line"><span class="comment">// 创建一个通用RGB颜色空间。 </span></div><div class="line">baseSpace = CGColorSpaceCreateWithName (kCGColorSpaceGenericRGB);</div><div class="line">	</div><div class="line"><span class="comment">// 创建一个模式颜色空间。该颜色空间指定如何表示模式的颜色。后面要设置模式的颜色时，必须使用这个颜色空间来进行设置</span></div><div class="line">patternSpace = CGColorSpaceCreatePattern (baseSpace);</div><div class="line">	</div><div class="line"><span class="comment">// 设置颜色空间来在填充模式时使用</span></div><div class="line">CGContextSetFillColorSpace (myContext, patternSpace);</div><div class="line">	</div><div class="line"><span class="comment">// 释放模式颜色空间</span></div><div class="line">CGColorSpaceRelease(patternSpace);</div><div class="line">	</div><div class="line"><span class="comment">// 释放基础颜色空间</span></div><div class="line">CGColorSpaceRelease(baseSpace);</div></pre></td></tr></table></figure>
+<h3 id="设置模板模式的骨架-Anatomy"><a href="#设置模板模式的骨架-Anatomy" class="headerlink" title="设置模板模式的骨架(Anatomy)"></a>设置模板模式的骨架(Anatomy)</h3><p>这一步与上面设置着色模式是一样的，不同的是isColored参数需要传递false。</p>
+<h3 id="指定模板模式作为填充或描边模式"><a href="#指定模板模式作为填充或描边模式" class="headerlink" title="指定模板模式作为填充或描边模式"></a>指定模板模式作为填充或描边模式</h3><p>我们可以调用CGContextSetFillPattern或者CGContextSetStrokePattern函数来使用模式进行填充或描边。Quartz可以将模式用于任何填充或描边流程。</p>
+<p>这两个函数包含以下几个参数：</p>
+<ol>
+<li>图形上下文</li>
+<li>先前创建的CGPattern对象</li>
+<li>颜色组件的数组</li>
+</ol>
+<p>由于模板模式在绘制回调中不提供颜色值，所以我们必须传递一个颜色给填充或描边函数来告诉Quartz使用什么颜色。代码清单6-7显示了为模板模式设置颜色的例子。</p>
+<p><strong>Listing 6-7  Code that sets opacity for a colored pattern</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">static</span> <span class="keyword">const</span> CGFloat color[<span class="number">4</span>] = &#123; <span class="number">0</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">0.5</span> &#125;; <span class="comment">//cyan, 50% transparent</span></div><div class="line">CGContextSetFillPattern (myContext, myPattern, color);</div></pre></td></tr></table></figure>
+<h3 id="使用模板模式绘制"><a href="#使用模板模式绘制" class="headerlink" title="使用模板模式绘制"></a>使用模板模式绘制</h3><p>在完成前面的步骤之后，我们就可以调用Quartz 2D函数来绘制了。我们的模式被当作“涂料”。例如，可以调用CGContextStrokePath, CGContextFillPath, CGContextFillRect或其它函数来绘制。</p>
+<h3 id="完整示例-1"><a href="#完整示例-1" class="headerlink" title="完整示例"></a>完整示例</h3><p>代码清单6-8包含一个绘制模板模式的函数。这个函数包含了前面讨论的所有步骤。</p>
+<p><strong>Listing 6-8  A function that paints a stencil pattern</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">define</span> PSIZE 16</span></div><div class="line"> </div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">MyStencilPatternPainting</span> <span class="params">(CGContextRef myContext,</span></span></div><div class="line">                                <span class="keyword">const</span> Rect *windowRect)</div><div class="line">&#123;</div><div class="line">    CGPatternRef pattern;</div><div class="line">    CGColorSpaceRef baseSpace;</div><div class="line">    CGColorSpaceRef patternSpace;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">const</span> CGFloat color[<span class="number">4</span>] = &#123; <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">1</span> &#125;;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">const</span> CGPatternCallbacks callbacks = &#123;<span class="number">0</span>, &amp;drawStar, <span class="literal">NULL</span>&#125;;</div><div class="line"> </div><div class="line">    baseSpace = CGColorSpaceCreateDeviceRGB ();</div><div class="line">    patternSpace = CGColorSpaceCreatePattern (baseSpace);</div><div class="line">    CGContextSetFillColorSpace (myContext, patternSpace);</div><div class="line">    CGColorSpaceRelease (patternSpace);</div><div class="line">    CGColorSpaceRelease (baseSpace);</div><div class="line">    pattern = CGPatternCreate(<span class="literal">NULL</span>, CGRectMake(<span class="number">0</span>, <span class="number">0</span>, PSIZE, PSIZE),</div><div class="line">                  CGAffineTransformIdentity, PSIZE, PSIZE,</div><div class="line">                  kCGPatternTilingConstantSpacing,</div><div class="line">                  <span class="literal">false</span>, &amp;callbacks);</div><div class="line">    CGContextSetFillPattern (myContext, pattern, color);</div><div class="line">    CGPatternRelease (pattern);</div><div class="line">    CGContextFillRect (myContext,CGRectMake (<span class="number">0</span>,<span class="number">0</span>,PSIZE*<span class="number">20</span>,PSIZE*<span class="number">20</span>));</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2014/12/02/quartz2d-5/" rel="next" title="Quartz 2D编程指南之五：变换">
+                <i class="fa fa-chevron-left"></i> Quartz 2D编程指南之五：变换
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2014/12/05/quartz2d-7/" rel="prev" title="Quartz 2D编程指南之七：阴影">
+                Quartz 2D编程指南之七：阴影 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#模式的骨架-Anatomy"><span class="nav-number">1.</span> <span class="nav-text">模式的骨架(Anatomy)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#着色模式-Colored-Patterns-和模板模式-Stencil-Patterns"><span class="nav-number">2.</span> <span class="nav-text">着色模式(Colored Patterns)和模板模式(Stencil Patterns)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#平铺-Tiling"><span class="nav-number">3.</span> <span class="nav-text">平铺(Tiling)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#模式如何工作"><span class="nav-number">4.</span> <span class="nav-text">模式如何工作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#绘制着色模式"><span class="nav-number">5.</span> <span class="nav-text">绘制着色模式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#写一个绘制着色模式单元格的回调函数"><span class="nav-number">5.1.</span> <span class="nav-text">写一个绘制着色模式单元格的回调函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#设置着色模式的颜色空间"><span class="nav-number">5.2.</span> <span class="nav-text">设置着色模式的颜色空间</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#设置着色模式的骨架"><span class="nav-number">5.3.</span> <span class="nav-text">设置着色模式的骨架</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#指定着色模式作为填充或描边模式"><span class="nav-number">5.4.</span> <span class="nav-text">指定着色模式作为填充或描边模式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用颜色模式绘制"><span class="nav-number">5.5.</span> <span class="nav-text">使用颜色模式绘制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#完整示例"><span class="nav-number">5.6.</span> <span class="nav-text">完整示例</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#绘制模板模式"><span class="nav-number">6.</span> <span class="nav-text">绘制模板模式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#写一个绘制模板模式单元格的回调函数"><span class="nav-number">6.1.</span> <span class="nav-text">写一个绘制模板模式单元格的回调函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#设置模板模式的颜色空间"><span class="nav-number">6.2.</span> <span class="nav-text">设置模板模式的颜色空间</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#设置模板模式的骨架-Anatomy"><span class="nav-number">6.3.</span> <span class="nav-text">设置模板模式的骨架(Anatomy)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#指定模板模式作为填充或描边模式"><span class="nav-number">6.4.</span> <span class="nav-text">指定模板模式作为填充或描边模式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用模板模式绘制"><span class="nav-number">6.5.</span> <span class="nav-text">使用模板模式绘制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#完整示例-1"><span class="nav-number">6.6.</span> <span class="nav-text">完整示例</span></a></li></ol></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

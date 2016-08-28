@@ -1,0 +1,728 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="前面一章我们整理了NSObject类，这一章我们来看看NSObject协议的内容。
+NSObject协议提供了一组方法作为Objective-C对象的基础。其实我们对照一个NSObject类和NSObject协议，可以看到很多方法的方法名都是一样的，只不过NSObject类提供的是类方法，是基于类级别的操作；而NSObject协议提供的是实例方法，是基于实例对象级别的操作。
+如果一个对象如果采用了">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Foundation: NSObject Protocol">
+<meta property="og:url" content="http://southpeak.github.io/2015/01/31/cocoa-foundation-nsobject-protocol/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="前面一章我们整理了NSObject类，这一章我们来看看NSObject协议的内容。
+NSObject协议提供了一组方法作为Objective-C对象的基础。其实我们对照一个NSObject类和NSObject协议，可以看到很多方法的方法名都是一样的，只不过NSObject类提供的是类方法，是基于类级别的操作；而NSObject协议提供的是实例方法，是基于实例对象级别的操作。
+如果一个对象如果采用了">
+<meta property="og:updated_time" content="2016-08-28T03:33:14.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Foundation: NSObject Protocol">
+<meta name="twitter:description" content="前面一章我们整理了NSObject类，这一章我们来看看NSObject协议的内容。
+NSObject协议提供了一组方法作为Objective-C对象的基础。其实我们对照一个NSObject类和NSObject协议，可以看到很多方法的方法名都是一样的，只不过NSObject类提供的是类方法，是基于类级别的操作；而NSObject协议提供的是实例方法，是基于实例对象级别的操作。
+如果一个对象如果采用了">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2015/01/31/cocoa-foundation-nsobject-protocol/"/>
+
+  <title> Foundation: NSObject Protocol | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Foundation: NSObject Protocol
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-01-31T22:41:09+08:00" content="2015-01-31">
+              2015-01-31
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/cocoa/" itemprop="url" rel="index">
+                    <span itemprop="name">Cocoa</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>前面一章我们整理了<code>NSObject</code>类，这一章我们来看看<code>NSObject</code>协议的内容。</p>
+<p><code>NSObject</code>协议提供了一组方法作为<code>Objective-C</code>对象的基础。其实我们对照一个<code>NSObject</code>类和<code>NSObject</code>协议，可以看到很多方法的方法名都是一样的，只不过<code>NSObject</code>类提供的是类方法，是基于类级别的操作；而<code>NSObject</code>协议提供的是实例方法，是基于实例对象级别的操作。</p>
+<p>如果一个对象如果采用了这个协议，则可以被看作是一级对象。我们可以从这个对象获取以下信息：</p>
+<ol>
+<li>类信息，以及类所在的继承体系。</li>
+<li>协议信息</li>
+<li>响应特定消息的能力</li>
+</ol>
+<p>实际上，<code>Cocoa</code>的根类<code>NSObject</code>就采用了这个类，所以所有继承自<code>NSObject</code>类的对象都具备<code>NSObject</code>协议中描述的功能。接下来，我们参照<code>NSObject</code>类，整理一下这些功能。</p>
+<h2 id="识别对象"><a href="#识别对象" class="headerlink" title="识别对象"></a>识别对象</h2><p>类似于<code>NSObject</code>类，<code>NSObject</code>协议提供了一些方法来识别类。 </p>
+<p>如果想获取对象的类对象，则可以使用如下方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">- (Class)<span class="keyword">class</span></div></pre></td></tr></table></figure>
+<p>如果想获取对象父类的类对象，则可以使用以下只读属性：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">@property</span>(<span class="keyword">readonly</span>) Class superclass</div></pre></td></tr></table></figure>
+<p>如果想查看某个对象是否是给定类的实例或者是给定类子类的实例，则可以使用以下方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">- (<span class="built_in">BOOL</span>)isKindOfClass:(Class)aClass</div></pre></td></tr></table></figure>
+<p>这个方法应该是大家常用的方法。需要注意的是在类簇中使用这个方法。在类簇中，我们获取到的对象类型可能并不是我们期望的类型。如果我们调用一个返回类簇的方法，则这个方法返回的实际类型会是最能标识这个类能做些什么的类型。例如，如果一个方法返回一个指向<code>NSArray</code>对象的指针，则不能使用<code>isKindOfClass:</code>方法查看经是否是一个可变数组，如以下代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">if</span> ([myArray isKindOfClass:[<span class="built_in">NSMutableArray</span> <span class="keyword">class</span>]])</div><div class="line">&#123;</div><div class="line">    <span class="comment">// Modify the object</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>如果我们使用这样的代码，我们可能会认为修改一个实际上不应该被修改的对象是没问题的。这样做可能会对那些期望对象保持不要变的代码产生影响。</p>
+<p>另外，查看对象是否是指定类的一个实例还可以使用以下方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">- (<span class="built_in">BOOL</span>)isMemberOfClass:(Class)aClass</div></pre></td></tr></table></figure>
+<p>注意，这个方法无法确定对象是否是指定类子类的实例。另外，类对象可能是编译器创建的对象，但它仍然支持这一概念。</p>
+<h2 id="测试对象"><a href="#测试对象" class="headerlink" title="测试对象"></a>测试对象</h2><p>对于对象的测试，<code>NSObject</code>协议也定义了两个方法，其中<code>respondsToSelector:</code>方法用于测试对象是否能响应指定的消息，这个方法可以是类自定义的实例方法，也可以是继承而来的实例方法。其声明如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">- (<span class="built_in">BOOL</span>)respondsToSelector:(SEL)aSelector</div></pre></td></tr></table></figure>
+<p>不过我们不能使用<code>super</code>关键字来调用<code>respondsToSelector:</code>，以查看对象是否是从其父类继承了某个方法。因为我们可以从<code>super</code>的定义可知，消息的最终实际接收者还是<code>self</code>本身，因此测试的还是对象的整个体系(包括对象所在类本身)，而不仅仅是父类。不过，我们可以使用父类来调用<code>NSObject</code>类的类方法<code>instancesRespondToSelector:</code>来达到这个目的，如下所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">if</span>( [MySuperclass instancesRespondToSelector:<span class="keyword">@selector</span>(aMethod)] ) &#123;</div><div class="line">    <span class="comment">// invoke the inherited method</span></div><div class="line">    [<span class="keyword">super</span> aMethod];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>我们不能简单地使用<code>[[self superclass] instancesRespondToSelector:@selector(aMethod)]</code>，因为如果由一个子类来调用，则可能导致方法的失败。</p>
+<p>还需要注意的是，如果对象能够转发消息，则也可以响应这个消息，不过这个方法会返回NO。</p>
+<p>如果想查看对象是否实现了某个类，则可以使用如下方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">- (<span class="built_in">BOOL</span>)conformsToProtocol:(Protocol *)aProtocol</div></pre></td></tr></table></figure>
+<p>这个方法与<code>NSObject</code>类的类方法<code>conformsToProtocol:</code>是一样的。它只是提供了一个便捷方法，我们不需要先去取对象的类，再调用类方法<code>conformsToProtocol:</code>。</p>
+<h2 id="标识和比较对象"><a href="#标识和比较对象" class="headerlink" title="标识和比较对象"></a>标识和比较对象</h2><p>如果我们想获取对象本身，则可以使用以下方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">instancetype</span>)<span class="keyword">self</span></div></pre></td></tr></table></figure>
+<p>比较两个对象是否相同，则可以使用以下方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">- (<span class="built_in">BOOL</span>)isEqual:(<span class="keyword">id</span>)anObject</div></pre></td></tr></table></figure>
+<p>这个方法定义了对象相同的意义。例如，一个容器对象可能会按照特定规则来定义两个对象是否相等，如其所有元素的<code>isEqual:</code>请求都返回YES。我们在自定义子类时，可以重写这个方法，以使用我们自己的规则来评判两个对象相等。</p>
+<p>如果两个对象相等，则它们必须拥有相同的<code>hash</code>值。在子类中定义<code>isEqual:</code>方法并打算把子类的实例放入集合中时，这一点非常重要。因此在子类中必须同时定义<code>hash</code>。</p>
+<p>hash值是一个整数值，它可以用于在<code>hash</code>表结构中作为一个表地址。其声明如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">@property</span>(<span class="keyword">readonly</span>) <span class="built_in">NSUInteger</span> hash</div></pre></td></tr></table></figure>
+<p>如果一个可变对象被添加到一个以<code>hash</code>值来确定对象位置的集合中，则当对象还在集合中时，其由<code>hash</code>方法返回的值不能改变。因此，<code>hash</code>方法不能依赖于对象内部的任何状态信息，或许我们必须确保对象在集合中时，不能改变其内部状态信息。比如，一个可变字典可以放到一个<code>hash</code>表中，但当它还在表中时，不能改变它。</p>
+<h2 id="发送消息"><a href="#发送消息" class="headerlink" title="发送消息"></a>发送消息</h2><p>在<code>NSObject</code>类中，定义了一系列的发送消息的方法，用于在目标线程中执行方法。<code>NSObject</code>协议也定义了如下几个方法，来执行发送消息的任务：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">id</span>)performSelector:(SEL)aSelector</div><div class="line">- (<span class="keyword">id</span>)performSelector:(SEL)aSelector withObject:(<span class="keyword">id</span>)anObject</div><div class="line">- (<span class="keyword">id</span>)performSelector:(SEL)aSelector withObject:(<span class="keyword">id</span>)anObject withObject:(<span class="keyword">id</span>)anotherObject</div></pre></td></tr></table></figure>
+<p>这三个方法基本相同，只不过后面两个方法能为<code>selector</code>指定的方法携带参数。因此我们以<code>performSelector:</code>为例。</p>
+<p><code>performSelector:</code>方法的使用与直接将消息发送给对象的效果是一样的，如下面几个操作，做的事情是一样的：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">id</span> myClone = [anObject <span class="keyword">copy</span>];</div><div class="line"><span class="keyword">id</span> myClone = [anObject performSelector:<span class="keyword">@selector</span>(<span class="keyword">copy</span>)];</div><div class="line"><span class="keyword">id</span> myClone = [anObject performSelector:sel_getUid(<span class="string">"copy"</span>)];</div></pre></td></tr></table></figure>
+<p>区别在于，<code>performSelector:</code>允许在运行时再去确定对象是否能处理消息。而<code>[anObject copy]</code>中，如果<code>anObject</code>不能处理<code>copy</code>，编译器就直接会报错。</p>
+<p>如果方法的参数过多，以至于上面几个方法都无法处理，则可以考虑使用<code>NSInvocation</code>对象。</p>
+<h2 id="描述对象"><a href="#描述对象" class="headerlink" title="描述对象"></a>描述对象</h2><p>描述对象的方法与<code>NSObject</code>类中描述类的方法其方法名相同，都是<code>description</code>，其声明如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">@property</span>(<span class="keyword">readonly</span>, <span class="keyword">copy</span>) <span class="built_in">NSString</span> *description</div></pre></td></tr></table></figure>
+<p>这个方法用于创建一个对象的文本表达方式，例如：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">ClassName *anObject = &lt;<span class="meta">#An object#&gt;;</span></div><div class="line"><span class="built_in">NSString</span> *string = [<span class="built_in">NSString</span> stringWithFormat:<span class="string">@"anObject is %@"</span>, anObject];</div></pre></td></tr></table></figure>
+<p>为了便于调试，<code>NSObject</code>协议还定义<code>debugDescription</code>方法，该方法声明如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">@property</span>(<span class="keyword">readonly</span>, <span class="keyword">copy</span>) <span class="built_in">NSString</span> *debugDescription</div></pre></td></tr></table></figure>
+<p>该方法返回一个在调试器中显示的用于描述对象内容的字符串。在调试器中打印一个对象时，会调用这个方法。<code>NSObject</code>类实现这个方法时只是调用了<code>description</code>方法，所以默认情况下，这两个方法的输出都是一样的。我们在子类中可以重写这个方法的实现。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p><code>NSObject</code>协议的定义的很多方法都是我们平常经常使用的。我们在创建<code>NSObject</code>类的子类时，默认都继承了<code>NSObject</code>类对于<code>NSObject</code>协议的实现。如果有特殊的需求，我们可以重写这些方法。</p>
+<p>当然，<code>NSObject</code>协议还定义了一些方法，如我们非常熟悉的<code>retain</code>, <code>release</code>, <code>autorelease</code>, <code>retainCount</code>方法，不过这些方法在<code>ARC</code>时代已经过时了，我们在此不过多说明。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/Foundation/Protocols/NSObject_Protocol/index.html" target="_blank" rel="external">NSObject Protocol Reference</a></li>
+</ol>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/01/31/cocoa-foundation-nsobject-class/" rel="next" title="Foundation: NSObject Class">
+                <i class="fa fa-chevron-left"></i> Foundation: NSObject Class
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/02/07/sourcecode-sdwebimage/" rel="prev" title="SDWebImage实现分析">
+                SDWebImage实现分析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#识别对象"><span class="nav-number">1.</span> <span class="nav-text">识别对象</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#测试对象"><span class="nav-number">2.</span> <span class="nav-text">测试对象</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#标识和比较对象"><span class="nav-number">3.</span> <span class="nav-text">标识和比较对象</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#发送消息"><span class="nav-number">4.</span> <span class="nav-text">发送消息</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#描述对象"><span class="nav-number">5.</span> <span class="nav-text">描述对象</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">6.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">7.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

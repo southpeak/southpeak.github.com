@@ -1,0 +1,783 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="最近下载iOS 9 GM版，然后跑了下我们的应用，发现有些网络请求失效了。先前在WWDC 2015上了解到iOS 9将要求网络请求使用HTTPS协议，但一直没有在iOS 9 beta版上跑过。现在这个问题突显出来了，所以搜了一些博文研究了一下。
+我们知道，Apple在安全及用户隐私方面做了很多工作，包括沙盒机制、代码签名、禁用私有API等。而在今年6月份的WWDC 2015上，Apple又提出了A">
+<meta property="og:type" content="article">
+<meta property="og:title" content="App Transport Security(ATS)">
+<meta property="og:url" content="http://southpeak.github.io/2015/09/14/app-transport-security-ats/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="最近下载iOS 9 GM版，然后跑了下我们的应用，发现有些网络请求失效了。先前在WWDC 2015上了解到iOS 9将要求网络请求使用HTTPS协议，但一直没有在iOS 9 beta版上跑过。现在这个问题突显出来了，所以搜了一些博文研究了一下。
+我们知道，Apple在安全及用户隐私方面做了很多工作，包括沙盒机制、代码签名、禁用私有API等。而在今年6月份的WWDC 2015上，Apple又提出了A">
+<meta property="og:image" content="http://neglectedpotential.com/wp-content/uploads/ATSInfoplist.png">
+<meta property="og:image" content="http://www.neglectedpotential.com/wp-content/uploads/ExampleB.png">
+<meta property="og:image" content="http://www.neglectedpotential.com/wp-content/uploads/ExampleC.png">
+<meta property="og:image" content="http://www.neglectedpotential.com/wp-content/uploads/ExampleD.png">
+<meta property="og:image" content="http://www.neglectedpotential.com/wp-content/uploads/ExampleE.png">
+<meta property="og:updated_time" content="2016-08-28T04:31:02.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="App Transport Security(ATS)">
+<meta name="twitter:description" content="最近下载iOS 9 GM版，然后跑了下我们的应用，发现有些网络请求失效了。先前在WWDC 2015上了解到iOS 9将要求网络请求使用HTTPS协议，但一直没有在iOS 9 beta版上跑过。现在这个问题突显出来了，所以搜了一些博文研究了一下。
+我们知道，Apple在安全及用户隐私方面做了很多工作，包括沙盒机制、代码签名、禁用私有API等。而在今年6月份的WWDC 2015上，Apple又提出了A">
+<meta name="twitter:image" content="http://neglectedpotential.com/wp-content/uploads/ATSInfoplist.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2015/09/14/app-transport-security-ats/"/>
+
+  <title> App Transport Security(ATS) | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                App Transport Security(ATS)
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-09-14T19:47:32+08:00" content="2015-09-14">
+              2015-09-14
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/something/" itemprop="url" rel="index">
+                    <span itemprop="name">杂项</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>最近下载<code>iOS 9 GM</code>版，然后跑了下我们的应用，发现有些网络请求失效了。先前在<code>WWDC 2015</code>上了解到<code>iOS 9</code>将要求网络请求使用<code>HTTPS</code>协议，但一直没有在<code>iOS 9 beta</code>版上跑过。现在这个问题突显出来了，所以搜了一些博文研究了一下。</p>
+<p>我们知道，<code>Apple</code>在安全及用户隐私方面做了很多工作，包括沙盒机制、代码签名、禁用私有API等。而在今年6月份的<code>WWDC 2015</code>上，<code>Apple</code>又提出了<code>App Transport Security(ATS)</code>的概念。这一特性的主要意图是为我们的<code>App</code>与服务器之间提供一种安全的通信方式，以防止中间人窃听、篡改传输的数据。这一特性在<code>iOS 9+</code>和<code>OS X 10.11+</code>中是默认的支持项。这一概念的提出，也将意味着<code>Apple</code>将会慢慢转向支持<code>HTTPS</code>，而可能放弃<code>HTTP</code>。</p>
+<h2 id="App-Transport-Security技术要求"><a href="#App-Transport-Security技术要求" class="headerlink" title="App Transport Security技术要求"></a>App Transport Security技术要求</h2><p>我们先来看看<code>ATS</code>的技术要求（参考<a href="https://developer.apple.com/library/prerelease/ios/technotes/App-Transport-Security-Technote/" target="_blank" rel="external">App Transport Security Technote</a>）：</p>
+<ul>
+<li>The server must support at least Transport Layer Security (TLS) protocol version 1.2.</li>
+<li>Connection ciphers are limited to those that provide forward secrecy (see the list of ciphers below.)</li>
+<li>Certificates must be signed using a SHA256 or better signature hash algorithm, with either a 2048 bit or greater RSA key or a 256 bit or greater Elliptic-Curve (ECC) key.</li>
+</ul>
+<p>可以看到服务端必须支持<code>TLS 1.2</code>或以上版本；必须使用支持前向保密的密码；证书必须使用<code>SHA-256</code>或者更好的签名<code>hash</code>算法来签名，如果证书无效，则会导致连接失败。</p>
+<p><code>Apple</code>认为这是目前保证通信安全性的最佳实践，特别是使用<code>TLS 1.2</code>和前向保密。当然，相信<code>Apple</code>也会与时俱进，不断的修正<code>ATS</code>，以保证网络通信的安全性。</p>
+<h2 id="默认配置"><a href="#默认配置" class="headerlink" title="默认配置"></a>默认配置</h2><p>在<code>iOS 9+</code>和<code>OS X 10.11+</code>中，如果我们的<code>App</code>使用了<code>NSURLConnection</code>、<code>CFURL</code> 或者<code>NSURLSession</code>相关的<code>API</code>来进行数据通信的话，则默认是通过<code>ATS</code>的方式来传输数据。在此配置下，如果我们使用<code>HTTP</code>来进行通信，则会导致请求失败，并报以下错误：</p>
+<blockquote>
+<p>The resource could not be loaded because the App Transport Security policy requires the use of a secure connection.</p>
+</blockquote>
+<p>这样意味着如果使用<code>ATS</code>，将无法支持<code>HTTP</code>协议（我们测试了一下，由于我们的登录服务是使用<code>HTTP</code>协议，目前在<code>iOS 9</code>下已无法正常登录）。相信目前还有大量的应用是通过HTTP协议来访问服务器的。而要让所有的应用都转向支持<code>HTTPS</code>，显然是一件费时费力的事（与今年年头所有应用必须支持64位<code>ARM</code>不同，那次只是在客户端层面，而<code>ATS</code>涉及到服务端，影响面更大）。所以苹果提供了一种兼容方案，下面我们就来看看如何处理。</p>
+<h2 id="自定义配置"><a href="#自定义配置" class="headerlink" title="自定义配置"></a>自定义配置</h2><p>考虑到现实因素，我们可能并不想使用默认配置，或者至少需要一个过渡时期。为此，<code>Apple</code>允许我们在<code>Info.plist</code>文件中来自行配置以修改默认设置(<code>Exceptions</code>)，下表是一些键值及对应的类型和说明：</p>
+<table>
+<thead>
+<tr>
+<th>键</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NSAppTransportSecurity</td>
+<td>Dictionary</td>
+<td>配置ATS的顶层键值</td>
+</tr>
+<tr>
+<td>NSAllowsArbitraryLoads</td>
+<td>Boolean</td>
+<td>这是一个开关键，设置不在NSExceptionDomains列表中的其它域ATS特性。默认值是NO，如果设置为YES，则会关闭其它域的ATS特性。</td>
+</tr>
+<tr>
+<td>NSExceptionDomains</td>
+<td>Dictionary</td>
+<td>特定域列表</td>
+</tr>
+<tr>
+<td><domain-name-for-exception-as-string></domain-name-for-exception-as-string></td>
+<td>Dictionary</td>
+<td>需要自定义配置的域名，键是对应的域名，如www.apple.com</td>
+</tr>
+<tr>
+<td>NSExceptionMinimumTLSVersion</td>
+<td>String</td>
+<td>指定域所需要的TLS的最低版本。有效值包括：TLSv1.0、TLSv1.1、TLSv1.2。默认值是TLSv1.2</td>
+</tr>
+<tr>
+<td>NSExceptionRequiresForwardSecrecy</td>
+<td>Boolean</td>
+<td>指定域是否需要支持前向保密。默认值是YES</td>
+</tr>
+<tr>
+<td>NSExceptionAllowsInsecureHTTPLoads</td>
+<td>Boolean</td>
+<td>指定域的请求是否允许使用不安全的HTTP。使用这个键来访问没有证书，或者证书是自签名、过期或主机名不匹配的证书。默认值为NO，表示需要使用HTTPS。</td>
+</tr>
+<tr>
+<td>NSIncludesSubdomains</td>
+<td>Boolean</td>
+<td>指定自定义的值是否应用到域的所有子域中。默认值是NO</td>
+</tr>
+<tr>
+<td>NSThirdPartyExceptionMinimumTLSVersion</td>
+<td>String</td>
+<td>类似于NSExceptionMinimumTLSVersion键，只不过指定的是应用本身无法控制的第三方组件的域所需要的TLS的最低版本。</td>
+</tr>
+<tr>
+<td>NSThirdPartyExceptionRequiresForwardSecrecy</td>
+<td>Boolean</td>
+<td>同上。指定第三方组件的域是否需要支持前向保密</td>
+</tr>
+<tr>
+<td>NSThirdPartyExceptionAllowsInsecureHTTPLoads</td>
+<td>Boolean</td>
+<td>同上。指定第三方组件的域的请求是否使用HTTPS</td>
+</tr>
+</tbody>
+</table>
+<p>通过设置上面的这些值，就可以精确的配置应用中访问的不同域的<code>ATS</code>特性。如下是<a href="http://www.neglectedpotential.com/2015/06/working-with-apples-application-transport-security/" target="_blank" rel="external">WORKING WITH APPLE’S APP TRANSPORT SECURITY</a>中给出的一个配置示例：</p>
+<p><img src="http://neglectedpotential.com/wp-content/uploads/ATSInfoplist.png" alt="image"></p>
+<p>另外，在这篇文章中，也为我们例举了几种常见的配置，我们一起来看一下：</p>
+<h3 id="Example-A：所有请求均使用ATS"><a href="#Example-A：所有请求均使用ATS" class="headerlink" title="Example A：所有请求均使用ATS"></a>Example A：所有请求均使用ATS</h3><p>这当然是默认配置，只需要我们使用<code>NSURLSession</code>, <code>NSURLConnection</code>或者<code>CFURL</code>来做网络请求。当然只有<code>iOS 9.0+</code>以及<code>OS X 10.11+</code>才支持这一特性。</p>
+<h3 id="Example-B：配置部分域不使用ATS"><a href="#Example-B：配置部分域不使用ATS" class="headerlink" title="Example B：配置部分域不使用ATS"></a>Example B：配置部分域不使用ATS</h3><p>如果我们希望部分域的请求不使用<code>ATS</code>，则我们可以将这些域放在<code>NSExceptionDomains</code>列表中来进行配置，以修改这些域的<code>ATS</code>默认配置。如果我们希望指定域及其所有子域都禁用<code>ATS</code>，则设置<code>NSExceptionAllowsInsecureHTTPLoads</code>为YES并将<code>NSIncludesSubdomains</code>设置为YES，如下配置：</p>
+<p><img src="http://www.neglectedpotential.com/wp-content/uploads/ExampleB.png" alt="image"></p>
+<p>那当然，如果我们不想在指定域完全禁用<code>ATS</code>，则可以设置 <code>NSExceptionRequiresForwardSecrecy</code> 和<code>NSExceptionMinimumTLSVersion</code> 来指定更多的规则。</p>
+<h3 id="Example-C：禁用ATS，但部分域使用ATS"><a href="#Example-C：禁用ATS，但部分域使用ATS" class="headerlink" title="Example C：禁用ATS，但部分域使用ATS"></a>Example C：禁用ATS，但部分域使用ATS</h3><p>如果我们想要在应用中禁用<code>ATS</code>特性，则可以设置<code>NSAllowsArbitraryLoads</code>的值为YES，这样所有的请求将不会使用<code>ATS</code>。而如果我们希望部分域使用<code>ATS</code>，则如同<code>Example B</code>中那样来设置指定域的 <code>NSExceptionAllowsInsecureHTTPLoads</code> 的值为NO，这样就要求指定域必须使用ATS来进行数据传输。如下配置：</p>
+<p><img src="http://www.neglectedpotential.com/wp-content/uploads/ExampleC.png" alt="image"></p>
+<h3 id="Example-D：降级ATS"><a href="#Example-D：降级ATS" class="headerlink" title="Example D：降级ATS"></a>Example D：降级ATS</h3><p>在一些情况下，我们可能需要使用<code>ATS</code>，但可能现实情况并不完全能够支持<code>ATS</code>的最佳实践。比如我们的服务端支持<code>TLS 1.2</code>，但却不支持前向保密。这种情况下，我们可以让指定域支持<code>ATS</code>，但同时禁用前向保密，这种情况下就可以设置<code>NSExceptionRequiresForwardSecrecy</code>为NO。同样，如果我们希望使用前向保密，但可以<code>TLS</code>的版本只是1.1，则我们可以设置 <code>NSExceptionMinimumTLSVersion</code> 的值为<code>TSLv1.1</code>，如下配置：</p>
+<p><img src="http://www.neglectedpotential.com/wp-content/uploads/ExampleD.png" alt="image"></p>
+<h3 id="Example-E：完全禁用ATS的更友好的方式"><a href="#Example-E：完全禁用ATS的更友好的方式" class="headerlink" title="Example E：完全禁用ATS的更友好的方式"></a>Example E：完全禁用ATS的更友好的方式</h3><p>如果想完全禁用<code>ATS</code>，我们可以在<code>Info.plist</code>中简单的设置<code>NSAllowsArbitraryLoads</code>为YES，如下配置：</p>
+<p><img src="http://www.neglectedpotential.com/wp-content/uploads/ExampleE.png" alt="image"></p>
+<p>以上几种情况基本上囊括了自定义<code>ATS</code>特性的所有情况。大家可以根据需要来自定义配置。</p>
+<h2 id="Certificate-Transparency"><a href="#Certificate-Transparency" class="headerlink" title="Certificate Transparency"></a>Certificate Transparency</h2><p>对于<code>ATS</code>，大部分安全特性都是默认可用的，不过<code>Certificate Transparency</code>是必须配置的。<code>Certificate Transparency</code>的概念在<code>wiki</code>中的解释是：</p>
+<blockquote>
+<p>Certificate Transparency (CT) is an experimental IETF open standard and open source framework for monitoring and auditing digital certificates. Through a system of certificate logs, monitors, and auditors, certificate transparency allows website users and domain owners to identify mistakenly or maliciously issued certificates and to identify certificate authorities (CAs) that have gone rogue.</p>
+</blockquote>
+<p>它主要是让web站点的用户和域所有者可以识别出错误的或恶意的证书，以及识别出无效的证书颁发机构。</p>
+<p>如果我们的证书支持<code>certificate transparency</code>，那么我们可以设置<code>NSRequiresCertificateTransparency</code>键来启用这一功能。而不如证书不支持<code>certificate transparency</code>，则该功能默认总是关闭的。</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p><code>Apple</code>提出<code>App Transport Security</code>这一特性，是为了保证用户数据的安全传输。安全因素始终是网络开发中一个重要的因素，相信会有越来越多的站点会转向<code>HTTPS</code>。而<code>Apple</code>作为业内技术的一个风向标，也会带动这一趋势的发展。所以，还不支持<code>HTTPS</code>的筒子们可以行为起来了。</p>
+<p>这篇文章更多的是对App开发文档<a href="https://developer.apple.com/library/prerelease/ios/technotes/App-Transport-Security-Technote/" target="_blank" rel="external">App Transport Security Technote</a>和<a href="http://www.neglectedpotential.com/2015/06/working-with-apples-application-transport-security/" target="_blank" rel="external">WORKING WITH APPLE’S APP TRANSPORT SECURITY</a>两篇文章的整理。<a href="http://weibo.com/luohanchenyilong/" target="_blank" rel="external">iOS程序犭袁</a>在他的<a href="https://github.com/ChenYilong/iOS9AdaptationTips" target="_blank" rel="external">iOS9AdaptationTips</a>一文中有更多有意思的内容，大家可以参考。</p>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><ol>
+<li><a href="https://developer.apple.com/library/prerelease/ios/technotes/App-Transport-Security-Technote/" target="_blank" rel="external">App Transport Security Technote</a></li>
+<li><a href="http://www.neglectedpotential.com/2015/06/working-with-apples-application-transport-security/" target="_blank" rel="external">WORKING WITH APPLE’S APP TRANSPORT SECURITY</a></li>
+<li><a href="https://developer.apple.com/videos/wwdc/2015/?id=711" target="_blank" rel="external">WWDC 2015视频：Networking with NSURLSession</a></li>
+<li><a href="http://willowtreeapps.com/blog/app-transport-security/" target="_blank" rel="external">App Transport Security</a></li>
+<li><a href="https://github.com/ChenYilong/iOS9AdaptationTips" target="_blank" rel="external">iOS9AdaptationTips</a></li>
+</ol>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/08/31/translate-10-things-you-need-to-know-about-cocoa-auto-layout/" rel="next" title="10 Things You Need to Know About Cocoa Auto Layout">
+                <i class="fa fa-chevron-left"></i> 10 Things You Need to Know About Cocoa Auto Layout
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/09/23/sourcecode-mmtweenanimation/" rel="prev" title="MMTweenAnimation实现分析">
+                MMTweenAnimation实现分析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#App-Transport-Security技术要求"><span class="nav-number">1.</span> <span class="nav-text">App Transport Security技术要求</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#默认配置"><span class="nav-number">2.</span> <span class="nav-text">默认配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#自定义配置"><span class="nav-number">3.</span> <span class="nav-text">自定义配置</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Example-A：所有请求均使用ATS"><span class="nav-number">3.1.</span> <span class="nav-text">Example A：所有请求均使用ATS</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Example-B：配置部分域不使用ATS"><span class="nav-number">3.2.</span> <span class="nav-text">Example B：配置部分域不使用ATS</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Example-C：禁用ATS，但部分域使用ATS"><span class="nav-number">3.3.</span> <span class="nav-text">Example C：禁用ATS，但部分域使用ATS</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Example-D：降级ATS"><span class="nav-number">3.4.</span> <span class="nav-text">Example D：降级ATS</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Example-E：完全禁用ATS的更友好的方式"><span class="nav-number">3.5.</span> <span class="nav-text">Example E：完全禁用ATS的更友好的方式</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Certificate-Transparency"><span class="nav-number">4.</span> <span class="nav-text">Certificate Transparency</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">5.</span> <span class="nav-text">小结</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#参考"><span class="nav-number">5.1.</span> <span class="nav-text">参考</span></a></li></ol></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

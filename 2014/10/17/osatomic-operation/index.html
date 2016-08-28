@@ -1,0 +1,719 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="并发编程一个主要问题就是如何同步数据。同步数据的方式有很多种，这里我们介绍一下libkern/OSAtomic.h。这个头文件包含是大量关于原子操作和同步操作的函数，如果要对数据进行同步操作，这里面的函数可以作为我们的首选项。不同平台这些函数的实现是自定义的。另外，它们是线程安全的。
+需要注意的是，传递给这些函数的所有地址都必须是“自然对齐”的，例如int32_t *指针必须是32位对齐的(地址的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="OSAtomic原子操作">
+<meta property="og:url" content="http://southpeak.github.io/2014/10/17/osatomic-operation/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="并发编程一个主要问题就是如何同步数据。同步数据的方式有很多种，这里我们介绍一下libkern/OSAtomic.h。这个头文件包含是大量关于原子操作和同步操作的函数，如果要对数据进行同步操作，这里面的函数可以作为我们的首选项。不同平台这些函数的实现是自定义的。另外，它们是线程安全的。
+需要注意的是，传递给这些函数的所有地址都必须是“自然对齐”的，例如int32_t *指针必须是32位对齐的(地址的">
+<meta property="og:updated_time" content="2016-08-27T05:58:04.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="OSAtomic原子操作">
+<meta name="twitter:description" content="并发编程一个主要问题就是如何同步数据。同步数据的方式有很多种，这里我们介绍一下libkern/OSAtomic.h。这个头文件包含是大量关于原子操作和同步操作的函数，如果要对数据进行同步操作，这里面的函数可以作为我们的首选项。不同平台这些函数的实现是自定义的。另外，它们是线程安全的。
+需要注意的是，传递给这些函数的所有地址都必须是“自然对齐”的，例如int32_t *指针必须是32位对齐的(地址的">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2014/10/17/osatomic-operation/"/>
+
+  <title> OSAtomic原子操作 | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                OSAtomic原子操作
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-10-17T10:56:00+08:00" content="2014-10-17">
+              2014-10-17
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/something/" itemprop="url" rel="index">
+                    <span itemprop="name">杂项</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>并发编程一个主要问题就是如何同步数据。同步数据的方式有很多种，这里我们介绍一下<code>libkern/OSAtomic.h</code>。这个头文件包含是大量关于原子操作和同步操作的函数，如果要对数据进行同步操作，这里面的函数可以作为我们的首选项。不同平台这些函数的实现是自定义的。另外，它们是线程安全的。</p>
+<p>需要注意的是，传递给这些函数的所有地址都必须是“自然对齐”的，例如<code>int32_t *</code>指针必须是32位对齐的(地址的低位2个bit为0)，<code>int64_t *</code>指针必须是64位对齐的(低3位为0)。</p>
+<p>这些原子函数的一些版本整合了内存屏障(memory barriers)，而另一些则没有。在诸如PPC这样的弱有序(weakly-ordered)架构中，Barriers严格限制了内存访问顺序。所有出现在barriers之前的加载和存储操作完成后，才会运行barriers之后的加载和存储操作。</p>
+<p>在单处理器系统中，barriers操作通常是一个空操作。在多处理器系统中，barriers在某些平台上可能是相当昂贵的操作，如PPC。</p>
+<p>大多数代码都应该使用barrier函数来确保在线程间共享的内存是正确同步的。例如，如果我们想要初始化一个共享的数据结构，然后自动增加某个变量值来标识初始化操作完成，则我们必须使用<code>OSAtomicIncrement32Barrier</code>来确保数据结构的存储操作在变量自动增加前完成。</p>
+<p>同样的，该数据结构的消费者也必须使用<code>OSAtomicIncrement32Barrier</code>，以确保在自动递增变量值之后再去加载这些数据。另一方面，如果我们只是简单地递增一个全局计数器，那么使用<code>OSAtomicIncrement32</code>会更安全且可能更快。</p>
+<p>如果不能确保我们使用的是哪个版本，则使用barrier变量以保证是安全的。</p>
+<p>另外，自旋锁和队列操作总是包含一个barrier。</p>
+<p>这个头文件中的函数主要可以分为以下几类</p>
+<h2 id="内存屏障-Memory-barriers"><a href="#内存屏障-Memory-barriers" class="headerlink" title="内存屏障(Memory barriers)"></a>内存屏障(Memory barriers)</h2><p>内存屏障的概念如上所述，它是一种屏障和指令类，可以让CPU或编译器强制将barrier之前和之后的内存操作分开。CPU采用了一些可能导致乱序执行的性能优化。在单个线程的执行中，内存操作的顺序一般是悄无声息的，但是在并发编程和设备驱动程序中就可能出现一些不可预知的行为，除非我们小心地去控制。排序约束的特性是依赖于硬件的，并由架构的内存顺序模型来定义。一些架构定义了多种barrier来执行不同的顺序约束。</p>
+<p><code>OSMemoryBarrier()</code>函数就是用来设置内存屏障，它即可以用于读操作，也可以用于写操作。</p>
+<p>示例代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 代码来自ReactiveCocoa:RACDisposable类</span></div><div class="line">	</div><div class="line">- (<span class="keyword">id</span>)initWithBlock:(<span class="keyword">void</span> (^)(<span class="keyword">void</span>))block &#123;</div><div class="line">    <span class="built_in">NSCParameterAssert</span>(block != <span class="literal">nil</span>);</div><div class="line">    </div><div class="line">    <span class="keyword">self</span> = [<span class="keyword">super</span> init];</div><div class="line">    <span class="keyword">if</span> (<span class="keyword">self</span> == <span class="literal">nil</span>) <span class="keyword">return</span> <span class="literal">nil</span>;</div><div class="line">    </div><div class="line">    _disposeBlock = (<span class="keyword">void</span> *)<span class="built_in">CFBridgingRetain</span>([block <span class="keyword">copy</span>]);</div><div class="line">    OSMemoryBarrier();</div><div class="line">    </div><div class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="自旋锁-Spinlocks"><a href="#自旋锁-Spinlocks" class="headerlink" title="自旋锁(Spinlocks)"></a>自旋锁(Spinlocks)</h2><p>自旋锁是在多处理器系统(SMP)上为保护一段关键代码的执行或者关键数据的一种保护机制，是实现synchronization的一种手段。</p>
+<p><code>libkern/OSAtomic.h</code>中包含了三个关于自旋锁的函数：<code>OSSpinLockLock</code>, <code>OSSpinLockTry</code>, <code>OSSpinLockUnlock</code>。</p>
+<p>示例代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 代码来自ReactiveCocoa:RACCompoundDisposable类</span></div><div class="line">	</div><div class="line">- (<span class="keyword">void</span>)dispose &#123;</div><div class="line"><span class="meta">#if RACCompoundDisposableInlineCount</span></div><div class="line">    RACDisposable *inlineCopy[RACCompoundDisposableInlineCount];</div><div class="line"><span class="meta">#endif</span></div><div class="line">    </div><div class="line">    <span class="built_in">CFArrayRef</span> remainingDisposables = <span class="literal">NULL</span>;</div><div class="line">    </div><div class="line">    OSSpinLockLock(&amp;_spinLock);</div><div class="line">    &#123;</div><div class="line">        _disposed = <span class="literal">YES</span>;</div><div class="line">        </div><div class="line"><span class="meta">#if RACCompoundDisposableInlineCount</span></div><div class="line">        <span class="keyword">for</span> (<span class="keyword">unsigned</span> i = <span class="number">0</span>; i &lt; RACCompoundDisposableInlineCount; i++) &#123;</div><div class="line">            inlineCopy[i] = _inlineDisposables[i];</div><div class="line">            _inlineDisposables[i] = <span class="literal">nil</span>;</div><div class="line">        &#125;</div><div class="line"><span class="meta">#endif</span></div><div class="line">        </div><div class="line">        remainingDisposables = _disposables;</div><div class="line">        _disposables = <span class="literal">NULL</span>;</div><div class="line">    &#125;</div><div class="line">    OSSpinLockUnlock(&amp;_spinLock);</div><div class="line">    </div><div class="line"><span class="meta">#if RACCompoundDisposableInlineCount</span></div><div class="line">    <span class="comment">// Dispose outside of the lock in case the compound disposable is used</span></div><div class="line">    <span class="comment">// recursively.</span></div><div class="line">    <span class="keyword">for</span> (<span class="keyword">unsigned</span> i = <span class="number">0</span>; i &lt; RACCompoundDisposableInlineCount; i++) &#123;</div><div class="line">        [inlineCopy[i] dispose];</div><div class="line">    &#125;</div><div class="line"><span class="meta">#endif</span></div><div class="line">    </div><div class="line">    <span class="keyword">if</span> (remainingDisposables == <span class="literal">NULL</span>) <span class="keyword">return</span>;</div><div class="line">    </div><div class="line">    <span class="built_in">CFIndex</span> count = <span class="built_in">CFArrayGetCount</span>(remainingDisposables);</div><div class="line">    <span class="built_in">CFArrayApplyFunction</span>(remainingDisposables, <span class="built_in">CFRangeMake</span>(<span class="number">0</span>, count), &amp;disposeEach, <span class="literal">NULL</span>);</div><div class="line">    <span class="built_in">CFRelease</span>(remainingDisposables);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="原子队列操作"><a href="#原子队列操作" class="headerlink" title="原子队列操作"></a>原子队列操作</h2><p>队列操作主要包含两类：</p>
+<ol>
+<li>不加锁的FIFO入队和出队原子操作，包含<code>OSAtomicFifoDequeue</code>和<code>OSAtomicFifoEnqueue</code>两个函数</li>
+<li>不加锁的LIFO入队和出队原子操作，包含<code>OSAtomicDequeue</code>和<code>OSAtomicEnqueue</code>两个函数。这两个函数是线程安全的，对有潜在精确要求的代码来说，这会是强大的构建方式。</li>
+</ol>
+<h2 id="比较和交换"><a href="#比较和交换" class="headerlink" title="比较和交换"></a>比较和交换</h2><p>这组函数可以细分为三组函数：</p>
+<ol>
+<li><code>OSAtomicCompareAndSwap**[Barrier](type __oldValue, type __newValue, volatile type *__theValue)</code>：这组函数用于比较<code>__oldValue</code>是否与<code>__theValue</code>指针指向的内存位置的值匹配，如果匹配，则将<code>__newValue</code>的值存储到<code>__theValue</code>指向的内存位置。可以根据需要使用barrier版本。</li>
+<li><code>OSAtomicTestAndClear/OSAtomicTestAndClearBarrier(uint32_t __n, volatile void * __theAddress)</code>：这组函数用于测试<code>__theAddress</code>指向的值中由<code>__n</code>指定的bit位，如果该位未被清除，则清除它。需要注意的是最低bit位应该是1，而不是0。对于一个64-bit的值来说，如果要清除最高位的值，则<code>__n</code>应该是64。</li>
+<li><code>OSAtomicTestAndSet/OSAtomicTestAndSetBarrier(uint32_t __n, volatile void * __theAddress)</code>：与<code>OSAtomicTestAndClear</code>相反，这组函数测试值后，如果指定位没有设置，则设置它。</li>
+</ol>
+<p>示例代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">void</span> * sharedBuffer(<span class="keyword">void</span>)</div><div class="line">&#123;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">void</span> * buffer;</div><div class="line">    <span class="keyword">if</span> (buffer == <span class="literal">NULL</span>) &#123;</div><div class="line">        <span class="keyword">void</span> * newBuffer = calloc(<span class="number">1</span>, <span class="number">1024</span>);</div><div class="line">        <span class="keyword">if</span> (!OSAtomicCompareAndSwapPtrBarrier(<span class="literal">NULL</span>, newBuffer, &amp;buffer)) &#123;</div><div class="line">            free(newBuffer);</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> buffer;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>上述代码的作用是如果没有缓冲区，我们将创建一个newBuffer，然后将其写到buffer中。</p>
+<h2 id="布尔操作-AND-OR-XOR"><a href="#布尔操作-AND-OR-XOR" class="headerlink" title="布尔操作(AND, OR, XOR)"></a>布尔操作(AND, OR, XOR)</h2><p>这组函数可根据以下两个规则来分类：</p>
+<ol>
+<li>是否使用Barrier</li>
+<li>返回值是原始值还是操作完成后的值</li>
+</ol>
+<p>以And为例，有4个函数：<code>OSAtomicAnd32</code>, <code>OSAtomicAnd32Barrier</code>, <code>OSAtomicAnd32Orig</code>, <code>OSAtomicAnd32OrigBarrier</code>。每个函数均带有两个参数：<code>__theMask(uint32_t)</code>和<code>__theValue(volatile uint32_t *)</code>。函数将<code>__theMask</code>与<code>__theValue</code>指向的值做AND操作。</p>
+<p>类似，还有OR操作和XOR操作。</p>
+<h2 id="数学操作"><a href="#数学操作" class="headerlink" title="数学操作"></a>数学操作</h2><p>这组函数主要包括：</p>
+<ol>
+<li>加操作：<code>OSAtomicAdd**</code>, <code>OSAtomicAdd**Barrier</code></li>
+<li>递减操作：<code>OSAtomicDecrement**</code>, <code>OSAtomicDecrement**Barrier</code></li>
+<li>递增操作：<code>OSAtomicIncrement**</code>, <code>OSAtomicIncrement**Barrier</code></li>
+</ol>
+<p>示例代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 代码摘自ReactiveCocoa:RACDynamicSequence</span></div><div class="line">	</div><div class="line">- (<span class="keyword">void</span>)dealloc &#123;</div><div class="line">	<span class="keyword">static</span> <span class="keyword">volatile</span> int32_t directDeallocCount = <span class="number">0</span>;</div><div class="line">	</div><div class="line">	<span class="keyword">if</span> (OSAtomicIncrement32(&amp;directDeallocCount) &gt;= DEALLOC_OVERFLOW_GUARD) &#123;</div><div class="line">		OSAtomicAdd32(-DEALLOC_OVERFLOW_GUARD, &amp;directDeallocCount);</div><div class="line">	</div><div class="line">		<span class="comment">// Put this sequence's tail onto the autorelease pool so we stop</span></div><div class="line">		<span class="comment">// recursing.</span></div><div class="line">		__autoreleasing RACSequence *tail __attribute__((unused)) = _tail;</div><div class="line">	&#125;</div><div class="line">	</div><div class="line">	_tail = <span class="literal">nil</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>相较于<code>@synchronized</code>，OSAtomic原子操作更趋于数据的底层，从更深层次来对单例进行保护。同时，它没有阻断其它线程对函数的访问。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ol>
+<li><a href="https://developer.apple.com/library/mac/documentation/System/Reference/OSAtomic_header_reference/Reference/reference.html" target="_blank" rel="external">OSAtomic.h User-Space Reference</a></li>
+<li><a href="http://blog.csdn.net/wzb56_earl/article/details/6634622" target="_blank" rel="external">Memory barrier</a></li>
+<li><a href="http://www.cocoachina.com/industry/20130821/6842.html" target="_blank" rel="external">Objc的底层并发API</a></li>
+<li><a href="http://blog.csdn.net/tuxiangqi/article/details/8076972" target="_blank" rel="external">OSATOMIC与synchronized加锁的对比</a></li>
+</ol>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2014/09/23/tutorial-performance-and-time/" rel="next" title="Tutorial performance and time">
+                <i class="fa fa-chevron-left"></i> Tutorial performance and time
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2014/10/19/instancetype/" rel="prev" title="instancetype">
+                instancetype <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#内存屏障-Memory-barriers"><span class="nav-number">1.</span> <span class="nav-text">内存屏障(Memory barriers)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#自旋锁-Spinlocks"><span class="nav-number">2.</span> <span class="nav-text">自旋锁(Spinlocks)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#原子队列操作"><span class="nav-number">3.</span> <span class="nav-text">原子队列操作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#比较和交换"><span class="nav-number">4.</span> <span class="nav-text">比较和交换</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#布尔操作-AND-OR-XOR"><span class="nav-number">5.</span> <span class="nav-text">布尔操作(AND, OR, XOR)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#数学操作"><span class="nav-number">6.</span> <span class="nav-text">数学操作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">7.</span> <span class="nav-text">小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">8.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

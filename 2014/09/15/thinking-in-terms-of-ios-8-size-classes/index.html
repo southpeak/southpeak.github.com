@@ -1,0 +1,716 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="原文链接：Thinking In Terms Of iOS 8 Size Classes
+对于最新的iOS8 SDK来说，最性感也最重要的的特性也许莫过于Size Classes了。
+在聊Size Classes之前，我们先来回顾下历史。
+一堂历史课最初，iOS推出时，我们只有一种设备：iPhone。它的屏幕大小是320\*480。不过即使如此，它也是同时支付横屏和竖屏。设计同时支持两个方向的Ap">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Thinking In Terms Of iOS 8 Size Classes">
+<meta property="og:url" content="http://southpeak.github.io/2014/09/15/thinking-in-terms-of-ios-8-size-classes/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="原文链接：Thinking In Terms Of iOS 8 Size Classes
+对于最新的iOS8 SDK来说，最性感也最重要的的特性也许莫过于Size Classes了。
+在聊Size Classes之前，我们先来回顾下历史。
+一堂历史课最初，iOS推出时，我们只有一种设备：iPhone。它的屏幕大小是320\*480。不过即使如此，它也是同时支付横屏和竖屏。设计同时支持两个方向的Ap">
+<meta property="og:image" content="http://cdn.carpeaqua.com.s3.amazonaws.com/images/size-classes/size_class_chart.jpg">
+<meta property="og:updated_time" content="2016-08-27T05:38:34.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Thinking In Terms Of iOS 8 Size Classes">
+<meta name="twitter:description" content="原文链接：Thinking In Terms Of iOS 8 Size Classes
+对于最新的iOS8 SDK来说，最性感也最重要的的特性也许莫过于Size Classes了。
+在聊Size Classes之前，我们先来回顾下历史。
+一堂历史课最初，iOS推出时，我们只有一种设备：iPhone。它的屏幕大小是320\*480。不过即使如此，它也是同时支付横屏和竖屏。设计同时支持两个方向的Ap">
+<meta name="twitter:image" content="http://cdn.carpeaqua.com.s3.amazonaws.com/images/size-classes/size_class_chart.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2014/09/15/thinking-in-terms-of-ios-8-size-classes/"/>
+
+  <title> Thinking In Terms Of iOS 8 Size Classes | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Thinking In Terms Of iOS 8 Size Classes
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-09-15T17:25:53+08:00" content="2014-09-15">
+              2014-09-15
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/translate/" itemprop="url" rel="index">
+                    <span itemprop="name">翻译</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>原文链接：<a href="http://carpeaqua.com/2014/06/14/thinking-in-terms-of-ios-8-size-classes/" target="_blank" rel="external">Thinking In Terms Of iOS 8 Size Classes</a></p>
+<p>对于最新的<code>iOS8 SDK</code>来说，最性感也最重要的的特性也许莫过于<code>Size Classes</code>了。</p>
+<p>在聊<code>Size Classes</code>之前，我们先来回顾下历史。</p>
+<h2 id="一堂历史课"><a href="#一堂历史课" class="headerlink" title="一堂历史课"></a>一堂历史课</h2><p>最初，<code>iOS</code>推出时，我们只有一种设备：<code>iPhone</code>。它的屏幕大小是<code>320\*480</code>。不过即使如此，它也是同时支付横屏和竖屏。设计同时支持两个方向的<code>App</code>不是像<code>Mobile Safari</code>或<code>Messages</code>那样，简单地拉伸和重新设置视图的大小。在大多数情况下，我们需要移动按钮和其它控件来让其适应横屏(<code>480\*320</code>)。</p>
+<p>几年后的现在，我们有了高清屏，<code>iPads</code>和大屏的<code>iPhone</code>。当然，所有这些设备都是支持横屏和竖屏的。解决这个适配问题的传统的方法是在视图控制器和自定义视图中监听设备方向的变化，同时使用多个<code>xib</code>或<code>storyboard</code>。</p>
+<p>假设我已经构建了一个同时支持<code>iPhone</code>和<code>iPad</code>的的<code>Glassboard</code>工程。在<code>iOS7</code>和老的版本之前，我们需要针对<code>iPad</code>单独创建一个<code>storyboard</code>，这个<code>storyboard</code>包含重建的视图控制器，<code>outlet</code>属性和<code>target/action</code>。这相当于是重复工作了。任何程序员都知道这不是个好主意。需要在两个不同的地方做相同的改变真是件糟糕的事。</p>
+<p>如果是使用代码，则我们需要在代码中检测屏幕方向及设备大小，以便我们能手动调整我们的约束或基于<code>frame</code>的布局。我们的代码会像下面这段代码一样：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">UIDevice</span> *device = [<span class="built_in">UIDevice</span> currentDevice];</div><div class="line"><span class="built_in">UIDeviceOrientation</span> currentOrientation = device.orientation;</div><div class="line"><span class="built_in">BOOL</span> isPhone = (device.userInterfaceIdiom == <span class="built_in">UIUserInterfaceIdiomPhone</span>);</div><div class="line"><span class="built_in">BOOL</span> isTallPhone = ([[<span class="built_in">UIScreen</span> mainScreen] bounds].size.height == <span class="number">568.0</span>);</div><div class="line"><span class="keyword">if</span> (<span class="built_in">UIDeviceOrientationIsPortrait</span>(currentOrientation) == <span class="literal">YES</span>)</div><div class="line">&#123;</div><div class="line">    <span class="comment">// Do Portrait Things</span></div><div class="line">    <span class="keyword">if</span> (isPhone == <span class="literal">YES</span>)</div><div class="line">    &#123;</div><div class="line">        <span class="comment">// Do Portrait Phone Things</span></div><div class="line">        <span class="comment">// Don't deny you've done this at least once.</span></div><div class="line">        <span class="keyword">if</span> (isTallPhone)</div><div class="line">        &#123;</div><div class="line">            <span class="comment">// iPhone 5+</span></div><div class="line">        &#125;</div><div class="line">        <span class="keyword">else</span></div><div class="line">        &#123;</div><div class="line">            <span class="comment">// Old phones</span></div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">else</span></div><div class="line">    &#123;</div><div class="line">        <span class="comment">// Do Portrait iPad things.</span></div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"><span class="keyword">else</span></div><div class="line">&#123;</div><div class="line">    <span class="comment">// Do Landscape Things.</span></div><div class="line">    <span class="keyword">if</span> (isPhone == <span class="literal">YES</span>)</div><div class="line">    &#123;</div><div class="line">        <span class="comment">// Do Landscape Phone Things</span></div><div class="line">    &#125;</div><div class="line">    <span class="keyword">else</span></div><div class="line">    &#123;</div><div class="line">        <span class="comment">// Do Landscape iPad things.</span></div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="Size-Classes"><a href="#Size-Classes" class="headerlink" title="Size Classes"></a>Size Classes</h2><p>显然，上面的这些方案都不理想，而且随着苹果新设备的推出，这种情况会变得越来越糟。在今年的<code>WWDC</code>上，苹果除了介绍自动布局的新特性外，我们同样也看到了许多可变<code>iOS</code>模拟器的事例，以及一种处理所有这些问题和屏幕问题的新技术：<code>Size Classes</code>。</p>
+<p><code>Size Classes</code>是<code>iOS</code>使用的一种新的技术，允许我们为给定的设备自定义我们的程序，而且是基于设备的方向和屏幕大小的。</p>
+<p><code>Size Classes</code>有两个目的：</p>
+<ol>
+<li>让开发人员和设计人员跳出指定设备的范畴，而是以更广义的范畴来思考问题</li>
+<li>为未来做准备</li>
+</ol>
+<p>第一个目的也引出了第二个目的。我们看到各种传说，说<code>iPhone 6, 7</code>将会是更大的设备。你也看到了苹果已经开发出了可穿戴设备(<code>Apple Watch</code>)。那么有什么方法可以让为这些设备开发变得更容易呢？那就是<code>Size Classes</code>。</p>
+<p>目前从<code>XCode 6</code>上可以看到有四种类型的<code>Size Classes</code>：</p>
+<p><img src="http://cdn.carpeaqua.com.s3.amazonaws.com/images/size-classes/size_class_chart.jpg" alt="image"></p>
+<ol>
+<li>宽紧凑(<code>Compact</code>)</li>
+<li>长紧凑</li>
+<li>宽正常(<code>Regular</code>)</li>
+<li>长正常</li>
+</ol>
+<p>任意时刻，我们的设备都有一个水平方向的<code>Size Class</code>和一个竖直方向的<code>Size Class</code>。这两者都是用来定义布局属性与物征(<code>trait</code>)的集合，以在屏幕上显示内容给用户。</p>
+<h2 id="特征-Traits"><a href="#特征-Traits" class="headerlink" title="特征(Traits)"></a>特征(Traits)</h2><p>水平和竖直的Size Class被认为是Traits。结合当前界面术语和显示比例，一起组成了一个特征集合。这不只是包含了指定的控制应该放在屏幕的什么地方。</p>
+<p>特征(<code>Trait</code>)也可以用于诸如<code>image assets</code>的东西上(假设你正在使用<code>Asset Catalogs</code>)。在<code>asset</code>中，我们不仅可以包含<code>1x</code>和<code>2x</code>版本，我们还可以为不同的<code>size class</code>指定不同的<code>image asset</code>。在代码中，它看着仍然是相同的<code>UIImage</code>调用。<code>Asset Catalogs</code>负责基于当前的特征集合来渲染合适的图片。</p>
+<h2 id="为Size-Classes设计"><a href="#为Size-Classes设计" class="headerlink" title="为Size Classes设计"></a>为Size Classes设计</h2><p><code>Size Classes</code>对于开发人员来讲是一个很好的扩展，因为当我们需要支持多种设备和方向时，它能简化我们的开发。通过简化我们的工作，苹果可以更容易地开发新的设备，并可以让开发者开发能用的应用，而不仅仅是只为<code>iPhone</code>开发程序。</p>
+<p>对于开发者来说，最大的改变是我们需要再一次修改我们的关于不同方向的代码。大家已经习惯了吧，谁让我们是开发者呢。</p>
+<p>对于设计者来说，特征集合意味着可以少考虑是为哪种设备来做设计，而可以更多的考虑设备的属性。现在，设计者最需要考虑的因素是物理屏幕大小。</p>
+<p>由于不能确保每台设备的屏幕尺寸都与<code>Photoshop</code>或测试样机保持一致，所以单独为特定的场景做设计已经站不住脚了。相反，我们的目标是应该为一类设备做通用的设计，主要包括：</p>
+<ol>
+<li>手机上的肖像模式</li>
+<li>平板上的肖像模式</li>
+<li>手机上的景观模式</li>
+<li>平板上的景观模式</li>
+</ol>
+<p>现在<code>iPhone 6</code>来了，它的屏幕也变大了，它拥有与<code>iPhone 4s</code>和<code>5</code>一样的特征集合。当然，<code>iPhone 6</code>的尺寸比原来的手机更大了，但是UI应该基于为指定特征集合定义的界面，来做自适应的处理。</p>
+<p>这可能意味着设计者需要推翻自己以前的一些设计，但这就是事实。就像软件开发一样，软件设计需要符合这些约束。新的约束就是我们不能再活在只为特定屏幕尺寸做设计的世界里面了。我们不是要像<code>Android</code>一样，但这是苹果希望我们前进的方向。</p>
+<h2 id="采用Size-Classes"><a href="#采用Size-Classes" class="headerlink" title="采用Size Classes"></a>采用Size Classes</h2><p>好消息是，<code>Interface Builder</code>可以让我们更好的使用<code>Size Classes</code>。更好的消息是，这些<code>Interface Builder</code>变化是向后兼容的，所以我们可以在合适的地方简化和合并<code>Storyboards</code>和<code>Xibs</code>，而不会落下任何用户。</p>
+<p>不太好的消息是，如果需要在代码中使用特征集合，则只支持<code>iOS 8</code>。这是因为苹果很少为老的系统提供新的<code>API</code>接口。这就意味着我们需要在代码中添加一些新的分支来支持不同的系统。例如，为自定义的<code>UIView</code>调整<code>intrinsicContentSize</code>属性。如果系统是<code>iOS8</code>，我们可以使用竖直和水平的<code>size class</code>来确定这个值，但如果设备仍然是<code>iOS 7</code>或老版本，则已存在的代码仍然需要保留。</p>
+<p>因为我使用并推荐<code>Interface Builder</code>，所以比起那些仍然活在“将一切写在代码”口号中的人们来说，我的工作明显地减少了。如果你仍然在那个阵营里面，我强烈建议你使用<code>iOS 8</code>, <code>XCode 6</code>和特征集合，并以此为契机加入到<code>Interface Builder</code>阵营中来。这样不仅能减少我们的代码量，同样可以通过提取大量的特征处理到一个视觉<code>UI</code>库来简化代码。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2014/08/12/mvvm-tutorial-with-reactivecocoa-2/" rel="next" title="MVVM Tutorial with ReactiveCocoa: Part 2/2">
+                <i class="fa fa-chevron-left"></i> MVVM Tutorial with ReactiveCocoa: Part 2/2
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2014/09/18/random-mac-in-ios8/" rel="prev" title="iOS8中扫描Wi-Fi时MAC地址的随机化">
+                iOS8中扫描Wi-Fi时MAC地址的随机化 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#一堂历史课"><span class="nav-number">1.</span> <span class="nav-text">一堂历史课</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Size-Classes"><span class="nav-number">2.</span> <span class="nav-text">Size Classes</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#特征-Traits"><span class="nav-number">3.</span> <span class="nav-text">特征(Traits)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#为Size-Classes设计"><span class="nav-number">4.</span> <span class="nav-text">为Size Classes设计</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#采用Size-Classes"><span class="nav-number">5.</span> <span class="nav-text">采用Size Classes</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

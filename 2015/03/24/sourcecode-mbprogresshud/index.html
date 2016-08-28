@@ -1,0 +1,751 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="源码来源：https://github.com/jdg/MBProgressHUD
+版本：0.9.1
+MBProgressHUD是一个显示HUD窗口的第三方类库，用于在执行一些后台任务时，在程序中显示一个表示进度的loading视图和两个可选的文本提示的HUD窗口。我想最多是应用在加载网络数据的时候。其实苹果官方自己有一个带有此功能的类UIProgressHUD，只不过它是私有的，现在不让用。至于">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MBProgressHUD实现分析">
+<meta property="og:url" content="http://southpeak.github.io/2015/03/24/sourcecode-mbprogresshud/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="源码来源：https://github.com/jdg/MBProgressHUD
+版本：0.9.1
+MBProgressHUD是一个显示HUD窗口的第三方类库，用于在执行一些后台任务时，在程序中显示一个表示进度的loading视图和两个可选的文本提示的HUD窗口。我想最多是应用在加载网络数据的时候。其实苹果官方自己有一个带有此功能的类UIProgressHUD，只不过它是私有的，现在不让用。至于">
+<meta property="og:updated_time" content="2016-08-28T03:46:02.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="MBProgressHUD实现分析">
+<meta name="twitter:description" content="源码来源：https://github.com/jdg/MBProgressHUD
+版本：0.9.1
+MBProgressHUD是一个显示HUD窗口的第三方类库，用于在执行一些后台任务时，在程序中显示一个表示进度的loading视图和两个可选的文本提示的HUD窗口。我想最多是应用在加载网络数据的时候。其实苹果官方自己有一个带有此功能的类UIProgressHUD，只不过它是私有的，现在不让用。至于">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2015/03/24/sourcecode-mbprogresshud/"/>
+
+  <title> MBProgressHUD实现分析 | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                MBProgressHUD实现分析
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-03-24T20:41:51+08:00" content="2015-03-24">
+              2015-03-24
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/sourcecode/" itemprop="url" rel="index">
+                    <span itemprop="name">源码分析</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>源码来源：<a href="https://github.com/jdg/MBProgressHUD" target="_blank" rel="external">https://github.com/jdg/MBProgressHUD</a></p>
+<p>版本：0.9.1</p>
+<p><code>MBProgressHUD</code>是一个显示<code>HUD</code>窗口的第三方类库，用于在执行一些后台任务时，在程序中显示一个表示进度的<code>loading</code>视图和两个可选的文本提示的<code>HUD</code>窗口。我想最多是应用在加载网络数据的时候。其实苹果官方自己有一个带有此功能的类<code>UIProgressHUD</code>，只不过它是私有的，现在不让用。至于实际的效果，可以看看<code>github</code>上工程给出的几张图例(貌似我这经常无法单独打开图片，所以就不在这贴图片了)，也可以运行一下<code>Demo</code>。</p>
+<p>具体用法我们就不多说了，参考<code>github</code>上的说明就能用得很顺的。本文主要还是从源码的角度来分析一下它的具体实现。</p>
+<h2 id="模式"><a href="#模式" class="headerlink" title="模式"></a>模式</h2><p>在分析实现代码之前，我们先来看看<code>MBProgressHUD</code>中定义的<code>MBProgressHUDMode</code>枚举。它用来表示<code>HUD</code>窗口的模式，即我们从效果图中看到的几种显示样式。其具体定义如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">typedef</span> <span class="keyword">enum</span> &#123;</div><div class="line">    <span class="comment">// 使用UIActivityIndicatorView来显示进度，这是默认值</span></div><div class="line">    MBProgressHUDModeIndeterminate,</div><div class="line">    </div><div class="line">    <span class="comment">// 使用一个圆形饼图来作为进度视图</span></div><div class="line">    MBProgressHUDModeDeterminate,</div><div class="line">    </div><div class="line">    <span class="comment">// 使用一个水平进度条</span></div><div class="line">    MBProgressHUDModeDeterminateHorizontalBar,</div><div class="line">    </div><div class="line">    <span class="comment">// 使用圆环作为进度条</span></div><div class="line">    MBProgressHUDModeAnnularDeterminate,</div><div class="line">    </div><div class="line">    <span class="comment">// 显示一个自定义视图，通过这种方式，可以显示一个正确或错误的提示图</span></div><div class="line">    MBProgressHUDModeCustomView,</div><div class="line">    </div><div class="line">    <span class="comment">// 只显示文本</span></div><div class="line">    MBProgressHUDModeText</div><div class="line">    </div><div class="line">&#125; MBProgressHUDMode;</div></pre></td></tr></table></figure>
+<p>通过设置<code>MBProgressHUD</code>的模式，我们可以使用<code>MBProgressHUD</code>自定义的表示进度的视图来满足我们的需求，也可以自定义这个进度视图，当然还可以只显示文本。在下面我们会讨论源码中是如何使用这几个值的。</p>
+<h2 id="外观"><a href="#外观" class="headerlink" title="外观"></a>外观</h2><p>我们先来了解一下<code>MBProgressHUD</code>的基本组成。一个<code>MBProgressHUD</code>视图主要由四个部分组成：</p>
+<ol>
+<li><code>loading</code>动画视图(在此做个统称，当然这个区域可以是自定义的一个<code>UIImageView</code>视图)。这个视图由我们设定的模式值决定，可以是菊花、进度条，也可以是我们自定义的视图；</li>
+<li>标题文本框(<code>label</code>)：主要用于显示提示的主题信息。这个文本框是可选的，通常位于<code>loading</code>动画视图的下面，且它是单行显示。它会根据<code>labelText</code>属性来自适应文本的大小(有一个长度上限)，如果过长，则超出的部分会显示为”…”；</li>
+<li>详情文本框(<code>detailsLabel</code>)。如果觉得标题不够详细，或者有附属信息，就可以将详细信息放在这里面显示。该文本框对应的是显示<code>detailsLabelText</code>属性的值，它是可以多行显示的。另外，详情的显示还依赖于<code>labelText</code>属性的设置，只有<code>labelText</code>属性被设置了，且不为空串，才会显示<code>detailsLabel</code>；</li>
+<li><code>HUD</code>背景框。主要是作为上面三个部分的一个背景，用来突出上面三部分。</li>
+</ol>
+<p>为了让我们更好地自定义这几个部分，<code>MBProgressHUD</code>还提供了一些属性，我们简单了解一下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 背景框的透明度，默认值是0.8</span></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">assign</span>) <span class="keyword">float</span> opacity;</div><div class="line"></div><div class="line"><span class="comment">// 背景框的颜色</span></div><div class="line"><span class="comment">// 需要注意的是如果设置了这个属性，则opacity属性会失效，即不会有半透明效果</span></div><div class="line"><span class="keyword">@property</span> (MB_STRONG) <span class="built_in">UIColor</span> *color;</div><div class="line"></div><div class="line"><span class="comment">// 背景框的圆角半径。默认值是10.0</span></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">assign</span>) <span class="keyword">float</span> cornerRadius;</div><div class="line"></div><div class="line"><span class="comment">// 标题文本的字体及颜色</span></div><div class="line"><span class="keyword">@property</span> (MB_STRONG) <span class="built_in">UIFont</span>* labelFont;</div><div class="line"><span class="keyword">@property</span> (MB_STRONG) <span class="built_in">UIColor</span>* labelColor;</div><div class="line"></div><div class="line"><span class="comment">// 详情文本的字体及颜色</span></div><div class="line"><span class="keyword">@property</span> (MB_STRONG) <span class="built_in">UIFont</span>* detailsLabelFont;</div><div class="line"><span class="keyword">@property</span> (MB_STRONG) <span class="built_in">UIColor</span>* detailsLabelColor;</div><div class="line"></div><div class="line"><span class="comment">// 菊花的颜色，默认是白色</span></div><div class="line"><span class="keyword">@property</span> (MB_STRONG) <span class="built_in">UIColor</span> *activityIndicatorColor;</div></pre></td></tr></table></figure>
+<p>通过以上属性，我们可以根据自己的需要来设置这几个部分的外观。</p>
+<p>另外还有一个比较有意思的属性是<code>dimBackground</code>，用于为<code>HUD</code>窗口的视图区域覆盖上一层径向渐变(<code>radial gradient</code>)层，其定义如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">@property</span> (<span class="keyword">assign</span>) <span class="built_in">BOOL</span> dimBackground;</div></pre></td></tr></table></figure>
+<p>让我们来看看通过它，<code>MBProgressHUD</code>都做了些什么。代码如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)drawRect:(<span class="built_in">CGRect</span>)rect &#123;</div><div class="line">	</div><div class="line">	...</div><div class="line">	<span class="keyword">if</span> (<span class="keyword">self</span>.dimBackground) &#123;</div><div class="line">		<span class="comment">//Gradient colours</span></div><div class="line">		size_t gradLocationsNum = <span class="number">2</span>;</div><div class="line">		<span class="built_in">CGFloat</span> gradLocations[<span class="number">2</span>] = &#123;<span class="number">0.0</span>f, <span class="number">1.0</span>f&#125;;</div><div class="line">		<span class="built_in">CGFloat</span> gradColors[<span class="number">8</span>] = &#123;<span class="number">0.0</span>f,<span class="number">0.0</span>f,<span class="number">0.0</span>f,<span class="number">0.0</span>f,<span class="number">0.0</span>f,<span class="number">0.0</span>f,<span class="number">0.0</span>f,<span class="number">0.75</span>f&#125;; </div><div class="line">		<span class="built_in">CGColorSpaceRef</span> colorSpace = <span class="built_in">CGColorSpaceCreateDeviceRGB</span>();</div><div class="line">		<span class="built_in">CGGradientRef</span> gradient = <span class="built_in">CGGradientCreateWithColorComponents</span>(colorSpace, gradColors, gradLocations, gradLocationsNum);</div><div class="line">		<span class="built_in">CGColorSpaceRelease</span>(colorSpace);</div><div class="line">		</div><div class="line">		<span class="comment">//Gradient center</span></div><div class="line">		<span class="built_in">CGPoint</span> gradCenter= <span class="built_in">CGPointMake</span>(<span class="keyword">self</span>.bounds.size.width/<span class="number">2</span>, <span class="keyword">self</span>.bounds.size.height/<span class="number">2</span>);</div><div class="line">		<span class="comment">//Gradient radius</span></div><div class="line">		<span class="keyword">float</span> gradRadius = MIN(<span class="keyword">self</span>.bounds.size.width , <span class="keyword">self</span>.bounds.size.height) ;</div><div class="line">		</div><div class="line">		<span class="comment">// 由中心向四周绘制渐变</span></div><div class="line">		<span class="built_in">CGContextDrawRadialGradient</span> (context, gradient, gradCenter,</div><div class="line">									 <span class="number">0</span>, gradCenter, gradRadius,</div><div class="line">									 kCGGradientDrawsAfterEndLocation);</div><div class="line">		<span class="built_in">CGGradientRelease</span>(gradient);</div><div class="line">	&#125;</div><div class="line">	...	</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这段代码由中心向<code>MBProgressHUD</code>视图的四周绘制了一个渐变层。当然，这里的颜色值是写死的，我们无法自行定义。有兴趣的话，大家可以将这个属性设置为YES，看看实际的效果。</p>
+<h2 id="创建、布局与绘制"><a href="#创建、布局与绘制" class="headerlink" title="创建、布局与绘制"></a>创建、布局与绘制</h2><p>除了继承自<code>UIView</code>的<code>-initWithFrame:</code>初始化方法，<code>MBProgressHUD</code>还为我们提供了两个初始化方法，如下所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">id</span>)initWithWindow:(<span class="built_in">UIWindow</span> *)window;</div><div class="line">- (<span class="keyword">id</span>)initWithView:(<span class="built_in">UIView</span> *)view;</div></pre></td></tr></table></figure>
+<p>这两个方法分别传入一个<code>UIWindow</code>对象和一个<code>UIView</code>对象。传入的视图对象仅仅是做为<code>MBProgressHUD</code>视图定义其<code>frame</code>属性的参照，而不会直接将<code>MBProgressHUD</code>视图添加到传入的视图对象上。这个添加操作还得我们自行处理(当然，<code>MBProgressHUD</code>还提供了几个便捷的类方法，我们下面会说明)。</p>
+<p><code>MBProgressHUD</code>提供了几个属性，可以让我们控制<code>HUD</code>的布局，这些属性主要有以下几个：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// HUD相对于父视图中心点的x轴偏移量和y轴偏移量</span></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">assign</span>) <span class="keyword">float</span> xOffset;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">assign</span>) <span class="keyword">float</span> yOffset;</div><div class="line"></div><div class="line"><span class="comment">// HUD各元素与HUD边缘的间距</span></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">assign</span>) <span class="keyword">float</span> margin;</div><div class="line"></div><div class="line"><span class="comment">// HUD背景框的最小大小</span></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">assign</span>) <span class="built_in">CGSize</span> minSize;</div><div class="line"></div><div class="line"><span class="comment">// HUD的实际大小</span></div><div class="line"><span class="keyword">@property</span> (atomic, <span class="keyword">assign</span>, <span class="keyword">readonly</span>) <span class="built_in">CGSize</span> size;</div><div class="line"></div><div class="line"><span class="comment">// 是否强制HUD背景框宽高相等</span></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">assign</span>, <span class="keyword">getter</span> = isSquare) <span class="built_in">BOOL</span> square;</div></pre></td></tr></table></figure>
+<p>需要注意的是，<code>MBProgressHUD</code>视图会充满其父视图的<code>frame</code>内，为此，在<code>MBProgressHUD</code>的<code>layoutSubviews</code>方法中，还专门做了处理，如下代码所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)layoutSubviews &#123;</div><div class="line">	[<span class="keyword">super</span> layoutSubviews];</div><div class="line">	</div><div class="line">	<span class="comment">// Entirely cover the parent view</span></div><div class="line">	<span class="built_in">UIView</span> *parent = <span class="keyword">self</span>.superview;</div><div class="line">	<span class="keyword">if</span> (parent) &#123;</div><div class="line">		<span class="keyword">self</span>.frame = parent.bounds;</div><div class="line">	&#125;</div><div class="line">	</div><div class="line">	...</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>也因此，当<code>MBProgressHUD</code>显示时，它也会屏蔽父视图的各种交互操作。</p>
+<p>在布局的过程中，会先根据我们要显示的视图计算出容纳这些视图所需要的总的宽度和高度。当然，会设置一个最大值。我们截取其中一段来看看：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">CGRect</span> bounds = <span class="keyword">self</span>.bounds;</div><div class="line"></div><div class="line">...</div><div class="line"></div><div class="line"><span class="built_in">CGFloat</span> remainingHeight = bounds.size.height - totalSize.height - kPadding - <span class="number">4</span> * margin; </div><div class="line"><span class="built_in">CGSize</span> maxSize = <span class="built_in">CGSizeMake</span>(maxWidth, remainingHeight);</div><div class="line"><span class="built_in">CGSize</span> detailsLabelSize = MB_MULTILINE_TEXTSIZE(detailsLabel.text, detailsLabel.font, maxSize, detailsLabel.lineBreakMode);</div><div class="line">totalSize.width = MAX(totalSize.width, detailsLabelSize.width);</div><div class="line">totalSize.height += detailsLabelSize.height;</div><div class="line"><span class="keyword">if</span> (detailsLabelSize.height &gt; <span class="number">0.</span>f &amp;&amp; (indicatorF.size.height &gt; <span class="number">0.</span>f || labelSize.height &gt; <span class="number">0.</span>f)) &#123;</div><div class="line">	totalSize.height += kPadding;</div><div class="line">&#125;</div><div class="line"></div><div class="line">totalSize.width += <span class="number">2</span> * margin;</div><div class="line">totalSize.height += <span class="number">2</span> * margin;</div></pre></td></tr></table></figure>
+<p>之后，就开始从上到下放置各个视图。在布局代码的最后，计算了一个<code>size</code>值，这是为后面绘制背景框做准备的。</p>
+<p>在上面的布局代码中，主要是处理了<code>loading</code>动画视图、标题文本框和详情文本框，而<code>HUD</code>背景框主要是在<code>drawRect:</code>中来绘制的。背景框的绘制代码如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// Center HUD</span></div><div class="line"><span class="built_in">CGRect</span> allRect = <span class="keyword">self</span>.bounds;</div><div class="line"><span class="comment">// Draw rounded HUD backgroud rect</span></div><div class="line"><span class="built_in">CGRect</span> boxRect = <span class="built_in">CGRectMake</span>(round((allRect.size.width - size.width) / <span class="number">2</span>) + <span class="keyword">self</span>.xOffset,</div><div class="line">							round((allRect.size.height - size.height) / <span class="number">2</span>) + <span class="keyword">self</span>.yOffset, size.width, size.height);</div><div class="line"><span class="keyword">float</span> radius = <span class="keyword">self</span>.cornerRadius;</div><div class="line"><span class="built_in">CGContextBeginPath</span>(context);</div><div class="line"><span class="built_in">CGContextMoveToPoint</span>(context, <span class="built_in">CGRectGetMinX</span>(boxRect) + radius, <span class="built_in">CGRectGetMinY</span>(boxRect));</div><div class="line"><span class="built_in">CGContextAddArc</span>(context, <span class="built_in">CGRectGetMaxX</span>(boxRect) - radius, <span class="built_in">CGRectGetMinY</span>(boxRect) + radius, radius, <span class="number">3</span> * (<span class="keyword">float</span>)M_PI / <span class="number">2</span>, <span class="number">0</span>, <span class="number">0</span>);</div><div class="line"><span class="built_in">CGContextAddArc</span>(context, <span class="built_in">CGRectGetMaxX</span>(boxRect) - radius, <span class="built_in">CGRectGetMaxY</span>(boxRect) - radius, radius, <span class="number">0</span>, (<span class="keyword">float</span>)M_PI / <span class="number">2</span>, <span class="number">0</span>);</div><div class="line"><span class="built_in">CGContextAddArc</span>(context, <span class="built_in">CGRectGetMinX</span>(boxRect) + radius, <span class="built_in">CGRectGetMaxY</span>(boxRect) - radius, radius, (<span class="keyword">float</span>)M_PI / <span class="number">2</span>, (<span class="keyword">float</span>)M_PI, <span class="number">0</span>);</div><div class="line"><span class="built_in">CGContextAddArc</span>(context, <span class="built_in">CGRectGetMinX</span>(boxRect) + radius, <span class="built_in">CGRectGetMinY</span>(boxRect) + radius, radius, (<span class="keyword">float</span>)M_PI, <span class="number">3</span> * (<span class="keyword">float</span>)M_PI / <span class="number">2</span>, <span class="number">0</span>);</div><div class="line"><span class="built_in">CGContextClosePath</span>(context);</div><div class="line"><span class="built_in">CGContextFillPath</span>(context);</div></pre></td></tr></table></figure>
+<p>这是最平常的绘制操作，在此不多做解释。</p>
+<p>我们上面讲过<code>MBProgressHUD</code>提供了几种窗口模式，这几种模式的主要区别在于<code>loading</code>动画视图的展示。默认情况下，使用的是菊花(<code>MBProgressHUDModeIndeterminate</code>)。我们可以通过设置以下属性，来改变<code>loading</code>动画视图：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">@property</span> (<span class="keyword">assign</span>) MBProgressHUDMode mode;</div></pre></td></tr></table></figure>
+<p>对于其它几种模式，<code>MBProgressHUD</code>专门我们提供了几个视图类。如果是进度条模式(<code>MBProgressHUDModeDeterminateHorizontalBar</code>)，则使用的是<code>MBBarProgressView</code>类；如果是饼图模式(<code>MBProgressHUDModeDeterminate</code>)或环形模式(<code>MBProgressHUDModeAnnularDeterminate</code>)，则使用的是<code>MBRoundProgressView</code>类。上面这两个类的主要操作就是在<code>drawRect:</code>中根据一些进度参数来绘制形状，大家可以自己详细看一下。</p>
+<p>当然，我们还可以自定义<code>loading</code>动画视图，此时选择的模式是<code>MBProgressHUDModeCustomView</code>。或者不显示<code>loading</code>动画视图，而只显示文本框(<code>MBProgressHUDModeText</code>)。</p>
+<p>具体显示哪一种<code>loading</code>动画视图，是在<code>-updateIndicators</code>方法中来处理的，其实现如下所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)updateIndicators &#123;</div><div class="line">	</div><div class="line">	<span class="built_in">BOOL</span> isActivityIndicator = [indicator isKindOfClass:[<span class="built_in">UIActivityIndicatorView</span> <span class="keyword">class</span>]];</div><div class="line">	<span class="built_in">BOOL</span> isRoundIndicator = [indicator isKindOfClass:[MBRoundProgressView <span class="keyword">class</span>]];</div><div class="line">	</div><div class="line">	<span class="keyword">if</span> (mode == MBProgressHUDModeIndeterminate) &#123;</div><div class="line">		...</div><div class="line">	&#125;</div><div class="line">	<span class="keyword">else</span> <span class="keyword">if</span> (mode == MBProgressHUDModeDeterminateHorizontalBar) &#123;</div><div class="line">		<span class="comment">// Update to bar determinate indicator</span></div><div class="line">		[indicator removeFromSuperview];</div><div class="line">		<span class="keyword">self</span>.indicator = MB_AUTORELEASE([[MBBarProgressView alloc] init]);</div><div class="line">		[<span class="keyword">self</span> addSubview:indicator];</div><div class="line">	&#125;</div><div class="line">	<span class="keyword">else</span> <span class="keyword">if</span> (mode == MBProgressHUDModeDeterminate || mode == MBProgressHUDModeAnnularDeterminate) &#123;</div><div class="line">		<span class="keyword">if</span> (!isRoundIndicator) &#123;</div><div class="line">			...</div><div class="line">		&#125;</div><div class="line">		<span class="keyword">if</span> (mode == MBProgressHUDModeAnnularDeterminate) &#123;</div><div class="line">			[(MBRoundProgressView *)indicator setAnnular:<span class="literal">YES</span>];</div><div class="line">		&#125;</div><div class="line">	&#125; </div><div class="line">	<span class="keyword">else</span> <span class="keyword">if</span> (mode == MBProgressHUDModeCustomView &amp;&amp; customView != indicator) &#123;</div><div class="line">		...</div><div class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> (mode == MBProgressHUDModeText) &#123;</div><div class="line">		...</div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="显示与隐藏"><a href="#显示与隐藏" class="headerlink" title="显示与隐藏"></a>显示与隐藏</h2><p><code>MBRoundProgressView</code>为我们提供了丰富的显示与隐藏<code>HUD</code>窗口的。在分析这些方法之前，我们先来看看<code>MBProgressHUD</code>为显示与隐藏提供的一些属性：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// HUD显示和隐藏的动画类型</span></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">assign</span>) MBProgressHUDAnimation animationType;</div><div class="line"></div><div class="line"><span class="comment">// HUD显示的最短时间。设置这个值是为了避免HUD显示后立即被隐藏。默认值为0</span></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">assign</span>) <span class="keyword">float</span> minShowTime;</div><div class="line"></div><div class="line"><span class="comment">// 这个属性设置了一个宽限期，它是在没有显示HUD窗口前被调用方法可能运行的时间。</span></div><div class="line"><span class="comment">// 如果被调用方法在宽限期内执行完，则HUD不会被显示。</span></div><div class="line"><span class="comment">// 这主要是为了避免在执行很短的任务时，去显示一个HUD窗口。</span></div><div class="line"><span class="comment">// 默认值是0。只有当任务状态是已知时，才支持宽限期。具体我们看实现代码。</span></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">assign</span>) <span class="keyword">float</span> graceTime;</div><div class="line"></div><div class="line"><span class="comment">// 这是一个标识位，标明执行的操作正在处理中。这个属性是配合graceTime使用的。</span></div><div class="line"><span class="comment">// 如果没有设置graceTime，则这个标识是没有太大意义的。在使用showWhileExecuting:onTarget:withObject:animated:方法时，</span></div><div class="line"><span class="comment">// 会自动去设置这个属性为YES，其它情况下都需要我们自己手动设置。</span></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">assign</span>) <span class="built_in">BOOL</span> taskInProgress;</div><div class="line"></div><div class="line"><span class="comment">// 隐藏时是否将HUD从父视图中移除，默认是NO。</span></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">assign</span>) <span class="built_in">BOOL</span> removeFromSuperViewOnHide;</div><div class="line"></div><div class="line"><span class="comment">// 进度指示器，从0.0到1.0，默认值为0.0</span></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">assign</span>) <span class="keyword">float</span> progress;</div><div class="line"></div><div class="line"><span class="comment">// 在HUD被隐藏后的回调</span></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">copy</span>) MBProgressHUDCompletionBlock completionBlock;</div></pre></td></tr></table></figure>
+<p>以上这些属性都还好理解，可能需要注意的就是<code>graceTime</code>和<code>taskInProgress</code>的配合使用。在下面我们将会看看这两个属性的用法。</p>
+<p>对于显示操作，最基本的就是<code>-show:</code>方法(其它几个显示方法都会调用该方法来显示HUD窗口)，我们先来看看它的实现，</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)show:(<span class="built_in">BOOL</span>)animated &#123;</div><div class="line">	useAnimation = animated;</div><div class="line">	<span class="comment">// If the grace time is set postpone the HUD display</span></div><div class="line">	<span class="keyword">if</span> (<span class="keyword">self</span>.graceTime &gt; <span class="number">0.0</span>) &#123;</div><div class="line">		<span class="keyword">self</span>.graceTimer = [<span class="built_in">NSTimer</span> scheduledTimerWithTimeInterval:<span class="keyword">self</span>.graceTime target:<span class="keyword">self</span> </div><div class="line">						   selector:<span class="keyword">@selector</span>(handleGraceTimer:) userInfo:<span class="literal">nil</span> repeats:<span class="literal">NO</span>];</div><div class="line">	&#125; </div><div class="line">	<span class="comment">// ... otherwise show the HUD imediately </span></div><div class="line">	<span class="keyword">else</span> &#123;</div><div class="line">		[<span class="keyword">self</span> showUsingAnimation:useAnimation];</div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>可以看到，如果我们没有设置<code>graceTime</code>属性，则会立即显示<code>HUD</code>；而如果设置了<code>graceTime</code>，则会创建一个定时器，并让显示操作延迟到<code>graceTime</code>所设定的时间再执行，而<code>-handleGraceTimer:</code>实现如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)handleGraceTimer:(<span class="built_in">NSTimer</span> *)theTimer &#123;</div><div class="line">	<span class="comment">// Show the HUD only if the task is still running</span></div><div class="line">	<span class="keyword">if</span> (taskInProgress) &#123;</div><div class="line">		[<span class="keyword">self</span> showUsingAnimation:useAnimation];</div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>可以看到，只有在设置了<code>taskInProgress</code>标识位为YES的情况下，才会去显示<code>HUD</code>窗口。所以，如果我们要自己调用<code>-show:</code>方法的话，需要酌情考虑设置<code>taskInProgress</code>标识位。</p>
+<p>除了<code>-show:</code>方法以外，<code>MBProgressHUD</code>还为我们提供了一组显示方法，可以让我们在显示<code>HUD</code>的同时，执行一些后台任务，我们在此主要介绍两个。其中一个是<code>-showWhileExecuting:onTarget:withObject:animated:</code>，它是基于<code>target-action</code>方式的调用，在执行一个后台任务时显示<code>HUD</code>，等后台任务执行完成后再隐藏<code>HUD</code>，具体实现如下所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)showWhileExecuting:(SEL)method onTarget:(<span class="keyword">id</span>)target withObject:(<span class="keyword">id</span>)object animated:(<span class="built_in">BOOL</span>)animated &#123;</div><div class="line">	methodForExecution = method;</div><div class="line">	targetForExecution = MB_RETAIN(target);</div><div class="line">	objectForExecution = MB_RETAIN(object);	</div><div class="line">	<span class="comment">// Launch execution in new thread</span></div><div class="line">	<span class="keyword">self</span>.taskInProgress = <span class="literal">YES</span>;</div><div class="line">	[<span class="built_in">NSThread</span> detachNewThreadSelector:<span class="keyword">@selector</span>(launchExecution) toTarget:<span class="keyword">self</span> withObject:<span class="literal">nil</span>];</div><div class="line">	<span class="comment">// Show HUD view</span></div><div class="line">	[<span class="keyword">self</span> show:animated];</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (<span class="keyword">void</span>)launchExecution &#123;</div><div class="line">	<span class="keyword">@autoreleasepool</span> &#123;</div><div class="line"><span class="meta">#pragma clang diagnostic push</span></div><div class="line"><span class="meta">#pragma clang diagnostic ignored <span class="meta-string">"-Warc-performSelector-leaks"</span></span></div><div class="line">		<span class="comment">// Start executing the requested task</span></div><div class="line">		[targetForExecution performSelector:methodForExecution withObject:objectForExecution];</div><div class="line"><span class="meta">#pragma clang diagnostic pop</span></div><div class="line">		<span class="comment">// Task completed, update view in main thread (note: view operations should</span></div><div class="line">		<span class="comment">// be done only in the main thread)</span></div><div class="line">		[<span class="keyword">self</span> performSelectorOnMainThread:<span class="keyword">@selector</span>(cleanUp) withObject:<span class="literal">nil</span> waitUntilDone:<span class="literal">NO</span>];</div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>可以看到，<code>-showWhileExecuting:onTarget:withObject:animated:</code>首先将<code>taskInProgress</code>属性设置为YES，这样在调用<code>-show:</code>方法时，即使设置了<code>graceTime</code>，也确保能在任务完成之前显示<code>HUD</code>。然后开启一个新线程，来异步执行我们的后台任务，最后去显示<code>HUD</code>。</p>
+<p>而在异步调用方法<code>-launchExecution</code>中，线程首先是维护了自己的一个<code>@autoreleasepool</code>，所以在我们自己的方法中，就不需要再去维护一个<code>@autoreleasepool</code>了。之后是去执行我们的任务，在任务完成之后，再回去主线程去执行清理操作，并隐藏<code>HUD</code>窗口。</p>
+<p>另一个显示方法是<code>-showAnimated:whileExecutingBlock:onQueue:completionBlock:</code>，它是基于GCD的调用，当<code>block</code>中的任务在指定的队列中执行时，显示<code>HUD</code>窗口，任务完成之后执行<code>completionBlock</code>操作，最后隐藏<code>HUD</code>窗口。我们来看看它的具体实现：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)showAnimated:(<span class="built_in">BOOL</span>)animated whileExecutingBlock:(dispatch_block_t)block onQueue:(<span class="built_in">dispatch_queue_t</span>)queue</div><div class="line">	 completionBlock:(MBProgressHUDCompletionBlock)completion &#123;</div><div class="line">	<span class="keyword">self</span>.taskInProgress = <span class="literal">YES</span>;</div><div class="line">	<span class="keyword">self</span>.completionBlock = completion;</div><div class="line">	<span class="built_in">dispatch_async</span>(queue, ^(<span class="keyword">void</span>) &#123;</div><div class="line">		block();</div><div class="line">		<span class="built_in">dispatch_async</span>(dispatch_get_main_queue(), ^(<span class="keyword">void</span>) &#123;</div><div class="line">			[<span class="keyword">self</span> cleanUp];</div><div class="line">		&#125;);</div><div class="line">	&#125;);</div><div class="line">	[<span class="keyword">self</span> show:animated];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这个方法也是首先将<code>taskInProgress</code>属性设置为YES，然后开启一个线程去执行<code>block</code>任务，最后主线程去执行清理操作，并隐藏<code>HUD</code>窗口。</p>
+<p>对于<code>HUD</code>的隐藏，<code>MBProgressHUD</code>提供了两个方法，一个是<code>-hide:</code>，另一个是<code>-hide:afterDelay:</code>，后者基于前者，所以我们主要来看看<code>-hide:</code>的实现：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)hide:(<span class="built_in">BOOL</span>)animated &#123;</div><div class="line">	useAnimation = animated;</div><div class="line">	<span class="comment">// If the minShow time is set, calculate how long the hud was shown,</span></div><div class="line">	<span class="comment">// and pospone the hiding operation if necessary</span></div><div class="line">	<span class="keyword">if</span> (<span class="keyword">self</span>.minShowTime &gt; <span class="number">0.0</span> &amp;&amp; showStarted) &#123;</div><div class="line">		<span class="built_in">NSTimeInterval</span> interv = [[<span class="built_in">NSDate</span> date] timeIntervalSinceDate:showStarted];</div><div class="line">		<span class="keyword">if</span> (interv &lt; <span class="keyword">self</span>.minShowTime) &#123;</div><div class="line">			<span class="keyword">self</span>.minShowTimer = [<span class="built_in">NSTimer</span> scheduledTimerWithTimeInterval:(<span class="keyword">self</span>.minShowTime - interv) target:<span class="keyword">self</span> </div><div class="line">								selector:<span class="keyword">@selector</span>(handleMinShowTimer:) userInfo:<span class="literal">nil</span> repeats:<span class="literal">NO</span>];</div><div class="line">			<span class="keyword">return</span>;</div><div class="line">		&#125; </div><div class="line">	&#125;</div><div class="line">	<span class="comment">// ... otherwise hide the HUD immediately</span></div><div class="line">	[<span class="keyword">self</span> hideUsingAnimation:useAnimation];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>我们可以看到，在设置了<code>minShowTime</code>属性并且已经显示了<code>HUD</code>窗口的情况下，会去判断显示的时间是否小于<code>minShowTime</code>指定的时间，如果是，则会开启一个定时器，等到显示的时间到了<code>minShowTime</code>所指定的时间，才会去隐藏<code>HUD</code>窗口；否则会直接去隐藏<code>HUD</code>窗口。</p>
+<p>隐藏的实际操作主要是去做了些清理操作，包括根据设定的<code>removeFromSuperViewOnHide</code>值来执行是否从父视图移除<code>HUD</code>窗口，以及执行<code>completionBlock</code>操作，还有就是执行代理的<code>hudWasHidden:</code>方法。这些操作是在私有方法<code>-done</code>里面执行的，实现如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)done &#123;</div><div class="line">	[<span class="built_in">NSObject</span> cancelPreviousPerformRequestsWithTarget:<span class="keyword">self</span>];</div><div class="line">	isFinished = <span class="literal">YES</span>;</div><div class="line">	<span class="keyword">self</span>.alpha = <span class="number">0.0</span>f;</div><div class="line">	<span class="keyword">if</span> (removeFromSuperViewOnHide) &#123;</div><div class="line">		[<span class="keyword">self</span> removeFromSuperview];</div><div class="line">	&#125;</div><div class="line"><span class="meta">#if NS_BLOCKS_AVAILABLE</span></div><div class="line">	<span class="keyword">if</span> (<span class="keyword">self</span>.completionBlock) &#123;</div><div class="line">		<span class="keyword">self</span>.completionBlock();</div><div class="line">		<span class="keyword">self</span>.completionBlock = <span class="literal">NULL</span>;</div><div class="line">	&#125;</div><div class="line"><span class="meta">#endif</span></div><div class="line">	<span class="keyword">if</span> ([delegate respondsToSelector:<span class="keyword">@selector</span>(hudWasHidden:)]) &#123;</div><div class="line">		[delegate performSelector:<span class="keyword">@selector</span>(hudWasHidden:) withObject:<span class="keyword">self</span>];</div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="其它"><a href="#其它" class="headerlink" title="其它"></a>其它</h2><p><code>MBProgressHUD</code>的一些主要的代码差不多已经分析完了，最后还有些边边角角的地方，一起来看看。</p>
+<h3 id="显示和隐藏的便捷方法"><a href="#显示和隐藏的便捷方法" class="headerlink" title="显示和隐藏的便捷方法"></a>显示和隐藏的便捷方法</h3><p>除了上面描述的实例方法之外，<code>MBProgressHUD</code>还为我们提供了几个便捷显示和隐藏<code>HUD</code>窗口的方法，如下所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">+ (MB_INSTANCETYPE)showHUDAddedTo:(<span class="built_in">UIView</span> *)view animated:(<span class="built_in">BOOL</span>)animated</div><div class="line">+ (<span class="built_in">BOOL</span>)hideHUDForView:(<span class="built_in">UIView</span> *)view animated:(<span class="built_in">BOOL</span>)animated</div><div class="line">+ (<span class="built_in">NSUInteger</span>)hideAllHUDsForView:(<span class="built_in">UIView</span> *)view animated:(<span class="built_in">BOOL</span>)animated</div></pre></td></tr></table></figure>
+<p>方法的签名已经很能说明问题了，在此不多描述。</p>
+<h3 id="部分属性值的设置"><a href="#部分属性值的设置" class="headerlink" title="部分属性值的设置"></a>部分属性值的设置</h3><p>对于部分属性(主要是”外观”一节中针对菊花、标题文本框和详情文本框的几个属性值)，为了在设置将这些属性时修改对应视图的属性，并没有直接为每个属性生成一个<code>setter</code>，而是通过KVO来监听这些属性值的变化，再将这些值赋值给视图的对应属性，如下所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 监听的属性数组</span></div><div class="line">- (<span class="built_in">NSArray</span> *)observableKeypaths &#123;</div><div class="line">	<span class="keyword">return</span> [<span class="built_in">NSArray</span> arrayWithObjects:<span class="string">@"mode"</span>, <span class="string">@"customView"</span>, <span class="string">@"labelText"</span>, <span class="string">@"labelFont"</span>, <span class="string">@"labelColor"</span>, ..., <span class="literal">nil</span>];</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// 注册KVO</span></div><div class="line">- (<span class="keyword">void</span>)registerForKVO &#123;</div><div class="line">	<span class="keyword">for</span> (<span class="built_in">NSString</span> *keyPath <span class="keyword">in</span> [<span class="keyword">self</span> observableKeypaths]) &#123;</div><div class="line">		[<span class="keyword">self</span> addObserver:<span class="keyword">self</span> forKeyPath:keyPath options:<span class="built_in">NSKeyValueObservingOptionNew</span> context:<span class="literal">NULL</span>];</div><div class="line">	&#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (<span class="keyword">void</span>)observeValueForKeyPath:(<span class="built_in">NSString</span> *)keyPath ofObject:(<span class="keyword">id</span>)object change:(<span class="built_in">NSDictionary</span> *)change context:(<span class="keyword">void</span> *)context &#123;</div><div class="line">	<span class="keyword">if</span> (![<span class="built_in">NSThread</span> isMainThread]) &#123;</div><div class="line">		[<span class="keyword">self</span> performSelectorOnMainThread:<span class="keyword">@selector</span>(updateUIForKeypath:) withObject:keyPath waitUntilDone:<span class="literal">NO</span>];</div><div class="line">	&#125; <span class="keyword">else</span> &#123;</div><div class="line">		[<span class="keyword">self</span> updateUIForKeypath:keyPath];</div><div class="line">	&#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (<span class="keyword">void</span>)updateUIForKeypath:(<span class="built_in">NSString</span> *)keyPath &#123;</div><div class="line">	<span class="keyword">if</span> ([keyPath isEqualToString:<span class="string">@"mode"</span>] || [keyPath isEqualToString:<span class="string">@"customView"</span>] ||</div><div class="line">		[keyPath isEqualToString:<span class="string">@"activityIndicatorColor"</span>]) &#123;</div><div class="line">		[<span class="keyword">self</span> updateIndicators];</div><div class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> ([keyPath isEqualToString:<span class="string">@"labelText"</span>]) &#123;</div><div class="line">		label.text = <span class="keyword">self</span>.labelText;</div><div class="line">	&#125; </div><div class="line">	</div><div class="line">	...</div><div class="line">	</div><div class="line">	[<span class="keyword">self</span> setNeedsLayout];</div><div class="line">	[<span class="keyword">self</span> setNeedsDisplay];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="代理"><a href="#代理" class="headerlink" title="代理"></a>代理</h3><p><code>MBProgressHUD</code>还为我们提供了一个代理<code>MBProgressHUDDelegate</code>，这个代理中只提供了一个方法，即：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)hudWasHidden:(MBProgressHUD *)hud;</div></pre></td></tr></table></figure>
+<p>这个代理方法是在隐藏<code>HUD</code>窗口后调用，如果此时我们需要在我们自己的实现中执行某些操作，则可以实现这个方法。</p>
+<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><p><code>MBProgressHUD</code>为我们提供了一个<code>HUD</code>窗口的很好的实现，不过个人在使用过程中，觉得它给我们提供的交互功能太少。其代理只提供了一个<code>-hudWasHidden:</code>方法，而且我们也无法通过点击<code>HUD</code>来执行一些操作。在现实的需求中，可能存在这种情况：比如一个网络操作，在发送请求等待响应的过程中，我们会显示一个<code>HUD</code>窗口以显示一个<code>loading</code>框。但如果我们想在等待响应的过程中，在当前视图中取消这个网络请求，就没有相应的处理方式，<code>MBProgressHUD</code>没有为我们提供这样的交互操作。当然这时候，我们可以根据自己的需求来修改源码。</p>
+<h2 id="与SVProgressHUD的对比"><a href="#与SVProgressHUD的对比" class="headerlink" title="与SVProgressHUD的对比"></a>与SVProgressHUD的对比</h2><p>与<code>MBProgressHUD</code>类似，<code>SVProgressHUD</code>类库也为我们提供了在视图中显示一个<code>HUD</code>窗口的功能。两者的基本思路是差不多的，差别更多的是在实现细节上。相对于<code>MBProgressHUD</code>来说，<code>SVProgressHUD</code>的实现有以下几点不同：</p>
+<ol>
+<li><code>SVProgressHUD</code>类对外提供的都是类方法，包括显示、隐藏、和视图属性设置都是使用类方法来操作。其内部实现为一个单例对象，类方法实际是针对这个单例对象来操作的。</li>
+<li><code>SVProgressHUD</code>主要包含三部分：<code>loading</code>视图、提示文本框和背景框，没有详情文本框。</li>
+<li><code>SVProgressHUD</code>默认提供了正确、错误和信息三种状态视图(与<code>loading</code>视图同一位置，根据需要来设置)。当然<code>MBProgressHUD</code>中，也可以自定义视图(<code>customView</code>)来显示相应的状态视图。</li>
+<li><code>SVProgressHUD</code>为我们提供了更多的交互操作，包括点击事件、显示事件及隐藏事件。不过这些都是通过通知的形式向外发送，所以我们需要自己去监听这些事件。</li>
+<li><code>SVProgressHUD</code>中一些<code>loading</code>动画是以<code>Layer</code>动画的形式来实现的。</li>
+</ol>
+<p><code>SVProgressHUD</code>的实现细节还未详细去看，有兴趣的读者可以去研究一下。这两个<code>HUD</code>类库各有优点，大家在使用时，可根据自己的需要和喜好来选择。</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>总体来说，<code>MBProgressHUD</code>的代码相对朴实，简单易懂，没有什么花哨难懂的东西。就技术点而言，也没有太多复杂的技术，都是我们常用的一些东西。就使用而言，也是挺方便的，参考一下<code>github</code>上的使用指南就能很快上手。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/03/20/cocoa-foundation-nsnotificationcenter/" rel="next" title="Foundation: NSNotificationCenter">
+                <i class="fa fa-chevron-left"></i> Foundation: NSNotificationCenter
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/04/23/cocoa-foundation-nskeyvalueobserving/" rel="prev" title="Foundation: NSKeyValueObserving(KVO)">
+                Foundation: NSKeyValueObserving(KVO) <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#模式"><span class="nav-number">1.</span> <span class="nav-text">模式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#外观"><span class="nav-number">2.</span> <span class="nav-text">外观</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#创建、布局与绘制"><span class="nav-number">3.</span> <span class="nav-text">创建、布局与绘制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#显示与隐藏"><span class="nav-number">4.</span> <span class="nav-text">显示与隐藏</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#其它"><span class="nav-number">5.</span> <span class="nav-text">其它</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#显示和隐藏的便捷方法"><span class="nav-number">5.1.</span> <span class="nav-text">显示和隐藏的便捷方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#部分属性值的设置"><span class="nav-number">5.2.</span> <span class="nav-text">部分属性值的设置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#代理"><span class="nav-number">5.3.</span> <span class="nav-text">代理</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#问题"><span class="nav-number">6.</span> <span class="nav-text">问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#与SVProgressHUD的对比"><span class="nav-number">7.</span> <span class="nav-text">与SVProgressHUD的对比</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">8.</span> <span class="nav-text">小结</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

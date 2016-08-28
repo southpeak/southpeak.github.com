@@ -1,0 +1,739 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="我们在开发应用的时候，经常会用到各种各样的控件，诸如按钮(UIButton)、滑块(UISlider)、分页控件(UIPageControl)等。这些控件用来与用户进行交互，响应用户的操作。我们查看这些类的继承体系，可以看到它们都是继承于UIControl类。UIControl是控件类的基类，它是一个抽象基类，我们不能直接使用UIControl类来实例化控件，它只是为控件子类定义一些通用的接口，并">
+<meta property="og:type" content="article">
+<meta property="og:title" content="UIKit: UIControl">
+<meta property="og:url" content="http://southpeak.github.io/2015/12/13/cocoa-uikit-uicontrol/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="我们在开发应用的时候，经常会用到各种各样的控件，诸如按钮(UIButton)、滑块(UISlider)、分页控件(UIPageControl)等。这些控件用来与用户进行交互，响应用户的操作。我们查看这些类的继承体系，可以看到它们都是继承于UIControl类。UIControl是控件类的基类，它是一个抽象基类，我们不能直接使用UIControl类来实例化控件，它只是为控件子类定义一些通用的接口，并">
+<meta property="og:image" content="https://developer.apple.com/library/prerelease/ios/documentation/General/Conceptual/Devpedia-CocoaApp/Art/target_action.jpg">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/UIControl%20Example.png?raw=true">
+<meta property="og:image" content="https://raw.githubusercontent.com/southpeak/Blog-images/master/UIControl%20Example%202.png">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/UIControl%20Example%203.png?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/UIControl%20Example%205.png?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/UIControl%20Example%204.png?raw=true">
+<meta property="og:updated_time" content="2016-08-28T04:36:59.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="UIKit: UIControl">
+<meta name="twitter:description" content="我们在开发应用的时候，经常会用到各种各样的控件，诸如按钮(UIButton)、滑块(UISlider)、分页控件(UIPageControl)等。这些控件用来与用户进行交互，响应用户的操作。我们查看这些类的继承体系，可以看到它们都是继承于UIControl类。UIControl是控件类的基类，它是一个抽象基类，我们不能直接使用UIControl类来实例化控件，它只是为控件子类定义一些通用的接口，并">
+<meta name="twitter:image" content="https://developer.apple.com/library/prerelease/ios/documentation/General/Conceptual/Devpedia-CocoaApp/Art/target_action.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2015/12/13/cocoa-uikit-uicontrol/"/>
+
+  <title> UIKit: UIControl | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                UIKit: UIControl
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-12-13T11:16:26+08:00" content="2015-12-13">
+              2015-12-13
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/cocoa/" itemprop="url" rel="index">
+                    <span itemprop="name">Cocoa</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>我们在开发应用的时候，经常会用到各种各样的控件，诸如按钮(<code>UIButton</code>)、滑块(<code>UISlider</code>)、分页控件(<code>UIPageControl</code>)等。这些控件用来与用户进行交互，响应用户的操作。我们查看这些类的继承体系，可以看到它们都是继承于<code>UIControl</code>类。<code>UIControl</code>是控件类的基类，它是一个抽象基类，我们不能直接使用<code>UIControl</code>类来实例化控件，它只是为控件子类定义一些通用的接口，并提供一些基础实现，以在事件发生时，预处理这些消息并将它们发送到指定目标对象上。</p>
+<p>本文将通过一个自定义的<code>UIControl</code>子类来看看<code>UIControl</code>的基本使用方法。不过在开始之前，让我们先来了解一下<code>Target-Action</code>机制。</p>
+<h2 id="Target-Action机制"><a href="#Target-Action机制" class="headerlink" title="Target-Action机制"></a>Target-Action机制</h2><p><code>Target-action</code>是一种设计模式，直译过来就是”目标-行为”。当我们通过代码为一个按钮添加一个点击事件时，通常是如下处理：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">[button addTarget:<span class="keyword">self</span> action:<span class="keyword">@selector</span>(tapButton:) forControlEvents:<span class="built_in">UIControlEventTouchUpInside</span>];</div></pre></td></tr></table></figure>
+<p>也就是说，当按钮的点击事件发生时，会将消息发送到<code>target</code>(此处即为self对象)，并由<code>target</code>对象的<code>tapButton:</code>方法来处理相应的事件。其基本过程可以用下图来描述：</p>
+<p><img src="https://developer.apple.com/library/prerelease/ios/documentation/General/Conceptual/Devpedia-CocoaApp/Art/target_action.jpg" alt="image"></p>
+<blockquote>
+<p>注：图片来源于官方文档<a href="https://developer.apple.com/library/prerelease/ios/documentation/General/Conceptual/Devpedia-CocoaApp/TargetAction.html" target="_blank" rel="external">Cocoa Application Competencies for iOS - Target Action</a></p>
+</blockquote>
+<p>即当事件发生时，事件会被发送到控件对象中，然后再由这个控件对象去触发<code>target</code>对象上的<code>action</code>行为，来最终处理事件。因此，<code>Target-Action</code>机制由两部分组成：即目标对象和行为<code>Selector</code>。目标对象指定最终处理事件的对象，而行为<code>Selector</code>则是处理事件的方法。</p>
+<p>有关<code>Target-Action</code>机制的具体描述，大家可以参考<a href="https://developer.apple.com/library/prerelease/ios/documentation/General/Conceptual/Devpedia-CocoaApp/TargetAction.html" target="_blank" rel="external">Cocoa Application Competencies for iOS - Target Action</a>。我们将会在下面讨论一些<code>Target-action</code>更深入的东西。</p>
+<h2 id="实例：一个带Label的图片控件"><a href="#实例：一个带Label的图片控件" class="headerlink" title="实例：一个带Label的图片控件"></a>实例：一个带Label的图片控件</h2><p>回到我们的正题来，我们将实现一个带Label的图片控件。通常情况下，我们会基于以下两个原因来实现一个自定义的控件：</p>
+<ul>
+<li>对于特定的事件，我们需要观察或修改分发到<code>target</code>对象的行为消息。</li>
+<li>提供自定义的跟踪行为。</li>
+</ul>
+<p>本例将会简单地结合这两者。先来看看效果：</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/UIControl%20Example.png?raw=true" alt="image"></p>
+<p>这个控件很简单，以图片为背景，然后在下方显示一个Label。</p>
+<p>先创建<code>UIControl</code>的一个子类，我们需要传入一个字符串和一个UIImage对象：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">ImageControl</span> : <span class="title">UIControl</span></span></div><div class="line"></div><div class="line">- (<span class="keyword">instancetype</span>)initWithFrame:(<span class="built_in">CGRect</span>)frame title:(<span class="built_in">NSString</span> *)title image:(<span class="built_in">UIImage</span> *)image;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>基础的布局我们在此不讨论。我们先来看看<code>UIControl</code>为我们提供了哪些自定义跟踪行为的方法。</p>
+<h3 id="跟踪触摸事件"><a href="#跟踪触摸事件" class="headerlink" title="跟踪触摸事件"></a>跟踪触摸事件</h3><p>如果是想提供自定义的跟踪行为，则可以重写以下几个方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">- (<span class="built_in">BOOL</span>)beginTrackingWithTouch:(<span class="built_in">UITouch</span> *)touch withEvent:(<span class="built_in">UIEvent</span> *)event</div><div class="line">- (<span class="built_in">BOOL</span>)continueTrackingWithTouch:(<span class="built_in">UITouch</span> *)touch withEvent:(<span class="built_in">UIEvent</span> *)event</div><div class="line">- (<span class="keyword">void</span>)endTrackingWithTouch:(<span class="built_in">UITouch</span> *)touch withEvent:(<span class="built_in">UIEvent</span> *)event</div><div class="line">- (<span class="keyword">void</span>)cancelTrackingWithEvent:(<span class="built_in">UIEvent</span> *)event</div></pre></td></tr></table></figure>
+<p>这四个方法分别对应的时跟踪开始、移动、结束、取消四种状态。看起来是不是很熟悉？这跟<code>UIResponse</code>提供的四个事件跟踪方法是不是挺像的？我们来看看<code>UIResponse</code>的四个方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)touchesBegan:(<span class="built_in">NSSet</span>&lt;<span class="built_in">UITouch</span> *&gt; *)touches withEvent:(<span class="built_in">UIEvent</span> *)event</div><div class="line">- (<span class="keyword">void</span>)touchesMoved:(<span class="built_in">NSSet</span>&lt;<span class="built_in">UITouch</span> *&gt; *)touches withEvent:(<span class="built_in">UIEvent</span> *)event</div><div class="line">- (<span class="keyword">void</span>)touchesEnded:(<span class="built_in">NSSet</span>&lt;<span class="built_in">UITouch</span> *&gt; *)touches withEvent:(<span class="built_in">UIEvent</span> *)event</div><div class="line">- (<span class="keyword">void</span>)touchesCancelled:(<span class="built_in">NSSet</span>&lt;<span class="built_in">UITouch</span> *&gt; *)touches withEvent:(<span class="built_in">UIEvent</span> *)event</div></pre></td></tr></table></figure>
+<p>我们可以看到，上面两组方法的参数基本相同，只不过<code>UIControl</code>的是针对单点触摸，而<code>UIResponse</code>可能是多点触摸。另外，返回值也是大同小异。由于<code>UIControl</code>本身是视图，所以它实际上也继承了<code>UIResponse</code>的这四个方法。如果测试一下，我们会发现在针对控件的触摸事件发生时，这两组方法都会被调用，而且互不干涉。</p>
+<p>为了判断当前对象是否正在追踪触摸操作，<code>UIControl</code>定义了一个<code>tracking</code>属性。该值如果为YES，则表明正在追踪。这对于我们是更加方便了，不需要自己再去额外定义一个变量来做处理。</p>
+<p>在测试中，我们可以发现当我们的触摸点沿着屏幕移出控件区域名，还是会继续追踪触摸操作，<code>cancelTrackingWithEvent:</code>消息并未被发送。为了判断当前触摸点是否在控件区域类，可以使用<code>touchInside</code>属性，这是个只读属性。不过实测的结果是，在控件区域周边一定范围内，该值还是会被标记为YES，即用于判定<code>touchInside</code>为YES的区域会比控件区域要大。</p>
+<h3 id="观察或修改分发到target对象的行为消息"><a href="#观察或修改分发到target对象的行为消息" class="headerlink" title="观察或修改分发到target对象的行为消息"></a>观察或修改分发到target对象的行为消息</h3><p>对于一个给定的事件，<code>UIControl</code>会调用<code>sendAction:to:forEvent:</code>来将行为消息转发到<code>UIApplication</code>对象，再由<code>UIApplication</code>对象调用其<code>sendAction:to:fromSender:forEvent:</code>方法来将消息分发到指定的<code>target</code>上，而如果我们没有指定<code>target</code>，则会将事件分发到响应链上第一个想处理消息的对象上。而如果子类想监控或修改这种行为的话，则可以重写这个方法。</p>
+<p>在我们的实例中，做了个小小的处理，将外部添加的<code>Target-Action</code>放在控件内部来处理事件，因此，我们的代码实现如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// ImageControl.m</span></div><div class="line">- (<span class="keyword">void</span>)sendAction:(SEL)action to:(<span class="keyword">id</span>)target forEvent:(<span class="built_in">UIEvent</span> *)event &#123;</div><div class="line">	<span class="comment">// 将事件传递到对象本身来处理</span></div><div class="line">    [<span class="keyword">super</span> sendAction:<span class="keyword">@selector</span>(handleAction:) to:<span class="keyword">self</span> forEvent:event];</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (<span class="keyword">void</span>)handleAction:(<span class="keyword">id</span>)sender &#123;</div><div class="line"></div><div class="line">    <span class="built_in">NSLog</span>(<span class="string">@"handle Action"</span>);</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// ViewController.m</span></div><div class="line"></div><div class="line">- (<span class="keyword">void</span>)viewDidLoad &#123;</div><div class="line">    [<span class="keyword">super</span> viewDidLoad];</div><div class="line"></div><div class="line">    <span class="keyword">self</span>.view.backgroundColor = [<span class="built_in">UIColor</span> whiteColor];</div><div class="line"></div><div class="line">    ImageControl *control = [[ImageControl alloc] initWithFrame:(<span class="built_in">CGRect</span>)&#123;<span class="number">50.0</span>f, <span class="number">100.0</span>f, <span class="number">200.0</span>f, <span class="number">300.0</span>f&#125; title:<span class="string">@"This is a demo"</span> image:[<span class="built_in">UIImage</span> imageNamed:<span class="string">@"demo"</span>]];</div><div class="line">    <span class="comment">// ...</span></div><div class="line"></div><div class="line">    [control addTarget:<span class="keyword">self</span> action:<span class="keyword">@selector</span>(tapImageControl:) forControlEvents:<span class="built_in">UIControlEventTouchUpInside</span>];</div><div class="line">&#125;</div><div class="line">- (<span class="keyword">void</span>)tapImageControl:(<span class="keyword">id</span>)sender &#123;</div><div class="line"></div><div class="line">    <span class="built_in">NSLog</span>(<span class="string">@"sender = %@"</span>, sender);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>由于我们重写了<code>sendAction:to:forEvent:</code>方法，所以最后处理事件的<code>Selector</code>是<code>ImageControl</code>的<code>handleAction:</code>方法，而不是ViewController的<code>tapImageControl:</code>方法。</p>
+<p>另外，<code>sendAction:to:forEvent:</code>实际上也被<code>UIControl</code>的另一个方法所调用，即<code>sendActionsForControlEvents:</code>。这个方法的作用是发送与指定类型相关的所有行为消息。我们可以在任意位置(包括控件内部和外部)调用控件的这个方法来发送参数<code>controlEvents</code>指定的消息。在我们的示例中，在ViewController.m中作了如下测试：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)viewDidLoad &#123;</div><div class="line">    <span class="comment">// ...</span></div><div class="line">    [control addTarget:<span class="keyword">self</span> action:<span class="keyword">@selector</span>(tapImageControl:) forControlEvents:<span class="built_in">UIControlEventTouchUpInside</span>];</div><div class="line"></div><div class="line">    [control sendActionsForControlEvents:<span class="built_in">UIControlEventTouchUpInside</span>];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>可以看到在未点击控件的情况下，触发了<code>UIControlEventTouchUpInside</code>事件，并打印了<code>handle Action</code>日志。</p>
+<h2 id="Target-Action的管理"><a href="#Target-Action的管理" class="headerlink" title="Target-Action的管理"></a>Target-Action的管理</h2><p>为一个控件对象添加、删除<code>Target-Action</code>的操作我们都已经很熟悉了，主要使用的是以下两个方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 添加</span></div><div class="line">- (<span class="keyword">void</span>)addTarget:(<span class="keyword">id</span>)target action:(SEL)action forControlEvents:(<span class="built_in">UIControlEvents</span>)controlEvents</div><div class="line"></div><div class="line">- (<span class="keyword">void</span>)removeTarget:(<span class="keyword">id</span>)target action:(SEL)action forControlEvents:(<span class="built_in">UIControlEvents</span>)controlEvents</div></pre></td></tr></table></figure>
+<p>如果想获取控件对象所有相关的target对象，则可以调用<code>allTargets</code>方法，该方法返回一个集合。集合中可能包含<code>NSNull</code>对象，表示至少有一个nil目标对象。</p>
+<p>而如果想获取某个target对象及事件相关的所有action，则可以调用<code>actionsForTarget:forControlEvent:</code>方法。</p>
+<p>不过，这些都是<code>UIControl</code>开放出来的接口。我们还是想要探究一下，<code>UIControl</code>是如何去管理<code>Target-Action</code>的呢？</p>
+<p>实际上，我们在程序某个合适的位置打个断点来观察<code>UIControl</code>的内部结构，可以看到这样的结果：</p>
+<p><img src="https://raw.githubusercontent.com/southpeak/Blog-images/master/UIControl%20Example%202.png" alt="image"></p>
+<p>因此，<code>UIControl</code>内部实际上是有一个可变数组(<code>_targetActions</code>)来保存<code>Target-Action</code>，数组中的每个元素是一个<code>UIControlTargetAction</code>对象。<code>UIControlTargetAction</code>类是一个私有类，我们可以在<a href="https://github.com/nst/iOS-Runtime-Headers/blob/master/Frameworks/UIKit.framework/UIControlTargetAction.h" target="_blank" rel="external">iOS-Runtime-Header</a>中找到它的头文件：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">UIControlTargetAction</span> : <span class="title">NSObject</span> </span>&#123;</div><div class="line">    SEL _action;</div><div class="line">    <span class="built_in">BOOL</span> _cancelled;</div><div class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> _eventMask;</div><div class="line">    <span class="keyword">id</span> _target;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>) <span class="built_in">BOOL</span> cancelled;</div><div class="line"></div><div class="line">- (<span class="keyword">void</span>).cxx_destruct;</div><div class="line">- (<span class="built_in">BOOL</span>)cancelled;</div><div class="line">- (<span class="keyword">void</span>)setCancelled:(<span class="built_in">BOOL</span>)arg1;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>可以看到<code>UIControlTargetAction</code>对象维护了一个<code>Target-Action</code>所必须的三要素，即<code>target</code>，<code>action</code>及对应的事件<code>eventMask</code>。</p>
+<p>如果仔细想想，会发现一个有意思的问题。我们来看看实例中ViewController(target)与ImageControl实例(control)的引用关系，如下图所示：</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/UIControl%20Example%203.png?raw=true" alt="image"></p>
+<p>嗯，循环引用。</p>
+<p>既然这样，就必须想办法打破这种循环引用。那么在这5个环节中，哪个地方最适合做这件事呢？仔细思考一样，1、2、4肯定是不行的，3也不太合适，那就只有5了。在上面的<code>UIControlTargetAction</code>头文件中，并没有办法看出<code>_target</code>是以<code>weak</code>方式声明的，那有证据么？</p>
+<p>我们在工程中打个<code>Symbolic</code>断点，如下所示：</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/UIControl%20Example%205.png?raw=true" alt="image"></p>
+<p>运行程序，程序会进入<code>[UIControl addTarget:action:forControlEvents:]</code>方法的汇编代码页，在这里，我们可以找到一些蛛丝马迹。如下图所示：</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/UIControl%20Example%204.png?raw=true" alt="image"></p>
+<p>可以看到，对于<code>_target</code>成员变量，在<code>UIControlTargetAction</code>的初始化方法中调用了<code>objc_storeWeak</code>，即这个成员变量对外部传进来的<code>target</code>对象是以<code>weak</code>的方式引用的。</p>
+<p>其实在<code>UIControl</code>的文档中，<code>addTarget:action:forControlEvents:</code>方法的说明还有这么一句：</p>
+<blockquote>
+<p>When you call this method, target is not retained.</p>
+</blockquote>
+<p>另外，如果我们以同一组target-action和event多次调用<code>addTarget:action:forControlEvents:</code>方法，在<code>_targetActions</code>中并不会重复添加<code>UIControlTargetAction</code>对象。</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>控件是我们在开发中常用的视图工具，能很好的表达用户的意图。我们可以使用UIKit提供的控件，也可以自定义控件。当然，<code>UIControl</code>除了上述的一些方法，还有一些属性和方法，以及一些常量，大家可以参考文档。</p>
+<p>示例工程的代码已上传到github，可以在<a href="https://github.com/southpeak/iOS-Dev-Examples/tree/master/UIKit/UIView/2.%20UIControlExample" target="_blank" rel="external">这里</a>下载。另外，推荐一下<a href="https://github.com/samvermette/SVSegmentedControl" target="_blank" rel="external">SVSegmentedControl</a>这个控件，大家可以研究下它的实现。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/UIKit/Reference/UIControl_Class" target="_blank" rel="external">UIControl Class Reference</a></li>
+<li><a href="https://developer.apple.com/library/ios/documentation/UserExperience/Conceptual/UIKitUICatalog/UIControl.html#//apple_ref/doc/uid/TP40012857-UIControl" target="_blank" rel="external">UIKit User Interface Catalog - About Controls</a></li>
+<li><a href="https://developer.apple.com/library/prerelease/ios/documentation/General/Conceptual/Devpedia-CocoaApp/TargetAction.html" target="_blank" rel="external">Cocoa Application Competencies for iOS - Target Action</a></li>
+<li><a href="https://github.com/nst/iOS-Runtime-Headers/blob/master/Frameworks/UIKit.framework/UIControlTargetAction.h" target="_blank" rel="external">iOS-Runtime-Header: UIControlTargetAction</a></li>
+<li><a href="https://github.com/samvermette/SVSegmentedControl" target="_blank" rel="external">SVSegmentedControl</a></li>
+</ol>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/11/22/cocoa-uikit-uiimage/" rel="next" title="UIKit: UIImage">
+                <i class="fa fa-chevron-left"></i> UIKit: UIImage
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/12/20/perfect-smooth-scrolling-in-uitableviews/" rel="prev" title="Perfect smooth scrolling in UITableViews">
+                Perfect smooth scrolling in UITableViews <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Target-Action机制"><span class="nav-number">1.</span> <span class="nav-text">Target-Action机制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实例：一个带Label的图片控件"><span class="nav-number">2.</span> <span class="nav-text">实例：一个带Label的图片控件</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#跟踪触摸事件"><span class="nav-number">2.1.</span> <span class="nav-text">跟踪触摸事件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#观察或修改分发到target对象的行为消息"><span class="nav-number">2.2.</span> <span class="nav-text">观察或修改分发到target对象的行为消息</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Target-Action的管理"><span class="nav-number">3.</span> <span class="nav-text">Target-Action的管理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">4.</span> <span class="nav-text">小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">5.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

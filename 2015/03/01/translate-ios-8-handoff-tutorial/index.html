@@ -1,0 +1,867 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="原文由Soheil Azarpour发表于raywenderlich，地址是iOS 8 Handoff Tutorial
+Handoff是iOS 8和OS X Yosemite中的一个新特性。它让我们在不同的设备间切换时，可以不间断地继续一个Activity，而不需要重新配置任何设备。
+我们可以为在iOS 8和Yosemite上的应用添加Handoff特性。在这篇指南中，我们将学习Handoff的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="iOS 8 Handoff Tutorial">
+<meta property="og:url" content="http://southpeak.github.io/2015/03/01/translate-ios-8-handoff-tutorial/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="原文由Soheil Azarpour发表于raywenderlich，地址是iOS 8 Handoff Tutorial
+Handoff是iOS 8和OS X Yosemite中的一个新特性。它让我们在不同的设备间切换时，可以不间断地继续一个Activity，而不需要重新配置任何设备。
+我们可以为在iOS 8和Yosemite上的应用添加Handoff特性。在这篇指南中，我们将学习Handoff的">
+<meta property="og:image" content="http://cdn5.raywenderlich.com/wp-content/uploads/2014/10/settings_screenshots-436x320.jpg">
+<meta property="og:image" content="http://cdn5.raywenderlich.com/wp-content/uploads/2014/10/image10-38-480x259.png">
+<meta property="og:image" content="http://cdn4.raywenderlich.com/wp-content/uploads/2014/10/App_Screenshots-700x412.jpg">
+<meta property="og:image" content="http://cdn2.raywenderlich.com/wp-content/uploads/2014/10/image15-49-700x232.png">
+<meta property="og:image" content="http://cdn4.raywenderlich.com/wp-content/uploads/2014/10/image16-52-480x268.png">
+<meta property="og:image" content="http://cdn1.raywenderlich.com/wp-content/uploads/2014/10/image17-55-480x233.png">
+<meta property="og:image" content="http://cdn4.raywenderlich.com/wp-content/uploads/2014/10/image18-58-480x85.png">
+<meta property="og:image" content="http://cdn1.raywenderlich.com/wp-content/uploads/2014/10/image20-63-180x320.png">
+<meta property="og:image" content="http://cdn4.raywenderlich.com/wp-content/uploads/2014/10/image22-691-700x360.png">
+<meta property="og:updated_time" content="2016-08-28T03:36:22.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="iOS 8 Handoff Tutorial">
+<meta name="twitter:description" content="原文由Soheil Azarpour发表于raywenderlich，地址是iOS 8 Handoff Tutorial
+Handoff是iOS 8和OS X Yosemite中的一个新特性。它让我们在不同的设备间切换时，可以不间断地继续一个Activity，而不需要重新配置任何设备。
+我们可以为在iOS 8和Yosemite上的应用添加Handoff特性。在这篇指南中，我们将学习Handoff的">
+<meta name="twitter:image" content="http://cdn5.raywenderlich.com/wp-content/uploads/2014/10/settings_screenshots-436x320.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2015/03/01/translate-ios-8-handoff-tutorial/"/>
+
+  <title> iOS 8 Handoff Tutorial | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                iOS 8 Handoff Tutorial
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-03-01T12:33:51+08:00" content="2015-03-01">
+              2015-03-01
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/translate/" itemprop="url" rel="index">
+                    <span itemprop="name">翻译</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>原文由<code>Soheil Azarpour</code>发表于<code>raywenderlich</code>，地址是<a href="http://www.raywenderlich.com/84174/ios-8-handoff-tutorial" target="_blank" rel="external">iOS 8 Handoff Tutorial</a></p>
+<p><code>Handoff</code>是<code>iOS 8</code>和<code>OS X Yosemite</code>中的一个新特性。它让我们在不同的设备间切换时，可以不间断地继续一个<code>Activity</code>，而不需要重新配置任何设备。</p>
+<p>我们可以为在<code>iOS 8</code>和<code>Yosemite</code>上的应用添加<code>Handoff</code>特性。在这篇指南中，我们将学习<code>Handoff</code>的基本功能和如何在非基于文档的<code>app</code>中使用<code>Handoff</code>。</p>
+<h2 id="Handoff概览"><a href="#Handoff概览" class="headerlink" title="Handoff概览"></a>Handoff概览</h2><p>在开始写代码前，我们需要先来了解一下<code>handoff</code>的一些基本概念。</p>
+<h3 id="起步"><a href="#起步" class="headerlink" title="起步"></a>起步</h3><p><code>Handoff</code>不仅可以将当前的<code>activity</code>从一个<code>iOS</code>设备传递到<code>OS X</code>设备，还可以将<code>activity</code>在不同的<code>iOS</code>设备传递。目前在模拟器上还不能使用<code>Handoff</code>功能，所以需要在<code>iOS</code>设备上运行我们的实例。</p>
+<h4 id="设备兼容性：iOS"><a href="#设备兼容性：iOS" class="headerlink" title="设备兼容性：iOS"></a>设备兼容性：iOS</h4><p>为了查看我们的<code>iOS</code>设备是否支持<code>handoff</code>功能，我们可以查看“设置”-&gt;“通用”列表。如果在列表中看到“Handoff与建议的应用程序”，则设备具备<code>Handoff</code>功能。以下截图显示了<code>iPhone 5s</code>(具备<code>Handoff</code>功能)和<code>iPad3</code>(不具备<code>Handoff</code>功能)的对比：</p>
+<p><img src="http://cdn5.raywenderlich.com/wp-content/uploads/2014/10/settings_screenshots-436x320.jpg" alt="image"></p>
+<p><code>Handoff</code>功能依赖于以下几点：</p>
+<ol>
+<li>一个<code>iCloud</code>账户：我们必须在希望使用<code>Handoff</code>功能的多台设备上登录同一个<code>iCloud</code>账户。</li>
+<li>低功耗蓝牙(<code>Bluetooth LE 4.0</code>)：<code>Handoff</code>是通过低功耗蓝牙来广播<code>activities</code>的，所以广播设备和接收设备都必须支持<code>Bluetooth LE 4.0</code>。</li>
+<li><code>iCloud</code>配对：设备必须已经通过<code>iCloud</code>配对。当在支持<code>Handoff</code>的设备上登录<code>iCloud</code>账户后，每台设备都会与其它支持<code>Handoff</code>的设备进行配对。</li>
+</ol>
+<p>此时，我们需要确保已经使用同一<code>iCloud</code>账号在两台支持<code>Handoff</code>功能且运行<code>iOS 8+</code>系统的设备上登录了。(译者注：具体配置可以参考<a href="https://support.google.com/chrome/answer/6153783?hl=zh-Hans" target="_blank" rel="external">在 Chrome（iOS 版）中使用 Handoff</a>)</p>
+<h3 id="User-Activities"><a href="#User-Activities" class="headerlink" title="User Activities"></a>User Activities</h3><p><code>Handoff</code>是基于<code>User Activity</code>的。<code>User Activity</code>是一个独立的信息集合单位，可以不依赖于任何其它信息而进行传输(<code>be handed off</code>)。</p>
+<p><code>NSUserActivity</code>对象表示一个<code>User Activity</code>实例。它封装了程序的一些状态，这些状态可以在其它设备相关的程序中继续使用。</p>
+<p>有三种方法和一个<code>NSUserActivity</code>对象交互：</p>
+<p>1) 创建一个<code>user activity</code>：原始应用程序创建一个<code>NSUserActivity</code>实例并调用<code>becomeCurrent()</code>以开启一个广播进程。下面是一个实例：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> activity = <span class="type">NSUserActivity</span>(activityType: <span class="string">"com.razeware.shopsnap.view"</span>)</div><div class="line">activity.title = <span class="string">"Viewing"</span></div><div class="line">activity.userInfo = [<span class="string">"shopsnap.item.key"</span>: [<span class="string">"Apple"</span>, <span class="string">"Orange"</span>, <span class="string">"Banana"</span>]]</div><div class="line"><span class="keyword">self</span>.userActivity = activity;</div><div class="line"><span class="keyword">self</span>.userActivity?.becomeCurrent()</div></pre></td></tr></table></figure>
+<p>我们可以使用<code>NSUserActivity</code>的<code>userInfo</code>字典来传递本地数据类型对象或可编码的自定义对象以将其传输到接收设备。本地数据类型包括<code>NSArray</code>, <code>NSData</code>, <code>NSDate</code>, <code>NSDictionary</code>, <code>NSNull</code>, <code>NSNumber</code>, <code>NSSet</code>, <code>NSString</code>, <code>NSUUID</code>和<code>NSURL</code>。通过<code>NSURL</code>可能会有点棘手。在使用<code>NSURL</code>前可以先参考一下下面的“最佳实践”一节。</p>
+<p>2) 更新<code>user activity</code>：一旦一个<code>NSUserActivity</code>成为当前的<code>activity</code>，则<code>iOS</code>会在最上层的视图控制器中调用<code>updateUserActivityState(activity:)</code>方法，以让我们有机会来更新<code>user activity</code>。下面是一个实例：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">override</span> <span class="function"><span class="keyword">func</span> <span class="title">updateUserActivityState</span><span class="params">(activity: NSUserActivity)</span></span> &#123;</div><div class="line">    <span class="keyword">let</span> activityListItems = <span class="comment">// ... get updated list of items</span></div><div class="line">    activity.addUserInfoEntriesFromDictionary([<span class="string">"shopsnap.item.key"</span>: activityListItems])</div><div class="line">    <span class="keyword">super</span>.updateUserActivityState(activity)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>注意我们不要将<code>userInfo</code>设置为一个新的字典或直接更新它，而是应该使用便捷方法<code>addUserInfoEntriesFromDictionary()</code>。</p>
+<p>在下文中，我们将学习如何按需求强制刷新<code>user activity</code>，或者是在程序的<code>app delegate</code>级别来获取一个相似功能的回调。</p>
+<p>3) 接收<code>user activity</code>：当我们的接收程序以<code>Handoff</code>的方式启动时，程序代理会调用<code>application(:willContinueUserActivityWithType:)</code>方法。注意这个方法的参数不是<code>NSUserActivity</code>对象，因为接收程序在下载并传递<code>NSUserActivity</code>数据需要花费一定的时间。在<code>user activity</code>已经被下载完成后，会调用以下的回调函数：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">application</span><span class="params">(application: UIApplication!, </span></span></div><div class="line">                 continueUserActivity userActivity: NSUserActivity!,</div><div class="line">                 restorationHandler: <span class="params">(<span class="params">([AnyObject]!)</span></span> -&gt; <span class="type">Void</span>)!) </div><div class="line">                 -&gt; <span class="type">Bool</span> &#123;</div><div class="line"> </div><div class="line">    <span class="comment">// Do some checks to make sure you can proceed</span></div><div class="line">    <span class="keyword">if</span> <span class="keyword">let</span> window = <span class="keyword">self</span>.window &#123;</div><div class="line">        window.rootViewController?.restoreUserActivityState(userActivity)</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="literal">true</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>然后我们可以使用存储在<code>NSUserActivity</code>对象中的数据来重新创建用户的<code>activity</code>。在这里，我们更新我们的应用以继续相关的<code>activity</code>。</p>
+<h3 id="Activity类型"><a href="#Activity类型" class="headerlink" title="Activity类型"></a>Activity类型</h3><p>当创建一个<code>user activity</code>后，我们必须为其指定一个<code>activity</code>类型。一个<code>activity</code>类型是一个简单的唯一字符串，通常使用反转<code>DNS</code>语义，如<code>com.razeware.shopsnap.view</code>。</p>
+<p>每一个可以接收<code>user activity</code>的程序都必须声明其可接收的<code>activity</code>类型。这类似于在程序中声明支持的<code>URL</code>方案(<code>URL schemes</code>)。对于非基于文本的程序，<code>activity</code>类型需要在<code>Info.plist</code>文件中定义，其键值为<code>NSUserActivityTypes</code>，如下所示：</p>
+<p><img src="http://cdn5.raywenderlich.com/wp-content/uploads/2014/10/image10-38-480x259.png" alt="image"></p>
+<p>对于支持一个给定<code>activity</code>的程序来说，需要满足三个要求：</p>
+<ol>
+<li>相同的组：两个程序都必须源于使用同一开发者组<code>ID(developer Team ID)</code>的开发者。</li>
+<li>相同的<code>activity</code>类型：发送程序创建某一<code>activity</code>类型的<code>user activity</code>，接收程序必须有相应类型的<code>NSUserActivityTypes</code>入口。</li>
+<li>签约：两个程序必须通过<code>App store</code>来发布或使用同一开发者账号来签约。</li>
+</ol>
+<p>现在我们已经学习了<code>user activities</code>和<code>activity</code>类型的基础知识，接下来让我们来看一个实例。</p>
+<h2 id="启动工程"><a href="#启动工程" class="headerlink" title="启动工程"></a>启动工程</h2><p>本指南的启动工程可以在“<a href="http://cdn2.raywenderlich.com/wp-content/uploads/2014/10/ShopSnap-Starter.zip" target="_blank" rel="external">启动工程</a>”中下载。下载后，使用<code>Xcode</code>打开工程并在<code>iPhone</code>模拟器中运行。</p>
+<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/10/App_Screenshots-700x412.jpg" alt="image"></p>
+<p>工程名是<code>ShopSnap</code>，我们可以在这个程序中构建一个简单的购物清单。一个购物项由一个字符串表示，然后我们将购物项存储在一个字符串的数组中。点击+按钮添加一个新的项目到清单中，而轻扫可以移除项目。</p>
+<p>我们将在程序中定义两个独立的<code>user activity</code>：</p>
+<ol>
+<li>查看清单。如果用户当前正在查看清单，我们将传输整个数组。</li>
+<li>添加或编译项目。如果用户当前正在添加新的项目，我们将传递一个单一项目的“编辑”<code>activity</code>。</li>
+</ol>
+<h3 id="设置开发组"><a href="#设置开发组" class="headerlink" title="设置开发组"></a>设置开发组</h3><p>为了让<code>Handoff</code>工作，发送和接收<code>app</code>都必须使用相同的开发组来签约。由于这个示例程序即是发送者也是接收者，所以这很简单！</p>
+<p>选择<code>ShopSnap</code>工程，在“通用”选项卡中，在”<code>Team</code>“中选择自己的开发组：</p>
+<p><img src="http://cdn2.raywenderlich.com/wp-content/uploads/2014/10/image15-49-700x232.png" alt="image"></p>
+<p>在支持<code>Handoff</code>的设备中编译并运行程序，以确保运行正常，然后继续。</p>
+<h3 id="配置activity类型"><a href="#配置activity类型" class="headerlink" title="配置activity类型"></a>配置activity类型</h3><p>接下来是配置程序所支持的<code>activity</code>类型。打开<code>&quot;Supporting Files\Info.plist&quot;</code>，点击<code>&quot;Information Property List&quot;</code>旁边的”+”按钮，在<code>&quot;Information Property List&quot;</code>中添加一个新的选项：</p>
+<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/10/image16-52-480x268.png" alt="image"></p>
+<p>键名为<code>&quot;NSUserActivityTypes&quot;</code>，类型设备为数组类型，如下所示：</p>
+<p><img src="http://cdn1.raywenderlich.com/wp-content/uploads/2014/10/image17-55-480x233.png" alt="image"></p>
+<p>在<code>NSUserActivityTypes</code>下添加两项并设置类型为字符串。<code>Item 0</code>的值为<code>com.razeware.shopsnap.view</code>，<code>Item 1</code>的值为<code>com.razeware.shopsnap.edit</code>。</p>
+<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/10/image18-58-480x85.png" alt="image"></p>
+<p>这些任意的<code>activity</code>类型对于我们的程序来说是特定和唯一的。因为我们将在程序的不同地方引用它们，所以在独立的文件中将其添加为常量是一种好的实践。</p>
+<p>在工程导航中右键点击<code>ShopSnap</code>组，选择<code>&quot;New File \ iOS \ Source \ Swift File&quot;</code>。将文件命名为<code>Constants.swift</code>并确保新类被添加到<code>ShopSnap target</code>中。</p>
+<p>在类中添加以下代码：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> <span class="type">ActivityTypeView</span> = <span class="string">"com.razeware.shopsnap.view"</span></div><div class="line"><span class="keyword">let</span> <span class="type">ActivityTypeEdit</span> = <span class="string">"com.razeware.shopsnap.edit"</span></div><div class="line"> </div><div class="line"><span class="keyword">let</span> <span class="type">ActivityItemsKey</span> = <span class="string">"shopsnap.items.key"</span></div><div class="line"><span class="keyword">let</span> <span class="type">ActivityItemKey</span>  = <span class="string">"shopsnap.item.key"</span></div></pre></td></tr></table></figure>
+<p>然后我们就可以使用这两个<code>activity</code>类型的常量。同时我们定义一些用于<code>user activity</code>的<code>userInfo</code>字典的键名字符串。</p>
+<h3 id="快速端到端测试"><a href="#快速端到端测试" class="headerlink" title="快速端到端测试"></a>快速端到端测试</h3><p>让我们来运行一个快速端到端测试以确保设备可以正确地通信。</p>
+<p>打开<code>ListViewController.swift</code>并添加以下两个函数：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 1.</span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">startUserActivity</span><span class="params">()</span></span> &#123;</div><div class="line">    <span class="keyword">let</span> activity = <span class="type">NSUserActivity</span>(activityType: <span class="type">ActivityTypeView</span>)</div><div class="line">    activity.title = <span class="string">"Viewing Shopping List"</span></div><div class="line">    activity.userInfo = [<span class="type">ActivityItemsKey</span>: [<span class="string">"Ice cream"</span>, <span class="string">"Apple"</span>, <span class="string">"Nuts"</span>]]</div><div class="line">    userActivity = activity</div><div class="line">    userActivity?.becomeCurrent()</div><div class="line">&#125;</div><div class="line"> </div><div class="line"><span class="comment">// 2.</span></div><div class="line"><span class="keyword">override</span> <span class="function"><span class="keyword">func</span> <span class="title">updateUserActivityState</span><span class="params">(activity: NSUserActivity)</span></span> &#123;</div><div class="line">    activity.addUserInfoEntriesFromDictionary([<span class="type">ActivityItemsKey</span>: [<span class="string">"Ice cream"</span>, <span class="string">"Apple"</span>, <span class="string">"Nuts"</span>]])</div><div class="line">    <span class="keyword">super</span>.updateUserActivityState(activity)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>我们通过硬编码一个<code>user activity</code>来快速测试，以确保我们可以在另一端正常接收。</p>
+<p>上面的代码做了以下两件事：</p>
+<ol>
+<li><code>startUserActivity()</code>是一个辅助函数，它使用一个硬编码的购物清单来创建了一个<code>NSUserActivity</code>实例。然后调用<code>becomeCurrent()</code>来广播这个<code>activity</code>。</li>
+<li>在调用<code>becomeCurrent()</code>后，系统将定期调用<code>updateUserActivityState()</code>。<code>UIViewController</code>从<code>UIResponder</code>类中继承了这个方法，我们应该重写它来更新我们的<code>userActivity</code>的状态。在这里，我们像前面一样使用硬编码来更新购物清单。注意，我们应该使用<code>addUserInfoEntriesFromDictionary</code>方法来修改<code>NSUserActivity的userInfo</code>字典。我们应该总是在方法的结尾调用<code>super.updateUserActivityState()</code>。</li>
+</ol>
+<p>注意，我们只需要调用上面的起始方法。在<code>viewDidLoad()</code>起始行下面添加以下代码</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">startUserActivity()</div></pre></td></tr></table></figure>
+<p>开始广播至少需要以上步骤。现在来看看接收者。打开AppDelegate.swift并添加以下代码：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">application</span><span class="params">(application: UIApplication!, </span></span></div><div class="line">                 continueUserActivity userActivity: NSUserActivity!, </div><div class="line">                 restorationHandler: <span class="params">(<span class="params">([AnyObject]!)</span></span> -&gt; <span class="type">Void</span>)!) </div><div class="line">                 -&gt; <span class="type">Bool</span> &#123;</div><div class="line"> </div><div class="line">    <span class="keyword">let</span> userInfo = userActivity.userInfo <span class="keyword">as</span> <span class="type">NSDictionary</span></div><div class="line">    <span class="built_in">println</span>(<span class="string">"Received a payload via handoff: \(userInfo)"</span>)</div><div class="line">    <span class="keyword">return</span> <span class="literal">true</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p><code>AppDelegate</code>中的这个方法在所有事情都准备好，且一个<code>userActivity</code>被成功传送后调用。在这里我们简单打印<code>userActivity</code>中的<code>userInfo</code>字典。我们返回<code>true</code>来标识我们处理了<code>user activity</code>。</p>
+<p>让我们来试试！要想在两台设备中正常工作，还需要做一些协调工作，所以还得仔细跟着。</p>
+<ol>
+<li>在第一台设备上安装并运行程序。</li>
+<li>在第二台设备上安装并运行程序。确保在<code>Xcode</code>中调用程序以便我们能看到打印输出。</li>
+<li>按下电源按钮让第二台设备休眠。在同一台设备上，按下<code>Home</code>键。如果所有事件都正常运行，我们应该可以看到<code>ShopSnap</code>程序的<code>icon</code>显示在屏幕的左下角上。从这里我们可以启动程序，然后在<code>Xcode</code>控制台可以看到以下的日志信息：</li>
+</ol>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="type">Received</span> a payload via handoff: &#123;</div><div class="line">    <span class="string">"shopsnap.items.key"</span> = (</div><div class="line">    <span class="string">"Ice cream"</span>,</div><div class="line">    <span class="type">Apple</span>,</div><div class="line">    <span class="type">Nuts</span></div><div class="line">  );</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>如果在锁屏下没有看到程序的<code>icon</code>，则在源设备上关闭并重新打开程序。这将强制系统重新广播信息。同时确认一下设备的控制台以查看是否有来自于<code>Handoff</code>的错误消息。</p>
+<p><img src="http://cdn1.raywenderlich.com/wp-content/uploads/2014/10/image20-63-180x320.png" alt="image"></p>
+<h2 id="创建一个新的Activity"><a href="#创建一个新的Activity" class="headerlink" title="创建一个新的Activity"></a>创建一个新的Activity</h2><p>现在我们有一个基本上可以工作的<code>Handoff</code>程序，是时候来扩展它了。打开<code>ListViewController.swift</code>，更新<code>startUserActivity()</code>方法，这次我们传入实际的购物清单以代码硬编码。使用以下代码来更新方法：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">startUserActivity</span><span class="params">()</span></span> &#123;</div><div class="line">    <span class="keyword">let</span> activity = <span class="type">NSUserActivity</span>(activityType: <span class="type">ActivityTypeView</span>)</div><div class="line">    activity.title = <span class="string">"Viewing Shopping List"</span></div><div class="line">    activity.userInfo = [<span class="type">ActivityItemsKey</span>: items]</div><div class="line">    userActivity = activity</div><div class="line">    userActivity?.becomeCurrent()</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>同样，更新<code>ListViewController.swift</code>的<code>updateUserActivityState(activity:)</code>方法，传递购物清单数组：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">override</span> <span class="function"><span class="keyword">func</span> <span class="title">updateUserActivityState</span><span class="params">(activity: NSUserActivity)</span></span> &#123;</div><div class="line">    activity.addUserInfoEntriesFromDictionary([<span class="type">ActivityItemsKey</span>: items])</div><div class="line">    <span class="keyword">super</span>.updateUserActivityState(activity)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>现在，更新<code>ListViewController.swift</code>中的<code>viewDidLoad()</code>，在从前面的代码中成功获取到清单后开启<code>userActivity</code>，如下所示：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">override</span> <span class="function"><span class="keyword">func</span> <span class="title">viewDidLoad</span><span class="params">()</span></span> &#123;</div><div class="line">    title = <span class="string">"Shopping List"</span></div><div class="line">    <span class="keyword">weak</span> <span class="keyword">var</span> weakSelf = <span class="keyword">self</span></div><div class="line">    <span class="type">PersistentStore</span>.defaultStore().fetchItems(&#123; (items:[<span class="type">String</span>]) <span class="keyword">in</span></div><div class="line">        <span class="keyword">if</span> <span class="keyword">let</span> unwrapped = weakSelf &#123;</div><div class="line">            unwrapped.items = items</div><div class="line">            unwrapped.tableView.reloadData()</div><div class="line">            <span class="keyword">if</span> items.isEmpty == <span class="literal">false</span> &#123;</div><div class="line">                unwrapped.startUserActivity()</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;)</div><div class="line">    <span class="keyword">super</span>.viewDidLoad()</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>当然，如果程序开始时，清单是空的，则程序不会去广播<code>user activity</code>。我们需要解决这个问题：在用户第一次添加一个购物项到列表时开启<code>user activity</code>。</p>
+<p>为了做到这一点，更新<code>ListViewController.swift</code>中代理回调<code>detailViewController(controller:didFinishWithUpdatedItem:)</code>的实现，如下所示：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">detailViewController</span><span class="params">(#controller: DetailViewController,</span></span></div><div class="line">                          didFinishWithUpdatedItem item: String) &#123;</div><div class="line">    <span class="comment">// ... some code</span></div><div class="line">    <span class="keyword">if</span> !items.isEmpty &#123;</div><div class="line">        startUserActivity()</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>在此有三种可能：</p>
+<ol>
+<li>用于更新一个已存在的购物项</li>
+<li>用户删除一个存在的购物项</li>
+<li>用户添加一个新的购物项</li>
+</ol>
+<p>现存的代码处理了所有的可能性；我们只需要添加一些检测代码，以在有一个非空的清单时开始一个<code>activity</code>。</p>
+<p>在两台设备上编译并运行。此时，我们应该可以在一台设备上添加新的项目，然后将其发送给另外一台设备。</p>
+<h3 id="收尾"><a href="#收尾" class="headerlink" title="收尾"></a>收尾</h3><p>当用户开始添加一个新的项目或编辑一个已存在的项目时，用户可能不是在查看购物清单。所以我们需要停止广播当前<code>activity</code>。同样，当清单中的所有项目被删除时，没有理由去继续广播当前<code>activiry</code>。在<code>ListViewController.swift</code>中添加以下辅助方法：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">stopUserActivity</span><span class="params">()</span></span> &#123;</div><div class="line">    userActivity?.invalidate()</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>在<code>stopUserActivity()</code>中，我们废止已存在的<code>NSUserActivity</code>。这让<code>handoff</code>停止广播。</p>
+<p>现在有了<code>stopUserActivity()</code>，是时候在适当的地方调用它了。</p>
+<p>在<code>ListViewController.swift</code>中，更新<code>prepareForSegue(segue:, sender:)</code>方法的实现，如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject!) &#123;</div><div class="line">    // ... some code</div><div class="line">    stopUserActivity()</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>当用户选择一行或者点击添加按钮时，<code>ListViewController</code>准备导航到详情视图。我们废弃当前的清单查看<code>activity</code>。</p>
+<p>在同一文件中，更新<code>tableView(_:commitEditingStyle:forRowAtIndexPath:)</code>的实现，如下所示：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">override</span> <span class="function"><span class="keyword">func</span> <span class="title">tableView</span><span class="params">(tableView: UITableView, </span></span></div><div class="line">                        commitEditingStyle editingStyle: UITableViewCellEditingStyle,</div><div class="line">                        forRowAtIndexPath indexPath: NSIndexPath) &#123;</div><div class="line">    <span class="comment">// ... some code</span></div><div class="line">    <span class="keyword">if</span> items.isEmpty &#123;</div><div class="line">        stopUserActivity()</div><div class="line">    &#125; <span class="keyword">else</span> &#123;</div><div class="line">        userActivity?.needsSave = <span class="literal">true</span></div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>当用户从清单中删除一项时，我们需要相应地更新<code>user activity</code>。如果移除清单中的所有项目，我们停止广播。否则，我们设置<code>userActivity</code>的<code>needsSave</code>属性为<code>true</code>。当我们这样做时，系统会立即回调<code>updateUserActivityState(activity:)</code>，在这里我们会更新<code>userActivity</code>。</p>
+<p>结束这一节之前，还有一种情况需要考虑，用户点击取消按钮，然后从<code>DetailViewController</code>中返回。这触发了一个已存在的场景。我们需要重新开始<code>userActivity</code>。更新<code>unwindDetailViewController(unwindSegue:)</code>的实现，如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">@IBAction func unwindDetailViewController(unwindSegue: UIStoryboardSegue) &#123;</div><div class="line">  // ... some code</div><div class="line">  startUserActivity()</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>编译并运行，确保所有事情运行正常。尝试添加一些项目到清单中，确保它们在设备间传输。</p>
+<h2 id="创建一个编辑Activity"><a href="#创建一个编辑Activity" class="headerlink" title="创建一个编辑Activity"></a>创建一个编辑Activity</h2><p>接下来，我们以类似的方式来处理<code>DetailViewController</code>。这一次，我们广播另一个<code>activity</code>类型。</p>
+<p>打开<code>DetailViewController.swift</code>并修改<code>textFieldDidBeginEditing(textField:)</code>，如下所示：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">textFieldDidBeginEditing</span><span class="params">(textField: UITextField!)</span></span> &#123;</div><div class="line">    <span class="comment">// Broadcast what we have, if there is anything!</span></div><div class="line">    <span class="keyword">let</span> activity = <span class="type">NSUserActivity</span>(activityType: <span class="type">ActivityTypeEdit</span>)</div><div class="line">    activity.title = <span class="string">"Editing Shopping List Item"</span></div><div class="line">    <span class="keyword">let</span> activityItem = (<span class="built_in">countElements</span>(textField.text!) &gt; <span class="number">0</span>) ? textField.text : <span class="string">""</span></div><div class="line">    activity.userInfo = [<span class="type">ActivityItemKey</span>: activityItem]</div><div class="line">    userActivity = activity</div><div class="line">    userActivity?.becomeCurrent()</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>​    </p>
+<p>上面的方法使用项目的字符串的当前内容创建一个“编辑”<code>activity</code>。</p>
+<p>当用户继续编辑项目时，我们需要更新<code>user activity</code>。仍然是在<code>DetailViewController.swift</code>中，更新<code>textFieldTextDidChange(notification:)</code>的实现，如下所示：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">textFieldTextDidChange</span><span class="params">(notification: NSNotification)</span></span> &#123;</div><div class="line">    <span class="keyword">if</span> <span class="keyword">let</span> text = textField!.text &#123;</div><div class="line">        item = text</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    userActivity?.needsSave = <span class="literal">true</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>现在我们已经标记了<code>activity</code>需要更新，接下来实现<code>updateUserActivityState(activity:)</code>，以备系统的更新需求：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">override</span> <span class="function"><span class="keyword">func</span> <span class="title">updateUserActivityState</span><span class="params">(activity: NSUserActivity)</span></span> &#123;</div><div class="line">    <span class="keyword">let</span> activityListItem = (<span class="built_in">countElements</span>(textField!.text!) &gt; <span class="number">0</span>) ? textField!.text : <span class="string">""</span></div><div class="line">    activity.addUserInfoEntriesFromDictionary([<span class="type">ActivityItemKey</span>: activityListItem])</div><div class="line">    <span class="keyword">super</span>.updateUserActivityState(activity)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这里我们简单地更新了当前项为文本输入框中的文本。</p>
+<p>编译并运行。此时，如果我们在一个设备中开始添加一个新项或编辑已存在的项目，我们可以将编辑进程同步给另一个设备。</p>
+<h3 id="收尾-1"><a href="#收尾-1" class="headerlink" title="收尾"></a>收尾</h3><p>因为<code>needsSave</code>是一个轻量级的操作，在上面的代码中，你可以根据需要来设置它，然后在每次按键时更新<code>userInfo</code>。</p>
+<p>这里有一个小细节你可能已经注意到了。视图控制器在<code>iPad</code>和<code>iPhone</code>的景观模式下中是一个分离视图。这样可以在清单的项目间切换而不需要收起键盘。这种情况发生时，<code>textFieldDidBeginEditing(textField:)</code>方法不会被调用，导致我们的<code>user activity</code>不会更新为新的文本。</p>
+<p>为了解决这个问题，更新<code>DetailViewController.swift</code>中<code>item</code>属性的<code>didSet</code>观察者，如下所示：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">var</span> item: <span class="type">String</span>? &#123;</div><div class="line">    <span class="keyword">didSet</span> &#123;</div><div class="line">        <span class="keyword">if</span> <span class="keyword">let</span> textField = <span class="keyword">self</span>.textField &#123;</div><div class="line">            textField.text = item</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">if</span> <span class="keyword">let</span> activity = userActivity &#123;</div><div class="line">            activity.needsSave = <span class="literal">true</span></div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>当用户点击<code>ListViewController</code>中的一个项目时，<code>DetailViewController</code>的<code>item</code>属性被设置。一个简单解决方案是让视图控制器知道，在项目更新时它必须更新<code>activity</code>。</p>
+<p>最后，当用户离开<code>DetailViewController</code>时，我们需要废止<code>userActivity</code>，以让编辑<code>activity</code>不再被广播。</p>
+<p>在<code>DetailViewController.swift</code>的<code>textFieldShouldReturn(_:)</code>方法的起始位置添加以下代码：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">userActivity?.invalidate()</div></pre></td></tr></table></figure>
+<p>编译并运行程序，确保程序工作正常。接下来，我们将处理接收的<code>activity</code>。</p>
+<h2 id="接收Activity"><a href="#接收Activity" class="headerlink" title="接收Activity"></a>接收Activity</h2><p>当用户通过<code>Handoff</code>启动程序时，处理接收的<code>NSUserActivity</code>的任务大部分是由程序的<code>delegate</code>来完成的。</p>
+<p>假设所有事情运行正常，数据成功传输，<code>iOS</code>会调用<code>application(_:continueUserActivity:restorationHandler:)</code>方法。这是我们与<code>NSUserActivity</code>实例交互的第一次机会。</p>
+<p>我们在前面的章节中已经有一个该方法的实现了。现在，我们做如下修改：</p>
+<p>​    </p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">application</span><span class="params">(application: UIApplication!, </span></span></div><div class="line">                 continueUserActivity userActivity: NSUserActivity!,</div><div class="line">                 restorationHandler: <span class="params">(<span class="params">([AnyObject]!)</span></span> -&gt; <span class="type">Void</span>)!)</div><div class="line">                 -&gt; <span class="type">Bool</span> &#123;</div><div class="line"> </div><div class="line">    <span class="keyword">if</span> <span class="keyword">let</span> window = <span class="keyword">self</span>.window &#123;</div><div class="line">        window.rootViewController?.restoreUserActivityState(userActivity)</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="literal">true</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>我们将<code>userActivity</code>传递给程序的<code>window</code>对象的<code>rootViewController</code>，然后返回<code>true</code>。这告诉系统成功处理了<code>Handoff</code>行为。从这里开始，我们将自己转发调用并恢复<code>activity</code>。</p>
+<p>我们在<code>rootViewController</code>中调用的方法是<code>restoreUserActivityState(activity:)</code>。这是在<code>UIResponder</code>中声明的一个标准方法。系统使用这个方法来告诉接收者恢复一个<code>NSUserActivivty</code>实例。</p>
+<p>我们现在的任务是沿着视图控制器架构往下，将<code>activity</code>从父视图控制器传递到子视图控制器，直到到达需要使用<code>activity</code>的地方：</p>
+<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/10/image22-691-700x360.png" alt="image"></p>
+<p>根视图控制器是一个<code>TraitOverrideViewController</code>对象，它的任务是管理程序的<code>size classes</code>；它对我们的<code>user activity</code>不感兴趣。打开<code>TraitOverrideViewController.swift</code>并添加以下代码：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">override</span> <span class="function"><span class="keyword">func</span> <span class="title">restoreUserActivityState</span><span class="params">(activity: NSUserActivity)</span></span> &#123;</div><div class="line">    <span class="keyword">let</span> nextViewController = childViewControllers.first <span class="keyword">as</span> <span class="type">UIViewController</span></div><div class="line">    nextViewController.restoreUserActivityState(activity)</div><div class="line">    <span class="keyword">super</span>.restoreUserActivityState(activity)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>在这里，我们获取<code>TraitOverrideViewController</code>的第一个子视图控制器，然后将<code>activity</code>往下传递。这样做是安全的，因为我们知道程序的视图控制器只包含一个子视图控制器。</p>
+<p>层级架构中的下一个视图控制器是<code>SplitViewController</code>，在这里事情会变得更有趣一些。</p>
+<p>打开<code>SplitViewController.swift</code>并添加以下代码：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">override</span> <span class="function"><span class="keyword">func</span> <span class="title">restoreUserActivityState</span><span class="params">(activity: NSUserActivity)</span></span> &#123;</div><div class="line">    <span class="comment">// What type of activity is it?</span></div><div class="line">    <span class="keyword">let</span> activityType = activity.activityType</div><div class="line"></div><div class="line">    <span class="comment">// This is an activity for ListViewController.</span></div><div class="line">    <span class="keyword">if</span> activityType == <span class="type">ActivityTypeView</span> &#123;</div><div class="line">        <span class="keyword">let</span> controller = viewControllerForViewing()</div><div class="line">        controller.restoreUserActivityState(activity)</div><div class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> activityType == <span class="type">ActivityTypeEdit</span> &#123;</div><div class="line">        <span class="comment">// This is an activity for DetailViewController.</span></div><div class="line">        <span class="keyword">let</span> controller = viewControllerForEditing()</div><div class="line">        controller.restoreUserActivityState(activity)</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="keyword">super</span>.restoreUserActivityState(activity)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p><code>SplitViewController</code>知道<code>ListViewController</code>和<code>DetailViewController</code>。如果<code>NSUserActivity</code>是一个列表查看<code>activity</code>类型，则将其传递给<code>ListViewController</code>；否则，如果是一个编辑<code>activity</code>类型，则传递给<code>DetailViewController</code>。</p>
+<p>我们将所有的<code>activity</code>传递给正确的对象，现在是时候从这些<code>activity</code>中获取数据了。</p>
+<p>打开<code>ListViewController.swift</code>并实现<code>restoreUserActivityState(activity:)</code>，如下所示：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">override</span> <span class="function"><span class="keyword">func</span> <span class="title">restoreUserActivityState</span><span class="params">(activity: NSUserActivity)</span></span> &#123;</div><div class="line">    <span class="comment">// Get the list of items.</span></div><div class="line">    <span class="keyword">if</span> <span class="keyword">let</span> userInfo = activity.userInfo &#123;</div><div class="line">        <span class="keyword">if</span> <span class="keyword">let</span> importedItems = userInfo[<span class="type">ActivityItemsKey</span>] <span class="keyword">as</span>? <span class="type">NSArray</span> &#123;</div><div class="line">            <span class="comment">// Merge it with what we have locally and update UI.</span></div><div class="line">            <span class="keyword">for</span> anItem <span class="keyword">in</span> importedItems &#123;</div><div class="line">                addItemToItemsIfUnique(anItem <span class="keyword">as</span> <span class="type">String</span>)</div><div class="line">            &#125;</div><div class="line">            <span class="type">PersistentStore</span>.defaultStore().updateStoreWithItems(items)</div><div class="line">            <span class="type">PersistentStore</span>.defaultStore().commit()</div><div class="line">            tableView.reloadData()</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">super</span>.restoreUserActivityState(activity)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>在上面的方法中，我们终于可以继续一个查看<code>activity</code>了。因为我们需要维护一个唯一的购物清单时，我们只需要将这些唯一的项目添加到本地列表中，然后保存并更新UI。</p>
+<p>编译并运行。现在我们可以看到通过<code>Handoff</code>从另一台设备上同步过来的清单数据了。</p>
+<p>编辑<code>activity</code>以类似的方法来处理。打开<code>DetailViewController.swift</code>并实现<code>restoreUserActivityState(activity:)</code>，如下所示：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">override</span> <span class="function"><span class="keyword">func</span> <span class="title">restoreUserActivityState</span><span class="params">(activity: NSUserActivity)</span></span> &#123;</div><div class="line">    <span class="keyword">if</span> <span class="keyword">let</span> userInfo = activity.userInfo &#123;</div><div class="line">        <span class="keyword">var</span> activityItem: <span class="type">AnyObject</span>? = userInfo[<span class="type">ActivityItemKey</span>]</div><div class="line">        <span class="keyword">if</span> <span class="keyword">let</span> itemToRestore = activityItem <span class="keyword">as</span>? <span class="type">String</span> &#123;</div><div class="line">            item = itemToRestore</div><div class="line">            textField?.text = item</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">super</span>.restoreUserActivityState(activity)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这里获取编辑<code>activity</code>的信息并更新文本域的内容。</p>
+<p>编译并运行，查看运行结果！</p>
+<h3 id="收尾-2"><a href="#收尾-2" class="headerlink" title="收尾"></a>收尾</h3><p>当用户在另一台设备上点击程序的<code>icon</code>以表明他们想要继续一个<code>user activity</code>时，系统启动相应的程序。一旦程序启动后，系统调用<code>application(_, willContinueUserActivityWithType:)</code>方法。打开<code>AppDelegate.swift</code>并添加以下方法：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">application</span><span class="params">(application: UIApplication,</span></span></div><div class="line">                 willContinueUserActivityWithType userActivityType: String!)</div><div class="line">                 -&gt; <span class="type">Bool</span> &#123;</div><div class="line">    <span class="keyword">return</span> <span class="literal">true</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>到这里，我们的程序已经下载了<code>NSUserActivity</code>实例及其<code>userInfo</code>有效载荷。现在我们只是简单返回<code>true</code>。这强制程序在每次用户初始<code>Handoff</code>进程时接收<code>activity</code>。如果想要通知用户<code>activity</code>正在处理，则这是个好地方。</p>
+<p>到这里，系统开始将数据从一台设备同步到另一台设备上。我们已经覆盖了任务正常运行的所有情况。但是可以想象<code>Handoff</code>的<code>activity</code>在某些情况下会失败。</p>
+<p>将以下方法添加到<code>AppDelegate.swift</code>中来处理这种情况：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">application</span><span class="params">(application: UIApplication!, </span></span></div><div class="line">                 didFailToContinueUserActivityWithType userActivityType: String!,</div><div class="line">                 error: NSError!) &#123;</div><div class="line"> </div><div class="line">    <span class="keyword">if</span> error.code != <span class="type">NSUserCancelledError</span> &#123;</div><div class="line">        <span class="keyword">let</span> message = <span class="string">"The connection to your other device may have been interrupted. Please try again. \(error.localizedDescription)"</span></div><div class="line">        <span class="keyword">let</span> alertView = <span class="type">UIAlertView</span>(title: <span class="string">"Handoff Error"</span>, message: message, delegate: <span class="literal">nil</span>, cancelButtonTitle: <span class="string">"Dismiss"</span>)</div><div class="line">        alertView.show()</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>如果我们接收到除了<code>NSUserCancelledError</code>之外的任何信息，则发生了某些错误，且我们不能恢复<code>activity</code>。在这种情况下，我们显示一个适当的消息给用户。然而，如果用户显示取消<code>Handoff</code>行为，则在这里我们不需要做任何事情，只需要放弃操作。</p>
+<h2 id="版本支持"><a href="#版本支持" class="headerlink" title="版本支持"></a>版本支持</h2><p>使用<code>Handoff</code>的最佳实践之一是版本化。处理这的一个策略是为每个发送的<code>Handoff</code>添加一个版本号，并且只接收来自这个版本号(或者更早的)<code>handoff</code>。让我们来试试。</p>
+<p>打开<code>Constants.swift</code>并添加以下常量：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> <span class="type">ActivityVersionKey</span> = <span class="string">"shopsnap.version.key"</span></div><div class="line"><span class="keyword">let</span> <span class="type">ActivityVersionValue</span> = <span class="string">"1.0"</span></div></pre></td></tr></table></figure>
+<p>上面的版本键名和值是我们为这个版本的程序随意挑选的键值对。</p>
+<p>如果我们回顾一下上面的章节，系统会定期并自动调用<code>restoreUserActivityState(activity:)</code>方法。这个方法的实现聚集于并限定于实现它的对象的范围内。例如，<code>ListViewController</code>重写了这个方法来更新带有购物清单的<code>userActivity</code>，而<code>DetailViewController</code>的实现是更新当前正在被编辑的项目。</p>
+<p>如果涉及到的东西对于<code>userActivity</code>来说是通用的，可用于所有的<code>user activity</code>，如版本号，则处理它的最好的地方就是在<code>AppDelegate</code>中了。</p>
+<p>任何时候调用<code>restoreUserActivityState(activity:)</code>，系统都会紧接着调用程序<code>delegate</code>的<code>application(application:, didUpdateUserActivity userActivity:)</code>方法。我们使用这个方法来为我们的<code>Handoff</code>添加版本支持。</p>
+<p>打开<code>AppDelegate.swift</code>并添加以下代码：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">application</span><span class="params">(application: UIApplication, </span></span></div><div class="line">                 didUpdateUserActivity userActivity: NSUserActivity) &#123;</div><div class="line">    userActivity.addUserInfoEntriesFromDictionary([<span class="type">ActivityVersionKey</span>: <span class="type">ActivityVersionValue</span>])</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>在这里我们简单地使用了程序的版本号来更新了<code>userInfo</code>字典。</p>
+<p>仍然是在<code>AppDelegate.swift</code>中，更新<code>application(_:, continueUserActivity: restorationHandler:)</code>的实现，如下所示：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">application</span><span class="params">(application: UIApplication!,</span></span></div><div class="line">                 continueUserActivity userActivity: NSUserActivity!,</div><div class="line">                 restorationHandler: <span class="params">(<span class="params">([AnyObject]!)</span></span> -&gt; <span class="type">Void</span>)!)</div><div class="line">                 -&gt; <span class="type">Bool</span> &#123;</div><div class="line"> </div><div class="line">    <span class="keyword">if</span> <span class="keyword">let</span> userInfo: <span class="type">NSDictionary</span> = userActivity.userInfo &#123;</div><div class="line">        <span class="keyword">if</span> <span class="keyword">let</span> version = userInfo[<span class="type">ActivityVersionKey</span>] <span class="keyword">as</span>? <span class="type">String</span> &#123;</div><div class="line">            <span class="comment">// Pass it on.</span></div><div class="line">            <span class="keyword">if</span> <span class="keyword">let</span> window = <span class="keyword">self</span>.window &#123;</div><div class="line">                window.rootViewController?.restoreUserActivityState(userActivity)</div><div class="line">            &#125;</div><div class="line">            <span class="keyword">return</span> <span class="literal">true</span></div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="literal">false</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>在这里我们检查<code>userAcitivty</code>的版本，只有当版本号与我们知道的相匹配时才传递。编译并运行，确保程序运行正常。</p>
+<h2 id="Handoff最佳实践"><a href="#Handoff最佳实践" class="headerlink" title="Handoff最佳实践"></a>Handoff最佳实践</h2><p>在结束之前，我们来看看<code>Handoff</code>的最佳实践：</p>
+<ol>
+<li><code>NSURL</code>：在<code>NSUserActivity</code>的<code>userInfo</code>字典中使用<code>NSURL</code>有点棘手。唯一可以安全地在<code>Handoff</code>中传输的<code>NSURLs</code>是使用<code>HTTP/HTTPS</code>和<code>iCloud</code>文档的<code>web</code>网址。我们不能传递本地文件的URL，因为在接收者端，接收者不能正确地转换并映射这些<code>URL</code>。传输文件链接的最好的方式是传递相对路径，然后在接收者端重新构建我们的<code>URL</code>。</li>
+<li>平台特定值：避免使用平台特定值，如滑动视图的内容偏移量；更好的方法是使用相对位置。例如，如果用户查看<code>table view</code>中的一些项目时，在我们的<code>user activity</code>中传递<code>table view</code>最上面的可视项的<code>index path</code>，而不是传递<code>table view</code>可视区域的内容偏移量。</li>
+<li>版本：想想在程序中使用版本和将来的更新。我们可以在程序的未来版本中添加一些新数据格式或者从<code>userInfo</code>字典中移除值。版本让我们可以理好地控制我们的<code>user activity</code>在当前和将来版本的程序中的行为。</li>
+</ol>
+<h2 id="下一步是哪"><a href="#下一步是哪" class="headerlink" title="下一步是哪"></a>下一步是哪</h2><p>这里是<a href="http://cdn5.raywenderlich.com/wp-content/uploads/2014/10/ShopSnap-Final.zip" target="_blank" rel="external">示例工程</a>的最终版本。</p>
+<p>如果想了解更多的关于<code>Handoff</code>，流和基于文档的<code>Handoff</code>，则可以查看<code>Handoff</code>的开发文档<a href="https://developer.apple.com/library/prerelease/ios/documentation/UserExperience/Conceptual/Handoff/HandoffFundamentals/HandoffFundamentals.html" target="_blank" rel="external">Apple’s Handoff Programming Guide</a>以获取更多的信息。</p>
+<p>如果喜欢这篇文章，则可以下载我们的书<a href="http://www.raywenderlich.com/store/ios-8-by-tutorials" target="_blank" rel="external">iOS 8 by Tutorials</a>，这里塞满了这样的教程。</p>
+<p>如果有更多的总量或关于这篇文章的评论，那么可以加入下面的讨论。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/02/11/cocoa-foundation-nscache/" rel="next" title="Foundation: NSCache">
+                <i class="fa fa-chevron-left"></i> Foundation: NSCache
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/03/07/cocoa-uikit-uiresponder/" rel="prev" title="UIKit: UIResponder">
+                UIKit: UIResponder <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Handoff概览"><span class="nav-number">1.</span> <span class="nav-text">Handoff概览</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#起步"><span class="nav-number">1.1.</span> <span class="nav-text">起步</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#设备兼容性：iOS"><span class="nav-number">1.1.1.</span> <span class="nav-text">设备兼容性：iOS</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#User-Activities"><span class="nav-number">1.2.</span> <span class="nav-text">User Activities</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Activity类型"><span class="nav-number">1.3.</span> <span class="nav-text">Activity类型</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#启动工程"><span class="nav-number">2.</span> <span class="nav-text">启动工程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#设置开发组"><span class="nav-number">2.1.</span> <span class="nav-text">设置开发组</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#配置activity类型"><span class="nav-number">2.2.</span> <span class="nav-text">配置activity类型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#快速端到端测试"><span class="nav-number">2.3.</span> <span class="nav-text">快速端到端测试</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#创建一个新的Activity"><span class="nav-number">3.</span> <span class="nav-text">创建一个新的Activity</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#收尾"><span class="nav-number">3.1.</span> <span class="nav-text">收尾</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#创建一个编辑Activity"><span class="nav-number">4.</span> <span class="nav-text">创建一个编辑Activity</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#收尾-1"><span class="nav-number">4.1.</span> <span class="nav-text">收尾</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#接收Activity"><span class="nav-number">5.</span> <span class="nav-text">接收Activity</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#收尾-2"><span class="nav-number">5.1.</span> <span class="nav-text">收尾</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#版本支持"><span class="nav-number">6.</span> <span class="nav-text">版本支持</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Handoff最佳实践"><span class="nav-number">7.</span> <span class="nav-text">Handoff最佳实践</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#下一步是哪"><span class="nav-number">8.</span> <span class="nav-text">下一步是哪</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

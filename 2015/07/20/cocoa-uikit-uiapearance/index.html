@@ -1,0 +1,784 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="文章开头先援引一下Mattt Thompson大神在UIApearance里的一句话吧：
+
+Users will pay a premium for good-looking software.
+
+就如同大多数人喜欢看帅哥美女一样，一款App能不能被接受，长得怎样很重要。虽然大家都明白“人不可貌相”这个理，但大多数人其实还是视觉动物。用户体验用户体验，如果都让用户看得不爽了，又何谈用户体验呢？所以">
+<meta property="og:type" content="article">
+<meta property="og:title" content="UIKit: UIApearance">
+<meta property="og:url" content="http://southpeak.github.io/2015/07/20/cocoa-uikit-uiapearance/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="文章开头先援引一下Mattt Thompson大神在UIApearance里的一句话吧：
+
+Users will pay a premium for good-looking software.
+
+就如同大多数人喜欢看帅哥美女一样，一款App能不能被接受，长得怎样很重要。虽然大家都明白“人不可貌相”这个理，但大多数人其实还是视觉动物。用户体验用户体验，如果都让用户看得不爽了，又何谈用户体验呢？所以">
+<meta property="og:image" content="https://raw.githubusercontent.com/southpeak/Blog-images/master/UIAppearance-Example-01.png">
+<meta property="og:updated_time" content="2016-08-28T03:49:30.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="UIKit: UIApearance">
+<meta name="twitter:description" content="文章开头先援引一下Mattt Thompson大神在UIApearance里的一句话吧：
+
+Users will pay a premium for good-looking software.
+
+就如同大多数人喜欢看帅哥美女一样，一款App能不能被接受，长得怎样很重要。虽然大家都明白“人不可貌相”这个理，但大多数人其实还是视觉动物。用户体验用户体验，如果都让用户看得不爽了，又何谈用户体验呢？所以">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/southpeak/Blog-images/master/UIAppearance-Example-01.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2015/07/20/cocoa-uikit-uiapearance/"/>
+
+  <title> UIKit: UIApearance | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                UIKit: UIApearance
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-07-20T00:01:05+08:00" content="2015-07-20">
+              2015-07-20
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/cocoa/" itemprop="url" rel="index">
+                    <span itemprop="name">Cocoa</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>文章开头先援引一下<code>Mattt Thompson</code>大神在<a href="http://nshipster.com/uiappearance/" target="_blank" rel="external">UIApearance</a>里的一句话吧：</p>
+<blockquote>
+<p>Users will pay a premium for good-looking software.</p>
+</blockquote>
+<p>就如同大多数人喜欢看帅哥美女一样，一款<code>App</code>能不能被接受，长得怎样很重要。虽然大家都明白“人不可貌相”这个理，但大多数人其实还是视觉动物。用户体验用户体验，如果都让用户看得不爽了，又何谈用户体验呢？所以…所以…哎，我也只能在这默默地码字了。</p>
+<p>在<code>iOS 5</code>以前，我们想去自定义系统控件的外观是一件麻烦的事。如果想统一地改变系统控件的外观，我们可能会想各种办法，如去继承现有的控件类，并在子类中修改，或者甚至于动用<code>method swizzling</code>这样高大上的方法。不过，苹果在<code>iOS 5</code>之后为我们提供了一种新的方法：<code>UIAppearance</code>，让这些事简单了不少。在这里，我们就来总结一下吧。</p>
+<h2 id="UIApearance是作用"><a href="#UIApearance是作用" class="headerlink" title="UIApearance是作用"></a>UIApearance是作用</h2><p><code>UIApearance</code>实际上是一个协议，我们可以用它来获取一个类的外观代理(<code>appearance proxy</code>)。为什么说是一个类，而不明确说是一个视图或控件呢？这是因为有些非视图对象(如<code>UIBarButtonItem</code>)也可以实现这个协议，来定义其所包含的视图对象的外观。我们可以给这个类的外观代理发送一个修改消息，来自定义一个类的实例的外观。</p>
+<p>我们以系统定义的控件<code>UIButton</code>为例，根据我们的使用方式，可以通过<code>UIAppearance</code>修改整个应用程序中所有<code>UIButton</code>的外观，也可以修改某一特定容器类中所有<code>UIButton</code>的外观(如<code>UIBarButtonItem</code>)。不过需要注意的是，这种修改只会影响到那些执行<code>UIAppearance</code>操作之后添加到我们的视图层级架构中的视图或控件，而不会影响到修改之前就已经添加的对象。因此，如果要修改特定的视图，先确保该视图在使用<code>UIAppearance</code>后才通过<code>addSubview</code>添加到视图层级架构中。</p>
+<h2 id="UIAppearance的使用"><a href="#UIAppearance的使用" class="headerlink" title="UIAppearance的使用"></a>UIAppearance的使用</h2><p>如上面所说，有两种方式来自定义对象的外观：针对某一类型的所有实例；针对包含在某一容器类的实例中的某一类型的实例。讲得有点绕，我把文档的原文贴出来吧。</p>
+<blockquote>
+<p>for all instances, and for instances contained within an instance of a container class.</p>
+</blockquote>
+<p>为此，<code>UIAppearance</code>声明了两个方法。如果我们想自定义一个类所有实例的外观，则可以使用下面这个方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// swift</span></div><div class="line"><span class="keyword">static</span> func appearance() -&gt; Self</div><div class="line"></div><div class="line"><span class="comment">//objc</span></div><div class="line">+ (<span class="keyword">instancetype</span>)appearance</div></pre></td></tr></table></figure>
+<p>例如，如果我们想修改<code>UINavigationBar</code>的所有实例的背影颜色和标题外观，则可以如下实现：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">UINavigationBar</span>.appearance().barTintColor = <span class="built_in">UIColor</span>(red: <span class="number">104.0</span>/<span class="number">255.0</span>, green: <span class="number">224.0</span>/<span class="number">255.0</span>, blue: <span class="number">231.0</span>/<span class="number">255.0</span>, alpha: <span class="number">1.0</span>)</div><div class="line">  </div><div class="line"><span class="built_in">UINavigationBar</span>.appearance().titleTextAttributes = [</div><div class="line">    <span class="built_in">NSFontAttributeName</span>: <span class="built_in">UIFont</span>.systemFontOfSize(<span class="number">15.0</span>),</div><div class="line">    <span class="built_in">NSForegroundColorAttributeName</span>: <span class="built_in">UIColor</span>.whiteColor()</div><div class="line">]</div></pre></td></tr></table></figure>
+<p>我们也可以指定一类容器，在这个容器中，我们可以自定义一个类的所有实例的外观。我们可以使用下面这个方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">+ (<span class="keyword">instancetype</span>)appearanceWhenContainedIn:(Class&lt;<span class="built_in">UIAppearanceContainer</span>&gt;)ContainerClass, ...</div></pre></td></tr></table></figure>
+<p>如，我们想修改导航栏中所有的按钮的外面，则可以如下处理：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">[[<span class="built_in">UIBarButtonItem</span> appearanceWhenContainedIn:[<span class="built_in">UINavigationBar</span> <span class="keyword">class</span>], <span class="literal">nil</span>]</div><div class="line">   setBackgroundImage:myNavBarButtonBackgroundImage forState:state barMetrics:metrics];</div><div class="line"></div><div class="line">[[<span class="built_in">UIBarButtonItem</span> appearanceWhenContainedIn:[<span class="built_in">UINavigationBar</span> <span class="keyword">class</span>], [<span class="built_in">UIPopoverController</span> <span class="keyword">class</span>], <span class="literal">nil</span>]</div><div class="line">    setBackgroundImage:myPopoverNavBarButtonBackgroundImage forState:state barMetrics:metrics];</div><div class="line"></div><div class="line">[[<span class="built_in">UIBarButtonItem</span> appearanceWhenContainedIn:[<span class="built_in">UIToolbar</span> <span class="keyword">class</span>], <span class="literal">nil</span>]</div><div class="line">    setBackgroundImage:myToolbarButtonBackgroundImage forState:state barMetrics:metrics];</div><div class="line"></div><div class="line">[[<span class="built_in">UIBarButtonItem</span> appearanceWhenContainedIn:[<span class="built_in">UIToolbar</span> <span class="keyword">class</span>], [<span class="built_in">UIPopoverController</span> <span class="keyword">class</span>], <span class="literal">nil</span>]</div><div class="line">    setBackgroundImage:myPopoverToolbarButtonBackgroundImage forState:state barMetrics:metrics];</div></pre></td></tr></table></figure>
+<p>注意这个方法的参数是一个可变参数，因此，它可以同时设置多个容器。</p>
+<p>我们仔细看文档，发现这个方法没有<code>swift</code>版本，至少我在<code>iOS 8.x</code>的<code>SDK</code>中没有找到对应的方法。呵呵，如果想在<code>iOS 8.x</code>以下的系统用<code>swift</code>来调用<code>appearanceWhenContainedIn</code>，那就乖乖地用混编吧。</p>
+<p>不过在<code>iOS 9</code>的<code>SDK</code>中(记录一下，今天是<code>2015.07.18</code>)，又把这个方法给加上了，不过这回参数换成了数组，如下所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">@available(iOS <span class="number">9.0</span>, *)</div><div class="line"><span class="keyword">static</span> func appearanceWhenContainedInInstancesOfClasses(containerTypes: [AnyObject.Type]) -&gt; Self</div></pre></td></tr></table></figure>
+<p>嗯，这里有个问题，我在<code>Xcode 7.0 beta 3</code>版本上测试<code>swift</code>版本的这个方法时，把将其放在启动方法里面，如下所示：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">application</span><span class="params">(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?)</span></span> -&gt; <span class="type">Bool</span> &#123;</div><div class="line"></div><div class="line">    <span class="comment">// 此处会崩溃，提示EXC_BAD_ACCESS</span></div><div class="line">	<span class="keyword">let</span> barButtonItemAppearance = <span class="type">UIBarButtonItem</span>.appearanceWhenContainedInInstancesOfClasses([<span class="type">UINavigationBar</span>.<span class="keyword">self</span>])</div><div class="line"></div><div class="line">	<span class="keyword">let</span> attributes = [</div><div class="line">	    <span class="type">NSFontAttributeName</span>: <span class="type">UIFont</span>.systemFontOfSize(<span class="number">13.0</span>),</div><div class="line">	    <span class="type">NSForegroundColorAttributeName</span>: <span class="type">UIColor</span>.whiteColor()</div><div class="line">	]</div><div class="line"></div><div class="line">	barButtonItemAppearance.setTitleTextAttributes(attributes, forState: .<span class="type">Normal</span>)</div><div class="line"></div><div class="line">    <span class="keyword">return</span> <span class="literal">true</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>程序崩溃了，在<code>appearanceWhenContainedInInstancesOfClasses</code>这行提示<code>EXC_BAD_ACCESS</code>。既然是内存问题，那就找找吧。我做了如下几个测试：</p>
+<p>1.拆分<code>UIBarButtonItem.appearanceWhenContainedInInstancesOfClasses</code>，在其前面加了如下几行代码：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> appearance = <span class="type">UIBarButtonItem</span>.appearance()</div><div class="line"></div><div class="line"><span class="keyword">let</span> arr: [<span class="type">AnyObject</span>.<span class="type">Type</span>] = [<span class="type">UINavigationBar</span>.<span class="keyword">self</span>, <span class="type">UIToolbar</span>.<span class="keyword">self</span>]</div><div class="line"></div><div class="line"><span class="built_in">print</span>(arr)</div></pre></td></tr></table></figure>
+<p>可以看到除了<code>appearanceWhenContainedInInstancesOfClasses</code>自身外，其它几个元素都是没问题的。</p>
+<p>2.将这段拷贝到默认的<code>ViewController</code>中，运行。同样崩溃了。</p>
+<p>3.在相同环境下(<code>Xcode 7.0 beta 3 + iOS 9.0</code>)，用<code>Objective-C</code>对应的方法试了一下，如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">- (<span class="built_in">BOOL</span>)application:(<span class="built_in">UIApplication</span> *)application didFinishLaunchingWithOptions:(<span class="built_in">NSDictionary</span> *)launchOptions &#123;</div><div class="line">    </div><div class="line">    [<span class="built_in">UIBarButtonItem</span> appearanceWhenContainedInInstancesOfClasses:@[[<span class="built_in">UINavigationBar</span> <span class="keyword">class</span>]]];</div><div class="line">    </div><div class="line">    <span class="keyword">return</span> <span class="literal">YES</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>程序很愉快地跑起来了。</p>
+<p>额，我能把这个归结为版本不稳定的缘故么？等到稳定版出来后再研究一下吧。</p>
+<h2 id="支持UIAppearance的组件"><a href="#支持UIAppearance的组件" class="headerlink" title="支持UIAppearance的组件"></a>支持UIAppearance的组件</h2><p>从<code>iOS 5.0</code>后，有很多<code>iOS</code>的<code>API</code>都已经支持<code>UIAppearance</code>的代理方法了，<code>Mattt Thompson</code>在<a href="http://nshipster.com/uiappearance/" target="_blank" rel="external">UIApearance</a>中，给我们提供了以下两行脚本代码，可以获取所有支持<code>UI_APPEARANCE_SELECTOR</code>的方法(我们将在下面介绍<code>UI_APPEARANCE_SELECTOR</code>)：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">$ cd /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS*.sdk/System/Library/Frameworks/<span class="built_in">UIKit</span>.framework/Headers</div><div class="line"></div><div class="line">$ grep -H <span class="built_in">UI_APPEARANCE_SELECTOR</span> .<span class="comment">/* | sed 's/ __OSX_AVAILABLE_STARTING(__MAC_NA,__IPHONE_5_0) UI_APPEARANCE_SELECTOR;//'</span></div></pre></td></tr></table></figure>
+<p>大家可以试一下，我这里列出部分输出：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">./<span class="built_in">UIActivityIndicatorView</span>.h:<span class="keyword">@property</span> (<span class="keyword">readwrite</span>, <span class="keyword">nonatomic</span>, <span class="keyword">retain</span>) <span class="built_in">UIColor</span> *color <span class="built_in">NS_AVAILABLE_IOS</span>(<span class="number">5</span>_0) <span class="built_in">UI_APPEARANCE_SELECTOR</span>;</div><div class="line">./<span class="built_in">UIAppearance</span>.h:<span class="comment">/* To participate in the appearance proxy API, tag your appearance property selectors in your header with UI_APPEARANCE_SELECTOR.</span></div><div class="line">./UIAppearance.h:#define UI_APPEARANCE_SELECTOR __attribute__((annotate("ui_appearance_selector")))</div><div class="line">./UIBarButtonItem.h:- (void)setBackgroundImage:(UIImage *)backgroundImage forState:(UIControlState)state barMetrics:(UIBarMetrics)barMetrics NS_AVAILABLE_IOS(5_0) UI_APPEARANCE_SELECTOR;</div><div class="line">./UIBarButtonItem.h:- (UIImage *)backgroundImageForState:(UIControlState)state barMetrics:(UIBarMetrics)barMetrics NS_AVAILABLE_IOS(5_0) UI_APPEARANCE_SELECTOR;</div><div class="line">./UIBarButtonItem.h:- (void)setBackgroundImage:(UIImage *)backgroundImage forState:(UIControlState)state style:(UIBarButtonItemStyle)style barMetrics:(UIBarMetrics)barMetrics NS_AVAILABLE_IOS(6_0) UI_APPEARANCE_SELECTOR;</div><div class="line">./UIBarButtonItem.h:- (UIImage *)backgroundImageForState:(UIControlState)state style:(UIBarButtonItemStyle)style barMetrics:(UIBarMetrics)barMetrics NS_AVAILABLE_IOS(6_0) UI_APPEARANCE_SELECTOR;</div><div class="line">./UIBarButtonItem.h:- (void)setBackgroundVerticalPositionAdjustment:(CGFloat)adjustment forBarMetrics:(UIBarMetrics)barMetrics NS_AVAILABLE_IOS(5_0) UI_APPEARANCE_SELECTOR; </div><div class="line">......</div></pre></td></tr></table></figure>
+<p>大家还可以在<a href="https://gist.github.com/mattt/5135521" target="_blank" rel="external">这里</a>查看<code>iOS 7.0</code>下的清单。</p>
+<h2 id="自定义类实现UIAppearance"><a href="#自定义类实现UIAppearance" class="headerlink" title="自定义类实现UIAppearance"></a>自定义类实现UIAppearance</h2><p>我们可以自定义一个类，并让这个类支持<code>UIAppearance</code>。为此，我们需要做两件事：</p>
+<ol>
+<li>让我们的类实现<code>UIAppearanceContainer</code>协议</li>
+<li>如果是在<code>Objective-C</code>中，则将相关的方法用<code>UI_APPEARANCE_SELECTOR</code>来标记。而在<code>Swift</code>中，需要在对应的属性或方法前面加上<code>dynamic</code>。</li>
+</ol>
+<p>当然，要让我们的类可以使用<code>appearance</code>(或<code>appearanceWhenContainedInInstancesOfClasses</code>)来获取自己的类，则还需要实现<code>UIAppearance</code>协议。</p>
+<p>在这里，我们来定义一个带边框的<code>Label</code>，通过<code>UIAppearance</code>来设置它的默认边框。实际上，<code>UIView</code>已经实现了<code>UIAppearance</code>和<code>UIAppearanceContainer</code>协议。因此，我们在其子类中不再需要显式地去声明实现这两个接口。</p>
+<p>我们的Label的声明如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// RoundLabel.h</span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">RoundLabel</span> : <span class="title">UILabel</span></span></div><div class="line"></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">assign</span>) <span class="built_in">CGFloat</span> borderWidth <span class="built_in">UI_APPEARANCE_SELECTOR</span>;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">assign</span>) <span class="built_in">CGFloat</span> cornerRadius <span class="built_in">UI_APPEARANCE_SELECTOR</span>;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">assign</span>) <span class="built_in">UIColor</span> *borderColor <span class="built_in">UI_APPEARANCE_SELECTOR</span>;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>具体的实现如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">RoundLabel</span></span></div><div class="line"></div><div class="line">- (<span class="keyword">void</span>)drawRect:(<span class="built_in">CGRect</span>)rect &#123;</div><div class="line">    </div><div class="line">    [<span class="keyword">super</span> drawRect:rect];</div><div class="line">    </div><div class="line">    <span class="keyword">self</span>.layer.borderColor = _borderColor.CGColor;</div><div class="line">    <span class="keyword">self</span>.layer.cornerRadius = _cornerRadius;</div><div class="line">    <span class="keyword">self</span>.layer.borderWidth = _borderWidth;</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (<span class="keyword">void</span>)setBorderWidth:(<span class="built_in">CGFloat</span>)borderWidth &#123;</div><div class="line">    </div><div class="line">    _borderWidth = borderWidth;</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (<span class="keyword">void</span>)setCornerRadius:(<span class="built_in">CGFloat</span>)cornerRadius &#123;</div><div class="line">    </div><div class="line">    _cornerRadius = cornerRadius;</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (<span class="keyword">void</span>)setRectColor:(<span class="built_in">UIColor</span> *)rectColor &#123;</div><div class="line">    </div><div class="line">    _borderColor = rectColor;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>我们在<code>drawRect:</code>设置<code>Label</code>的边框，这样<code>RoundLabel</code>的所有实例就可以使用默认的边框配置属性了。</p>
+<p>然后，我们可以在<code>AppDelegate</code>或者其它某个位置来设置<code>RoundLabel</code>的默认配置，如下所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">UIColor</span> *color = [<span class="built_in">UIColor</span> colorWithRed:<span class="number">104.0</span>/<span class="number">255.0</span> green:<span class="number">224.0</span>/<span class="number">255.0</span> blue:<span class="number">231.0</span>/<span class="number">255.0</span> alpha:<span class="number">1.0</span>f];</div><div class="line"></div><div class="line">[RoundLabel appearance].cornerRadius = <span class="number">5.0</span>f;</div><div class="line">[RoundLabel appearance].borderColor = color;</div><div class="line">[RoundLabel appearance].borderWidth = <span class="number">1.0</span>f;</div></pre></td></tr></table></figure>
+<p>当然，我们在使用<code>RoundLabel</code>时，可以根据实际需要再修改这几个属性的值。</p>
+<p><code>Swift</code>的实现就简单多了，我们只需要如下处理：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">RoundLabel</span>: <span class="title">UILabel</span> </span>&#123;</div><div class="line">    </div><div class="line">    <span class="keyword">dynamic</span> <span class="function"><span class="keyword">func</span> <span class="title">setBorderColor</span><span class="params">(color: UIColor)</span></span> &#123;</div><div class="line">        layer.borderColor = color.<span class="type">CGColor</span></div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">dynamic</span> <span class="function"><span class="keyword">func</span> <span class="title">setBorderWidth</span><span class="params">(width: CGFloat)</span></span> &#123;</div><div class="line">        layer.borderWidth = width</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">dynamic</span> <span class="function"><span class="keyword">func</span> <span class="title">setCornerRadius</span><span class="params">(radius: CGFloat)</span></span> &#123;</div><div class="line">        layer.cornerRadius = radius</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>在<code>UIAppearanceContainer</code>的官方文档中，有对支持<code>UIAppearance</code>的方法作格式限制，具体要求如下：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// Swift</span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">propertyForAxis1</span><span class="params">(axis1: IntegerType, axis2: IntegerType, axisN: IntegerType)</span></span> -&gt; <span class="type">PropertyType</span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">setProperty</span><span class="params">(property: PropertyType, forAxis1 axis1: IntegerType, axis2: IntegerType)</span></span></div><div class="line"></div><div class="line"><span class="comment">//objc</span></div><div class="line">- (<span class="type">PropertyType</span>)propertyForAxis1:(<span class="type">IntegerType</span>)axis1 axis2:(<span class="type">IntegerType</span>)axis2 … axisN:(<span class="type">IntegerType</span>)axisN;</div><div class="line">- (void)setProperty:(<span class="type">PropertyType</span>)property forAxis1:(<span class="type">IntegerType</span>)axis1 axis2:(<span class="type">IntegerType</span>)axis2 … axisN:(<span class="type">IntegerType</span>)axisN;</div></pre></td></tr></table></figure>
+<p>其中的属性类型可以是<code>iOS</code>的任意类型，包括<code>id</code>, <code>NSInteger</code>, <code>NSUInteger</code>, <code>CGFloat</code>, <code>CGPoint</code>, <code>CGSize</code>, <code>CGRect</code>, <code>UIEdgeInsets</code>或<code>UIOffset</code>。而<code>IntegerType</code>必须是<code>NSInteger</code>或者<code>NSUInteger</code>。如果类型不对，则会抛出异常。</p>
+<p>我们可以以<code>UIBarButtonItem</code>为例，它定义了以下方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">setTitlePositionAdjustment:forBarMetrics:</div><div class="line"></div><div class="line">backButtonBackgroundImageForState:barMetrics:</div><div class="line"></div><div class="line">setBackButtonBackgroundImage:forState:barMetrics:</div></pre></td></tr></table></figure>
+<p>这些方法就是满足上面所提到的格式。</p>
+<h2 id="Trait-Collection"><a href="#Trait-Collection" class="headerlink" title="Trait Collection"></a>Trait Collection</h2><p>我们查看<a href="https://developer.apple.com/library/ios/documentation/UIKit/Reference/UIAppearance_Protocol/" target="_blank" rel="external">UIAppearance</a>的官方文档，可以看到在<code>iOS 8</code>后，这个协议又新增了两个方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// Swift</span></div><div class="line"><span class="keyword">static</span> func appearanceForTraitCollection(_ trait: <span class="built_in">UITraitCollection</span>) -&gt; Self</div><div class="line"></div><div class="line"><span class="comment">//objc</span></div><div class="line">+ (<span class="keyword">instancetype</span>)appearanceForTraitCollection:(<span class="built_in">UITraitCollection</span> *)trait</div><div class="line">  </div><div class="line">+ (<span class="keyword">instancetype</span>)appearanceForTraitCollection:(<span class="built_in">UITraitCollection</span> *)trait</div><div class="line">                         whenContainedIn:(Class&lt;<span class="built_in">UIAppearanceContainer</span>&gt;)ContainerClass, ...</div></pre></td></tr></table></figure>
+<p>这两个方法涉及到<code>Trait Collection</code>，具体的内容我们在此不过多的分析。</p>
+<h2 id="一些深入的东西"><a href="#一些深入的东西" class="headerlink" title="一些深入的东西"></a>一些深入的东西</h2><p>了解了怎么去使用<code>UIApearance</code>，现在我们再来了解一下它是怎么运作的。我们跟着<a href="http://petersteinberger.com/blog/2013/uiappearance-for-custom-views/" target="_blank" rel="external">UIAppearance for Custom Views</a>一文的思路来走。</p>
+<p>我们在以下实现中打一个断点：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)setBorderWidth:(<span class="built_in">CGFloat</span>)borderWidth &#123;</div><div class="line">    </div><div class="line">    _borderWidth = borderWidth;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>然后运行程序。程序启动时，我们发现虽然在<code>AppDelegate</code>中调用了</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">[RoundLabel appearance].borderWidth = <span class="number">1.0</span>f;</div></pre></td></tr></table></figure>
+<p>但实际上，此时程序没有到在此断住。我们再进到<code>Label</code>所在的视图控制器，这时程序在断点处停住了。在这里，我们可以看看方法的调用栈。</p>
+<p><img src="https://raw.githubusercontent.com/southpeak/Blog-images/master/UIAppearance-Example-01.png" alt="image"></p>
+<p>在调用栈里面，我们可以看到<code>_UIAppearance</code>这个东东，我们从<a href="https://github.com/nst/iOS-Runtime-Headers/blob/master/Frameworks/UIKit.framework/_UIAppearance.h" target="_blank" rel="external">iOS-Runtime-Headers</a>可以找到这个类的定义：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">_UIAppearance</span> : <span class="title">NSObject</span> </span>&#123;</div><div class="line">    <span class="built_in">NSMutableArray</span> *_appearanceInvocations;</div><div class="line">    <span class="built_in">NSArray</span> *_containerList;</div><div class="line">    _UIAppearanceCustomizableClassInfo *_customizableClassInfo;</div><div class="line">    <span class="built_in">NSMapTable</span> *_invocationSources;</div><div class="line">    <span class="built_in">NSMutableDictionary</span> *_resettableInvocations;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>其中<a href="https://github.com/nst/iOS-Runtime-Headers/blob/master/Frameworks/UIKit.framework/_UIAppearanceCustomizableClassInfo.h" target="_blank" rel="external">_UIAppearanceCustomizableClassInfo</a>存储的是外观对应的类的信息。我们可以看看这个类的声明：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">_UIAppearanceCustomizableClassInfo</span> : <span class="title">NSObject</span> </span>&#123;</div><div class="line">    <span class="built_in">NSString</span> *_appearanceNodeKey;</div><div class="line">    Class _customizableViewClass;</div><div class="line">    Class _guideClass;</div><div class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> _hash;</div><div class="line">    <span class="built_in">BOOL</span> _isCustomizableViewClassRoot;</div><div class="line">    <span class="built_in">BOOL</span> _isGuideClassRoot;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">readonly</span>) <span class="built_in">NSString</span> *_appearanceNodeKey;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">readonly</span>) Class _customizableViewClass;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">readonly</span>) Class _guideClass;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">readonly</span>) <span class="keyword">unsigned</span> <span class="keyword">int</span> _hash;</div><div class="line"></div><div class="line">+ (<span class="keyword">id</span>)_customizableClassInfoForViewClass:(Class)arg1 withGuideClass:(Class)arg2;</div><div class="line"></div><div class="line">- (<span class="keyword">id</span>)_appearanceNodeKey;</div><div class="line">- (Class)_customizableViewClass;</div><div class="line">- (Class)_guideClass;</div><div class="line">- (<span class="keyword">unsigned</span> <span class="keyword">int</span>)_hash;</div><div class="line">- (<span class="keyword">id</span>)_superClassInfo;</div><div class="line">- (<span class="keyword">void</span>)dealloc;</div><div class="line">- (<span class="keyword">id</span>)description;</div><div class="line">- (<span class="keyword">unsigned</span> <span class="keyword">int</span>)hash;</div><div class="line">- (<span class="built_in">BOOL</span>)isEqual:(<span class="keyword">id</span>)arg1;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>在<code>_UIAppearance</code>中，还有一个<code>_appearanceInvocations</code>变量，我们可以在<code>Debug</code>中尝试用以下命令来打印出它的信息：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">po [[<span class="built_in">NSClassFromString</span>(<span class="string">@"_UIAppearance"</span>) _appearanceForClass:[RoundLabel <span class="keyword">class</span>] withContainerList:<span class="literal">nil</span>] valueForKey:<span class="string">@"_appearanceInvocations"</span>]</div></pre></td></tr></table></figure>
+<p>我们可以得到以下的信息：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">&lt;__NSArrayM <span class="number">0x7fd44a5c1f80</span>&gt;(</div><div class="line">&lt;<span class="built_in">NSInvocation</span>: <span class="number">0x7fd44a5c1d20</span>&gt;</div><div class="line"><span class="keyword">return</span> value: &#123;v&#125; <span class="keyword">void</span></div><div class="line">target: &#123;@&#125; <span class="number">0x10b545ae0</span></div><div class="line">selector: &#123;:&#125; setCornerRadius:</div><div class="line">argument <span class="number">2</span>: &#123;d&#125; <span class="number">0.000000</span></div><div class="line">,</div><div class="line">&lt;<span class="built_in">NSInvocation</span>: <span class="number">0x7fd44a5bf300</span>&gt;</div><div class="line"><span class="keyword">return</span> value: &#123;v&#125; <span class="keyword">void</span></div><div class="line">target: &#123;@&#125; <span class="number">0x10b545ae0</span></div><div class="line">selector: &#123;:&#125; setBorderColor:</div><div class="line">argument <span class="number">2</span>: &#123;@&#125; <span class="number">0x7fd44a5bbb80</span></div><div class="line">,</div><div class="line">&lt;<span class="built_in">NSInvocation</span>: <span class="number">0x7fd44a50b8c0</span>&gt;</div><div class="line"><span class="keyword">return</span> value: &#123;v&#125; <span class="keyword">void</span></div><div class="line">target: &#123;@&#125; <span class="number">0x10b545ae0</span></div><div class="line">selector: &#123;:&#125; setBorderWidth:</div><div class="line">argument <span class="number">2</span>: &#123;d&#125; <span class="number">0.000000</span></div><div class="line">)</div></pre></td></tr></table></figure>
+<p>可以看到这个数组中存储的实际上是<code>NSInvocation</code>对象，每个对象就是我们在程序中设置的<code>RoundLabel</code>外观的方法信息。</p>
+<p>在<code>Peter Steinberger</code>的文章中，有提到当我们设置了一个自定义的外观时，<a href="https://github.com/nst/iOS-Runtime-Headers/blob/master/Frameworks/UIKit.framework/_UIAppearanceRecorder.h" target="_blank" rel="external">_UIAppearanceRecorder</a>会去保存并跟踪这个设置。我们可以看看<code>_UIAppearanceRecorder</code>的声明：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">_UIAppearanceRecorder</span> : <span class="title">NSObject</span> </span>&#123;</div><div class="line">    <span class="built_in">NSString</span> *_classNameToRecord;</div><div class="line">    <span class="built_in">NSArray</span> *_containerClassNames;</div><div class="line">    <span class="built_in">NSMutableArray</span> *_customizations;</div><div class="line">    Class _superclassToRecord;</div><div class="line">    <span class="built_in">NSArray</span> *_unarchivedCustomizations;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>不过有点可惜的是，我没有从这里找到太多的信息。我用<code>runtime</code>检查了一下这个类中的数据，貌似没有太多东西。可能是姿势不对，我把代码和结果贴出来，大家帮我看看。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">unsigned</span> <span class="keyword">int</span> outCount = <span class="number">0</span>;</div><div class="line"></div><div class="line">Class recorderClass = <span class="built_in">NSClassFromString</span>(<span class="string">@"_UIAppearanceRecorder"</span>);</div><div class="line"></div><div class="line"><span class="keyword">id</span> recorder = [recorderClass performSelector:<span class="built_in">NSSelectorFromString</span>(<span class="string">@"_sharedAppearanceRecorderForClass::whenContainedIn:"</span>) withObject:[RoundLabel <span class="keyword">class</span>] withObject:<span class="literal">nil</span>];</div><div class="line"></div><div class="line"><span class="built_in">NSLog</span>(<span class="string">@"_UIAppearanceRecorder instance : %@"</span>, recorder);</div><div class="line"></div><div class="line">Ivar *variables = class_copyIvarList(recorderClass, &amp;outCount);</div><div class="line"></div><div class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; outCount; i++) &#123;</div><div class="line">    Ivar variable = variables[i];</div><div class="line"></div><div class="line">    <span class="keyword">id</span> value = object_getIvar(recorder, variable);</div><div class="line">    <span class="built_in">NSLog</span>(<span class="string">@"variable's name: %s, value: %@"</span>, ivar_getName(variable), value);</div><div class="line">&#125;</div><div class="line"></div><div class="line">free(variables);</div></pre></td></tr></table></figure>
+<p>打印结果：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">UIAppearanceExample2[7600:381708] _UIAppearanceRecorder instance : &lt;_UIAppearanceRecorder: 0x7fa29a718960&gt;</div><div class="line">UIAppearanceExample2[7600:381708] variable's name: _classNameToRecord, value: RoundLabel</div><div class="line">UIAppearanceExample2[7600:381708] variable's name: _superclassToRecord, value: (null)</div><div class="line">UIAppearanceExample2[7600:381708] variable's name: _containerClassNames, value: (null)</div><div class="line">UIAppearanceExample2[7600:381708] variable's name: _customizations, value: (</div><div class="line">)</div><div class="line">UIAppearanceExample2[7600:381708] variable's name: _unarchivedCustomizations, value: (null)</div></pre></td></tr></table></figure>
+<p>我们回过头再来看看<code>_UIAppearance的_appearanceInvocations</code>，我们是否可以这样猜测：<code>UIAppearance</code>是否是通过类似于<code>Swizzling Method</code>这种方式，在运行时去更新视图的默认显示呢？求解。</p>
+<h2 id="遗留问题"><a href="#遗留问题" class="headerlink" title="遗留问题"></a>遗留问题</h2><p>这一小篇遗留下了两个问题：</p>
+<ol>
+<li>在<code>swift</code>中如何正确地使用<code>appearanceWhenContainedInInstancesOfClasses</code>方法？我在<code>stackoverflow</code>中没有找到答案。</li>
+<li><code>iOS</code>内部是如何用<code>UIAppearance</code>设置的信息来在运行时替换默认的设置的？</li>
+</ol>
+<p>如果有答案，还请告知。</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>使用<code>UIAppearance</code>，可以让我们方便地去修改一些视图或控件的默认显示。同样，如果我们打算开发一个视图库，也可能会用到相关的内容。我们可以在库的内部自定义一些<code>UIAppearance</code>的规则来代替手动去修改视图外观。这样，库外部就可以方便的通过<code>UIAppearance</code>来整体修改一个类中视图的外观了。</p>
+<p>我在<code>github</code>中搜索<code>UIAppearance</code>相关的实例时，找到了<a href="https://github.com/robertwijas/UISS" target="_blank" rel="external">UISS</a>这个开源库，它提供了一种便捷的方式来定义程序的样式。这个库也是基于<code>UIAppearance</code>的。看其介绍，如果我们想自定义一个<code>UIButton</code>的外观，可以使用以下方式：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">&#123;</div><div class="line">    <span class="string">"UIButton"</span>:&#123;</div><div class="line">        <span class="string">"titleColor:normal"</span>:[<span class="string">"white"</span>, <span class="number">0.8</span>],</div><div class="line">        <span class="string">"titleColor:highlighted"</span>:<span class="string">"white"</span>,</div><div class="line">        <span class="string">"backgroundImage:normal"</span>: [<span class="string">"button-background-normal"</span>, [<span class="number">0</span>,<span class="number">10</span>,<span class="number">0</span>,<span class="number">10</span>]],</div><div class="line">        <span class="string">"backgroundImage:highlighted"</span>: [<span class="string">"button-background-highlighted"</span>, [<span class="number">0</span>,<span class="number">10</span>,<span class="number">0</span>,<span class="number">10</span>]],</div><div class="line">        <span class="string">"titleEdgeInsets"</span>: [<span class="number">1</span>,<span class="number">0</span>,<span class="number">0</span>,<span class="number">0</span>],</div><div class="line">        <span class="string">"UILabel"</span>:&#123;</div><div class="line">            <span class="string">"font"</span>:[<span class="string">"Copperplate-Bold"</span>, <span class="number">18</span>]</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>看着像<code>JSON</code>吧？</p>
+<p>具体的我也还没有看，回头抽空再研究研究这个库。</p>
+<p><em>补充：文章中的示例代码已放到<code>github</code>中，可以在<a href="https://github.com/southpeak/iOS-Dev-Examples/tree/master/UIKit/UIApearance" target="_blank" rel="external">这里</a>查看(不保证在<code>iOS 9.0</code>以下能正常进行，嘿嘿)</em></p>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><ol>
+<li><a href="http://nshipster.com/uiappearance/" target="_blank" rel="external">UIApearance</a></li>
+<li><a href="https://developer.apple.com/library/ios/documentation/UIKit/Reference/UIAppearance_Protocol/" target="_blank" rel="external">UIAppearance Protocol Reference</a></li>
+<li><a href="https://developer.apple.com/library//ios/recipes/UIAppearanceContainer_Protocol/index.html" target="_blank" rel="external">UIAppearanceContainer Protocol Reference</a></li>
+<li><a href="http://petersteinberger.com/blog/2013/uiappearance-for-custom-views/" target="_blank" rel="external">UIAppearance for Custom Views</a></li>
+</ol>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/06/30/ios-techset-3/" rel="next" title="iOS知识小集 第三期(2015.06.30)">
+                <i class="fa fa-chevron-left"></i> iOS知识小集 第三期(2015.06.30)
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/08/15/ios-techset-4/" rel="prev" title="iOS知识小集 第四期(2015.08.15)">
+                iOS知识小集 第四期(2015.08.15) <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#UIApearance是作用"><span class="nav-number">1.</span> <span class="nav-text">UIApearance是作用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#UIAppearance的使用"><span class="nav-number">2.</span> <span class="nav-text">UIAppearance的使用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#支持UIAppearance的组件"><span class="nav-number">3.</span> <span class="nav-text">支持UIAppearance的组件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#自定义类实现UIAppearance"><span class="nav-number">4.</span> <span class="nav-text">自定义类实现UIAppearance</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Trait-Collection"><span class="nav-number">5.</span> <span class="nav-text">Trait Collection</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#一些深入的东西"><span class="nav-number">6.</span> <span class="nav-text">一些深入的东西</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#遗留问题"><span class="nav-number">7.</span> <span class="nav-text">遗留问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">8.</span> <span class="nav-text">小结</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#参考"><span class="nav-number">8.1.</span> <span class="nav-text">参考</span></a></li></ol></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

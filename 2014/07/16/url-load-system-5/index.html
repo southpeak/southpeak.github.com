@@ -1,0 +1,706 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="缓存URL加载系统为请求提供了基于磁盘和内存的组合响应缓存。这个缓存让应用减少了对网络连接的依赖，提高了性能。
+一个NSURLRequest实例通过设置缓存策略来指定本地缓存。默认的缓存策略是NSURLRequestUseProtocolCachePolicy，其行为是由协议指定的针对该协议最好的实现方式。另外几种缓存策略描述如下：
+
+NSURLRequestReloadIgnoringCache">
+<meta property="og:type" content="article">
+<meta property="og:title" content="URL加载系统之五：缓存、Cookies与协议">
+<meta property="og:url" content="http://southpeak.github.io/2014/07/16/url-load-system-5/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="缓存URL加载系统为请求提供了基于磁盘和内存的组合响应缓存。这个缓存让应用减少了对网络连接的依赖，提高了性能。
+一个NSURLRequest实例通过设置缓存策略来指定本地缓存。默认的缓存策略是NSURLRequestUseProtocolCachePolicy，其行为是由协议指定的针对该协议最好的实现方式。另外几种缓存策略描述如下：
+
+NSURLRequestReloadIgnoringCache">
+<meta property="og:updated_time" content="2016-08-27T05:08:34.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="URL加载系统之五：缓存、Cookies与协议">
+<meta name="twitter:description" content="缓存URL加载系统为请求提供了基于磁盘和内存的组合响应缓存。这个缓存让应用减少了对网络连接的依赖，提高了性能。
+一个NSURLRequest实例通过设置缓存策略来指定本地缓存。默认的缓存策略是NSURLRequestUseProtocolCachePolicy，其行为是由协议指定的针对该协议最好的实现方式。另外几种缓存策略描述如下：
+
+NSURLRequestReloadIgnoringCache">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2014/07/16/url-load-system-5/"/>
+
+  <title> URL加载系统之五：缓存、Cookies与协议 | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                URL加载系统之五：缓存、Cookies与协议
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-07-16T22:56:30+08:00" content="2014-07-16">
+              2014-07-16
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/translate/" itemprop="url" rel="index">
+                    <span itemprop="name">翻译</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="缓存"><a href="#缓存" class="headerlink" title="缓存"></a>缓存</h2><p>URL加载系统为请求提供了基于磁盘和内存的组合响应缓存。这个缓存让应用减少了对网络连接的依赖，提高了性能。</p>
+<p>一个NSURLRequest实例通过设置缓存策略来指定本地缓存。默认的缓存策略是NSURLRequestUseProtocolCachePolicy，其行为是由协议指定的针对该协议最好的实现方式。另外几种缓存策略描述如下：</p>
+<ol>
+<li>NSURLRequestReloadIgnoringCacheData：URL加载系统将从服务端加载数据，而完全忽略缓存。</li>
+<li>NSURLRequestReturnCacheDataElseLoad：URL加载系统使用缓存数据，忽略其过期时间；只有在没有缓存版本的时候才从源端加载数据。</li>
+<li>NSURLRequestReturnCacheDataDontLoad：允许应用指定只有在缓存中的数据应该被返回。如果在创建NSURLConnection或NSURLDownload实例时使用这个缓存策略，如果响应没有在本地缓存中，则直接返回nil。这类似于使用离线模式，且从来不进行网络连接。</li>
+</ol>
+<p>需要注意的是，目前只有HTTP和HTTPS的响应还被缓存。</p>
+<p>缓存最常用的场景是使用HTTP协议做网络请求，同时设置缓存策略为NSURLRequestUseProtocolCachePolicy。如果一个请求的NSCachedURLResponse不存在，则加载系统会从源端获取数据。如果请求的缓存响应存在于本地，则URL加载系统检查响应来确定它指定的内容必须被重新验证。如果内容必须验证，则加载系统发出一个HEAD请求到源端以确定资源是否已经改变。如果没有改变，则URL加载系统返回缓存响应对象。如果已经改变了，则URL加载系统从源端获取数据。</p>
+<p>如果缓存响应对象没有指定内容必须被重新验证，则加载系统校验缓存响应对象的最大age或有效时间。如果缓存对象未过期，则加载系统返回缓存对象。如果响应过旧，则URL加载系统发起一个HEAD请求到源端查看资源是否已被修改。如果修改了，则URL加载系统从源端获取新的数据。否则，返回缓存响应对象。</p>
+<p>默认情况下，连接的数据基于请求的缓存策略来进行缓存，同时由处理请求的NSURLProtocol子类来解析。如果我们需要对缓存做更精确的控制，我们可以实现一些代理方法来允许应用来确定请求是否应该缓存：</p>
+<ol>
+<li>对于NSURLSession数据和上传任务，实现URLSession:dataTask:willCacheResponse:completionHandler:方法。这个代理方法只用于数据请求和上传任务。而下载任务的缓存由指定的缓存策略来决定。</li>
+<li>对于NSURLConnection，实现connection:willCacheResponse:方法</li>
+</ol>
+<p>对于NSURLSession，我们的代理方法调用一个完成处理器block来告知会话需要缓存什么东西。对于NSURLConnection，代理方法返回连接需要缓存的对象。不管是哪种情况，代理都会提供以下值之一：</p>
+<ol>
+<li>允许缓存的响应对象</li>
+<li>新创建的响应对象，用于缓存被修改的响应</li>
+<li>NULL，以阻止缓存</li>
+</ol>
+<p>代理方法也可以提供与NSCacheURLResponse对象相关的userInfo字典，将这些对象作为响应的一部分存储在缓存中。</p>
+<p>需要注意的是，如果我们使用NSURLSession眀实现了代理方法，则代理方法必须总是调用提供的完成处理器，否则会导致内存泄露。</p>
+<h2 id="Cookies"><a href="#Cookies" class="headerlink" title="Cookies"></a>Cookies</h2><p>由于HTTP协议是无状态的，客户端通常使用cookie来提供URL请求间数据的持久化存储。URL加载系统提供接口来创建和管理cookie，将cookie作为HTTP请求的一部分进行发送，并在解析一个服务端的响应时获取cookie。</p>
+<p>NSHTTPCookie类封装了一个cookie，并提供了大量访问器来访问cookie的各种属性。该类同样提供了方法用于HTTP cookie头与NSHTTPCookie实例之间的互转。URL加载系统自动发送与NSURLRequest对象匹配的任何存储的cookie，除非该请求指明不需要发送cookie。同样，NSURLResponse对象是返回的cookie将根据当前设定的cookie接收策略来处理。</p>
+<p>NSHTTPCookieStorage提供接口来管理NSHTTPCookie对象的集合。与MacOS不同的是，iOS的cookie不能在应用间共享。NSHTTPCookieStorage允许一个应用指定cookie接收策略。</p>
+<h2 id="协议支持"><a href="#协议支持" class="headerlink" title="协议支持"></a>协议支持</h2><p>URL加载系统允许客户端程序扩展协议，以支持自定义的传输数据的方式。URL加载系统默认只支持http, https, file, ftp和data协议。</p>
+<p>我们可以继承NSURLProtocol来实现一个自定义的协议，然后使用NSURLProtocol类的的registerClass:方法将其注册到URL加载系统中。当NSURLSession, NSURLConnection和NSURLDownload对象初始化一个NSURLRequest的连接时，URL加载系统以注册顺序的倒序来查询每一个注册类。每个类都将调用canInitWithRequest:方法，第一个返回YES的类将被用于处理请求。</p>
+<p>如果自定义协议需要额外的属性业支持请求与响应，则通过创建NSURLRequest, NSMutableRequest和NSResponse类的类别来提供这些属性的访问器。NSURLProtocol类提供方法在这些访问器中设置和获取属性值。</p>
+<p>URL加载系统负责在连接开始和完成时创建和释放NSURLProtocol实例。我们的应用不应该直接创建NSURLProtocol的实例。</p>
+<p>当NSURLProtocol子类通过URL加载系统初始化时，它提供了一个实现NSURLProtocolClient协议的客户端对象。NSURLProtocol子类将消息从NSURLProtocolClient协议发送到客户端对象，来告诉URL加载系统它创建了响应，接收数据，重定向到新的URL，请求认证，完成加载等操作。如果自定义协议支持认证，还必须实现NSURLAuthenticationChallengeSender协议。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/URLLoadingSystem/URLLoadingSystem.html" target="_blank" rel="external">URL Loading System Programming Guide</a></li>
+</ol>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2014/07/16/url-load-system-4/" rel="next" title="URL加载系统之四：认证与TLS链验证">
+                <i class="fa fa-chevron-left"></i> URL加载系统之四：认证与TLS链验证
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2014/07/17/ioszhong-liu-stream-de-shi-yong/" rel="prev" title="iOS中流(Stream)的使用">
+                iOS中流(Stream)的使用 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#缓存"><span class="nav-number">1.</span> <span class="nav-text">缓存</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Cookies"><span class="nav-number">2.</span> <span class="nav-text">Cookies</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#协议支持"><span class="nav-number">3.</span> <span class="nav-text">协议支持</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">4.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

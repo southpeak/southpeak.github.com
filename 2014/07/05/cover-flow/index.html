@@ -1,0 +1,709 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="这篇是两年前在CocoaChina上写的，现在把它归集到这边来。大家也可以查看原文。
+Cover flow是苹果首创的将多首歌曲的封面以3D界面的形式显示出来的方式。如下图所示：
+
+从图中可以看到，显示在中间的图片为目标图片，两侧的图片在y轴都旋转了一定的角度，并且每两张图片之间都保持了一定的距离。在交互（如点击两侧的图片）的时候，滑动到中间的图片会逐渐放大，旋转的角度由原来的旋转角度a变为0，且">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Cover flow基本原理及Tapku实现方法">
+<meta property="og:url" content="http://southpeak.github.io/2014/07/05/cover-flow/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="这篇是两年前在CocoaChina上写的，现在把它归集到这边来。大家也可以查看原文。
+Cover flow是苹果首创的将多首歌曲的封面以3D界面的形式显示出来的方式。如下图所示：
+
+从图中可以看到，显示在中间的图片为目标图片，两侧的图片在y轴都旋转了一定的角度，并且每两张图片之间都保持了一定的距离。在交互（如点击两侧的图片）的时候，滑动到中间的图片会逐渐放大，旋转的角度由原来的旋转角度a变为0，且">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/Cove%20flow.png?raw=true">
+<meta property="og:updated_time" content="2016-08-27T04:38:15.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Cover flow基本原理及Tapku实现方法">
+<meta name="twitter:description" content="这篇是两年前在CocoaChina上写的，现在把它归集到这边来。大家也可以查看原文。
+Cover flow是苹果首创的将多首歌曲的封面以3D界面的形式显示出来的方式。如下图所示：
+
+从图中可以看到，显示在中间的图片为目标图片，两侧的图片在y轴都旋转了一定的角度，并且每两张图片之间都保持了一定的距离。在交互（如点击两侧的图片）的时候，滑动到中间的图片会逐渐放大，旋转的角度由原来的旋转角度a变为0，且">
+<meta name="twitter:image" content="https://github.com/southpeak/Blog-images/blob/master/Cove%20flow.png?raw=true">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2014/07/05/cover-flow/"/>
+
+  <title> Cover flow基本原理及Tapku实现方法 | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Cover flow基本原理及Tapku实现方法
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-07-05T17:51:43+08:00" content="2014-07-05">
+              2014-07-05
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/sourcecode/" itemprop="url" rel="index">
+                    <span itemprop="name">源码分析</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>这篇是两年前在CocoaChina上写的，现在把它归集到这边来。大家也可以查看<a href="http://www.cocoachina.com/bbs/read.php?tid=75699" target="_blank" rel="external">原文</a>。</p>
+<p>Cover flow是苹果首创的将多首歌曲的封面以3D界面的形式显示出来的方式。如下图所示：</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/Cove%20flow.png?raw=true" alt="image"></p>
+<p>从图中可以看到，显示在中间的图片为目标图片，两侧的图片在y轴都旋转了一定的角度，并且每两张图片之间都保持了一定的距离。在交互（如点击两侧的图片）的时候，滑动到中间的图片会逐渐放大，旋转的角度由原来的旋转角度a变为0，且位置上移动中间，变成新的目标图片；同时原处于中间位置的图片则缩小、旋转一定的角度、位置偏移到一侧。所以在整个过程中，主要有两个属性发生了变化：角度与位置(缩放只是视觉上的，并没有进行缩放操作)。</p>
+<p>在每次点击一张图片时，如果这张图片在目标图片的左边，则所有的图片都会向右移动，同时做相应的旋转；相反，点击目标图片右侧的图片时，所有图片都会向左移动并做相应的旋转。</p>
+<p>从如上描述的效果，可以看出在Cover Flow中最主要的的操作有两个：3D仿射变换与动画。仿射变换实质上是一种线性变换，通常主要用到的仿射变换有平移(Translation)、旋转(Rotation)、缩放(Scale)。<br>对于这两种操作，iOS都提供了非常简便的接口来实现。接下来我们便以tapku的实现方法为例，来说明实现Cover Flow的基本过程。</p>
+<h2 id="图片的布局"><a href="#图片的布局" class="headerlink" title="图片的布局"></a>图片的布局</h2><p>从效果图可以看出，图片是按一条直接排列，图片与图片之间有一定的间距，目标图片是正向显示，两侧的图片则按一定的角度进行了旋转，与目标图片形成一定的角度。同时我们还能看到每个图片都有一个倒影，并且这个倒影是渐变的，由上而下逐渐透明度逐渐减小。</p>
+<h3 id="Cover-Flow单元的定义"><a href="#Cover-Flow单元的定义" class="headerlink" title="Cover Flow单元的定义"></a>Cover Flow单元的定义</h3><p>在tapku中，每一个图片附属于一个视图(TKCoverflowCoverView)，这个视图相当于UITableViewCell，它包含了三个要素：图片(imageView)，倒影图片(reflected)，渐变层(gradientLayer)。渐变层覆盖于倒影图片上，且大小位置一致。</p>
+<p>TKCoverflowCoverView的声明及布局代码如下所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">TKCoverflowCoverView</span> : <span class="title">UIView</span> </span>&#123;</div><div class="line">	<span class="keyword">float</span> baseline;</div><div class="line">	<span class="built_in">UIImageView</span> *imageView;</div><div class="line">	<span class="built_in">UIImageView</span> *reflected;</div><div class="line">	<span class="built_in">CAGradientLayer</span> *gradientLayer;</div><div class="line">&#125;</div><div class="line"><span class="keyword">@end</span></div><div class="line">	</div><div class="line">- (<span class="keyword">id</span>)initWithFrame:(<span class="built_in">CGRect</span>)frame &#123;</div><div class="line">	<span class="keyword">self</span> = [<span class="keyword">super</span> initWithFrame:frame];</div><div class="line"> 	<span class="keyword">if</span> (<span class="keyword">self</span>) &#123;</div><div class="line">		<span class="keyword">self</span>.opaque = <span class="literal">NO</span>;</div><div class="line">		<span class="keyword">self</span>.backgroundColor = [<span class="built_in">UIColor</span> clearColor];</div><div class="line">		<span class="keyword">self</span>.layer.anchorPoint = <span class="built_in">CGPointMake</span>(<span class="number">0.5</span>, <span class="number">0.5</span>);</div><div class="line">		</div><div class="line">		imageView = [[<span class="built_in">UIImageView</span> alloc] initWithFrame:<span class="built_in">CGRectMake</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="keyword">self</span>.frame.size.width, <span class="keyword">self</span>.frame.size.width)];</div><div class="line">		[<span class="keyword">self</span> addSubview:imageView];</div><div class="line">		reflected = [[<span class="built_in">UIImageView</span> alloc] initWithFrame:<span class="built_in">CGRectMake</span>(<span class="number">0</span>, <span class="keyword">self</span>.frame.size.width, <span class="keyword">self</span>.frame.size.width, <span class="keyword">self</span>.frame.size.width)];</div><div class="line">		reflected.transform = <span class="built_in">CGAffineTransformScale</span>(reflected.transform, <span class="number">1</span>, <span class="number">-1</span>);</div><div class="line">		[<span class="keyword">self</span> addSubview:reflected];</div><div class="line">		</div><div class="line">		gradientLayer = [<span class="built_in">CAGradientLayer</span> layer];</div><div class="line">		gradientLayer.colors = [<span class="built_in">NSArray</span> arrayWithObjects:(<span class="keyword">id</span>)[<span class="built_in">UIColor</span> colorWithWhite:<span class="number">0</span> alpha:<span class="number">0.5</span>].CGColor,(<span class="keyword">id</span>)[<span class="built_in">UIColor</span> colorWithWhite:<span class="number">0</span> alpha:<span class="number">1</span>].CGColor,<span class="literal">nil</span>];</div><div class="line">		gradientLayer.startPoint = <span class="built_in">CGPointMake</span>(<span class="number">0</span>, <span class="number">0</span>);</div><div class="line">		gradientLayer.endPoint = <span class="built_in">CGPointMake</span>(<span class="number">0</span>, <span class="number">0.4</span>);</div><div class="line">		gradientLayer.frame = <span class="built_in">CGRectMake</span>(<span class="number">0</span>, <span class="keyword">self</span>.frame.size.width, <span class="keyword">self</span>.frame.size.width, <span class="keyword">self</span>.frame.size.width);</div><div class="line">		[<span class="keyword">self</span>.layer addSublayer:gradientLayer];</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">	<span class="keyword">return</span> <span class="keyword">self</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>注意：此次将视图的锚点(anchorPoint属性)设置为(0.5, 0.5)，即视图的中心点，目的是让视图以中心点为基点进行旋转。</p>
+<p>在进行仿射变换时，视图作为一个整体进行变换。</p>
+<h3 id="图片的布局-1"><a href="#图片的布局-1" class="headerlink" title="图片的布局"></a>图片的布局</h3><p>tapku中，图片的布局与交互是在TKCoverflowView类中完成的。类TKCoverflowView继承自UIScrollView，相当于是TableView。</p>
+<p>该类中定义是两个仿射变量：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">CATransform3D</span> leftTransform, rightTransform</div></pre></td></tr></table></figure>
+<p>这两个变量分别设置了两侧图片的仿射变换，具体的设置方法为</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>) setupTransforms&#123;</div><div class="line">  	leftTransform = <span class="built_in">CATransform3DMakeRotation</span>(coverAngle, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>);</div><div class="line">	leftTransform = <span class="built_in">CATransform3DConcat</span>(leftTransform,<span class="built_in">CATransform3DMakeTranslation</span>(-spaceFromCurrent, <span class="number">0</span>, <span class="number">-300</span>));</div><div class="line">  	rightTransform = <span class="built_in">CATransform3DMakeRotation</span>(-coverAngle, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>);</div><div class="line">	rightTransform = <span class="built_in">CATransform3DConcat</span>(rightTransform,<span class="built_in">CATransform3DMakeTranslation</span>(spaceFromCurrent, <span class="number">0</span>, <span class="number">-300</span>));</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>其中coverAngle为旋转的角度。对每个仿射变量同时设置了旋转也平移变换。</p>
+<p>Cover Flow单元是存储在一个数组中：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">NSMutableArray</span> *coverViews;</div></pre></td></tr></table></figure>
+<p>初始化时设置数组的大小，并存入空对象。在后期获取某个索引位置的单元时，如果该单元为空，则生成一个新的TKCoverflowCoverView并放入相应位置。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">if</span>([coverViews objectAtIndex:cnt] == [<span class="built_in">NSNull</span> null])&#123;</div><div class="line">  	TKCoverflowCoverView *cover = [dataSource coverflowView:<span class="keyword">self</span> coverAtIndex:cnt];</div><div class="line">	[coverViews replaceObjectAtIndex:cnt withObject:cover];</div><div class="line">	......</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>每个Cover Flow单元的位置计算如下</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">CGRect</span> r = cover.frame;</div><div class="line">r.origin.y = currentSize.height / <span class="number">2</span> - (coverSize.height/<span class="number">2</span>) - (coverSize.height/<span class="number">16</span>);</div><div class="line">r.origin.x = (currentSize.width/<span class="number">2</span> - (coverSize.width/ <span class="number">2</span>)) + (coverSpacing) * cnt;</div><div class="line">cover.frame = r;</div></pre></td></tr></table></figure>
+<p>其中currentSize,coverSize,coverSpacing都是固定值。从中可以看出所有单元的y值都是一样的，而x值则与其在数组中的索引值相关，索引越大，x值也越大。而这就涉及我们之后的一个问题。一会再讲。<br>假定目标图片的索引为currentIndex，则目标图片两侧的仿射属性设置如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">if</span>(cnt &gt; currentIndex)&#123;</div><div class="line">	cover.layer.transform = rightTransform;</div><div class="line">&#125;</div><div class="line"><span class="keyword">else</span> &#123;</div><div class="line">	cover.layer.transform = leftTransform;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>如上即为Cover Flow的基本布局，可以与UITableView比较一下。</p>
+<h2 id="交互"><a href="#交互" class="headerlink" title="交互"></a>交互</h2><p>Cover Flow的基本交互是点击两侧的图片，则被点击的图片成为新的目标图片并移动中屏幕中间，而其它图片一起移动，在这个过程中所需要做的就两件事：旋转与平移。</p>
+<p>方法很简单：在动画块中重新设置Cover Flow单元的transform属性，这样就可以缓动实现这个动画的过程。实际上只有新旧目标图片及中间的图片需要做这种变换，其余图片的transform属性都是不变的。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">float</span> speed = <span class="number">0.3</span>;</div><div class="line">[<span class="built_in">UIView</span> beginAnimations:string context:<span class="literal">nil</span>];</div><div class="line">[<span class="built_in">UIView</span> setAnimationDuration:speed];</div><div class="line">[<span class="built_in">UIView</span> setAnimationCurve:<span class="built_in">UIViewAnimationCurveEaseOut</span>];</div><div class="line">[<span class="built_in">UIView</span> setAnimationBeginsFromCurrentState:<span class="literal">YES</span>];</div><div class="line">[<span class="built_in">UIView</span> setAnimationDelegate:<span class="keyword">self</span>];</div><div class="line">[<span class="built_in">UIView</span> setAnimationDidStopSelector:<span class="keyword">@selector</span>(animationDidStop:finished:context:)]; </div><div class="line"><span class="keyword">for</span>(<span class="built_in">UIView</span> *v <span class="keyword">in</span> views)&#123;</div><div class="line"><span class="keyword">int</span> i = [coverViews indexOfObject:v];</div><div class="line">	<span class="keyword">if</span>(i &lt; index) v.layer.transform = leftTransform;</div><div class="line">	<span class="keyword">else</span> <span class="keyword">if</span>(i &gt; index) v.layer.transform = rightTransform;</div><div class="line">	<span class="keyword">else</span> v.layer.transform = <span class="built_in">CATransform3DIdentity</span>;</div><div class="line">&#125;</div><div class="line">[<span class="built_in">UIView</span> commitAnimations];</div></pre></td></tr></table></figure>
+<p>但这在做的只是旋转了Cover Flow的内容，并没有对Cover Flow进行水平平移，Cover Flow水平位置已由其origin.x值固定。那么水平上的平移是如何实现的呢，我们看下面的代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>) snapToAlbum:(<span class="built_in">BOOL</span>)animated&#123;</div><div class="line">  	<span class="built_in">UIView</span> *v = [coverViews objectAtIndex:currentIndex];</div><div class="line"> 	<span class="keyword">if</span>((<span class="built_in">NSObject</span>*)v!=[<span class="built_in">NSNull</span> null])&#123;</div><div class="line">		[<span class="keyword">self</span> setContentOffset:<span class="built_in">CGPointMake</span>(v.center.x - (currentSize.width/<span class="number">2</span>), <span class="number">0</span>) animated:animated];</div><div class="line">	&#125;</div><div class="line">	<span class="keyword">else</span></div><div class="line">	&#123;  </div><div class="line">		[<span class="keyword">self</span> setContentOffset:<span class="built_in">CGPointMake</span>(coverSpacing*currentIndex, <span class="number">0</span>) animated:animated];</div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>其所做的就是以目标图片为中心，整体平移TKCoverflowView视图。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>由上可以看出，Cover Flow特效的原理很简单：对新旧目标图片及中间的图片以动画的形式做仿射变换。至于仿射变换如何处理，有不同的方法。tapku所实现的方法可以说相对简单灵活。</p>
+<p>Android, Flash都有类似的Cover Flow特效实现方法，有兴趣的童鞋可以参考一下。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2014/07/02/ios-swift-cpointer-1/" rel="next" title="Swift中C指针的基本使用方法">
+                <i class="fa fa-chevron-left"></i> Swift中C指针的基本使用方法
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2014/07/06/ios-swift-cpointer-2/" rel="prev" title="Swift对C指针实现浅析">
+                Swift对C指针实现浅析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#图片的布局"><span class="nav-number">1.</span> <span class="nav-text">图片的布局</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Cover-Flow单元的定义"><span class="nav-number">1.1.</span> <span class="nav-text">Cover Flow单元的定义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#图片的布局-1"><span class="nav-number">1.2.</span> <span class="nav-text">图片的布局</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#交互"><span class="nav-number">2.</span> <span class="nav-text">交互</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

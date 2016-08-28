@@ -1,0 +1,867 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="路径定义了一个或多个形状，或是子路径。一个子路径可由直线，曲线，或者同时由两者构成。它可以是开放的，也可以是闭合的。一个子路径可以是简单的形状，如线、圆、矩形、星形；也可以是复杂的形状，如山脉的轮廓或者是涂鸦。图3-1显示了一些我们可以创建的路径。左上角的直线可以是虚线；直线也可以是实线。上边中间的路径是由多条曲线组成的开放路径。右上角的同心圆填充了颜色，但没有描边。左下角的加利福尼亚州是闭合路径">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Quartz 2D编程指南之三：路径(Path)">
+<meta property="og:url" content="http://southpeak.github.io/2014/11/16/quartz2d-3/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="路径定义了一个或多个形状，或是子路径。一个子路径可由直线，曲线，或者同时由两者构成。它可以是开放的，也可以是闭合的。一个子路径可以是简单的形状，如线、圆、矩形、星形；也可以是复杂的形状，如山脉的轮廓或者是涂鸦。图3-1显示了一些我们可以创建的路径。左上角的直线可以是虚线；直线也可以是实线。上边中间的路径是由多条曲线组成的开放路径。右上角的同心圆填充了颜色，但没有描边。左下角的加利福尼亚州是闭合路径">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/path_vector_examples.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/subpaths.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/circle_clipping.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/circles.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rounded_corner.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/bezier_paths.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/cubic_bezier_curve.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/quadratic_bezier_curve.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/ellipses.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rectangles.gif">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/quartz-2d-table3-1.png?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/quartz-2d-table3-2.png?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/quartz-2d-table3-3.png?raw=true">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/linedash.gif">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/quartz-2d-table3-4.png?raw=true">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/eosampleone.gif">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/quartz-2d-table3-5.png?raw=true">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/vertical.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/horizontal.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_normal.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_multiply.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_screen.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_overlay.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_darken.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_lighten.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_color_dodge.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_color_burn.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_soft_light.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_hard_light.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_difference.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_exclusion.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_hue.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_saturation.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_color.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_luminosity.gif">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/quartz-2d-table3-6.png?raw=true">
+<meta property="og:updated_time" content="2016-08-27T08:09:02.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Quartz 2D编程指南之三：路径(Path)">
+<meta name="twitter:description" content="路径定义了一个或多个形状，或是子路径。一个子路径可由直线，曲线，或者同时由两者构成。它可以是开放的，也可以是闭合的。一个子路径可以是简单的形状，如线、圆、矩形、星形；也可以是复杂的形状，如山脉的轮廓或者是涂鸦。图3-1显示了一些我们可以创建的路径。左上角的直线可以是虚线；直线也可以是实线。上边中间的路径是由多条曲线组成的开放路径。右上角的同心圆填充了颜色，但没有描边。左下角的加利福尼亚州是闭合路径">
+<meta name="twitter:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/path_vector_examples.gif">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2014/11/16/quartz2d-3/"/>
+
+  <title> Quartz 2D编程指南之三：路径(Path) | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Quartz 2D编程指南之三：路径(Path)
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-11-16T21:44:15+08:00" content="2014-11-16">
+              2014-11-16
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/translate/" itemprop="url" rel="index">
+                    <span itemprop="name">翻译</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p><strong>路径</strong>定义了一个或多个形状，或是子路径。一个子路径可由直线，曲线，或者同时由两者构成。它可以是开放的，也可以是闭合的。一个子路径可以是简单的形状，如线、圆、矩形、星形；也可以是复杂的形状，如山脉的轮廓或者是涂鸦。图3-1显示了一些我们可以创建的路径。左上角的直线可以是虚线；直线也可以是实线。上边中间的路径是由多条曲线组成的开放路径。右上角的同心圆填充了颜色，但没有描边。左下角的加利福尼亚州是闭合路径，由许多曲线和直线构成，且对路径进行填充和描边。两个星形阐明了填充路径的两种方式，我们将在本章详细描述。</p>
+<p><strong>Figure 3-1  Quartz supports path-based drawing</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/path_vector_examples.gif" alt="image"></p>
+<p>在本章中，我们将学习如何构建路径，如何对路径进行填充和描边，及影响路径表现形式的参数。</p>
+<h2 id="创建及绘制路径"><a href="#创建及绘制路径" class="headerlink" title="创建及绘制路径"></a>创建及绘制路径</h2><p>路径创建及路径绘制是两个独立的工作。首先我们创建路径。当我们需要渲染路径时，我们需要使用Quartz来绘制它。正如图3-1中所示，我们可以选择对路径进行描边，填充路径，或同时进行这两种操作。我们同样可以将其它对象绘制到路径所表示的范围内，即对对象进行裁减。</p>
+<p>图3-2绘制了一个路径，该路径包含两个子路径。左边的子路径是一个矩形，右边的子路径是由直线和曲线组成的抽象形状。两个子路径都进行了填充及描边。</p>
+<p><strong>Figure 3-2  A path that contains two shapes, or subpaths</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/subpaths.gif" alt="image"></p>
+<p>图3-3显示了多条独立绘制的路径。每个路径饮食随机生成的曲线，一些进行填充，另一些进行了描边。这些路径都包含在一个圆形裁减区域内。</p>
+<p><strong>Figure 3-3  A clipping area constrains drawing</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/circle_clipping.gif" alt="image"></p>
+<h2 id="构建块-Building-Block"><a href="#构建块-Building-Block" class="headerlink" title="构建块(Building Block)"></a>构建块(Building Block)</h2><p>子路径是由直线、弧和曲线构成的。Quartz同样也提供了简便的函数用于添加矩形或椭圆等形状。点也是路径最基本的构建块，因为点定义了形状的起始点与终止点。</p>
+<h3 id="点"><a href="#点" class="headerlink" title="点"></a>点</h3><p>点由x, y坐标值定义，用于在用户空间指定 一个位置。我们可以调用函数CGContextMoveToPoint来为新的子路径指定起始点。Quartz跟踪当前点，用于记录路径构建过程中最新的位置。例如，如果调用函数CGContextMoveToPoint并设置位置为(10, 10)，即将当前点移动到位置(10, 10)。如果在水平位置绘制50个单位长度的直线，则直线的终点为(60, 10)，该点变成当前点。直线、弧和曲线总是从当前点开始绘制。</p>
+<p>通常我们通过传递(x, y)值给Quartz函数来指定一个点。一些函数需要我们传递一个CGPoint数据结构，该结构包含两个浮点值。</p>
+<h3 id="直线"><a href="#直线" class="headerlink" title="直线"></a>直线</h3><p>直线由两个端点定义。起始点通常是当前点，所以创建直线时，我们只需要指定终止点。我们使用函数CGContextAddLineToPoint来添加一条直线到子路径中。</p>
+<p>我们可以调用CGContextAddLines函数添加一系列相关的直线到子路径中。我们传递一个点数组给这个函数。第一个点必须是第一条直线的起始点；剩下的点是端点。Quartz从第一个点开始绘制一个新子路径，然后每两个相邻点连接成一条线段。</p>
+<h3 id="弧"><a href="#弧" class="headerlink" title="弧"></a>弧</h3><p>弧是圆弧段。Quartz提供了两个函数来创建弧。函数CGContextAddArc从圆中来创建一个曲线段。我们指定一个圆心，半径和放射角(以弧度为单位)。放射角为2 PI时，创建的是一个圆。图3-4显示了多个独立的路径。每个路径饮食一个自动生成的圆；一些是填充的，另一些是描边的。</p>
+<p><strong>Figure 3-4  Multiple paths; each path contains a randomly generated circle</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/circles.gif" alt="image"></p>
+<p>函数CGContextAddArcToPoint用于为矩形创建内切弧的场景。Quartz使用我们提供的端点创建两条正切线。同样我们需要提供圆的半径。弧心是两条半径的交叉点，每条半径都与相应的正切线垂直。弧的两个端点是正切线的正切点，如图3-5所示。红色的部分是实际绘制的部分。</p>
+<p><strong>Figure 3-5  Defining an arc with two tangent lines and a radius</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rounded_corner.gif" alt="image"></p>
+<p>如果当前路径已经包含了一个子路径，Quartz将追加一条从当前点到弧的起始点的直线段。如果当前路径为空，Quartz将创建一个新的子路径，该子路径从弧的起始点开始，而不添加初始的直线段。</p>
+<h3 id="曲线"><a href="#曲线" class="headerlink" title="曲线"></a>曲线</h3><p>二次与三次Bezier曲线是代数曲线，可以指定任意的曲线形状。曲线上的点通过一个应用于起始、终点及一个或多个控制点的多项式计算得出。这种方式定义的形状是向量图的基础。这个公式比将位数组更容易存储，并且曲线可以在任何分辨下重新创建。</p>
+<p>图3-6显示了一些路径的曲线。每条路径包含一条随机生成的曲线；一些是填充的，另一些是描边的。</p>
+<p><strong>Figure 3-6  Multiple paths; each path contains a randomly generated curve</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/bezier_paths.gif" alt="image"></p>
+<p>我们使用函数CGContextAddCurveToPoint将Bezier曲线连接到当前点，并传递控制点和端点作为参数，如图3-7所示。两个控制点的位置决定了曲线的形状。如果两个控制点都在两个端点上面，则曲线向上凸起。如果两个控制点都在两个端点下面，则曲线向下凹。如果第二个控制点比第一个控制点离得当前点近，则曲线自交叉，创建了一个回路。</p>
+<p><strong>Figure 3-7  A cubic Bézier curve uses two control points</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/cubic_bezier_curve.gif" alt="image"></p>
+<p>我们也可以调用函数CGContextAddQuadCurveToPoint来创建Bezier，并传递端点及一个控制点，如图3-8所示。控制点决定了曲线弯曲的方向。由于只使用一个控制点，所以无法创建出如三次Bezier曲线一样多的曲线。例如我们无法创建出交叉的曲线。</p>
+<p><strong>Figure 3-8  A quadratic Bézier curve uses one control point</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/quadratic_bezier_curve.gif" alt="image"></p>
+<h3 id="闭合路径"><a href="#闭合路径" class="headerlink" title="闭合路径"></a>闭合路径</h3><p>我们可以调用函数CGContextClosePath来闭合曲线。该函数用一条直接来连接当前点与起始点，以使路径闭合。起始与终点重合的直线、弧和曲线并不自动闭合路径，我们必须调用CGContextClosePath来闭合路径。</p>
+<p>Quartz的一些函数将路径的子路径看成是闭合的。这些函数显示地添加一条直线来闭合 子路径，如同调用了CGContextClosePath函数。</p>
+<p>在闭合一条子路径后，如果程序再添加直线、弧或曲线到路径，Quartz将在闭合的子路径的起点开始创建一个子路径。</p>
+<h3 id="椭圆"><a href="#椭圆" class="headerlink" title="椭圆"></a>椭圆</h3><p>椭圆是一种特殊的圆。椭圆是通过定义两个焦点，在平面内所有与这两个焦点的距离之和相等的点所构成的图形。图3-9显示了一些独立的路径。每个路径都包含一个随机生成的椭圆；一些进行了填充，另一边进行了描边。</p>
+<p><strong>Figure 3-9  Multiple paths; each path contains a randomly generated ellipse</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/ellipses.gif" alt="image"> </p>
+<p>我们可以调用CGContextAddEllipseInRect函数来添加一个椭圆到当前路径。我们提供一个矩形来定义一个椭圆。Quartz利用一系列的Bezier曲线来模拟椭圆。椭圆的中心就是矩形的中心。如果矩形的宽与高相等，则椭圆变成了圆，且圆的半径为矩形宽度的一半。如果矩形的宽与高不相等，则定义了椭圆的长轴与短轴。</p>
+<p>添加到路径中的椭圆开始于一个move-to操作，结束于一个close-subpath操作，所有的移动方向都是顺时针。</p>
+<h3 id="矩形"><a href="#矩形" class="headerlink" title="矩形"></a>矩形</h3><p>我们可以调用CGContextAddRect来添加一个矩形到当前路径中，并提供一个CGRect结构体(包含矩形的原点及大小)作为参数。</p>
+<p>添加到路径的矩形开始于一个move-to操作，结束于一个close-subpath操作，所有的移动方向都是顺时针。</p>
+<p>我们也可能调用CGContextAddRects函数来添加一系列的矩形到当前路径，并传递一个CGRect结构体的数组。图3-10显示了一些独立的路径。每个路径包含一个随机生成的矩形；一些进行了填充，另一边进行了描边。</p>
+<p><strong>Figure 3-10  Multiple paths; each path contains a randomly generated rectangle</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rectangles.gif" alt="image"></p>
+<h2 id="创建路径"><a href="#创建路径" class="headerlink" title="创建路径"></a>创建路径</h2><p>当我们需要在一个图形上下文中构建一个路径时，我们需要调用CGContextBeginPath来标记Quartz。然后，我们调用函数CGContextMovePoint来设置每一个图形或子路径的起始点。在构建起始点后，我们可以添加直线、弧、曲线。记住如下规则：</p>
+<ol>
+<li>在开始绘制路径前，调用函数CGContextBeginPath；</li>
+<li>直线、弧、曲线开始于当前点。空路径没有当前点；我们必须调用CGContextMoveToPoint来设置第一个子路径的起始点，或者调用一个便利函数来隐式地完成该任务。</li>
+<li>如果要闭合当前子路径，调用函数CGContextClosePath。随后路径将开始一个新的子路径，即使我们不显示设置一个新的起始点。</li>
+<li>当绘制弧时，Quartz将在当前点与弧的起始点间绘制一条直线。</li>
+<li>添加椭圆和矩形的Quartz程序将在路径中添加新的闭合子路径。</li>
+<li>我们必须调用绘制函数来填充或者描边一条路径，因为创建路径时并不会绘制路径。</li>
+</ol>
+<p>在绘制路径后，将清空图形上下文。我们也许想保留路径，特别是在绘制复杂场景时，我们需要反复使用。基于此，Quartz提供了两个数据类型来创建可复用路径—CGPathRef和CGMutablePathRef。我们可以调用函数CGPathCreateMutable来创建可变的CGPath对象，并可向该对象添加直线、弧、曲线和矩形。Quartz提供了一个类似于操作图形上下文的CGPath的函数集合。这些路径函数操作CGPath对象，而不是图形上下文。这些函数包括：</p>
+<ol>
+<li>CGPathCreateMutable，取代CGContextBeginPath</li>
+<li>CGPathMoveToPoint，取代CGContextMoveToPoint</li>
+<li>CGPathAddLineToPoint，取代CGContexAddLineToPoint</li>
+<li>CGPathAddCurveToPoint，取代CGContexAddCurveToPoint</li>
+<li>CGPathAddEllipseInRect，取代CGContexAddEllipseInRect</li>
+<li>CGPathAddArc，取代CGContexAddArc</li>
+<li>CGPathAddRect，取代CGContexAddRect</li>
+<li>CGPathCloseSubpath，取代CGContexClosePath</li>
+</ol>
+<p>如果想要添加一个路径到图形上下文，可以调用CGContextAddPath。路径将保留在图形上下文中，直到Quartz绘制它。我们可以调用CGContextAddPath再次添加路径。</p>
+<h2 id="绘制路径"><a href="#绘制路径" class="headerlink" title="绘制路径"></a>绘制路径</h2><p>我们可以绘制填充或描边的路径。描边(Stroke)是绘制路径的边框。填充是绘制路径包含的区域。Quartz提供了函数来填充或描边路径。描边线的属性(宽度、颜色等)，填充色及Quartz用于计算填充区域的方法都是图形状态的一部分。</p>
+<h3 id="影响描边的属性"><a href="#影响描边的属性" class="headerlink" title="影响描边的属性"></a>影响描边的属性</h3><p>我们可以使用表3-1中的属性来决定如何对路径进行描边操作。这边属性是图形上下文的一部分，这意味着我们设置的值将会影响到后续的描边操作，直到我们个性这些值。</p>
+<p><strong>Table 3-1  Parameters that affect how Quartz strokes the current path</strong></p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/quartz-2d-table3-1.png?raw=true" alt="image"></p>
+<p>linewidth是线的总宽度，单位是用户空间单元。</p>
+<p>linejoin属性指定如何绘制线段间的联接点。Quartz支持表3-2中描述的联接样式。</p>
+<p><strong>Table 3-2  Line join styles</strong></p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/quartz-2d-table3-2.png?raw=true" alt="image"></p>
+<p>linecap指定如何绘制直线的端点。Quartz支持表3-3所示的线帽类型。默认的是butt cap。</p>
+<p><strong>Table 3-3  Line cap styles</strong></p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/quartz-2d-table3-3.png?raw=true" alt="image"> </p>
+<p>闭合路径将起始点看作是一个联接点；起始点同样也使用选定的直线连接方法进行渲染。如果通过添加一条连接到起始点的直线来闭合路径，则路径的两个端点都使用选定的线帽类型来绘制。</p>
+<p>Linedash pattern(虚线模式)允许我们沿着描边绘制虚线。我们通过在CGContextSetLineDash结构体中指定虚线数组和虚线相位来控制虚线的大小及位置。</p>
+<p>CGContextSetLineDash结构如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">void</span> <span class="built_in">CGContextSetLineDash</span> (</div><div class="line">	<span class="built_in">CGContextRef</span> ctx,</div><div class="line">	<span class="keyword">float</span> phase,</div><div class="line">	<span class="keyword">const</span> <span class="keyword">float</span> lengths[],</div><div class="line">	size_t count,</div><div class="line">);</div></pre></td></tr></table></figure>
+<p>其中lengths属性指定了虚线段的长度，该值是在绘制片断与未绘制片断之间交替。phase属性指定虚线模式的起始点。图3-11显示了虚线模式：</p>
+<p><strong>Figure 3-11  Examples of line dash patterns</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/linedash.gif" alt="image"></p>
+<p>描边颜色空间(stroke color space)定义了Quartz如何解析描边的颜色。我们同样也可以指定一个封装了颜色和颜色空间的CGColorRef数据类型。</p>
+<h3 id="路径描边的函数"><a href="#路径描边的函数" class="headerlink" title="路径描边的函数"></a>路径描边的函数</h3><p>Quartz提供了表3-4中的函数来描边当前路径。其中一些是描边矩形及椭圆的便捷函数。</p>
+<p><strong>Table 3-4  Functions that stroke paths</strong></p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/quartz-2d-table3-4.png?raw=true" alt="image"></p>
+<p>函数CGContextStrokeLineSegments等同于如下代码</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">CGContextBeginPath</span>(context);                                                                                                                                                                                                                                                                 </div><div class="line"><span class="keyword">for</span>(k = <span class="number">0</span>; k &lt; count; k += <span class="number">2</span>)</div><div class="line">&#123;</div><div class="line">	<span class="built_in">CGContextMoveToPoint</span>(context,s[k].x, s[k].y); <span class="built_in">CGContextAddLineToPoint</span>(context,s[k+<span class="number">1</span>].x, s[k+<span class="number">1</span>].y);</div><div class="line">&#125;</div><div class="line">	</div><div class="line"><span class="built_in">CGContextStrokePath</span>(context);</div></pre></td></tr></table></figure>
+<p>当我们调用CGContextStrokeLineSegments时，我们通过点数组来指定线段，并组织成点对的形式。每一对是由线段的起始点与终止点组成。例如，数组的第一个点指定了第一条直线的起始点，第二个点是第一条直线的终点，第三个点是第二条直线的起始点，依此类推。</p>
+<h3 id="填充路径"><a href="#填充路径" class="headerlink" title="填充路径"></a>填充路径</h3><p>当我们填充当前路径时，Quartz将路径包含的每个子路径都看作是闭合的。然后，使用这些闭合路径并计算填充的像素。 Quartz有两种方式来计算填充区域。椭圆和矩形这样的路径其区域都很明显。但是如果路径是由几个重叠的部分组成或者路径包含多个子路径(如图3-12所示)，我们则有两种规则来定义填充区域。</p>
+<p>默认的规则是非零缠绕数规则(nonzero windingnumber rule)。为了确定一个点是否需要绘制，我们从该点开始绘制一条直线穿过绘图的边界。从0开始计数，每次路径片断从左到右穿过直线是，计数加1；而从右到左穿过直线时，计数减1。如果结果为0，则不绘制该点，否则绘制。路径片断绘制的方向会影响到结果。图3-13显示了使用非缠绕数规则对内圆和外圆进行填充的结果。当两个圆绘制方向相同时，两个圆都被填充。如果方向相反，则内圆不填充。</p>
+<p>我们也可以使用偶数-奇数规则。为了确定一个点是否被绘制，我们从该点开始绘制一条直线穿过绘图的边界。计算穿过该直线的路径片断的数目。如果是奇数，则绘制该点，如果是偶数，则不绘制该点。路径片断绘制的方向不影响结果。如图3-12所示，无论两个圆的绘制方向是什么，填充结果都是一样的。</p>
+<p><strong>Figure 3-12  Concentric circles filled using different fill rules</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/eosampleone.gif" alt="image"></p>
+<p>Quartz提供了表3-5中的函数来填充当前路径。其中一些是填充矩形及椭圆的便捷函数。</p>
+<p><strong>Table 3-5  Functions that fill paths</strong></p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/quartz-2d-table3-5.png?raw=true" alt="image"></p>
+<h3 id="设置混合模式"><a href="#设置混合模式" class="headerlink" title="设置混合模式"></a>设置混合模式</h3><p>混合模式指定了Quartz如何将绘图绘制到背景上。Quartz默认使用普通混合模式(normal blend mode)，该模式使用如下公式来计算前景绘图与背景绘图如何混合：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">result = (alpha * foreground) + (1 - alpha) *background</div></pre></td></tr></table></figure>
+<p>“颜色与颜色空间”章节里面详细讨论了颜色值的alpha组件，该组件用于指定颜色的透明度。在本章的例子中，我们可以假设颜色值是完全不透明的(alpha = 0)。对于不透明的颜色值，当我们用普通混合模式时，所有绘制于背景之上的绘图都会遮掩住背景。</p>
+<p>我们可以调用函数CGContextSetBlendMode并传递适当的混合模式常量值来设置混合模式来达到我们想到的效果。记住混合模式是图形状态的一部分。如果调用了函数CGContextSaveGState来改变混合模式，则调用函数CGContextRestoreGState来重新设置混合模式为普通混合模式。</p>
+<p>接下来的内容例举了不同混合模式上将图3-13的矩形绘制到图3-14的矩形之上的效果。背景图使用普通混合模式来绘制。然后调用CGContextSetBlendMode函数来改变混合模式。最后绘制前景矩形。</p>
+<p><strong>Figure 3-13  The rectangles painted in the foreground</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/vertical.gif" alt="image"></p>
+<p><strong>Figure 3-14  The rectangles painted in the background</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/horizontal.gif" alt="image"></p>
+<p>注意：我们同样可以使用混合来组合两张图片或将图片与图形上下文中已有的内容进行混合。</p>
+<h4 id="普通混合模式"><a href="#普通混合模式" class="headerlink" title="普通混合模式"></a>普通混合模式</h4><p>由于普通混合模式是默认的混合模式，所以在设置了其它混合模式后，可以调用CGContextSetBlendMode并传递kCGBlendModeNormal来将混合模式重设为默认。图3-15显示了普通混合模式上图3-13与图3-14混合的效果。</p>
+<p><strong>Figure 3-15  Rectangles painted using normal blend mode</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_normal.gif" alt="image"></p>
+<h4 id="正片叠底混合模式-Mutiply-Blend-Mode"><a href="#正片叠底混合模式-Mutiply-Blend-Mode" class="headerlink" title="正片叠底混合模式(Mutiply Blend Mode)"></a>正片叠底混合模式(Mutiply Blend Mode)</h4><p>正片叠底混合模式指定将前景的图片采样与背景图片采样相乘。结果颜色至少与两个采样颜色之一一样暗。图3-16显示了混合结果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeMultiply来设置这种混合模式。</p>
+<p><strong>Figure 3-16  Rectangles painted using multiply blend mode</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_multiply.gif" alt="image"> </p>
+<h4 id="屏幕混合模式-Screen-Blend-Mode"><a href="#屏幕混合模式-Screen-Blend-Mode" class="headerlink" title="屏幕混合模式(Screen Blend Mode)"></a>屏幕混合模式(Screen Blend Mode)</h4><p>屏幕混合模式指定将前景图片采样的反转色与背景图片的反转色相乘。结果颜色至少与两种采样颜色之一一样亮。图3-17显示了混合结果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeScreen来设置这种混合模式。</p>
+<p><strong>Figure 3-17  Rectangles painted using screen blend mode</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_screen.gif" alt="image"></p>
+<h4 id="叠加混合模式-Overlay-Blend-Mode"><a href="#叠加混合模式-Overlay-Blend-Mode" class="headerlink" title="叠加混合模式(Overlay Blend Mode)"></a>叠加混合模式(Overlay Blend Mode)</h4><p>叠加混合模式是将前景图片与背景图片或者正片叠底，或者屏幕化，这取决于背景颜色。背景颜色值与前景颜色值以反映出背景颜色的亮度与暗度。图3-18显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeOverlay来设置这种混合模式。</p>
+<p><strong>Figure 3-18  Rectangles painted using overlay blend mode</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_overlay.gif" alt="image"></p>
+<h4 id="暗化混合模式-Darken-Blend-Mode"><a href="#暗化混合模式-Darken-Blend-Mode" class="headerlink" title="暗化混合模式(Darken Blend Mode)"></a>暗化混合模式(Darken Blend Mode)</h4><p>通过选择前景图片与背景图片更暗的采样来混合图片采样。背景图片采样被前景图片采样更暗的部分取代，而其它部分不变。图3-19显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeDarken来设置这种混合模式。</p>
+<p><strong>Figure 3-19  Rectangles painted using darken blend mode</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_darken.gif" alt="image"> </p>
+<h4 id="亮化混合模式-Lighten-Blend-Mode"><a href="#亮化混合模式-Lighten-Blend-Mode" class="headerlink" title="亮化混合模式(Lighten Blend Mode)"></a>亮化混合模式(Lighten Blend Mode)</h4><p>通过选择前景图片与背景图片更亮的采样来混合图片采样。背景图片采样被前景图片采样更亮的部分取代，而其它部分不变。图3-20显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeLighten来设置这种混合模式。</p>
+<p><strong>Figure 3-20  Rectangles painted using lighten blend mode</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_lighten.gif" alt="image"></p>
+<h4 id="色彩减淡模式-ColorDodge-Blend-Mode"><a href="#色彩减淡模式-ColorDodge-Blend-Mode" class="headerlink" title="色彩减淡模式(ColorDodge Blend Mode)"></a>色彩减淡模式(ColorDodge Blend Mode)</h4><p>加亮背景图片采样以反映出前景图片采样。被指定为黑色的前景图片采样值将不产生变化。图3-21显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeColorDodge来设置这种混合模式。</p>
+<p><strong>Figure 3-21  Rectangles painted using color dodge blend mode</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_color_dodge.gif" alt="image"> </p>
+<h4 id="色彩加深模式-ColorBurn-Blend-Mode"><a href="#色彩加深模式-ColorBurn-Blend-Mode" class="headerlink" title="色彩加深模式(ColorBurn Blend Mode)"></a>色彩加深模式(ColorBurn Blend Mode)</h4><p>加深背景图片采样以反映出前景图片采样。被指定为白色的前景图片采样值将不产生变化。图3-21显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeColorBurn来设置这种混合模式。</p>
+<p><strong>Figure 3-22  Rectangles painted using color burn blend mode</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_color_burn.gif" alt="image"></p>
+<h4 id="柔光混合模式-SoftLight-Blend-Mode"><a href="#柔光混合模式-SoftLight-Blend-Mode" class="headerlink" title="柔光混合模式(SoftLight Blend Mode)"></a>柔光混合模式(SoftLight Blend Mode)</h4><p>根据前景采样颜色减淡或加深颜色值。如果前景采样颜色比50%灰度值更亮，则减淡背景，类似于Dodge模式。如果前景采样颜色比50%灰度值更暗，则加强背景，类似于Burn模式。纯黑或纯白的图片采样将产生更暗或更亮的区域。但是但是不产生纯白或纯黑的颜色。该效果类似于将一个漫射光源放于一个前景图前。该效果用于在场景中添加高光效果。图3-23显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeSoftLight来设置这种混合模式。</p>
+<p><strong>Figure 3-23  Rectangles painted using soft light blend mode</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_soft_light.gif" alt="image"></p>
+<h4 id="强光混合模式-Hard-Light-Blend-Mode"><a href="#强光混合模式-Hard-Light-Blend-Mode" class="headerlink" title="强光混合模式(Hard Light Blend Mode)"></a>强光混合模式(Hard Light Blend Mode)</h4><p>根据前景图片采样颜色正片叠加或屏幕化颜色。如果前景采样颜色比50%灰度值更亮，则减淡背景，类似于screen模式。如果前景采样颜色比50%灰度值更暗，则加深背景，类似于multiply模式。如果前景采样颜色等于50%灰度，则前景颜色不变。纯黑与纯白的颜色图片采样将产生纯黑或纯白的颜色值。该效果类似于将一个强光源放于一个前景图前。该效果用于在场景中添加高光效果。图3-24显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeHardLight来设置这种混合模式。</p>
+<p><strong>Figure 3-24  Rectangles painted using hard light blend mode</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_hard_light.gif" alt="image"></p>
+<h4 id="差值混合模式-Difference-Blend-Mode"><a href="#差值混合模式-Difference-Blend-Mode" class="headerlink" title="差值混合模式(Difference Blend Mode)"></a>差值混合模式(Difference Blend Mode)</h4><p>将前景图片采样颜色值与背景图片采样值相减，相减的前后关系取决于哪个采样的亮度值更大。黑色的前景采样值不发生变化；白色值转化为背景的值。图3-25显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeDifference来设置这种混合模式。</p>
+<p><strong>Figure 3-25  Rectangles painted using difference blend mode </strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_difference.gif" alt="image"></p>
+<h4 id="排除混合模式-Exclusion-Blend-Mode"><a href="#排除混合模式-Exclusion-Blend-Mode" class="headerlink" title="排除混合模式(Exclusion Blend Mode)"></a>排除混合模式(Exclusion Blend Mode)</h4><p>该效果类似于Difference效果，只是对比度更低。黑色的前景采样值不发生变化；白色值转化为背景的值。图3-26显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeExclusion来设置这种混合模式。</p>
+<p><strong>Figure 3-26  Rectangles painted using exclusion blend mode</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_exclusion.gif" alt="image"> </p>
+<h4 id="色相混合模式-Hue-Blend-Mode"><a href="#色相混合模式-Hue-Blend-Mode" class="headerlink" title="色相混合模式(Hue Blend Mode)"></a>色相混合模式(Hue Blend Mode)</h4><p>使用背景的亮度和饱和度与前景的色相混合。图3-27显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeHue来设置这种混合模式。</p>
+<p><strong>Figure 3-27  Rectangles painted using hue blend mode</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_hue.gif" alt="image"></p>
+<h4 id="饱和度混合模式-Saturation-Blend-Mode"><a href="#饱和度混合模式-Saturation-Blend-Mode" class="headerlink" title="饱和度混合模式(Saturation Blend Mode)"></a>饱和度混合模式(Saturation Blend Mode)</h4><p>混合背景的亮度和色相前景的饱和度。背景中没有饱和度的区域不发生变化。图3-28显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeSaturation来设置这种混合模式。</p>
+<p><strong>Figure 3-28  Rectangles painted using saturation blend mode</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_saturation.gif" alt="image"> </p>
+<h4 id="颜色混合模式-Color-Blend-Mode"><a href="#颜色混合模式-Color-Blend-Mode" class="headerlink" title="颜色混合模式(Color Blend Mode)"></a>颜色混合模式(Color Blend Mode)</h4><p>混合背景的亮度值与前景的色相与饱和度。该模式保留图片的灰度级。我们可以使用该模式绘制单色图片或彩色图片。图3-29显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeColor来设置这种混合模式。</p>
+<p><strong>Figure 3-29  Rectangles painted using color blend mode</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_color.gif" alt="image"> </p>
+<h4 id="亮度混合模式-Luminosity-Blend-Mode"><a href="#亮度混合模式-Luminosity-Blend-Mode" class="headerlink" title="亮度混合模式(Luminosity Blend Mode)"></a>亮度混合模式(Luminosity Blend Mode)</h4><p>将背景图片的色相、饱和度与背景图片的亮度相混合。该模块产生一个与Color Blend模式相反的效果。图3-30显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeLuminosity来设置这种混合模式。</p>
+<p><strong>Figure 3-30  Rectangles painted using luminosity blend mode</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_luminosity.gif" alt="image"> </p>
+<h2 id="裁剪路径"><a href="#裁剪路径" class="headerlink" title="裁剪路径"></a>裁剪路径</h2><p>当前裁剪区域是从路径中创建，作为一个遮罩，从而允许遮住我们不想绘制的部分。例如，我们有一个很大的图片，但只需要显示其中一小部分，则可以设置裁减区域来显示我们想显示的部分。</p>
+<p>当我们绘制的时候，Quartz只渲染裁剪区域里面的东西。裁剪区域内的闭合路径是可见的；而在区域外的部分是不可见的。</p>
+<p>当图形上下文初始创建时，裁减区域包含上下文所有的可绘制区域(例如，PDF上下文的media box)。我们可以通过设置当前路径来改变裁剪区域，然后使用裁减函数来取代绘制函数。裁剪函数与当前已有的裁剪区域求交集以获得路径的填充区域。因此，我们可以求交取得裁减区域，缩小图片的可视区域，但是不能扩展裁减区域。</p>
+<p>裁减区域是图形状态的一部分。为了恢复先前的裁减区域，我们可以在裁减前保存图形状态，并在裁减绘制后恢复图形状态。</p>
+<p>代码清单3-1显示了绘制圆形后设置裁减区域。该段代码使得绘图被裁减，效果类似于图3-3所示。</p>
+<p><strong>Listing 3-1 Setting up a circular clip area</strong></p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">CGContextBeginPath</span>(context);</div><div class="line"><span class="built_in">CGContextAddArc</span>(context, w/<span class="number">2</span>, h/<span class="number">2</span>, ((w&gt;h) ? h : w)/<span class="number">2</span>, <span class="number">0</span>, <span class="number">2</span>*PI, <span class="number">0</span>);</div><div class="line"><span class="built_in">CGContextClosePath</span>(context);</div><div class="line"><span class="built_in">CGContextClip</span>(context);</div></pre></td></tr></table></figure>
+<p><strong>Table 3-6  Functions that clip the graphics context</strong></p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/quartz-2d-table3-6.png?raw=true" alt="image"></p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2014/11/11/quartz2d-2/" rel="next" title="Quartz 2D编程指南之二：图形上下文(Graphics Contexts)">
+                <i class="fa fa-chevron-left"></i> Quartz 2D编程指南之二：图形上下文(Graphics Contexts)
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2014/12/01/quartz2d-4/" rel="prev" title="Quartz 2D编程指南之四：颜色与颜色空间">
+                Quartz 2D编程指南之四：颜色与颜色空间 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#创建及绘制路径"><span class="nav-number">1.</span> <span class="nav-text">创建及绘制路径</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#构建块-Building-Block"><span class="nav-number">2.</span> <span class="nav-text">构建块(Building Block)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#点"><span class="nav-number">2.1.</span> <span class="nav-text">点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#直线"><span class="nav-number">2.2.</span> <span class="nav-text">直线</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#弧"><span class="nav-number">2.3.</span> <span class="nav-text">弧</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#曲线"><span class="nav-number">2.4.</span> <span class="nav-text">曲线</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#闭合路径"><span class="nav-number">2.5.</span> <span class="nav-text">闭合路径</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#椭圆"><span class="nav-number">2.6.</span> <span class="nav-text">椭圆</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#矩形"><span class="nav-number">2.7.</span> <span class="nav-text">矩形</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#创建路径"><span class="nav-number">3.</span> <span class="nav-text">创建路径</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#绘制路径"><span class="nav-number">4.</span> <span class="nav-text">绘制路径</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#影响描边的属性"><span class="nav-number">4.1.</span> <span class="nav-text">影响描边的属性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#路径描边的函数"><span class="nav-number">4.2.</span> <span class="nav-text">路径描边的函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#填充路径"><span class="nav-number">4.3.</span> <span class="nav-text">填充路径</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#设置混合模式"><span class="nav-number">4.4.</span> <span class="nav-text">设置混合模式</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#普通混合模式"><span class="nav-number">4.4.1.</span> <span class="nav-text">普通混合模式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#正片叠底混合模式-Mutiply-Blend-Mode"><span class="nav-number">4.4.2.</span> <span class="nav-text">正片叠底混合模式(Mutiply Blend Mode)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#屏幕混合模式-Screen-Blend-Mode"><span class="nav-number">4.4.3.</span> <span class="nav-text">屏幕混合模式(Screen Blend Mode)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#叠加混合模式-Overlay-Blend-Mode"><span class="nav-number">4.4.4.</span> <span class="nav-text">叠加混合模式(Overlay Blend Mode)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#暗化混合模式-Darken-Blend-Mode"><span class="nav-number">4.4.5.</span> <span class="nav-text">暗化混合模式(Darken Blend Mode)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#亮化混合模式-Lighten-Blend-Mode"><span class="nav-number">4.4.6.</span> <span class="nav-text">亮化混合模式(Lighten Blend Mode)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#色彩减淡模式-ColorDodge-Blend-Mode"><span class="nav-number">4.4.7.</span> <span class="nav-text">色彩减淡模式(ColorDodge Blend Mode)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#色彩加深模式-ColorBurn-Blend-Mode"><span class="nav-number">4.4.8.</span> <span class="nav-text">色彩加深模式(ColorBurn Blend Mode)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#柔光混合模式-SoftLight-Blend-Mode"><span class="nav-number">4.4.9.</span> <span class="nav-text">柔光混合模式(SoftLight Blend Mode)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#强光混合模式-Hard-Light-Blend-Mode"><span class="nav-number">4.4.10.</span> <span class="nav-text">强光混合模式(Hard Light Blend Mode)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#差值混合模式-Difference-Blend-Mode"><span class="nav-number">4.4.11.</span> <span class="nav-text">差值混合模式(Difference Blend Mode)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#排除混合模式-Exclusion-Blend-Mode"><span class="nav-number">4.4.12.</span> <span class="nav-text">排除混合模式(Exclusion Blend Mode)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#色相混合模式-Hue-Blend-Mode"><span class="nav-number">4.4.13.</span> <span class="nav-text">色相混合模式(Hue Blend Mode)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#饱和度混合模式-Saturation-Blend-Mode"><span class="nav-number">4.4.14.</span> <span class="nav-text">饱和度混合模式(Saturation Blend Mode)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#颜色混合模式-Color-Blend-Mode"><span class="nav-number">4.4.15.</span> <span class="nav-text">颜色混合模式(Color Blend Mode)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#亮度混合模式-Luminosity-Blend-Mode"><span class="nav-number">4.4.16.</span> <span class="nav-text">亮度混合模式(Luminosity Blend Mode)</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#裁剪路径"><span class="nav-number">5.</span> <span class="nav-text">裁剪路径</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

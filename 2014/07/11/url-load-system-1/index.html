@@ -1,0 +1,746 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="URL加载系统是一组类和协议的集合，它允许我们的App访问URL指定的内容的。
+URL加载系统的核心类是NSURL，该类提供了大量方法让我们操作URLs和它指向的资源。另外它还提供了一系列的类来加载URL的内容，上传数据到服务器，管理Cookie存储，控制响应缓存，处理认证存储和授权信息，及自定义协议扩展。
+URL Loading System可支持以下协议
+
+ftp://
+http://
+htt">
+<meta property="og:type" content="article">
+<meta property="og:title" content="URL加载系统之一：基本结构">
+<meta property="og:url" content="http://southpeak.github.io/2014/07/11/url-load-system-1/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="URL加载系统是一组类和协议的集合，它允许我们的App访问URL指定的内容的。
+URL加载系统的核心类是NSURL，该类提供了大量方法让我们操作URLs和它指向的资源。另外它还提供了一系列的类来加载URL的内容，上传数据到服务器，管理Cookie存储，控制响应缓存，处理认证存储和授权信息，及自定义协议扩展。
+URL Loading System可支持以下协议
+
+ftp://
+http://
+htt">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/URLLoadingSystem/Art/nsobject_hierarchy_2x.png">
+<meta property="og:updated_time" content="2016-08-27T04:45:32.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="URL加载系统之一：基本结构">
+<meta name="twitter:description" content="URL加载系统是一组类和协议的集合，它允许我们的App访问URL指定的内容的。
+URL加载系统的核心类是NSURL，该类提供了大量方法让我们操作URLs和它指向的资源。另外它还提供了一系列的类来加载URL的内容，上传数据到服务器，管理Cookie存储，控制响应缓存，处理认证存储和授权信息，及自定义协议扩展。
+URL Loading System可支持以下协议
+
+ftp://
+http://
+htt">
+<meta name="twitter:image" content="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/URLLoadingSystem/Art/nsobject_hierarchy_2x.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2014/07/11/url-load-system-1/"/>
+
+  <title> URL加载系统之一：基本结构 | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                URL加载系统之一：基本结构
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-07-11T19:10:29+08:00" content="2014-07-11">
+              2014-07-11
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/translate/" itemprop="url" rel="index">
+                    <span itemprop="name">翻译</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>URL加载系统是一组类和协议的集合，它允许我们的App访问URL指定的内容的。</p>
+<p>URL加载系统的核心类是NSURL，该类提供了大量方法让我们操作URLs和它指向的资源。另外它还提供了一系列的类来加载URL的内容，上传数据到服务器，管理Cookie存储，控制响应缓存，处理认证存储和授权信息，及自定义协议扩展。</p>
+<p>URL Loading System可支持以下协议</p>
+<ol>
+<li>ftp://</li>
+<li>http://</li>
+<li>https://</li>
+<li>file://</li>
+<li>data://</li>
+</ol>
+<p>另外它还支持代理服务和网关处理。</p>
+<p>URL加载系统定义了用于加载URL的类，另外还定义了一些辅助类来修改加载类的行为。这些辅助类可以分为五大类：</p>
+<ol>
+<li>协议支持</li>
+<li>授权与认证</li>
+<li>Cookie存储</li>
+<li>配置管理 </li>
+<li>缓存管理</li>
+</ol>
+<p>整个URL加载系统的结构如下图所示：</p>
+<p><img src="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/URLLoadingSystem/Art/nsobject_hierarchy_2x.png" alt="image"></p>
+<p>下面对这张图做个简单的介绍</p>
+<h2 id="URL-Loading"><a href="#URL-Loading" class="headerlink" title="URL Loading"></a>URL Loading</h2><p>在这张图中，我们用得最多的就是URL Loading中的这几个类。这些类允许我们从URL指定的源获取内容。根据不同的需求，我们可以使用不同的类，这主要依赖于我们应用所支持的系统版本，以及我们希望内容是以文件的形式获取还是以数据块的方式获取。对于系统的版本，主要有以下几点作为参考：</p>
+<ol>
+<li>在iOS7及后续版本中，推荐使用NSURLSession。</li>
+<li>对于iOS7以前的版本，可以使用NSURLConnection来获取数据并加载到本地内存中。如果要保存数据，可以再将数据写入磁盘。</li>
+</ol>
+<p>而对于获取数据，主要看我们是获取数据到内存中还是下载文件并保存。如果只是获取数据到内存中，则有两种方法：</p>
+<ol>
+<li>对于简单的请求，可以使用NSURLSession</li>
+<li>对于复杂的请求（如上传数据请求），提供了NSURLRequest对象来与NSURLSession和NSURLConnection一起使用。</li>
+</ol>
+<p>不管使用哪种方法，我们都可以获取到响应数据，为此，我们可以如下处理响应</p>
+<ol>
+<li>提供一个响应处理block。当URL Loading类完成从服务端接收数据时调用该block.</li>
+<li>提供自定义有delegate。URL Loading类间断性地调用我们的代理方法来获取数据。在需要的情况下，我们的程序负责收集这些数据。</li>
+</ol>
+<p>另外，URL Loading提供了一个返回对象来封装与请求相关的元数据，如MIME类型等。</p>
+<p>而如果我们需要下载文件，则有两个基本方法来处理：</p>
+<ol>
+<li>对于简单请求，可以使用NSURLSession</li>
+<li>对于复杂请求，提供了NSURLRequest对象来与NSURLSession和NSURLDownload一起使用。</li>
+</ol>
+<p>相较于NSURLDownload，NSURLSession有两个明显的优势：NSURLSession可用于iOS系统，而NSURLDownload在iOS中不被支持；当应用挂起、终止或异常退出时，下载可以在后台继续进行。</p>
+<p>URL Loading中还提供了两个类用于处理元数据，一个用于表示客户端请求(NSURLRequest)，一个用于表示服务端响应(NSURLResponse)。我们分别介绍一下这两个类。</p>
+<h3 id="NSURLRequest"><a href="#NSURLRequest" class="headerlink" title="NSURLRequest"></a>NSURLRequest</h3><p>NSURLRequest对象封装了URL和协议指定的属性，及依赖于协议的行为。同时也指定了本地缓存策略及连接超时时间。一些协议支持协议指定的属性，如HTTP协议可以添加返回HTTP请求体，请求报头和传输方法到NSURLRequest中。</p>
+<p>这里需要注意的是，当我们使用NSURLRequest的子类NSMutableURLRequest初始化一个连接或下载时，将会对NSMutableURLRequest实例进行深拷贝。因此在初始的请求上做修改时不会影响到连接和下载对象。</p>
+<h3 id="NSURLResponse"><a href="#NSURLResponse" class="headerlink" title="NSURLResponse"></a>NSURLResponse</h3><p>一个响应可以分为两个部分：描述内容的元数据和内容数据本身。而NSURLResponse类封装了大部分协议的响应元数据，这些元数据包括MIME类型，期望的Content-Length，编码格式，及提供响应的URL。NSURLResponse的一些子类提供了与协议相关的额外元数据。如NSHTTPURLResponse存储了web服务器返回的响应头和状态码。</p>
+<p>需要注意的是NSURLResponse对象只存储响应的元数据，而不存储响应数据本身。响应数据由URL Loading通过响应处理block和对象的代理来接收并处理。</p>
+<h2 id="认证和证书"><a href="#认证和证书" class="headerlink" title="认证和证书"></a>认证和证书</h2><p>针对认证和证书，URL加载系统提供了以下几个类：</p>
+<ol>
+<li>NSURLCredential：封装了由认证信息和持久化行为组成的证书。</li>
+<li>NSURLProtectionSpace：表示需要特定证书的区域。一个保护区域可以限制到单独的URL，拥有web服务器的区域，或引用一个代理。</li>
+<li>NSURLCredientialStorage：一般是一个共享实例，用于管理证书存储和提供NSURLCredential对象到NSURLProductionSpace对象的映射。</li>
+<li>NSURLAuthenticationChallenge：封装了认证一个请求的的NSURLProtocol实现所需要的信息：一个建议的证书、保护空间、错误信息或者协议用于确定所需要认证的响应、以及认证尝试次数等。初始对象（即请求发送者）必须实现NSURLAuthenticationChallengeSender协议。NSURLAuthenticationChallenge实例被用于NSURLProtocol的子类来告诉URL加载系统需要认证。他们同样为NSURLConnection和NSURLDownload的代理方法提供了便利的自定义认证处理。</li>
+</ol>
+<h2 id="缓存管理"><a href="#缓存管理" class="headerlink" title="缓存管理"></a>缓存管理</h2><p>URL加载系统提供基于磁盘和内存的缓存，允许程序减少对网络连接的依赖，并提供对缓存响应的快速访问。缓存存储在每个app的缓存文件夹下。NSURLConnection会根据缓存策略（初始化NSURLRequest对象中指定的）来查询缓存。</p>
+<p>NSURLCache提供了配置缓存大小和磁盘存储位置的方法。同时提供了包含缓存响应的NSCacheURLResponse对象集合的方法。NSCacheURLResponse对象封装了NSURLResponse对象和URL数据，同时提供用户信息字典，这些信息可以用于缓存任何用户数据。</p>
+<p>不是所有的协议实现都支持响应缓存。当前只有http和https请求可被缓存。</p>
+<p>一个NSURLConnection对象可以通过connection:willCacheResponse:代理访求来控制是否缓存响应，响应是否只应该存储在内存中。</p>
+<h2 id="Cookie存储"><a href="#Cookie存储" class="headerlink" title="Cookie存储"></a>Cookie存储</h2><p>由于HTTP协议是无状态的，所以客户端通常使用cookie来保存URL请求的数据。URL加载系统提供了接口来创建和管理cookie，将cookie作为HTTP请求的一部分来发送，及解析web服务端响应数据时接收cookie.</p>
+<p>iOS提供了NSHTTPCookieStorage类来管理一个NSHTTPCookie对象的集合。</p>
+<h2 id="协议支持"><a href="#协议支持" class="headerlink" title="协议支持"></a>协议支持</h2><p>URL加载系统默认支持http, https, file, ftp, data协议。另外，URL加载系统也允许我们注册自己的类来支持额外的系统层级的网络协议。我们也可以添加指定协议的属性到URL请求和URL响应对象</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2014/07/08/mix-swift-and-objective-c/" rel="next" title="Swift和Objective-C混合编程">
+                <i class="fa fa-chevron-left"></i> Swift和Objective-C混合编程
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2014/07/11/url-load-system-2/" rel="prev" title="URL加载系统之二：NSURLSession">
+                URL加载系统之二：NSURLSession <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#URL-Loading"><span class="nav-number">1.</span> <span class="nav-text">URL Loading</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#NSURLRequest"><span class="nav-number">1.1.</span> <span class="nav-text">NSURLRequest</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#NSURLResponse"><span class="nav-number">1.2.</span> <span class="nav-text">NSURLResponse</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#认证和证书"><span class="nav-number">2.</span> <span class="nav-text">认证和证书</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#缓存管理"><span class="nav-number">3.</span> <span class="nav-text">缓存管理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Cookie存储"><span class="nav-number">4.</span> <span class="nav-text">Cookie存储</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#协议支持"><span class="nav-number">5.</span> <span class="nav-text">协议支持</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

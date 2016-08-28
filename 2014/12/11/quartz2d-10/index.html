@@ -1,0 +1,719 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="管理数据是每一个图形应用程序所需要处理的工作。对于Quartz来说，数据管理涉及为Quartz 2D程序提供数据，及从中获取数据。一些Quartz 2D程序将数据传输到Quartz中，如从文件或程序其它部分获取图片或PDF数据。另一些程序则获取Quartz数据，如将图像或PDF数据写入到文件，或提供给程序其它部分这些数据。
+Quartz提供了一系列的函数来管理数据。通过学习本章，我们可以了解到哪些">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Quartz 2D编程指南之十：Quartz 2D中的数据管理">
+<meta property="og:url" content="http://southpeak.github.io/2014/12/11/quartz2d-10/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="管理数据是每一个图形应用程序所需要处理的工作。对于Quartz来说，数据管理涉及为Quartz 2D程序提供数据，及从中获取数据。一些Quartz 2D程序将数据传输到Quartz中，如从文件或程序其它部分获取图片或PDF数据。另一些程序则获取Quartz数据，如将图像或PDF数据写入到文件，或提供给程序其它部分这些数据。
+Quartz提供了一系列的函数来管理数据。通过学习本章，我们可以了解到哪些">
+<meta property="og:image" content="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/movingdata.gif">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/quartz-2d-table10-1.png?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/quartz-2d-table10-2.png?raw=true">
+<meta property="og:updated_time" content="2016-08-27T08:42:35.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Quartz 2D编程指南之十：Quartz 2D中的数据管理">
+<meta name="twitter:description" content="管理数据是每一个图形应用程序所需要处理的工作。对于Quartz来说，数据管理涉及为Quartz 2D程序提供数据，及从中获取数据。一些Quartz 2D程序将数据传输到Quartz中，如从文件或程序其它部分获取图片或PDF数据。另一些程序则获取Quartz数据，如将图像或PDF数据写入到文件，或提供给程序其它部分这些数据。
+Quartz提供了一系列的函数来管理数据。通过学习本章，我们可以了解到哪些">
+<meta name="twitter:image" content="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/movingdata.gif">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2014/12/11/quartz2d-10/"/>
+
+  <title> Quartz 2D编程指南之十：Quartz 2D中的数据管理 | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Quartz 2D编程指南之十：Quartz 2D中的数据管理
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-12-11T09:19:08+08:00" content="2014-12-11">
+              2014-12-11
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/translate/" itemprop="url" rel="index">
+                    <span itemprop="name">翻译</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>管理数据是每一个图形应用程序所需要处理的工作。对于Quartz来说，数据管理涉及为Quartz 2D程序提供数据，及从中获取数据。一些Quartz 2D程序将数据传输到Quartz中，如从文件或程序其它部分获取图片或PDF数据。另一些程序则获取Quartz数据，如将图像或PDF数据写入到文件，或提供给程序其它部分这些数据。</p>
+<p>Quartz提供了一系列的函数来管理数据。通过学习本章，我们可以了解到哪些函数是最适合我们的程序的。</p>
+<blockquote>
+<p>注：我们推荐使用图像I/O框架来读取和写入数据，该框架在iOS 4、Mac OS X 10.4或者更高版本中可用。查看《Image I/OProgramming Guide 》可以获取更多关于CGImageSourceRef和CGImageDestinationRef的信息。图像源和目标不仅提供了访问图像数据的方法，不提供了更多访问图像原数据的方法。</p>
+</blockquote>
+<p>Quartz可识别三种类型的数据源和目标：</p>
+<ol>
+<li>URL：通过URL指定的数据可以作为数据的提供者和接收者。我们使用Core Foundation数据类型CFURLRef作为参数传递给Quartz函数。</li>
+<li>CFData：Core Foundation数据类型CFDataRef和CFMutableDataRef可简化Core Foundation对象的内存分配行为。CFData是一个”toll-freebridged”类，CocoaFoundation中对应的类是NSData；如果在Quartz 2D中使用Cocoa框架，你可以传递一个NSData对象给Quartz方法，以取代CFData对象。</li>
+<li>原始数据：我们可以提供一个指向任何类型数据的指针，连同处理这些数据基本内存管理的回调函数集合。</li>
+</ol>
+<p>这些数据，无论是URL、CFData对象，还是数据缓存，都可以是图像数据或PDF数据。图像数据可以是任何格式的数据。Quartz能够解析大部分常用的图像文件格式。一些Quartz数据管理函数专门用于处理图像数据，一些只处理PDF数据，还有一些可同时处理PDF和图像数据。</p>
+<p>URL，CFData和原始数据源和目标中的数据都是在Mac OS X 或者iOS图像领域范围之外的，如图10-1所示。Mac OS X或iOS的其它图像技术通常会提供它们自己的方式来和Quartz通信。例如，一个Mac OS X 应用程序可以传输一个Quartz图像给Core Image，并使用Core Image来实现更复杂的效果。</p>
+<p><strong>Figure 10-1  Moving data to and from Quartz 2D in Mac OS X</strong></p>
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/movingdata.gif" alt="image"></p>
+<h2 id="传输数据给Quartz-2D"><a href="#传输数据给Quartz-2D" class="headerlink" title="传输数据给Quartz 2D"></a>传输数据给Quartz 2D</h2><p>表10-1列出了从数据源获取数据的方法。所有的这些函数，除了CGPDFDocumentCreateWithURL，都返回一个图像源(CGImageSourceRef)或者数据提供者(CGDataProviderRef)。图像源和数据提供者抽象了数据访问工作，并避免了程序去管理原始内存缓存。</p>
+<p>图像源是将图像数据传输给Quartz的首先方式。图像源可表示很多种图像数据。一个图像源可表示多于一个图像，也可表示缩略图、图像的属性和图像文件。当我们拥有CGImageSourceRef对象后，我们可以完成如下工作：</p>
+<ol>
+<li>使用函数CGImageSourceCreateImageAtIndex,CGImageSourceCreateThumbnailAtIndex, CGImageSourceCreateIncremental创建图像(CGImageRef). 一个CGImageRef数据类型表示一个单独的Quartz图像。</li>
+<li>通过函数CGImageSourceUpdateData或CGImageSourceUpdateDataProvider来添加内容到图像源中。</li>
+<li>使用函数CGImageSourceGetCount, CGImageSourceCopyProperties和CGImageSourceCopyTypeIdentifiers获取图像源的信息。</li>
+</ol>
+<p>CFPDFDocumentCreateWithURL函数可以方便地从URL指定的文件创建PDF文档。</p>
+<p>数据提供者是比较老的机制，它有很多限制。它们可用于获取图像或PDF数据。</p>
+<p>我们可以将数据提供者用于：</p>
+<ol>
+<li>一个图像创建函数，如CGImageCreate,CGImageCreateWithPNGDataProvider或者CGImageCreateWithJPEGDataProvider。</li>
+<li>PDF文档的创建函数CGPDFDocumentCreateWithProvider.</li>
+<li>函数CGImageSourceUpdateDataProvider用于更新已存在的图像源。</li>
+</ol>
+<p>关于图像的更多信息，可查看“Bitmap Images andImage Masks”。</p>
+<p><strong>Table 10-1  Functions that move data into Quartz 2D</strong></p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/quartz-2d-table10-1.png?raw=true" alt="image"></p>
+<h2 id="获取Quartz-2D的数据"><a href="#获取Quartz-2D的数据" class="headerlink" title="获取Quartz 2D的数据"></a>获取Quartz 2D的数据</h2><p>表10-2列出地从Quartz 2D中获取数据的方法。所有这些方法，除了CGPDFContextCreateWithURL，都返回一个图像目标(CGImageDestinationRef)或者是数据消费者(CGDataComsumerRef)。图像目标和数据消费者抽象的数据写入工作，让Quartz来处理细节。</p>
+<p>一个图像目标是获取Quartz数据的首先方法。与图像源一样，图像目标也可以表示很多图像数据，如一个单独图片、多个图片、缩略图、图像属性或者图片文件。在获取到CGImageDestinationRef后，我们可以完成以下工作：</p>
+<ol>
+<li>使用函数CGImageDestinationAddImage或者CGImageDestinationAddImageFromSource添加一个图像(CGImageRef)到目标中。一个CGImageRef表示一个图片。</li>
+<li>使用函数CGImageDestinationSetProperties设置属性</li>
+<li>使用函数CGImageDestinationCopyTypeIdentifiers和CGImageDestinationGetTypeID从图像目标中获取信息。</li>
+</ol>
+<p>函数CGPDFContextCreateWithURL可以方便地将PDF数据写入URL指定的位置。</p>
+<p>数据消费者是一种老的机制，有很多限制。它们用于写图像或PDF数据。我们可以将数据消费者用于：</p>
+<ol>
+<li>PDF上下文创建函数CGPDFContextCreate。该函数返回一个图形上下文，用于记录一系列的PDF绘制命令。</li>
+<li>函数CGImageDestinationCreateWithDataConsumer，用于从数据消费者中创建图像目标。</li>
+</ol>
+<p>关于图像的更多信息，可查看“Bitmap Images andImage Masks”。</p>
+<p><strong>Table 10-2  Functions that move data out of Quartz 2D</strong></p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/quartz-2d-table10-2.png?raw=true" alt="image"></p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2014/12/10/quartz2d-9/" rel="next" title="Quartz 2D编程指南之九：透明层">
+                <i class="fa fa-chevron-left"></i> Quartz 2D编程指南之九：透明层
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/01/05/quartz2d-11/" rel="prev" title="Quartz 2D编程指南之十一：位图与图像遮罩">
+                Quartz 2D编程指南之十一：位图与图像遮罩 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#传输数据给Quartz-2D"><span class="nav-number">1.</span> <span class="nav-text">传输数据给Quartz 2D</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#获取Quartz-2D的数据"><span class="nav-number">2.</span> <span class="nav-text">获取Quartz 2D的数据</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

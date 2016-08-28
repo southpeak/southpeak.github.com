@@ -1,0 +1,830 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="换了个厂子，还不到1个月。哎，着实是累啊，基本上是996.5的节奏，只会更多。加班把我快加吐了，但人在江湖，身不由已啊。为了讨口饭吃，命也不要了。谁让咱只是个臭写代码的呢。不过加班是多，只是长得太丑，所有没办法，没时间也得抽时间来学习。不然，饭都没得吃了，还得养家糊口呢。
+本期总结的内容不是很多，主要有以下几个问题：
+
+使用UIVisualEffectView为视图添加特殊效果
+Nullabili">
+<meta property="og:type" content="article">
+<meta property="og:title" content="iOS知识小集 第二期(2015.05.31)">
+<meta property="og:url" content="http://southpeak.github.io/2015/05/31/ios-techset-2/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="换了个厂子，还不到1个月。哎，着实是累啊，基本上是996.5的节奏，只会更多。加班把我快加吐了，但人在江湖，身不由已啊。为了讨口饭吃，命也不要了。谁让咱只是个臭写代码的呢。不过加班是多，只是长得太丑，所有没办法，没时间也得抽时间来学习。不然，饭都没得吃了，还得养家糊口呢。
+本期总结的内容不是很多，主要有以下几个问题：
+
+使用UIVisualEffectView为视图添加特殊效果
+Nullabili">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/blur%20effect.png?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/Vibrancy%20effect.png?raw=true">
+<meta property="og:image" content="http://i.stack.imgur.com/CFOSG.png">
+<meta property="og:updated_time" content="2016-08-27T02:40:25.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="iOS知识小集 第二期(2015.05.31)">
+<meta name="twitter:description" content="换了个厂子，还不到1个月。哎，着实是累啊，基本上是996.5的节奏，只会更多。加班把我快加吐了，但人在江湖，身不由已啊。为了讨口饭吃，命也不要了。谁让咱只是个臭写代码的呢。不过加班是多，只是长得太丑，所有没办法，没时间也得抽时间来学习。不然，饭都没得吃了，还得养家糊口呢。
+本期总结的内容不是很多，主要有以下几个问题：
+
+使用UIVisualEffectView为视图添加特殊效果
+Nullabili">
+<meta name="twitter:image" content="https://github.com/southpeak/Blog-images/blob/master/blur%20effect.png?raw=true">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2015/05/31/ios-techset-2/"/>
+
+  <title> iOS知识小集 第二期(2015.05.31) | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                iOS知识小集 第二期(2015.05.31)
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-05-31T23:50:54+08:00" content="2015-05-31">
+              2015-05-31
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/techset/" itemprop="url" rel="index">
+                    <span itemprop="name">知识小集</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>换了个厂子，还不到1个月。哎，着实是累啊，基本上是996.5的节奏，只会更多。加班把我快加吐了，但人在江湖，身不由已啊。为了讨口饭吃，命也不要了。谁让咱只是个臭写代码的呢。不过加班是多，只是长得太丑，所有没办法，没时间也得抽时间来学习。不然，饭都没得吃了，还得养家糊口呢。</p>
+<p>本期总结的内容不是很多，主要有以下几个问题：</p>
+<ol>
+<li>使用<code>UIVisualEffectView</code>为视图添加特殊效果</li>
+<li><code>Nullability Annotations</code></li>
+<li><code>weak</code>的生命周期</li>
+</ol>
+<h2 id="使用UIVisualEffectView为视图添加特殊效果"><a href="#使用UIVisualEffectView为视图添加特殊效果" class="headerlink" title="使用UIVisualEffectView为视图添加特殊效果"></a>使用UIVisualEffectView为视图添加特殊效果</h2><p>在<code>iOS 8</code>后，苹果开放了不少创建特效的接口，其中就包括创建毛玻璃(<code>blur</code>)的接口。</p>
+<p>通常要想创建一个特殊效果(如<code>blur</code>效果)，可以创建一个<code>UIVisualEffectView</code>视图对象，这个对象提供了一种简单的方式来实现复杂的视觉效果。这个可以把这个对象看作是效果的一个容器，实际的效果会影响到该视图对象底下的内容，或者是添加到该视图对象的<code>contentView</code>中的内容。</p>
+<p>我们举个例子来看看如果使用<code>UIVisualEffectView</code>：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">let bgView: UIImageView = UIImageView(image: UIImage(named: &quot;visual&quot;))</div><div class="line">bgView.frame = self.view.bounds</div><div class="line">self.view.addSubview(bgView)</div><div class="line"></div><div class="line">let blurEffect: UIBlurEffect = UIBlurEffect(style: .Light)</div><div class="line">let blurView: UIVisualEffectView = UIVisualEffectView(effect: blurEffect)</div><div class="line">blurView.frame = CGRectMake(50.0, 50.0, self.view.frame.width - 100.0, 200.0)</div><div class="line">self.view.addSubview(blurView)</div></pre></td></tr></table></figure>
+<p>这段代码是在当前视图控制器上添加了一个<code>UIImageView</code>作为背景图。然后在视图的一小部分中使用了<code>blur</code>效果。其效果如下所示：</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/blur%20effect.png?raw=true" alt="image"></p>
+<p>我们可以看到<code>UIVisualEffectView</code>还是非常简单的。需要注意是的，不应该直接添加子视图到<code>UIVisualEffectView</code>视图中，而是应该添加到<code>UIVisualEffectView</code>对象的<code>contentView</code>中。</p>
+<p>另外，尽量避免将<code>UIVisualEffectView</code>对象的<code>alpha</code>值设置为小于<code>1.0</code>的值，因为创建半透明的视图会导致系统在离屏渲染时去对<code>UIVisualEffectView</code>对象及所有的相关的子视图做混合操作。这不但消耗<code>CPU/GPU</code>，也可能会导致许多效果显示不正确或者根本不显示。</p>
+<p>我们在上面看到，初始化一个<code>UIVisualEffectView</code>对象的方法是<code>UIVisualEffectView(effect: blurEffect)</code>，其定义如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">init(effect effect: UIVisualEffect)</div></pre></td></tr></table></figure>
+<p>这个方法的参数是一个<code>UIVisualEffect</code>对象。我们查看官方文档，可以看到在UIKit中，定义了几个专门用来创建视觉特效的，它们分别是<code>UIVisualEffect</code>、<code>UIBlurEffect</code>和<code>UIVibrancyEffect</code>。它们的继承层次如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">NSObject</div><div class="line">	| -- UIVisualEffect</div><div class="line">		| -- UIBlurEffect</div><div class="line">		| -- UIVibrancyEffect</div></pre></td></tr></table></figure>
+<p><code>UIVisualEffect</code>是一个继承自<code>NSObject</code>的创建视觉效果的基类，然而这个类除了继承自<code>NSObject</code>的属性和方法外，没有提供任何新的属性和方法。其主要目的是用于初始化<code>UIVisualEffectView</code>，在这个初始化方法中可以传入<code>UIBlurEffect</code>或者<code>UIVibrancyEffect</code>对象。</p>
+<p>一个<code>UIBlurEffect</code>对象用于将<code>blur</code>(毛玻璃)效果应用于<code>UIVisualEffectView</code>视图下面的内容。如上面的示例所示。不过，这个对象的效果并不影响<code>UIVisualEffectView</code>对象的<code>contentView</code>中的内容。</p>
+<p><code>UIBlurEffect</code>主要定义了三种效果，这些效果由枚举<code>UIBlurEffectStyle</code>来确定，该枚举的定义如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">enum UIBlurEffectStyle : Int &#123;</div><div class="line">    case ExtraLight</div><div class="line">    case Light</div><div class="line">    case Dark</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>其主要是根据色调(<code>hue</code>)来确定特效视图与底部视图的混合。</p>
+<p>与<code>UIBlurEffect</code>不同的是，<code>UIVibrancyEffect</code>主要用于放大和调整<code>UIVisualEffectView</code>视图下面的内容的颜色，同时让<code>UIVisualEffectView</code>的<code>contentView</code>中的内容看起来更加生动。通常<code>UIVibrancyEffect</code>对象是与<code>UIBlurEffect</code>一起使用，主要用于处理在<code>UIBlurEffect</code>特效上的一些显示效果。接上面的代码，我们看看在blur的视图上添加一些新的特效，如下代码所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">let vibrancyView: UIVisualEffectView = UIVisualEffectView(effect: UIVibrancyEffect(forBlurEffect: blurEffect))</div><div class="line">vibrancyView.setTranslatesAutoresizingMaskIntoConstraints(false)</div><div class="line">blurView.contentView.addSubview(vibrancyView)</div><div class="line"></div><div class="line">var label: UILabel = UILabel()</div><div class="line">label.setTranslatesAutoresizingMaskIntoConstraints(false)</div><div class="line">label.text = &quot;Vibrancy Effect&quot;</div><div class="line">label.font = UIFont(name: &quot;HelveticaNeue-Bold&quot;, size: 30)</div><div class="line">label.textAlignment = .Center</div><div class="line">label.textColor = UIColor.whiteColor()</div><div class="line">vibrancyView.contentView.addSubview(label)</div></pre></td></tr></table></figure>
+<p>其效果如下图所示：</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/Vibrancy%20effect.png?raw=true" alt="image"></p>
+<p><code>vibrancy</code>特效是取决于颜色值的。所有添加到<code>contentView</code>的子视图都必须实现<code>tintColorDidChange</code>方法并更新自己。需要注意的是，我们使用<code>UIVibrancyEffect(forBlurEffect:)</code>方法创建<code>UIVibrancyEffect</code>时，参数<code>blurEffect</code>必须是我们想加效果的那个<code>blurEffect</code>，否则可能不是我们想要的效果。</p>
+<p>另外，<code>UIVibrancyEffect</code>还提供了一个类方法<code>notificationCenterVibrancyEffect</code>，其声明如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">class func notificationCenterVibrancyEffect() -&gt; UIVibrancyEffect!</div></pre></td></tr></table></figure>
+<p>这个方法创建一个用于通知中心的<code>Today</code>扩展的<code>vibrancy</code>特效。</p>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/UIKit/Reference/UIVisualEffectView/" target="_blank" rel="external">UIVisualEffectView Class Reference</a></li>
+<li><a href="https://developer.apple.com/library/ios/documentation/UIKit/Reference/UIVisualEffect_class/index.html#//apple_ref/occ/cl/UIVisualEffect" target="_blank" rel="external">UIVisualEffect Class Reference</a></li>
+<li><a href="https://developer.apple.com/library/ios/documentation/UIKit/Reference/UIVisualEffect_class/index.html#//apple_ref/occ/cl/UIVisualEffect" target="_blank" rel="external">UIBlurEffect Class Reference</a></li>
+<li><a href="https://developer.apple.com/library/ios/documentation/UIKit/Reference/UIVibrancyEffect/" target="_blank" rel="external">UIVibrancyEffect Class Reference</a></li>
+<li><a href="http://swiftoverload.com/tag/uivisualeffectview/" target="_blank" rel="external">UIVisualEffect – Swift Tutorial</a></li>
+<li><a href="http://idrawcode.tumblr.com/post/101925733632/ios-8-uivisualeffect" target="_blank" rel="external">iOS 8: UIVisualEffect</a></li>
+</ol>
+<h2 id="Pointer-is-missing-a-nullability-type-specifier-nonnull-or-nullable-问题的处理-–-Nullability-Annotations"><a href="#Pointer-is-missing-a-nullability-type-specifier-nonnull-or-nullable-问题的处理-–-Nullability-Annotations" class="headerlink" title="Pointer is missing a nullability type specifier (nonnull or nullable)问题的处理 – Nullability Annotations"></a>Pointer is missing a nullability type specifier (<strong>nonnull or </strong>nullable)问题的处理 – Nullability Annotations</h2><p>最近在用<code>Xcode 6.3</code>写代码，一些涉及到对象的代码会报如下编译器警告：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">Pointer is missing a nullability type specifier (_nonnull or _nullable)</div></pre></td></tr></table></figure>
+<p>于是<code>google</code>了一下，发现这是<code>Xcode 6.3</code>的一个新特性，即<strong>nullability annotations</strong>。</p>
+<h3 id="Nullability-Annotations"><a href="#Nullability-Annotations" class="headerlink" title="Nullability Annotations"></a>Nullability Annotations</h3><p>我们都知道在<code>swift</code>中，可以使用<code>!</code>和<code>?</code>来表示一个对象是<code>optional</code>的还是<code>non-optional</code>，如<code>view?</code>和<code>view!</code>。而在<code>Objective-C</code>中则没有这一区分，<code>view</code>即可表示这个对象是<code>optional</code>，也可表示是<code>non-optional</code>。这样就会造成一个问题：在<code>Swift</code>与<code>Objective-C</code>混编时，<code>Swift</code>编译器并不知道一个<code>Objective-C</code>对象到底是<code>optional</code>还是<code>non-optional</code>，因此这种情况下编译器会隐式地将<code>Objective-C</code>的对象当成是<code>non-optional</code>。</p>
+<p>为了解决这个问题，苹果在<code>Xcode 6.3</code>引入了一个<code>Objective-C</code>的新特性：<code>nullability annotations</code>。这一新特性的核心是两个新的类型注释：<strong>__nullable</strong>和<strong>__nonnull</strong>。从字面上我们可以猜到，<strong>__nullable</strong>表示对象可以是<code>NULL</code>或<code>nil</code>，而<strong>__nonnull</strong>表示对象不应该为空。当我们不遵循这一规则时，编译器就会给出警告。</p>
+<p>我们来看看以下的实例，</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line">@interface TestNullabilityClass ()</div><div class="line"></div><div class="line">@property (nonatomic, copy) NSArray * items;</div><div class="line"></div><div class="line">- (id)itemWithName:(NSString * __nonnull)name;</div><div class="line"></div><div class="line">@end</div><div class="line"></div><div class="line">@implementation TestNullabilityClass</div><div class="line"></div><div class="line">...</div><div class="line"></div><div class="line">- (void)testNullability &#123;</div><div class="line">    [self itemWithName:nil];	// 编译器警告：Null passed to a callee that requires a non-null argument</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (id)itemWithName:(NSString * __nonnull)name &#123;</div><div class="line">    return nil;</div><div class="line">&#125;</div><div class="line"></div><div class="line">@end</div></pre></td></tr></table></figure>
+<p>不过这只是一个警告，程序还是能编译通过并运行。</p>
+<p>事实上，在任何可以使用<code>const</code>关键字的地方都可以使用<code>__nullable</code>和<code>__nonnull</code>，不过这两个关键字仅限于使用在指针类型上。而在方法的声明中，我们还可以使用不带下划线的<code>nullable</code>和<code>nonnull</code>，如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">- (nullable id)itemWithName:(NSString * nonnull)name</div></pre></td></tr></table></figure>
+<p>在属性声明中，也增加了两个相应的特性，因此上例中的items属性可以如下声明：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">@property (nonatomic, copy, nonnull) NSArray * items;</div></pre></td></tr></table></figure>
+<p>当然也可以用以下这种方式：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">@property (nonatomic, copy) NSArray * __nonnull items;</div></pre></td></tr></table></figure>
+<p>推荐使用<code>nonnull</code>这种方式，这样可以让属性声明看起来更清晰。</p>
+<h3 id="Nonnull区域设置-Audited-Regions"><a href="#Nonnull区域设置-Audited-Regions" class="headerlink" title="Nonnull区域设置(Audited Regions)"></a>Nonnull区域设置(Audited Regions)</h3><p>如果需要每个属性或每个方法都去指定<code>nonnull</code>和<code>nullable</code>，是一件非常繁琐的事。苹果为了减轻我们的工作量，专门提供了两个宏：<code>NS_ASSUME_NONNULL_BEGIN</code>和<code>NS_ASSUME_NONNULL_END</code>。在这两个宏之间的代码，所有简单指针对象都被假定为<code>nonnull</code>，因此我们只需要去指定那些<code>nullable</code>的指针。如下代码所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">NS_ASSUME_NONNULL_BEGIN</div><div class="line"></div><div class="line">@interface TestNullabilityClass ()</div><div class="line"></div><div class="line">@property (nonatomic, copy) NSArray * items;</div><div class="line"></div><div class="line">- (id)itemWithName:(nullable NSString *)name;</div><div class="line"></div><div class="line">@end</div><div class="line"></div><div class="line">NS_ASSUME_NONNULL_END</div></pre></td></tr></table></figure>
+<p>在上面的代码中，<code>items</code>属性默认是<code>non null</code>的，<code>itemWithName:</code>方法的返回值也是<code>non null</code>，而参数是指定为<code>nullable</code>的。</p>
+<p>不过，为了安全起见，苹果还制定了几条规则：</p>
+<ol>
+<li>typedef定义的类型的<code>nullability</code>特性通常依赖于上下文，即使是在<code>Audited Regions</code>中，也不能假定它为<code>nonnull</code>。</li>
+<li>复杂的指针类型(如id <em>)必须显示去指定是<code>nonnull</code>还是<code>nullable</code>。例如，指定一个指向nullable对象的<code>nonnull</code>指针，可以使用`”__nullable id </em> __nonnull”`。</li>
+<li>我们经常使用的<code>NSError **</code>通常是被假定为一个指向<code>nullable NSError</code>对象的<code>nullable</code>指针。</li>
+</ol>
+<h3 id="兼容性"><a href="#兼容性" class="headerlink" title="兼容性"></a>兼容性</h3><p>因为<code>Nullability Annotations</code>是<code>Xcode 6.3</code>新加入的，所以我们需要考虑之前的老代码。实际上，苹果已以帮我们处理好了这种兼容问题，我们可以安全地使用它们：</p>
+<ol>
+<li>老代码仍然能正常工作，即使对<code>nonnull</code>对象使用了<code>nil</code>也没有问题。</li>
+<li>老代码在需要和<code>swift</code>混编时，在新的<code>swift</code>编译器下会给出一个警告。</li>
+<li><code>nonnull</code>不会影响性能。事实上，我们仍然可以在运行时去判断我们的对象是否为<code>nil</code>。</li>
+</ol>
+<p>事实上，我们可以将<code>nonnull/nullable</code>与我们的断言和异常一起看待，其需要处理的问题都是同一个：违反约定是一个程序员的错误。特别是，返回值是我们可控的东西，如果返回值是<code>nonnull</code>的，则我们不应该返回<code>nil</code>，除非是为了向后兼容。</p>
+<h3 id="参考-1"><a href="#参考-1" class="headerlink" title="参考"></a>参考</h3><ol>
+<li><a href="https://developer.apple.com/swift/blog/?id=25" target="_blank" rel="external">Nullability and Objective-C</a></li>
+</ol>
+<h2 id="weak的生命周期"><a href="#weak的生命周期" class="headerlink" title="weak的生命周期"></a>weak的生命周期</h2><p>我们都知道<code>weak</code>表示的是一个弱引用，这个引用不会增加对象的引用计数，并且在所指向的对象被释放之后，<code>weak</code>指针会被设置的为<code>nil</code>。<code>weak</code>引用通常是用于处理循环引用的问题，如代理及block的使用中，相对会较多的使用到<code>weak</code>。</p>
+<p>之前对weak的实现略有了解，知道它的一个基本的生命周期，但具体是怎么实现的，了解得不是太清晰。今天又翻了翻《Objective-C高级编程》关于<code>__weak</code>的讲解，在此做个笔记。</p>
+<p>我们以下面这行代码为例：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">&#123;</div><div class="line">    id __weak obj1 = obj;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>当我们初始化一个<code>weak</code>变量时，<code>runtime</code>会调用<code>objc_initWeak</code>函数。这个函数在<code>Clang</code>中的声明如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">id objc_initWeak(id *object, id value);</div></pre></td></tr></table></figure>
+<p>其具体实现如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">id objc_initWeak(id *object, id value)</div><div class="line">&#123;</div><div class="line">    *object = 0;</div><div class="line">    return objc_storeWeak(object, value);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>示例代码轮换成编译器的模拟代码如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">id obj1;</div><div class="line">objc_initWeak(&amp;obj1, obj);</div></pre></td></tr></table></figure>
+<p>因此，这里所做的事是先将<code>obj1</code>初始化为<code>0(nil)</code>，然后将<code>obj1</code>的地址及<code>obj</code>作为参数传递给<code>objc_storeWeak</code>函数。</p>
+<p><code>objc_initWeak</code>函数有一个前提条件：就是<code>object</code>必须是一个没有被注册为<code>__weak</code>对象的有效指针。而<code>value</code>则可以是<code>null</code>，或者指向一个有效的对象。</p>
+<p>如果<code>value</code>是一个空指针或者其指向的对象已经被释放了，则<code>object</code>是<code>zero-initialized</code>的。否则，<code>object</code>将被注册为一个指向<code>value</code>的<code>__weak</code>对象。而这事应该是<code>objc_storeWeak</code>函数干的。<code>objc_storeWeak</code>的函数声明如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">id objc_storeWeak(id *location, id value);</div></pre></td></tr></table></figure>
+<p>其具体实现如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div></pre></td><td class="code"><pre><div class="line">id objc_storeWeak(id *location, id newObj)</div><div class="line">&#123;</div><div class="line">    id oldObj;</div><div class="line">    SideTable *oldTable;</div><div class="line">    SideTable *newTable;</div><div class="line">    ......</div><div class="line"></div><div class="line">    // Acquire locks for old and new values.</div><div class="line">    // Order by lock address to prevent lock ordering problems. </div><div class="line">    // Retry if the old value changes underneath us.</div><div class="line"> retry:</div><div class="line">    oldObj = *location;</div><div class="line"></div><div class="line">    oldTable = SideTable::tableForPointer(oldObj);</div><div class="line">    newTable = SideTable::tableForPointer(newObj);</div><div class="line"></div><div class="line">    ......</div><div class="line"></div><div class="line">    if (*location != oldObj) &#123;</div><div class="line">        OSSpinLockUnlock(lock1);</div><div class="line"></div><div class="line">#if SIDE_TABLE_STRIPE &gt; 1</div><div class="line">        if (lock1 != lock2) OSSpinLockUnlock(lock2);</div><div class="line">#endif</div><div class="line">        goto retry;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    if (oldObj) &#123;</div><div class="line">        weak_unregister_no_lock(&amp;oldTable-&gt;weak_table, oldObj, location);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    if (newObj) &#123;</div><div class="line">        newObj = weak_register_no_lock(&amp;newTable-&gt;weak_table, newObj,location);</div><div class="line">        </div><div class="line">        // weak_register_no_lock returns NULL if weak store should be rejected</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    // Do not set *location anywhere else. That would introduce a race.</div><div class="line">    *location = newObj;</div><div class="line"></div><div class="line">    ......</div><div class="line"></div><div class="line">    return newObj;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>我们撇开源码中各种锁操作，来看看这段代码都做了些什么。在此之前，我们先来了解下<code>weak</code>表和<code>SideTable</code>。</p>
+<p><code>weak</code>表是一个弱引用表，实现为一个<code>weak_table_t</code>结构体，存储了某个对象相关的的所有的弱引用信息。其定义如下(具体定义在<a href="http://www.opensource.apple.com/source/objc4/objc4-646/runtime/objc-weak.h" target="_blank" rel="external">objc-weak.h</a>中)：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">struct weak_table_t &#123;</div><div class="line">    weak_entry_t *weak_entries;</div><div class="line">    size_t    num_entries;</div><div class="line">    ......</div><div class="line">&#125;;</div></pre></td></tr></table></figure>
+<p>其中<code>weak_entry_t</code>是存储在弱引用表中的一个内部结构体，它负责维护和存储指向一个对象的所有弱引用<code>hash</code>表。其定义如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">struct weak_entry_t &#123;</div><div class="line"></div><div class="line">    DisguisedPtr&lt;objc_object&gt; referent;</div><div class="line">    union &#123;</div><div class="line">        struct &#123;</div><div class="line">            weak_referrer_t *referrers;</div><div class="line">            uintptr_t        out_of_line : 1;</div><div class="line">            ......</div><div class="line">        &#125;;</div><div class="line">        </div><div class="line">        struct &#123;</div><div class="line">            // out_of_line=0 is LSB of one of these (don&apos;t care which)</div><div class="line">            weak_referrer_t  inline_referrers[WEAK_INLINE_COUNT];</div><div class="line">        &#125;;</div><div class="line">    &#125;;</div><div class="line">&#125;;</div></pre></td></tr></table></figure>
+<p>其中<code>referent</code>是被引用的对象，即示例代码中的<code>obj</code>对象。下面的<code>union</code>即存储了所有指向该对象的弱引用。由注释可以看到，当<code>out_of_line</code>等于<code>0</code>时，<code>hash</code>表被一个数组所代替。另外，所有的弱引用对象的地址都是存储在<code>weak_referrer_t</code>指针的地址中。其定义如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">typedef objc_object ** weak_referrer_t;</div></pre></td></tr></table></figure>
+<p><code>SideTable</code>是一个用<code>C++</code>实现的类，它的具体定义在<a href="http://opensource.apple.com/source/objc4/objc4-532.2/runtime/NSObject.mm" target="_blank" rel="external">NSObject.mm</a>中，我们来看看它的一些成员变量的定义：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">class SideTable &#123;</div><div class="line"></div><div class="line">private:</div><div class="line">    static uint8_t table_buf[SIDE_TABLE_STRIPE * SIDE_TABLE_SIZE];</div><div class="line"></div><div class="line">public:</div><div class="line">    RefcountMap refcnts;</div><div class="line">    weak_table_t weak_table;</div><div class="line">    ......</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p><code>RefcountMap refcnts</code>，大家应该能猜到这个做什么用的吧？看着像是引用计数什么的。哈哈，貌似就是啊，这东东存储了一个对象的引用计数的信息。当然，我们在这里不去探究它，我们关注的是<code>weak_table</code>。这个成员变量指向的就是一个对象的<code>weak</code>表。</p>
+<p>了解了<code>weak</code>表和<code>SideTable</code>，让我们再回过头来看看<code>objc_storeWeak</code>。首先是根据<code>weak</code>指针找到其指向的老的对象：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">oldObj = *location;</div></pre></td></tr></table></figure>
+<p>然后获取到与新旧对象相关的SideTable对象：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">oldTable = SideTable::tableForPointer(oldObj);</div><div class="line">newTable = SideTable::tableForPointer(newObj);</div></pre></td></tr></table></figure>
+<p>下面要做的就是在老对象的<code>weak</code>表中移除指向信息，而在新对象的<code>weak</code>表中建立关联信息：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">if (oldObj) &#123;</div><div class="line">    weak_unregister_no_lock(&amp;oldTable-&gt;weak_table, oldObj, location);</div><div class="line">&#125;</div><div class="line">if (newObj) &#123;</div><div class="line">    newObj = weak_register_no_lock(&amp;newTable-&gt;weak_table, newObj,location);</div><div class="line">    // weak_register_no_lock returns NULL if weak store should be rejected</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>接下来让弱引用指针指向新的对象：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">*location = newObj;</div></pre></td></tr></table></figure>
+<p>最后会返回这个新对象：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">return newObj;</div></pre></td></tr></table></figure>
+<p><code>objc_storeWeak</code>的基本实现就是这样。当然，在<code>objc_initWeak</code>中调用<code>objc_storeWeak</code>时，老对象是空的，所有不会执行<code>weak_unregister_no_lock</code>操作。</p>
+<p>而当<code>weak</code>引用指向的对象被释放时，又是如何去处理<code>weak</code>指针的呢？当释放对象时，其基本流程如下：</p>
+<ol>
+<li>调用<code>objc_release</code></li>
+<li>因为对象的引用计数为<code>0</code>，所以执行<code>dealloc</code></li>
+<li>在<code>dealloc</code>中，调用了<code>_objc_rootDealloc</code>函数</li>
+<li>在<code>_objc_rootDealloc</code>中，调用了<code>object_dispose</code>函数</li>
+<li>调用<code>objc_destructInstance</code></li>
+<li>最后调用<code>objc_clear_deallocating</code></li>
+</ol>
+<p>我们重点关注一下最后一步，<code>objc_clear_deallocating</code>的具体实现如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">void objc_clear_deallocating(id obj) </div><div class="line">&#123;</div><div class="line">    ......</div><div class="line"></div><div class="line">    SideTable *table = SideTable::tableForPointer(obj);</div><div class="line">    </div><div class="line">    // clear any weak table items</div><div class="line">    // clear extra retain count and deallocating bit</div><div class="line">    // (fixme warn or abort if extra retain count == 0 ?)</div><div class="line">    OSSpinLockLock(&amp;table-&gt;slock);</div><div class="line"></div><div class="line">    if (seen_weak_refs) &#123;</div><div class="line">        arr_clear_deallocating(&amp;table-&gt;weak_table, obj);</div><div class="line">    &#125;</div><div class="line">    ......</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>我们可以看到，在这个函数中，首先取出对象对应的<code>SideTable</code>实例，如果这个对象有关联的弱引用，则调用<code>arr_clear_deallocating</code>来清除对象的弱引用信息。我们来看看<code>arr_clear_deallocating</code>具体实现：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div></pre></td><td class="code"><pre><div class="line">PRIVATE_EXTERN void arr_clear_deallocating(weak_table_t *weak_table, id referent) &#123;</div><div class="line">    &#123;</div><div class="line">        weak_entry_t *entry = weak_entry_for_referent(weak_table, referent);</div><div class="line"></div><div class="line">        if (entry == NULL) &#123;</div><div class="line">            ......</div><div class="line">            return;</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        // zero out references</div><div class="line">        for (int i = 0; i &lt; entry-&gt;referrers.num_allocated; ++i) &#123;</div><div class="line"></div><div class="line">            id *referrer = entry-&gt;referrers.refs[i].referrer;</div><div class="line">            </div><div class="line">            if (referrer) &#123;</div><div class="line">                if (*referrer == referent) &#123;</div><div class="line">                    *referrer = nil;</div><div class="line">                &#125;</div><div class="line">                else if (*referrer) &#123;</div><div class="line">                    objc_inform(&quot;_weak variable @ %p holds %p instead of %p\n&quot;, referrer, *referrer, referent);</div><div class="line">                &#125;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        weak_entry_remove_no_lock(weak_table, entry);</div><div class="line">        weak_table-&gt;num_weak_refs--;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这个函数首先是找出对象对应的<code>weak_entry_t</code>链表，然后挨个将弱引用置为<code>nil</code>。最后清理对象的记录。</p>
+<p>通过上面的描述，我们基本能了解一个<code>weak</code>引用从生到死的过程。从这个流程可以看出，一个<code>weak</code>引用的处理涉及各种查表、添加与删除操作，还是有一定消耗的。所以如果大量使用<code>__weak</code>变量的话，会对性能造成一定的影响。那么，我们应该在什么时候去使用<code>weak</code>呢？《Objective-C高级编程》给我们的建议是只在避免循环引用的时候使用<code>__weak</code>修饰符。</p>
+<p>另外，在<code>clang</code>中，还提供了不少关于<code>weak</code>引用的处理函数。如<code>objc_loadWeak</code>,<code>objc_destroyWeak</code>, <code>objc_moveWeak</code>等，我们可以在苹果的开源代码中找到相关的实现。等有时间，我再好好研究研究。</p>
+<h3 id="参考-2"><a href="#参考-2" class="headerlink" title="参考"></a>参考</h3><ol>
+<li>《Objective-C高级编程》1.4: __weak修饰符</li>
+<li><a href="http://clang.llvm.org/docs/AutomaticReferenceCounting.html" target="_blank" rel="external">Clang 3.7 documentation - Objective-C Automatic Reference Counting (ARC)</a></li>
+<li><a href="http://opensource.apple.com/source/objc4/objc4-532.2/runtime/NSObject.mm" target="_blank" rel="external">apple opensource - NSObject.mm</a></li>
+</ol>
+<h2 id="零碎"><a href="#零碎" class="headerlink" title="零碎"></a>零碎</h2><h3 id="CAGradientLayer"><a href="#CAGradientLayer" class="headerlink" title="CAGradientLayer"></a>CAGradientLayer</h3><p><code>CAGradientLayer</code>类是用于在其背景色上绘制一个颜色渐变，以填充层的整个形状，包括圆角。这个类继承自<code>CALayer</code>类，使用起来还是很方便的。</p>
+<p>与<code>Quartz 2D</code>中的渐变处理类似，一个渐变有一个起始位置(<code>startPoint</code>)和一个结束位置(<code>endPoint</code>)，在这两个位置之间，我们可以指定一组颜色值(<code>colors</code>，元素是<code>CGColorRef</code>对象)，可以是两个，也可以是多个，每个颜色值会对应一个位置(<code>locations</code>)。另外，渐变还分为轴向渐变和径向渐变。</p>
+<p>我们写个实例来看看<code>CAGradientLayer</code>的具体使用：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">CAGradientLayer *layer = [CAGradientLayer layer];</div><div class="line">layer.startPoint = (CGPoint)&#123;0.5f, 0.0f&#125;;</div><div class="line">layer.endPoint = (CGPoint)&#123;0.5f, 1.0f&#125;;</div><div class="line">layer.colors = [NSArray arrayWithObjects:(id)[UIColor blueColor].CGColor, (id)[UIColor redColor].CGColor, (id)[UIColor greenColor].CGColor, nil];</div><div class="line">layer.locations = @[@0.0f, @0.6f, @1.0f];</div><div class="line">layer.frame = self.view.layer.bounds;</div><div class="line"></div><div class="line">[self.view.layer insertSublayer:layer atIndex:0];</div></pre></td></tr></table></figure>
+<h4 id="参考-3"><a href="#参考-3" class="headerlink" title="参考"></a>参考</h4><ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Reference/CAGradientLayer_class/" target="_blank" rel="external">CAGradientLayer Class Reference</a></li>
+</ol>
+<h3 id="Xcode中Ineligible-Devices的处理"><a href="#Xcode中Ineligible-Devices的处理" class="headerlink" title="Xcode中Ineligible Devices的处理"></a>Xcode中Ineligible Devices的处理</h3><p>换了台新电脑，装了个<code>Xcode 6.3</code>，整了个新证书和<code>profile</code>，然后打开<code>Xcode</code>，连上手机。额，然后发现设备居然被标识为<code>Ineligible Devices</code>，没认出来。情况类似于下图：</p>
+<p><img src="http://i.stack.imgur.com/CFOSG.png" alt="image"></p>
+<p>电脑是受信任的，证书和<code>profile</code>也都是<code>OK</code>的。试了几次重启<code>Xcode</code>和重新连接手机，无效。设备就是选不了。最后是在<code>Product</code>-&gt;<code>Destination</code>里面才选中这个设备的。不过在工具栏还是不能选择，郁闷，求解。</p>
+<h3 id="iOS-7后隐藏UITextField的光标"><a href="#iOS-7后隐藏UITextField的光标" class="headerlink" title="iOS 7后隐藏UITextField的光标"></a>iOS 7后隐藏UITextField的光标</h3><p>新项目只支持<code>iOS 7</code>后，很多事情变得简单多了，就像隐藏<code>UITextField</code>的光标一样，就简单的一句话：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">textFiled.tintColor = [UIColor clearColor];</div></pre></td></tr></table></figure>
+<p>通常我们用<code>UIPickerView</code>作为我们的<code>UITextField</code>的<code>inputView</code>时，我们是需要隐藏光标的。当然，如果想换个光标颜色，也是这么处理。</p>
+<p>这么处理的有个遗留问题是：通常我们使用<code>UIPickerView</code>作为<code>UITextField</code>的<code>inputView</code>时， 并不希望去执行各种菜单操作(全选、复制、粘帖)，但只是去设置<code>UITextField</code>的<code>tintColor</code>时，我们仍然可以执行这边操作，所以需要加额外的处理。这个问题，我们可以这样处理：在<code>textFieldShouldBeginEditing:</code>中，我们把<code>UITextField</code>的<code>userInteractionEnabled</code>设置为<code>NO</code>，然后在<code>textFieldShouldEndEditing:</code>，将将这个值设置回来。如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">- (BOOL)textFieldShouldBeginEditing:(UITextField *)textField &#123;</div><div class="line">    textField.userInteractionEnabled = NO;</div><div class="line">    return YES;</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (BOOL)textFieldShouldEndEditing:(UITextField *)textField &#123;</div><div class="line">    textField.userInteractionEnabled = YES;</div><div class="line">    return YES;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这样就<code>OK</code>了。当然这只是我们当前使用的一种处理方式，还有其它的方法，直接<code>google</code>或者<code>stackoverflow</code>吧。</p>
+<h3 id="iOS-7后UIAlertView中文字左对齐问题"><a href="#iOS-7后UIAlertView中文字左对齐问题" class="headerlink" title="iOS 7后UIAlertView中文字左对齐问题"></a>iOS 7后UIAlertView中文字左对齐问题</h3><p>在<code>iOS 7</code>之前，如果我们想要让<code>UIAlertView</code>中的文字居左显示的话，可以使用以下这段代码来处理：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">for (UIView *view in alert.subviews) &#123;</div><div class="line">    if([[view class] isSubclassOfClass:[UILabel class]]) &#123;</div><div class="line">       ((UILabel*)view).textAlignment = NSTextAlignmentLeft;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>但很遗憾的是，在<code>iOS 7</code>之后，苹果不让我们这么干了。我们去取<code>UIAlertView</code>的<code>subviews</code>时，获得的只是一个空数组，我们没有办法获取到我们想要的<code>label</code>。怎么办？三条路：告诉产品经理和UED说这个实现不了(当然，这个是会被鄙视的，人家会说你能力差)；自己写；找第三方开源代码。嘿嘿，不过由于最近时间紧，所以我决定跟他们说实现不了，哈哈。不过在<code>github</code>上找了一个开源的，<a href="https://github.com/wimagguc/ios-custom-alertview" target="_blank" rel="external">Custom iOS AlertView</a>，<code>star</code>的数量也不少，看来不错，回头好好研究研究。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/05/10/ios-techset-1/" rel="next" title="iOS知识小集 第一期(2015.05.10)">
+                <i class="fa fa-chevron-left"></i> iOS知识小集 第一期(2015.05.10)
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/06/30/ios-techset-3/" rel="prev" title="iOS知识小集 第三期(2015.06.30)">
+                iOS知识小集 第三期(2015.06.30) <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#使用UIVisualEffectView为视图添加特殊效果"><span class="nav-number">1.</span> <span class="nav-text">使用UIVisualEffectView为视图添加特殊效果</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#参考"><span class="nav-number">1.1.</span> <span class="nav-text">参考</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Pointer-is-missing-a-nullability-type-specifier-nonnull-or-nullable-问题的处理-–-Nullability-Annotations"><span class="nav-number">2.</span> <span class="nav-text">Pointer is missing a nullability type specifier (nonnull or nullable)问题的处理 – Nullability Annotations</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Nullability-Annotations"><span class="nav-number">2.1.</span> <span class="nav-text">Nullability Annotations</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Nonnull区域设置-Audited-Regions"><span class="nav-number">2.2.</span> <span class="nav-text">Nonnull区域设置(Audited Regions)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#兼容性"><span class="nav-number">2.3.</span> <span class="nav-text">兼容性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考-1"><span class="nav-number">2.4.</span> <span class="nav-text">参考</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#weak的生命周期"><span class="nav-number">3.</span> <span class="nav-text">weak的生命周期</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#参考-2"><span class="nav-number">3.1.</span> <span class="nav-text">参考</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#零碎"><span class="nav-number">4.</span> <span class="nav-text">零碎</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#CAGradientLayer"><span class="nav-number">4.1.</span> <span class="nav-text">CAGradientLayer</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#参考-3"><span class="nav-number">4.1.1.</span> <span class="nav-text">参考</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Xcode中Ineligible-Devices的处理"><span class="nav-number">4.2.</span> <span class="nav-text">Xcode中Ineligible Devices的处理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#iOS-7后隐藏UITextField的光标"><span class="nav-number">4.3.</span> <span class="nav-text">iOS 7后隐藏UITextField的光标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#iOS-7后UIAlertView中文字左对齐问题"><span class="nav-number">4.4.</span> <span class="nav-text">iOS 7后UIAlertView中文字左对齐问题</span></a></li></ol></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

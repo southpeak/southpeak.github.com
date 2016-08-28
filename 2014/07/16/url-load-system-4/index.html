@@ -1,0 +1,720 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="一个NSURLRequest对象经常会遇到认证请求，或者需要从其所连接的服务端请求证书。当需要认证请求时，NSURLConnection、NSURLSession和NSURLDownload类会通知它们的代理对象，以便能正确地做处理。不过需要注意的是，URL加载系统只有在服务端响应包含WWW-Authenticate头时才会调用代理来处理认证请求，而类似于代理认证和TLS信任验证这样的认证类型则不">
+<meta property="og:type" content="article">
+<meta property="og:title" content="URL加载系统之四：认证与TLS链验证">
+<meta property="og:url" content="http://southpeak.github.io/2014/07/16/url-load-system-4/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="一个NSURLRequest对象经常会遇到认证请求，或者需要从其所连接的服务端请求证书。当需要认证请求时，NSURLConnection、NSURLSession和NSURLDownload类会通知它们的代理对象，以便能正确地做处理。不过需要注意的是，URL加载系统只有在服务端响应包含WWW-Authenticate头时才会调用代理来处理认证请求，而类似于代理认证和TLS信任验证这样的认证类型则不">
+<meta property="og:updated_time" content="2016-08-27T04:51:13.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="URL加载系统之四：认证与TLS链验证">
+<meta name="twitter:description" content="一个NSURLRequest对象经常会遇到认证请求，或者需要从其所连接的服务端请求证书。当需要认证请求时，NSURLConnection、NSURLSession和NSURLDownload类会通知它们的代理对象，以便能正确地做处理。不过需要注意的是，URL加载系统只有在服务端响应包含WWW-Authenticate头时才会调用代理来处理认证请求，而类似于代理认证和TLS信任验证这样的认证类型则不">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2014/07/16/url-load-system-4/"/>
+
+  <title> URL加载系统之四：认证与TLS链验证 | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                URL加载系统之四：认证与TLS链验证
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-07-16T18:51:03+08:00" content="2014-07-16">
+              2014-07-16
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/translate/" itemprop="url" rel="index">
+                    <span itemprop="name">翻译</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>一个NSURLRequest对象经常会遇到认证请求，或者需要从其所连接的服务端请求证书。当需要认证请求时，NSURLConnection、NSURLSession和NSURLDownload类会通知它们的代理对象，以便能正确地做处理。不过需要注意的是，URL加载系统只有在服务端响应包含WWW-Authenticate头时才会调用代理来处理认证请求，而类似于代理认证和TLS信任验证这样的认证类型则不需要这个头。</p>
+<h2 id="确定如何响应一个认证请求"><a href="#确定如何响应一个认证请求" class="headerlink" title="确定如何响应一个认证请求"></a>确定如何响应一个认证请求</h2><p>如果一个NSURLRequest对象需要认证时，则认证请求方式取决于使用的对象的类型：</p>
+<ol>
+<li>如果请求是与NSURLSession对象关联，则所有认证请求都会传递给代理，而不考虑认证的类型。</li>
+<li>如果请求是与NSURLConnection或NSURLDownload对象，则对象的代理接收一个connection:canAuthenticateAgainstProtectionSpace: (或者 download:canAuthenticateAgainstProtectionSpace:) 消息。这允许代理对象在尝试再次认证前分析服务端的属性，包括协议和认证方法。如果我们的代理对象不准备认证服务端的受保护空间，则返回NO，且系统尝试使用用户的keychain的信息进行认证。</li>
+<li>如果NSURLConnection或NSURLDownload的代理对象没有实现connection:canAuthenticateAgainstProtectionSpace: (或者 download:canAuthenticateAgainstProtectionSpace:)方法，且保护空间使用客户端证书认证或服务端信任认证，则系统假设我们返回NO。而对象其它所有类型，系统都返回YES。</li>
+</ol>
+<p>下一步，如果我们的代理对象同意处理认证，但是没有有效的证书（不管是作为请求URL的一部分或者在NSURLCredentialStorage中共享），则代理以收到以下消息：</p>
+<ol>
+<li>URLSession:didReceiveChallenge:completionHandler:</li>
+<li>URLSession:task:didReceiveChallenge:completionHandler:</li>
+<li>connection:didReceiveAuthenticationChallenge:</li>
+<li>download:didReceiveAuthenticationChallenge:</li>
+</ol>
+<p>为了让连接能够继续，则代理对象有三种选择：</p>
+<ol>
+<li>提供认证证书</li>
+<li>尝试在没有证书的情况下继续</li>
+<li>取消认证查询</li>
+</ol>
+<p>为了确保操作的正确流程，传递给这些方法的NSURLAuthenticationChallenge实例会包含一些信息，包括是什么触发了认证查询、查询的尝试次数、任何先前尝试的证书、请求证书的NSURLProtectionSpace对象，及查询的发送者。</p>
+<p>如果认证请求事先尝试认证且失败了(如用户在服务端修改了密码)，我们可以通过在认证请求调用proposedCredential来获取尝试凭据。代理可以使用这些证书来填充一个显示给用户的话框。</p>
+<p>调用认证请求的previousFailureCount可以返回身份验证尝试次数，这些尝试包括不同认证协议的尝试请求。代理可以将这些方法提供给用户，以确定先前提供的证书是否失败，或限制最大认证尝试次数。</p>
+<h2 id="响应认证请求"><a href="#响应认证请求" class="headerlink" title="响应认证请求"></a>响应认证请求</h2><p>前面说过三种响应我们响应connection:didReceiveAuthenticationChallenge:代理方法的方式，我们将逐一介绍：</p>
+<h3 id="提供证书"><a href="#提供证书" class="headerlink" title="提供证书"></a>提供证书</h3><p>为了进行认证，程序需要使用服务端期望的认证信息创建一个NSURLCredential对象。我们可以调用authenticationMethod来确定服务端的认证方法，这个认证方法是在提供的认证请求的保护空间中。NSURLCredential支持一些方法：</p>
+<ol>
+<li>HTTP基本认证(NSURLAuthenticationMethodHTTPBasic)：需要用户名和密码。提示用户输入必要信息并使用credentialWithUser:password:persistence:方法创建一个NSURLCredential对象。</li>
+<li>HTTP数字认证(NSURLAuthenticationMethodHTTPDigest):类似于基本认证，需要用户名和密码。提示用户输入必要信息并使用credentialWithUser:password:persistence:方法创建一个NSURLCredential对象。</li>
+<li>客户端证书认证(NSURLAuthenticationMethodClientCertificate): 需要系统标识和所有服务端认证所需要的证书。然后使用credentialWithIdentity:certificates:persistence:来创建一个NSURLCredential对象。</li>
+<li>服务端信任认证(NSURLAuthenticationMethodServerTrust)需要一个由认证请求的保护空间提供的信任。使用credentialForTrust:来创建一个NSURLCredential对象。</li>
+</ol>
+<p>在创建NSURLCredential对象后</p>
+<ol>
+<li>对于NSURLSession，使用提供的完成处理block将该对象传递给认证请求发送者</li>
+<li>对于NSURLConnection和NSURLDownload，使用useCredential:forAuthenticationChallenge:方法将对象传递给认证请求发送者。</li>
+</ol>
+<h3 id="尝试在没有证书的情况下继续"><a href="#尝试在没有证书的情况下继续" class="headerlink" title="尝试在没有证书的情况下继续"></a>尝试在没有证书的情况下继续</h3><p>如果代理选择不提供证书，可以尝试继续操作：</p>
+<ol>
+<li>对于NSURLSession，传递下面的值给完成处理block:<br> NSURLSessionAuthChallengePerformDefaultHandling:处理请求。尽管代理没有提供代理方法来处理认证请求<br> NSURLSessionAuthChallengeRejectProtectionSpace:拒绝请求。依赖于服务端响应允许的认证类型，URL加载类可能多次调用这个代理方法。</li>
+<li>对于NSURLConnection和NSURLDownload，在[challenge sender]中调用continueWithoutCredentialsForAuthenticationChallenge:。</li>
+</ol>
+<p>依赖于协议的实现，这种处理方法可能会导致连接失败而以送connectionDidFailWithError:消息，或者返回可选的不需要认证的URL内容。</p>
+<h3 id="取消连接"><a href="#取消连接" class="headerlink" title="取消连接"></a>取消连接</h3><p>代理可以选择取消认证请求</p>
+<ol>
+<li>对于NSURLSession，传递NSURLSessionAuthChallengeCancelAuthenticationChallenge给完成处理block</li>
+<li>对于NSURLConnection和NSURLDownload，在[challenge sender]中调用cancelAuthenticationChallenge:。代理接收connection:didCancelAuthenticationChallenge:消息，以提供用户反馈的机会。</li>
+</ol>
+<p>下面的代码演示了使用用户名和密码创建NSURLCredential对象来响应认证请求</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">-(<span class="keyword">void</span>)connection:(<span class="built_in">NSURLConnection</span> *)connection didReceiveAuthenticationChallenge:(<span class="built_in">NSURLAuthenticationChallenge</span> *)challenge</div><div class="line">	&#123;</div><div class="line">	    <span class="keyword">if</span> ([challenge previousFailureCount] == <span class="number">0</span>)</div><div class="line"></div><div class="line">    &#123;</div><div class="line">    	        <span class="built_in">NSURLCredential</span> *newCredential;</div><div class="line">	        newCredential = [<span class="built_in">NSURLCredential</span> credentialWithUser:[<span class="keyword">self</span> preferencesName] password:[<span class="keyword">self</span> preferencesPassword] persistence:<span class="built_in">NSURLCredentialPersistenceNone</span>];</div><div class="line">	        [[challenge sender] useCredential:newCredential forAuthenticationChallenge:challenge];</div><div class="line">	    &#125;</div><div class="line"></div><div class="line">    <span class="keyword">else</span></div><div class="line"></div><div class="line">    &#123;	        [[challenge sender] cancelAuthenticationChallenge:challenge];	        <span class="comment">// inform the user that the user name and password</span>	        <span class="comment">// in the preferences are incorrect</span>	        [<span class="keyword">self</span> showPreferencesCredentialsAreIncorrectPanel:<span class="keyword">self</span>];	    &#125;</div><div class="line"></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>如果代理没有实现connection:didReceiveAuthenticationChallenge:，而请求需要认证，则有效的证书必须位于URL证书存储中或作为请求URL的一部分。如果证书无效或者认证失败，则底层实现会发送一个continueWithoutCredentialForAuthenticationChallenge:消息。</p>
+<h2 id="执行自定义TLS链验证"><a href="#执行自定义TLS链验证" class="headerlink" title="执行自定义TLS链验证"></a>执行自定义TLS链验证</h2><p>在NSURL系统的AIP中，TLS链验证由应用的认证代理方法来处理，但它不是提供证书给服务端以验证用户，而是在TLS握手的过程中校验服务端提供的证书，然后再告诉URL加载系统是否应该接受还是拒绝这些证书。</p>
+<p>如果需要以非标准的方法(如接收一个指定的自标识的证书用于测试)来执行链验证，则应用必须如下处理：</p>
+<ol>
+<li>对于NSURLSession，实现URLSession:didReceiveChallenge:completionHandler:和URLSession:task:didReceiveChallenge:completionHandler:代理方法。如果实现了两者，由会话级别的方法负责处理认证。</li>
+<li>对于NSURLConnection和NSURLDownload，实现connection:canAuthenticateAgainstProtectionSpace:和download:canAuthenticateAgainstProtectionSpace:方法，如果保护空间有一个NSURLAuthenticationMethodServerTrust类型的认证，则返回YES。然后，实现connection:didReceiveAuthenticationChallenge:或download:didReceiveAuthenticationChallenge:方法来处理认证。</li>
+</ol>
+<p>在认证处理代理方法中，我们需要确认认证保护空间是否有NSURLAuthenticationMethodServerTrust类型的认证，如果有，则从保护空间获取serverTrust信息。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2014/07/15/url-load-system-3/" rel="next" title="URL加载系统之三：NSURLConnection">
+                <i class="fa fa-chevron-left"></i> URL加载系统之三：NSURLConnection
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2014/07/16/url-load-system-5/" rel="prev" title="URL加载系统之五：缓存、Cookies与协议">
+                URL加载系统之五：缓存、Cookies与协议 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#确定如何响应一个认证请求"><span class="nav-number">1.</span> <span class="nav-text">确定如何响应一个认证请求</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#响应认证请求"><span class="nav-number">2.</span> <span class="nav-text">响应认证请求</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#提供证书"><span class="nav-number">2.1.</span> <span class="nav-text">提供证书</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#尝试在没有证书的情况下继续"><span class="nav-number">2.2.</span> <span class="nav-text">尝试在没有证书的情况下继续</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#取消连接"><span class="nav-number">2.3.</span> <span class="nav-text">取消连接</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#执行自定义TLS链验证"><span class="nav-number">3.</span> <span class="nav-text">执行自定义TLS链验证</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

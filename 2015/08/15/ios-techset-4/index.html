@@ -1,0 +1,839 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="又欠了一屁股债了。积累了一大堆的问题放在那，就是没有整理。不能怪别人，也能怪自己了，犯起懒来，啥事也不想做，连喜爱的户外运动也给拉下了，掐指一算，居然大半年没出去了。然后经常看到老驴子们出去玩耍，回来就是一通的美图，心里那个痒痒啊。
+回到正题吧，这次的知识小集知识点不多，还是三个：
+
+ARC与MRC的性能对比
+Bitcode
+在Swift中实现NS_OPTIONS
+
+篇幅超过了预期，大家慢慢看，如">
+<meta property="og:type" content="article">
+<meta property="og:title" content="iOS知识小集 第四期(2015.08.15)">
+<meta property="og:url" content="http://southpeak.github.io/2015/08/15/ios-techset-4/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="又欠了一屁股债了。积累了一大堆的问题放在那，就是没有整理。不能怪别人，也能怪自己了，犯起懒来，啥事也不想做，连喜爱的户外运动也给拉下了，掐指一算，居然大半年没出去了。然后经常看到老驴子们出去玩耍，回来就是一通的美图，心里那个痒痒啊。
+回到正题吧，这次的知识小集知识点不多，还是三个：
+
+ARC与MRC的性能对比
+Bitcode
+在Swift中实现NS_OPTIONS
+
+篇幅超过了预期，大家慢慢看，如">
+<meta property="og:image" content="https://developer.apple.com/library/prerelease/ios/documentation/IDEs/Conceptual/AppDistributionGuide/Art/6_ios_review_dist_profile_submit_2x.png">
+<meta property="og:updated_time" content="2016-08-27T02:40:44.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="iOS知识小集 第四期(2015.08.15)">
+<meta name="twitter:description" content="又欠了一屁股债了。积累了一大堆的问题放在那，就是没有整理。不能怪别人，也能怪自己了，犯起懒来，啥事也不想做，连喜爱的户外运动也给拉下了，掐指一算，居然大半年没出去了。然后经常看到老驴子们出去玩耍，回来就是一通的美图，心里那个痒痒啊。
+回到正题吧，这次的知识小集知识点不多，还是三个：
+
+ARC与MRC的性能对比
+Bitcode
+在Swift中实现NS_OPTIONS
+
+篇幅超过了预期，大家慢慢看，如">
+<meta name="twitter:image" content="https://developer.apple.com/library/prerelease/ios/documentation/IDEs/Conceptual/AppDistributionGuide/Art/6_ios_review_dist_profile_submit_2x.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2015/08/15/ios-techset-4/"/>
+
+  <title> iOS知识小集 第四期(2015.08.15) | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                iOS知识小集 第四期(2015.08.15)
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-08-15T22:21:02+08:00" content="2015-08-15">
+              2015-08-15
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/techset/" itemprop="url" rel="index">
+                    <span itemprop="name">知识小集</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>又欠了一屁股债了。积累了一大堆的问题放在那，就是没有整理。不能怪别人，也能怪自己了，犯起懒来，啥事也不想做，连喜爱的户外运动也给拉下了，掐指一算，居然大半年没出去了。然后经常看到老驴子们出去玩耍，回来就是一通的美图，心里那个痒痒啊。</p>
+<p>回到正题吧，这次的知识小集知识点不多，还是三个：</p>
+<ol>
+<li><code>ARC</code>与<code>MRC</code>的性能对比</li>
+<li><code>Bitcode</code></li>
+<li>在<code>Swift</code>中实现<code>NS_OPTIONS</code></li>
+</ol>
+<p>篇幅超过了预期，大家慢慢看，如有问题还请指正。</p>
+<h2 id="ARC与MRC的性能对比"><a href="#ARC与MRC的性能对比" class="headerlink" title="ARC与MRC的性能对比"></a>ARC与MRC的性能对比</h2><p><code>MRC</code>似乎已经是一个上古时代的话题了，不过我还是绕有兴致的把它翻出来。因为，今天我被一个问题问住了：<code>ARC</code>与<code>MRC</code>的性能方面孰优劣。确实，之前没有对比过。</p>
+<p>先来做个测试吧。首先我们需要一个计时辅助函数，我选择使用<code>mach_absolute_time</code>，计算时间差的函数如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">double subtractTimes(uint64_t endTime, uint64_t startTime) &#123;</div><div class="line"></div><div class="line">    uint64_t difference = endTime - startTime;</div><div class="line">    static double conversion = 0.0;</div><div class="line"></div><div class="line">    if(conversion == 0.0) &#123;</div><div class="line"></div><div class="line">        mach_timebase_info_data_t info;</div><div class="line">        kern_return_t err = mach_timebase_info(&amp;info);                       //Convert the timebaseinto seconds</div><div class="line"></div><div class="line">        if(err == 0)</div><div class="line">            conversion = 1e-9 * (double) info.numer / (double) info.denom;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    return conversion * (double)difference;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>然后定义两个测试类，一个是<code>ARC</code>环境下的，一个是<code>MRC</code>环境下的，分别如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div></pre></td><td class="code"><pre><div class="line">// Test1.m</div><div class="line">+ (void)test &#123;</div><div class="line"></div><div class="line">    uint64_t start,stop;</div><div class="line"></div><div class="line">    start = mach_absolute_time();</div><div class="line"></div><div class="line">    for (int i = 0; i &lt; 1000000; i++) &#123;</div><div class="line">        NSArray *array = [[NSArray alloc] init];</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    stop = mach_absolute_time();</div><div class="line"></div><div class="line">    double diff = subtractTimes(stop, start);</div><div class="line"></div><div class="line">    NSLog(@&quot;ARC total time in seconds = %f\n&quot;, diff);</div><div class="line">&#125;</div><div class="line"></div><div class="line">// Test2.m</div><div class="line">// 在target-&gt;Build Phases-&gt;Compile Sources中，添加编译标识-fno-objc-arc</div><div class="line">+ (void)test &#123;</div><div class="line"></div><div class="line">    uint64_t start,stop;</div><div class="line"></div><div class="line">    start = mach_absolute_time();</div><div class="line"></div><div class="line">    for (int i = 0; i &lt; 1000000; i++) &#123;</div><div class="line">        NSArray *array = [[NSArray alloc] init];</div><div class="line">        [array release];</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    stop = mach_absolute_time();</div><div class="line"></div><div class="line">    double diff = subtractTimes(stop, start);</div><div class="line"></div><div class="line">    NSLog(@&quot;MRC total time in seconds = %f\n&quot;, diff);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>多运行几组测试，然后挑两组吧来看看，数据如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">// A组</div><div class="line">ARC total time in seconds = 0.077761</div><div class="line">MRC total time in seconds = 0.072469</div><div class="line"></div><div class="line">// B组</div><div class="line">ARC total time in seconds = 0.075722</div><div class="line">MRC total time in seconds = 0.101671</div></pre></td></tr></table></figure>
+<p>从上面的数据可以看到，<code>ARC</code>与<code>MRC</code>各有快慢的情况。即使上升到统计学的角度，<code>ARC</code>也只是以轻微的优势胜出。看来我的测试姿势不对，并没有证明哪一方占绝对的优势。</p>
+<p>嗯，那我们再来看看官方文档是怎么说的吧。在<a href="https://developer.apple.com/library/ios/releasenotes/ObjectiveC/RN-TransitioningToARC/Introduction/Introduction.html" target="_blank" rel="external">Transitioning to ARC Release Notes</a>中有这么一段话：</p>
+<blockquote>
+<p><strong>Is ARC slow?</strong></p>
+<p>It depends on what you’re measuring, but generally “no.” The compiler efficiently eliminates many extraneous<code>retain</code>/<code>release</code> calls and much effort has been invested in speeding up the Objective-C runtime in general. In particular, the common “return a retain/autoreleased object” pattern is much faster and does not actually put the object into the autorelease pool, when the caller of the method is ARC code.</p>
+<p>One issue to be aware of is that the optimizer is not run in common debug configurations, so expect to see a lot more <code>retain</code>/<code>release</code> traffic at <code>-O0</code> than at <code>-Os</code>.</p>
+</blockquote>
+<p>再来看看别人的数据吧。<code>Stefan Itterheim</code>在<a href="http://www.learn-cocos2d.com/2013/03/confirmed-arc-slow/" target="_blank" rel="external">Confirmed: Objective-C ARC is slow. Don’t use it! (sarcasm off)</a>一文中给出了大量的测试数据。这篇文章是<code>2013.3.20</code>号发表的。<code>Stefan Itterheim</code>通过他的测试得出一个结论</p>
+<blockquote>
+<p>ARC is generally faster, and ARC can indeed be slower</p>
+</blockquote>
+<p>嗯，有些矛盾。不过在文章中，<code>Steffen Itterheim</code>指出大部分情况下，<code>ARC</code>的性能是更好的，这主要得益于一些底层的优化以及<code>autorelease pool</code>的优化，这个从官方文档也能看到。但在一些情况下，<code>ARC</code>确实是更慢，<code>ARC</code>会发送一些额外的<code>retain/release</code>消息，如一些涉及到临时变量的地方，看下面这段代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">// this is typical MRC code:</div><div class="line">&#123;</div><div class="line">    id object = [array objectAtIndex:0];</div><div class="line">    [object doSomething];</div><div class="line">    [object doAnotherThing];</div><div class="line">&#125;</div><div class="line"></div><div class="line">// this is what ARC does (and what is considered best practice under MRC):</div><div class="line">&#123;</div><div class="line">    id object = [array objectAtIndex:0];</div><div class="line">    [object retain]; // inserted by ARC</div><div class="line">    [object doSomething];</div><div class="line">    [object doAnotherThing];</div><div class="line">    [object release]; // inserted by ARC</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>另外，在带对象参数的方法中，也有类似的操作：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">// this is typical MRC code:</div><div class="line">-(void) someMethod:(id)object</div><div class="line">&#123;</div><div class="line">    [object doSomething];</div><div class="line">    [object doAnotherThing];</div><div class="line">&#125;</div><div class="line"></div><div class="line">// this is what ARC does (and what is considered best practice under MRC):</div><div class="line">-(void) someMethod:(id)object</div><div class="line">&#123;</div><div class="line">    [object retain]; // inserted by ARC</div><div class="line">    [object doSomething];</div><div class="line">    [object doAnotherThing];</div><div class="line">    [object release]; // inserted by ARC</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这些些额外的<code>retain/release</code>操作也成了降低<code>ARC</code>环境下程序性能的罪魁祸首。但实际上，之所以添加这些额外的<code>retain/release</code>操作，是为了保证代码运行的正确性。如果只是在单线程中执行这些操作，可能确实没必要添加这些额外的操作。但一旦涉及以多线程的操作，问题就来了。如上面的方法中，<code>object</code>完全有可能在<code>doSoming</code>和<code>doAnotherThing</code>方法调用之间被释放。为了避免这种情况的发生，便在方法开始处添加了<code>[object retain]</code>，而在方法结束后，添加了<code>[object release]</code>操作。</p>
+<p>如果想了解更多关于<code>ARC</code>与<code>MRC</code>性能的讨论，可以阅读一下<a href="http://stackoverflow.com/questions/12527286/are-there-any-concrete-study-of-the-performance-impact-of-using-arc" target="_blank" rel="external">Are there any concrete study of the performance impact of using ARC?</a>与<a href="http://mjtsai.com/blog/2013/09/10/arc-vs-mrc-performance/" target="_blank" rel="external">ARC vs. MRC Performance</a>，在此就不过多的摘抄了。</p>
+<p>实际上，即便是<code>ARC</code>的性能不如<code>MRC</code>，我们也应该去使用<code>ARC</code>，因此它给我们带来的好处是不言而喻的。我们不再需要像使用<code>MRC</code>那样，去过多的关注内存问题(虽然内存是必须关注的)，而将更多的时间放在我们真正关心的事情上。如果真的对性能非常关切的话，可以考虑直接用<code>C</code>或<code>C++</code>。反正我是不会再回到<code>MRC</code>时代了。</p>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><ol>
+<li><a href="http://stackoverflow.com/questions/12527286/are-there-any-concrete-study-of-the-performance-impact-of-using-arc" target="_blank" rel="external">Are there any concrete study of the performance impact of using ARC?</a></li>
+<li><a href="http://mjtsai.com/blog/2013/09/10/arc-vs-mrc-performance/" target="_blank" rel="external">ARC vs. MRC Performance</a></li>
+<li><a href="http://www.learn-cocos2d.com/2013/03/confirmed-arc-slow/" target="_blank" rel="external">Confirmed: Objective-C ARC is slow. Don’t use it! (sarcasm off)</a></li>
+<li><a href="https://developer.apple.com/library/ios/releasenotes/ObjectiveC/RN-TransitioningToARC/Introduction/Introduction.html" target="_blank" rel="external">Transitioning to ARC Release Notes</a></li>
+</ol>
+<h2 id="Bitcode"><a href="#Bitcode" class="headerlink" title="Bitcode"></a>Bitcode</h2><p>今天试着用<code>Xcode 7 beta 3</code>在真机(<code>iOS 8.3</code>)上运行一下我们的工程，结果发现工程编译不过。看了下问题，报的是以下错误：</p>
+<blockquote>
+<p>ld: ‘/Users/**/Framework/SDKs/PolymerPay/Library/mobStat/lib**SDK.a(**ForSDK.o)’ does not contain bitcode. You must rebuild it with bitcode enabled (Xcode setting ENABLE_BITCODE), obtain an updated library from the vendor, or disable bitcode for this target. for architecture arm64</p>
+</blockquote>
+<p>得到的信息是我们引入的一个第三方库不包含<code>bitcode</code>。嗯，不知道<code>bitcode</code>是啥，所以就得先看看这货是啥了。</p>
+<h3 id="Bitcode是什么？"><a href="#Bitcode是什么？" class="headerlink" title="Bitcode是什么？"></a>Bitcode是什么？</h3><p>找东西嘛，最先想到的当然是先看官方文档了。在<a href="https://developer.apple.com/library/prerelease/ios/documentation/IDEs/Conceptual/AppDistributionGuide/AppThinning/AppThinning.html#//apple_ref/doc/uid/TP40012582-CH35" target="_blank" rel="external">App Distribution Guide - App Thinning (iOS, watchOS)</a>一节中，找到了下面这样一个定义：</p>
+<blockquote>
+<p><em>Bitcode</em> is an intermediate representation of a compiled program. Apps you upload to iTunes Connect that contain bitcode will be compiled and linked on the App Store. Including bitcode will allow Apple to re-optimize your app binary in the future without the need to submit a new version of your app to the store.</p>
+</blockquote>
+<p>说的是<code>bitcode</code>是被编译程序的一种中间形式的代码。包含<code>bitcode</code>配置的程序将会在<code>App store</code>上被编译和链接。<code>bitcode</code>允许苹果在后期重新优化我们程序的二进制文件，而不需要我们重新提交一个新的版本到<code>App store</code>上。</p>
+<p>嗯，看着挺高级的啊。</p>
+<p>继续看，在<a href="https://developer.apple.com/library/prerelease/ios/documentation/DeveloperTools/Conceptual/WhatsNewXcode/Articles/xcode_7_0.html" target="_blank" rel="external">What’s New in Xcode-New Features in Xcode 7</a>中，还有一段如下的描述</p>
+<blockquote>
+<p><strong>Bitcode.</strong> When you archive for submission to the App Store, Xcode will compile your app into an intermediate representation. The App Store will then compile the bitcode down into the 64 or 32 bit executables as necessary.</p>
+</blockquote>
+<p>当我们提交程序到<code>App store</code>上时，<code>Xcode</code>会将程序编译为一个中间表现形式(<code>bitcode</code>)。然后<code>App store</code>会再将这个<code>bitcode</code>编译为可执行的<code>64</code>位或<code>32</code>位程序。</p>
+<p>再看看这两段描述都是放在<code>App Thinning</code>(App瘦身)一节中，可以看出其与包的优化有关了。喵大(<a href="http://weibo.com/onevcat" target="_blank" rel="external">@onevcat</a>)在其博客<a href="http://onevcat.com/2015/06/ios9-sdk/" target="_blank" rel="external">开发者所需要知道的 iOS 9 SDK 新特性</a>中也描述了<code>iOS 9</code>中苹果在<code>App</code>瘦身中所做的一些改进，大家可以转场到那去研读一下。</p>
+<h3 id="Bitcode配置"><a href="#Bitcode配置" class="headerlink" title="Bitcode配置"></a>Bitcode配置</h3><p>在上面的错误提示中，提到了如何处理我们遇到的问题：</p>
+<blockquote>
+<p>You must rebuild it with bitcode enabled (Xcode setting ENABLE_BITCODE), obtain an updated library from the vendor, or disable bitcode for this target. for architecture arm64</p>
+</blockquote>
+<p>要么让第三方库支持，要么关闭<code>target</code>的<code>bitcode</code>选项。</p>
+<p>实际上在<code>Xcode 7</code>中，我们新建一个<code>iOS</code>程序时，<code>bit code</code>选项默认是设置为<code>YES</code>的。我们可以在<code>”Build Settings”</code>-&gt;<code>”Enable Bitcode”</code>选项中看到这个设置。</p>
+<p>不过，我们现在需要考虑的是三个平台：<code>iOS</code>，<code>Mac OS</code>，<code>watchOS</code>。</p>
+<ul>
+<li>对应<code>iOS</code>，<code>bitcode</code>是可选的。</li>
+</ul>
+<ul>
+<li>对于<code>watchOS</code>，<code>bitcode</code>是必须的。</li>
+</ul>
+<ul>
+<li><code>Mac OS</code>不支持<code>bitcode</code>。</li>
+</ul>
+<p>如果我们开启了<code>bitcode</code>，在提交包时，下面这个界面也会有个<code>bitcode</code>选项：</p>
+<p><img src="https://developer.apple.com/library/prerelease/ios/documentation/IDEs/Conceptual/AppDistributionGuide/Art/6_ios_review_dist_profile_submit_2x.png" alt="image"></p>
+<blockquote>
+<p>盗图，我的应用没办法在这个界面显示<code>bitcode</code>，因为依赖于第三方的库，而这个库不支持<code>bitcode</code>，暂时只能设置<code>ENABLE_BITCODE为NO</code>。</p>
+<p>所以，如果我们的工程需要支持<code>bitcode</code>，则必要要求所有的引入的第三方库都支持<code>bitcode</code>。我就只能等着公司那些大哥大姐们啥时候提供一个新包给我们了。</p>
+</blockquote>
+<h3 id="题外话"><a href="#题外话" class="headerlink" title="题外话"></a>题外话</h3><p>如上面所说，<code>bitcode</code>是一种中间代码。<code>LLVM</code>官方文档有介绍这种文件的格式，有兴趣的可以移步<a href="http://llvm.org/docs/BitCodeFormat.html#llvm-bitcode-file-format" target="_blank" rel="external">LLVM Bitcode File Format</a>。</p>
+<h3 id="参考-1"><a href="#参考-1" class="headerlink" title="参考"></a>参考</h3><ol>
+<li><a href="https://developer.apple.com/library/prerelease/ios/documentation/IDEs/Conceptual/AppDistributionGuide/AppThinning/AppThinning.html#//apple_ref/doc/uid/TP40012582-CH35" target="_blank" rel="external">App Distribution Guide - App Thinning (iOS, watchOS)</a></li>
+<li><a href="https://developer.apple.com/library/prerelease/ios/documentation/DeveloperTools/Conceptual/WhatsNewXcode/Articles/xcode_7_0.html" target="_blank" rel="external">What’s New in Xcode-New Features in Xcode 7</a></li>
+<li><a href="http://onevcat.com/2015/06/ios9-sdk/" target="_blank" rel="external">开发者所需要知道的 iOS 9 SDK 新特性</a></li>
+<li><a href="http://llvm.org/docs/BitCodeFormat.html#llvm-bitcode-file-format" target="_blank" rel="external">LLVM Bitcode File Format</a></li>
+</ol>
+<h2 id="在Swift中实现NS-OPTIONS"><a href="#在Swift中实现NS-OPTIONS" class="headerlink" title="在Swift中实现NS_OPTIONS"></a>在Swift中实现NS_OPTIONS</h2><p>从<code>Xcode 4.5</code>以后，我们在<code>Objective-C</code>中使用<code>NS_ENUM</code>和<code>NS_OPTIONS</code>来定义一个枚举，以替代<code>C</code>语言枚举的定义方式。其中<code>NS_ENUM</code>用于定义普通的枚举，<code>NS_OPTIONS</code>用于定义选项类型的枚举。</p>
+<p>而到了<code>Swift</code>中，枚举增加了更多的特性。它可以包含原始类型(不再局限于整型)以及相关值。正是由于这些原因，枚举在<code>Swift</code>中得到了更广泛的应用。在<code>Foundation</code>中，<code>Objective-C</code>中的<code>NS_ENUM</code>类型的枚举，都会自动转换成<code>Swift</code>中<code>enum</code>，并且更加精炼。以<code>Collection View</code>的滚动方向为例，在<code>Objective-C</code>中，其定义如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">typedef NS_ENUM(NSInteger, UICollectionViewScrollDirection) &#123;</div><div class="line">	UICollectionViewScrollDirectionVertical,</div><div class="line">	UICollectionViewScrollDirectionHorizontal</div><div class="line">&#125;;</div></pre></td></tr></table></figure>
+<p>而在<code>Swift</code>中，其定义如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">enum UICollectionViewScrollDirection : Int &#123;</div><div class="line">	case Vertical</div><div class="line">	case Horizontal</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>精练多了吧，看着舒服多了，还能少码两个字。我们自己定义枚举时，也应该采用这种方式。</p>
+<p>不过对于<code>Objective-C</code>中<code>NS_OPTIONS</code>类型的枚举，<code>Swift</code>中的实现似乎就没有那么美好了。</p>
+<p>我们再来对比一下<code>UICollectionViewScrollPosition</code>的定义吧，在<code>Objective-C</code>中，其定义如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">typedef NS_OPTIONS(NSUInteger, UICollectionViewScrollPosition) &#123;</div><div class="line">    UICollectionViewScrollPositionNone                 = 0,</div><div class="line"></div><div class="line">    // The vertical positions are mutually exclusive to each other, but are bitwise or-able with the horizontal scroll positions.</div><div class="line">    // Combining positions from the same grouping (horizontal or vertical) will result in an NSInvalidArgumentException.</div><div class="line">    UICollectionViewScrollPositionTop                  = 1 &lt;&lt; 0,</div><div class="line">    UICollectionViewScrollPositionCenteredVertically   = 1 &lt;&lt; 1,</div><div class="line">    UICollectionViewScrollPositionBottom               = 1 &lt;&lt; 2,</div><div class="line"></div><div class="line">    // Likewise, the horizontal positions are mutually exclusive to each other.</div><div class="line">    UICollectionViewScrollPositionLeft                 = 1 &lt;&lt; 3,</div><div class="line">    UICollectionViewScrollPositionCenteredHorizontally = 1 &lt;&lt; 4,</div><div class="line">    UICollectionViewScrollPositionRight                = 1 &lt;&lt; 5</div><div class="line">&#125;;</div></pre></td></tr></table></figure>
+<p>而在<code>Swift 2.0</code>中，其定义如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">struct UICollectionViewScrollPosition : OptionSetType &#123;</div><div class="line">    init(rawValue: UInt)</div><div class="line"></div><div class="line">    static var None: UICollectionViewScrollPosition &#123; get &#125;</div><div class="line"></div><div class="line">    // The vertical positions are mutually exclusive to each other, but are bitwise or-able with the horizontal scroll positions.</div><div class="line">    // Combining positions from the same grouping (horizontal or vertical) will result in an NSInvalidArgumentException.</div><div class="line">    static var Top: UICollectionViewScrollPosition &#123; get &#125;</div><div class="line">    static var CenteredVertically: UICollectionViewScrollPosition &#123; get &#125;</div><div class="line">    static var Bottom: UICollectionViewScrollPosition &#123; get &#125;</div><div class="line"></div><div class="line">    // Likewise, the horizontal positions are mutually exclusive to each other.</div><div class="line">    static var Left: UICollectionViewScrollPosition &#123; get &#125;</div><div class="line">    static var CenteredHorizontally: UICollectionViewScrollPosition &#123; get &#125;</div><div class="line">    static var Right: UICollectionViewScrollPosition &#123; get &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>额，光看代码，不看实现，这也是化简为繁的节奏啊。</p>
+<p>为什么要这样做呢？<code>Mattt</code>给了我们如下解释：</p>
+<blockquote>
+<p>Well, the same integer bitmasking tricks in C don’t work for enumerated types in Swift. An <code>enum</code> represents a type with a closed set of valid options, without a built-in mechanism for representing a conjunction of options for that type. An <code>enum</code> could, ostensibly, define a case for all possible combinations of values, but for <code>n &gt; 3</code>, the combinatorics make this approach untenable.</p>
+</blockquote>
+<p>意思是<code>Swift</code>不支持<code>C</code>语言中枚举值的整型掩码操作的技巧。在<code>Swift</code>中，一个枚举可以表示一组有效选项的集合，但却没有办法支持这些选项的组合操作(“&amp;”、”|”等)。理论上，一个枚举可以定义选项值的任意组合值，但对于<code>n &gt; 3</code>这种操作，却无法有效的支持。</p>
+<p>为了支持类<code>NS_OPTIONS</code>的枚举，<code>Swift 2.0</code>中定义了<code>OptionSetType</code>协议【在<code>Swift 1.2</code>中是使用<code>RawOptionSetType</code>，相比较而言已经改进了不少】，它的声明如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div></pre></td><td class="code"><pre><div class="line">/// Supplies convenient conformance to `SetAlgebraType` for any type</div><div class="line">/// whose `RawValue` is a `BitwiseOperationsType`.  For example:</div><div class="line">///</div><div class="line">///     struct PackagingOptions : OptionSetType &#123;</div><div class="line">///       let rawValue: Int</div><div class="line">///       init(rawValue: Int) &#123; self.rawValue = rawValue &#125;</div><div class="line">///     </div><div class="line">///       static let Box = PackagingOptions(rawValue: 1)</div><div class="line">///       static let Carton = PackagingOptions(rawValue: 2)</div><div class="line">///       static let Bag = PackagingOptions(rawValue: 4)</div><div class="line">///       static let Satchel = PackagingOptions(rawValue: 8)</div><div class="line">///       static let BoxOrBag: PackagingOptions = [Box, Bag]</div><div class="line">///       static let BoxOrCartonOrBag: PackagingOptions = [Box, Carton, Bag]</div><div class="line">///     &#125;</div><div class="line">///</div><div class="line">/// In the example above, `PackagingOptions.Element` is the same type</div><div class="line">/// as `PackagingOptions`, and instance `a` subsumes instance `b` if</div><div class="line">/// and only if `a.rawValue &amp; b.rawValue == b.rawValue`.</div><div class="line">protocol OptionSetType : SetAlgebraType, RawRepresentable &#123;</div><div class="line"></div><div class="line">    /// An `OptionSet`&apos;s `Element` type is normally `Self`.</div><div class="line">    typealias Element = Self</div><div class="line"></div><div class="line">    /// Convert from a value of `RawValue`, succeeding unconditionally.</div><div class="line">    init(rawValue: Self.RawValue)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>从字面上来理解，<code>OptionSetType</code>是选项集合类型，它定义了一些基本操作，包括集合操作(<code>union</code>, <code>intersect</code>, <code>exclusiveOr</code>)、成员管理(<code>contains</code>, <code>insert</code>, <code>remove</code>)、位操作(<code>unionInPlace</code>, <code>intersectInPlace</code>, <code>exclusiveOrInPlace</code>)以及其它的一些基本操作。</p>
+<p>作为示例，我们来定义一个表示方向的选项集合，通常我们是定义一个实现<code>OptionSetType</code>协议的结构体，如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">struct Directions: OptionSetType &#123;</div><div class="line"></div><div class="line">    var rawValue:Int</div><div class="line">    init(rawValue: Int) &#123;</div><div class="line">        self.rawValue = rawValue</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    static let Up: Directions = Directions(rawValue: 1 &lt;&lt; 0)</div><div class="line">    static let Down: Directions = Directions(rawValue: 1 &lt;&lt; 1)</div><div class="line">    static let Left: Directions = Directions(rawValue: 1 &lt;&lt; 2)</div><div class="line">    static let Right: Directions = Directions(rawValue: 1 &lt;&lt; 3)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>所需要做的基本上就是这些。然后我们就可以创建<code>Directions</code>的实例了，如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">let direction: Directions = Directions.Left</div><div class="line">if direction == Directions.Left &#123;</div><div class="line">    // ...</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>如果想同时支持两个方向，则可以如上处理：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">let leftUp: Directions = [Directions.Left, Directions.Up]</div><div class="line">if leftUp.contains(Directions.Left) &amp;&amp; leftUp.contains(Directions.Up) &#123;</div><div class="line">    // ...</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>如果<code>leftUp</code>同时包含<code>Directions.Left</code>和<code>Directions.Up</code>，则返回<code>true</code>。</p>
+<p>这里还有另外一种方法来达到这个目的，就是我们在<code>Directions</code>结构体中直接声明声明<code>Left</code>和<code>Up</code>的静态常量，如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">struct Directions: OptionSetType &#123;</div><div class="line"></div><div class="line">    // ...</div><div class="line">    static let LeftUp: Directions = [Directions.Left, Directions.Up]</div><div class="line">    static let RightUp: Directions = [Directions.Right, Directions.Up]</div><div class="line">    // ...</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这样，我们就可以以如下方式来执行上面的操作：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">if leftUp == Directions.LeftUp &#123;</div><div class="line">    // ...</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>当然，如果单一选项较多，而要去组合所有的情况，这种方法就显示笨拙了，这种情况下还是推荐使用<code>contains</code>方法。</p>
+<p>总体来说，<code>Swift</code>中的对选项的支持没有<code>Objective-C</code>中的<code>NS_OPTIONS</code>来得简洁方便。而且在<code>Swift 1.2</code>的时候，我们还是可以使用”&amp;”和”|”操作符的。下面这段代码在<code>Swift 1.2</code>上是<code>OK</code>的：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">UIView.animateWithDuration(0.3, delay: 1.0, options: UIViewAnimationOptions.CurveEaseIn | UIViewAnimationOptions.CurveEaseOut, animations: &#123; () -&gt; Void in</div><div class="line">    // ...</div><div class="line">&#125;, completion: nil)</div></pre></td></tr></table></figure>
+<p>但到了<code>Swift 2.0</code>时，<code>OptionSetType</code>已经不再支持”&amp;”和”|”操作了，因此，上面这段代码需要修改成：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">UIView.animateWithDuration(0.3, delay: 1.0, options: [UIViewAnimationOptions.CurveEaseIn, UIViewAnimationOptions.CurveEaseInOut], animations: &#123; () -&gt; Void in</div><div class="line">        // ...</div><div class="line">&#125;, completion: nil)</div></pre></td></tr></table></figure>
+<p>不过，慢慢习惯就好。</p>
+<h3 id="参考-2"><a href="#参考-2" class="headerlink" title="参考"></a>参考</h3><ol>
+<li><a href="http://nshipster.com/rawoptionsettype/" target="_blank" rel="external">RawOptionSetType</a></li>
+<li><a href="http://www.swift-studies.com/blog/2015/6/17/exploring-swift-20-optionsettypes" target="_blank" rel="external">Exploring Swift 2.0 OptionSetTypes</a></li>
+<li><a href="http://www.informit.com/articles/article.aspx?p=2420231" target="_blank" rel="external">Notes from WWDC 2015: The Enumerated Delights of Swift 2.0 Option Sets</a>​</li>
+<li>《100个Swift开发必备Tip》— Tip 66. Options</li>
+</ol>
+<h2 id="零碎"><a href="#零碎" class="headerlink" title="零碎"></a>零碎</h2><h3 id="静态分析中”Potential-null-dereference”的处理"><a href="#静态分析中”Potential-null-dereference”的处理" class="headerlink" title="静态分析中”Potential null dereference”的处理"></a>静态分析中”Potential null dereference”的处理</h3><p>我们在写一个方法时，如果希望在方法执行出错时，获取一个<code>NSError</code>对象，我们通常会像下面这样来定义我们的方法</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">+ (NSString )checkStringLength:(NSString *)str error:(NSError **)error &#123;</div><div class="line"></div><div class="line">	if (str.length &lt;= 0) &#123;</div><div class="line">	        *error = [NSError errorWithDomain:@&quot;ErrorDomain&quot; code:-1 userInfo:nil];</div><div class="line">    	return nil;</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	return str;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这段代码看着没啥问题，至少在语法上是OK的，所以在编译时，编译器并不会报任何警告。</p>
+<p>如果我们用以下方式去调用的话，也是一切正常的：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">NSError *error = nil;</div><div class="line">[Test checkStringLength:@&quot;&quot; error:&amp;error];</div></pre></td></tr></table></figure>
+<p>不过我们如果就静态分析器来分析一下，发现会在”<code>*error = ...</code>“这行代码处报如下的警告：</p>
+<blockquote>
+<p>Potential null dereference.  According to coding standards in ‘Creating and Returning NSError Objects’ the parameter may be null</p>
+</blockquote>
+<p>这句话告诉我们的是这里可能存在空引用。实际上，如果我们像下面这样调用方法的话，程序是会崩溃的：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">[Test checkStringLength:@&quot;&quot; error:NULL];</div></pre></td></tr></table></figure>
+<p>因为此时在方法中，<code>error</code>实际上是<code>NULL</code>，<code>*error</code>这货啥也不是，对它赋值肯定就出错了。</p>
+<p>这里正确的姿式是在使用<code>error</code>之前，先判断它是否为<code>NULL</code>，完整的代码如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">+ (NSString )checkStringLength:(NSString *)str error:(NSError **)error &#123;</div><div class="line"></div><div class="line">    if (str.length &lt;= 0) &#123;</div><div class="line"></div><div class="line">        if (error != NULL) &#123;</div><div class="line">            *error = [NSError errorWithDomain:@&quot;ErrorDomain&quot; code:-1 userInfo:nil];</div><div class="line">        &#125;</div><div class="line">        return nil;</div><div class="line">    &#125;</div><div class="line">    return str;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>实际上，对此这种方式的传值，我们始终需要去做非空判断。</p>
+<h3 id="Charles支持iOS模拟器"><a href="#Charles支持iOS模拟器" class="headerlink" title="Charles支持iOS模拟器"></a>Charles支持iOS模拟器</h3><p>咬咬牙花了50刀买了一个<code>Charles</code>的<code>License</code>。</p>
+<p>今天临时需要在模拟器上跑工程，想抓一下数据包，看一下请求<code>Header</code>里面的信息。工程跑起来时，发现<code>Charles</code>没有抓取到数据。嗯，本着有问题先问<code>stackoverflow</code>的原则，跑到上面搜了一下。找到了这个贴子：<a href="http://stackoverflow.com/questions/25439756/how-to-use-charles-proxy-on-the-xcode-6-ios-8-simulator" target="_blank" rel="external">How to use Charles Proxy on the Xcode 6 (iOS 8) Simulator?</a>。不过我的处理没有他这么麻烦，基本上两步搞定了：</p>
+<p>1.在<code>Charles</code>的菜单中选择<code>Help &gt; SSL Proxying &gt; Install Charles Root Certificate in iOS Simulators</code>，直接点击就行。这时候会弹出一个提示框，点击OK就行。</p>
+<p>2.如果这时候还不能抓取数据，就重启模拟器。</p>
+<p>这样就OK了。在<code>Keychain</code>里面，真机和模拟器的证书是同一个。</p>
+<p>至于<code>stackoverflow</code>里面提到的在3.9.3版本上还需要覆盖一个脚本文件，这个没有尝试过，哈哈，我的是最新的3.10.2。</p>
+<p>还有个需要注意的是，在抓取模拟器数据时，如果关闭<code>Charles</code>，那么模拟器将无法再请求到网络数据。这时需要重新开启<code>Charles</code>，或者是重启模拟器。另外如果重置了模拟器的设置(<code>Reset Content and Settings…</code>)，<code>Charles</code>也抓取不到模拟器的数据，需要重新来过。</p>
+<h4 id="参考-3"><a href="#参考-3" class="headerlink" title="参考"></a>参考</h4><ol>
+<li><a href="http://stackoverflow.com/questions/25439756/how-to-use-charles-proxy-on-the-xcode-6-ios-8-simulator" target="_blank" rel="external">How to use Charles Proxy on the Xcode 6 (iOS 8) Simulator?</a></li>
+</ol>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/07/20/cocoa-uikit-uiapearance/" rel="next" title="UIKit: UIApearance">
+                <i class="fa fa-chevron-left"></i> UIKit: UIApearance
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/08/31/translate-10-things-you-need-to-know-about-cocoa-auto-layout/" rel="prev" title="10 Things You Need to Know About Cocoa Auto Layout">
+                10 Things You Need to Know About Cocoa Auto Layout <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#ARC与MRC的性能对比"><span class="nav-number">1.</span> <span class="nav-text">ARC与MRC的性能对比</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#参考"><span class="nav-number">1.1.</span> <span class="nav-text">参考</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Bitcode"><span class="nav-number">2.</span> <span class="nav-text">Bitcode</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Bitcode是什么？"><span class="nav-number">2.1.</span> <span class="nav-text">Bitcode是什么？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Bitcode配置"><span class="nav-number">2.2.</span> <span class="nav-text">Bitcode配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#题外话"><span class="nav-number">2.3.</span> <span class="nav-text">题外话</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考-1"><span class="nav-number">2.4.</span> <span class="nav-text">参考</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#在Swift中实现NS-OPTIONS"><span class="nav-number">3.</span> <span class="nav-text">在Swift中实现NS_OPTIONS</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#参考-2"><span class="nav-number">3.1.</span> <span class="nav-text">参考</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#零碎"><span class="nav-number">4.</span> <span class="nav-text">零碎</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#静态分析中”Potential-null-dereference”的处理"><span class="nav-number">4.1.</span> <span class="nav-text">静态分析中”Potential null dereference”的处理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Charles支持iOS模拟器"><span class="nav-number">4.2.</span> <span class="nav-text">Charles支持iOS模拟器</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#参考-3"><span class="nav-number">4.2.1.</span> <span class="nav-text">参考</span></a></li></ol></li></ol></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

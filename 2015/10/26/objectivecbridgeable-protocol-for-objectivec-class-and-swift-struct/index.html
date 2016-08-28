@@ -1,0 +1,716 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="我们知道在Swift中，可以在NSArray与Array之间做无缝的转换，如下所示：
+1234567891011let mobile = [&quot;iPhone&quot;, &quot;Nokia&quot;, &quot;小米Note&quot;]let mobile1 = (mobile as NSArray).objectAtIndex(1)print(mobile1)let animalArray = NSArray(objects: &quot;li">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用_ObjectiveCBridgeable协议实现Objective-C类与Swift结构体的无缝互转">
+<meta property="og:url" content="http://southpeak.github.io/2015/10/26/objectivecbridgeable-protocol-for-objectivec-class-and-swift-struct/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="我们知道在Swift中，可以在NSArray与Array之间做无缝的转换，如下所示：
+1234567891011let mobile = [&quot;iPhone&quot;, &quot;Nokia&quot;, &quot;小米Note&quot;]let mobile1 = (mobile as NSArray).objectAtIndex(1)print(mobile1)let animalArray = NSArray(objects: &quot;li">
+<meta property="og:updated_time" content="2016-08-28T04:24:48.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="使用_ObjectiveCBridgeable协议实现Objective-C类与Swift结构体的无缝互转">
+<meta name="twitter:description" content="我们知道在Swift中，可以在NSArray与Array之间做无缝的转换，如下所示：
+1234567891011let mobile = [&quot;iPhone&quot;, &quot;Nokia&quot;, &quot;小米Note&quot;]let mobile1 = (mobile as NSArray).objectAtIndex(1)print(mobile1)let animalArray = NSArray(objects: &quot;li">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2015/10/26/objectivecbridgeable-protocol-for-objectivec-class-and-swift-struct/"/>
+
+  <title> 使用_ObjectiveCBridgeable协议实现Objective-C类与Swift结构体的无缝互转 | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                使用_ObjectiveCBridgeable协议实现Objective-C类与Swift结构体的无缝互转
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-10-26T10:33:22+08:00" content="2015-10-26">
+              2015-10-26
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/swift/" itemprop="url" rel="index">
+                    <span itemprop="name">Swift</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>我们知道在<code>Swift</code>中，可以在<code>NSArray</code>与<code>Array</code>之间做无缝的转换，如下所示：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> mobile = [<span class="string">"iPhone"</span>, <span class="string">"Nokia"</span>, <span class="string">"小米Note"</span>]</div><div class="line"><span class="keyword">let</span> mobile1 = (mobile <span class="keyword">as</span> <span class="type">NSArray</span>).objectAtIndex(<span class="number">1</span>)</div><div class="line"><span class="built_in">print</span>(mobile1)</div><div class="line"></div><div class="line"><span class="keyword">let</span> animalArray = <span class="type">NSArray</span>(objects: <span class="string">"lion"</span>, <span class="string">"tiger"</span>, <span class="string">"monkey"</span>)</div><div class="line"><span class="keyword">var</span> animalCount = (animalArray <span class="keyword">as</span> <span class="type">Array</span>).<span class="built_in">count</span></div><div class="line"><span class="built_in">print</span>(animalCount)</div><div class="line"></div><div class="line"><span class="comment">// 输出</span></div><div class="line"><span class="comment">// "Nokia"</span></div><div class="line"><span class="comment">// ["lion", "tiger", "monkey"]</span></div></pre></td></tr></table></figure>
+<p>编译器会为了我们完成所有转换，我们只需要拿来即用就行。当然，除了数组外，还有字典(<code>Dictionary</code>)、集合(<code>Set</code>)、字符串(<code>String</code>)也是一样。</p>
+<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><p>不过仔细一想，会发现，<code>NSArray</code>是类类型，而<code>Array</code>是结构体类型。一个是引用类型，一个是值类型，它们是怎样实现无缝转换的呢？这让我们想到了<code>Cocoa Foundation</code>与<code>Core Foundation</code>之间转换的<code>toll-free bridging</code>技术。那<code>NSArray</code>与<code>Array</code>之间是不是也应该有类似的桥接实现呢？</p>
+<h2 id="Objective-C-Bridge"><a href="#Objective-C-Bridge" class="headerlink" title="Objective-C Bridge"></a>Objective-C Bridge</h2><p>我们将鼠标移动到<code>Array</code>上，然后<code>&quot;cmd+鼠标点击&quot;</code>，进入到<code>Swift</code>的声明文件中，在<code>Array</code>的注释中，可以看到下面这段：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/// Objective-C Bridge</span></div><div class="line"><span class="comment">/// ==================</span></div><div class="line"><span class="comment">/// The main distinction between Array and the other array types is that it interoperates seamlessly and efficiently with Objective-C.</span></div><div class="line"><span class="comment">/// Array&lt;Element&gt; is considered bridged to Objective-C iff Element is bridged to Objective-C.</span></div><div class="line"></div><div class="line"><span class="comment">// ......</span></div></pre></td></tr></table></figure>
+<p>可以看到<code>Array</code>与<code>Objective-C</code>的数组之间确实存在某种桥接技术，我们暂且称之为<code>&quot;Objective-C Bridge&quot;</code>桥接。那这又是如何实现的呢？</p>
+<p>我们在当前文件中搜索<code>bridge</code>，会发现有这样一个协议：<code>_ObjectiveCBridgeable</code>。我们先来看看它的声明：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/// A Swift Array or Dictionary of types conforming to `_ObjectiveCBridgeable` can be passed to Objective-C as an NSArray or NSDictionary, respectively. The elements of the resulting NSArray or NSDictionary will be the result of calling `_bridgeToObjectiveC` on each element of the source container.</span></div><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">protocol</span> <span class="title">_ObjectiveCBridgeable</span> </span>&#123;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>即一个<code>Swift</code>数组或字典，如果其元素类型实现了<code>_ObjectiveCBridgeable</code>协议，则该数组或字典可以被转换成<code>Objective-C</code>的数组或字典。对于<code>_ObjectiveCBridgeable</code>协议，我们目前所能得到的文档就只有这些，也看不到它里面声明了什么属性方法。不过，可以看到这个协议是访问控制权限是<code>public</code>，也就意味着可以定义类来实现这个接口。这就好办了，下面就来尝试实现这样一个转换。</p>
+<h2 id="Objective-C类与Swift结构体的互转示例"><a href="#Objective-C类与Swift结构体的互转示例" class="headerlink" title="Objective-C类与Swift结构体的互转示例"></a>Objective-C类与Swift结构体的互转示例</h2><p>在此先定义一个<code>Objective-C</code>类，如下所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// Mobile.h</span></div><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">Mobile</span> : <span class="title">NSObject</span></span></div><div class="line"></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) <span class="built_in">NSString</span> *brand;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) <span class="built_in">NSString</span> *system;</div><div class="line"></div><div class="line">- (<span class="keyword">instancetype</span>)initWithBrand:(<span class="built_in">NSString</span> *)brand system:(<span class="built_in">NSString</span> *)system;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div><div class="line"></div><div class="line"><span class="comment">// Mobole.m</span></div><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">Mobile</span></span></div><div class="line"></div><div class="line">- (<span class="keyword">instancetype</span>)initWithBrand:(<span class="built_in">NSString</span> *)brand system:(<span class="built_in">NSString</span> *)system &#123;</div><div class="line"></div><div class="line">    <span class="keyword">self</span> = [<span class="keyword">super</span> init];</div><div class="line"></div><div class="line">    <span class="keyword">if</span> (<span class="keyword">self</span>) &#123;</div><div class="line">        _brand = brand;</div><div class="line">        _system = system;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>同样，我定义一个<code>Swift</code>结构体，如下所示：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">struct</span> <span class="title">SwiftMobile</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="keyword">let</span> brand: <span class="type">String</span></div><div class="line">    <span class="keyword">let</span> system: <span class="type">String</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>要想实现<code>Mobile</code>类与<code>SwiftMobile</code>结构体之间的互转，则<code>SwiftMobile</code>结构体需要实现<code>_ObjectiveCBridgeable</code>协议，如下所示：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">extension</span> <span class="title">SwiftMobile</span>: <span class="title">_ObjectiveCBridgeable</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="keyword">typealias</span> _ObjectiveCType = <span class="type">Mobile</span></div><div class="line"></div><div class="line">    <span class="comment">// 判断是否能转换成Objective-C对象</span></div><div class="line">    <span class="keyword">static</span> <span class="function"><span class="keyword">func</span> <span class="title">_isBridgedToObjectiveC</span><span class="params">()</span></span> -&gt; <span class="type">Bool</span> &#123;</div><div class="line">        <span class="keyword">return</span> <span class="literal">true</span></div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="comment">// 获取转换的目标类型</span></div><div class="line">    <span class="keyword">static</span> <span class="function"><span class="keyword">func</span> <span class="title">_getObjectiveCType</span><span class="params">()</span></span> -&gt; <span class="type">Any</span>.<span class="type">Type</span> &#123;</div><div class="line">        <span class="keyword">return</span> _ObjectiveCType.<span class="keyword">self</span></div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="comment">// 转换成Objective-C对象</span></div><div class="line">    <span class="function"><span class="keyword">func</span> <span class="title">_bridgeToObjectiveC</span><span class="params">()</span></span> -&gt; _ObjectiveCType &#123;</div><div class="line">        <span class="keyword">return</span> <span class="type">Mobile</span>(brand: brand, system: system)</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="comment">// 强制将Objective-C对象转换成Swift结构体类型</span></div><div class="line">    <span class="keyword">static</span> <span class="function"><span class="keyword">func</span> <span class="title">_forceBridgeFromObjectiveC</span><span class="params">(source: _ObjectiveCType, <span class="keyword">inout</span> result: SwiftMobile?)</span></span> &#123;</div><div class="line">        result = <span class="type">SwiftMobile</span>(brand: source.brand, system: source.system)</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="comment">// 有条件地将Objective-C对象转换成Swift结构体类型</span></div><div class="line">    <span class="keyword">static</span> <span class="function"><span class="keyword">func</span> <span class="title">_conditionallyBridgeFromObjectiveC</span><span class="params">(source: _ObjectiveCType, <span class="keyword">inout</span> result: SwiftMobile?)</span></span> -&gt; <span class="type">Bool</span> &#123;</div><div class="line"></div><div class="line">        _forceBridgeFromObjectiveC(source, result: &amp;result)</div><div class="line"></div><div class="line">        <span class="keyword">return</span> <span class="literal">true</span></div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>可以看到<code>SwiftMobile</code>结构体主要实现了<code>_ObjectiveCBridgeable</code>接口的<code>5</code>个方法，从方法名基本上就能知道每个方法的用途。这里需要注意的是在本例中的<code>_conditionallyBridgeFromObjectiveC</code>只是简单地调用了<code>_forceBridgeFromObjectiveC</code>，如果需要指定条件，则需要更详细的实现。</p>
+<p>让我们来测试一下：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> mobile = <span class="type">Mobile</span>(brand: <span class="string">"iPhone"</span>, system: <span class="string">"iOS 9.0"</span>)</div><div class="line"></div><div class="line"><span class="keyword">let</span> swiftMobile = mobile <span class="keyword">as</span> <span class="type">SwiftMobile</span></div><div class="line"><span class="built_in">print</span>(<span class="string">"\(swiftMobile.brand): \(swiftMobile.system)"</span>)</div><div class="line"></div><div class="line"><span class="keyword">let</span> swiftMobile2 = <span class="type">SwiftMobile</span>(brand: <span class="string">"Galaxy Note 3 Lite"</span>, system: <span class="string">"Android 5.0"</span>)</div><div class="line"><span class="keyword">let</span> mobile2 = swiftMobile2 <span class="keyword">as</span> <span class="type">Mobile</span></div><div class="line"><span class="built_in">print</span>(<span class="string">"\(mobile2.brand): \(mobile2.system)"</span>)</div><div class="line"></div><div class="line"><span class="comment">// 输出:</span></div><div class="line"><span class="comment">// iPhone: iOS 9.0</span></div><div class="line"><span class="comment">// Galaxy Note 3 Lite: Android 5.0</span></div></pre></td></tr></table></figure>
+<p>可以看到只需要使用<code>as</code>，就能实现<code>Mobile</code>类与<code>SwiftMobile</code>结构体的无缝转换。是不是很简单？</p>
+<h2 id="集合类型的无缝互换"><a href="#集合类型的无缝互换" class="headerlink" title="集合类型的无缝互换"></a>集合类型的无缝互换</h2><p>回到数组的议题上来。</p>
+<p>我们知道<code>NSArray</code>的元素类型必须是类类型的，它不支持存储结构体、数值等类型。因此，<code>Array</code>转换成<code>NSArray</code>的前提是<code>Array</code>的元素类型能被<code>NSArray</code>所接受。如果存储在<code>Array</code>中的元素的类型是结构体，且该结构体实现了<code>_ObjectiveCBridgeable</code>接口，则转换成<code>NSArray</code>时，编译器会自动将所有的元素转换成对应的类类型对象。以上面的<code>SwiftMobile</code>为例，看如下代码：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> sm1 = <span class="type">SwiftMobile</span>(brand: <span class="string">"iPhone"</span>, system: <span class="string">"iOS 9.0"</span>)</div><div class="line"><span class="keyword">let</span> sm2 = <span class="type">SwiftMobile</span>(brand: <span class="string">"Galaxy Note 3"</span>, system: <span class="string">"Android 5.0"</span>)</div><div class="line"><span class="keyword">let</span> sm3 = <span class="type">SwiftMobile</span>(brand: <span class="string">"小米"</span>, system: <span class="string">"Android 4.0"</span>)</div><div class="line"></div><div class="line"><span class="keyword">let</span> mobiles = [sm1, sm2, sm3]</div><div class="line"></div><div class="line"><span class="keyword">let</span> mobileArray = mobiles <span class="keyword">as</span> <span class="type">NSArray</span></div><div class="line"><span class="built_in">print</span>(mobileArray)</div><div class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="number">0</span>..&lt;mobiles.<span class="built_in">count</span> &#123;</div><div class="line">    <span class="built_in">print</span>(<span class="string">"\(mobileArray.objectAtIndex(i).brand): \(mobileArray.objectAtIndex(i).system)"</span>)</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// 输出：</span></div><div class="line"><span class="comment">// (</span></div><div class="line"><span class="comment">//    "&lt;Mobile: 0x100c03f30&gt;",</span></div><div class="line"><span class="comment">//    "&lt;Mobile: 0x100c03940&gt;",</span></div><div class="line"><span class="comment">//    "&lt;Mobile: 0x100c039c0&gt;"</span></div><div class="line"><span class="comment">// )</span></div><div class="line"><span class="comment">// iPhone: iOS 9.0</span></div><div class="line"><span class="comment">// Galaxy Note 3: Android 5.0</span></div><div class="line"><span class="comment">// 小米: Android 4.0</span></div></pre></td></tr></table></figure>
+<p>可以看到打印<code>mobileArray</code>数组时，其元素已经转换成了类<code>Mobile</code>的对象。一切都是那么的自然。而如果我们的<code>SwiftMobile</code>并没有实现<code>_ObjectiveCBridgeable</code>接口，则会报编译器错误：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">'[<span class="type">SwiftMobile</span>]' <span class="keyword">is</span> not convertible to '<span class="type">NSArray'</span></div></pre></td></tr></table></figure>
+<p>实际上，像<code>Bool</code>，<code>Int</code>， <code>UInt</code>，<code>Float</code>，<code>Double</code>，<code>CGFloat</code>这些数值类型也实现了<code>_ObjectiveCBridgeable</code>接口。我们可以从文档<a href="https://developer.apple.com/library/prerelease/mac/releasenotes/General/APIDiffsMacOSX10_11/Swift/Swift.html" target="_blank" rel="external">OS X v10.11 API Diffs - Swift Changes for Swift</a>中找到一些线索：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">extension</span> <span class="title">Bool</span> : <span class="title">_ObjectiveCBridgeable</span> </span>&#123;</div><div class="line">    <span class="keyword">init</span>(<span class="number">_</span> number: <span class="type">NSNumber</span>)</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">extension</span> <span class="title">Int</span> : <span class="title">_ObjectiveCBridgeable</span> </span>&#123;</div><div class="line">    <span class="keyword">init</span>(<span class="number">_</span> number: <span class="type">NSNumber</span>)</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">extension</span> <span class="title">Float</span> : <span class="title">_ObjectiveCBridgeable</span> </span>&#123;</div><div class="line">    <span class="keyword">init</span>(<span class="number">_</span> number: <span class="type">NSNumber</span>)</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// ... Double, UInt ...</span></div></pre></td></tr></table></figure>
+<p><em>(注意：整型类型只有<code>Int</code>与<code>UInt</code>实现了接口，而其它诸如<code>Int16</code>，<code>Uint32</code>，<code>Int8</code>等则没有）</em></p>
+<p>它们的目标类型都是<code>NSNumber</code>类型，如下代码所示：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> numbers = [<span class="number">1</span>, <span class="number">29</span>, <span class="number">40</span>]</div><div class="line"><span class="keyword">let</span> numberArray = (numbers <span class="keyword">as</span> <span class="type">NSArray</span>).objectAtIndex(<span class="number">2</span>)</div><div class="line"></div><div class="line"><span class="built_in">print</span>(numberArray.<span class="keyword">dynamicType</span>)</div><div class="line"></div><div class="line"><span class="comment">// 输出:</span></div><div class="line"><span class="comment">// __NSCFNumber</span></div></pre></td></tr></table></figure>
+<p>当然，要想实现<code>Array</code>与<code>NSArray</code>无缝切换，除了元素类型需要支持这种操作外，<code>Array</code>本身也需要能支持<code>Objective-C Bridge</code>，即它也需要实现<code>_ObjectiveCBridgeable</code>接口。在<code>Swift</code>文件的<code>Array</code>声明中并没有找到相关的线索：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">struct</span> <span class="title">Array</span>&lt;<span class="title">Element</span>&gt; : <span class="title">CollectionType</span>, <span class="title">Indexable</span>, <span class="title">SequenceType</span>, <span class="title">MutableCollectionType</span>, <span class="title">MutableIndexable</span>, <span class="title">_DestructorSafeContainer</span></span></div></pre></td></tr></table></figure>
+<p>线索依然在<a href="https://developer.apple.com/library/prerelease/mac/releasenotes/General/APIDiffsMacOSX10_11/Swift/Swift.html" target="_blank" rel="external">OS X v10.11 API Diffs - Swift Changes for Swift</a>中，有如下声明：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">extension</span> <span class="title">Array</span> : <span class="title">_ObjectiveCBridgeable</span> </span>&#123;</div><div class="line">    <span class="keyword">init</span>(_fromNSArray source: <span class="type">NSArray</span>, noCopy noCopy: <span class="type">Bool</span> = <span class="keyword">default</span>)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>因此，<code>Array</code>与<code>NSArray</code>相互转换需要两个条件：</p>
+<ol>
+<li><code>Array</code>自身实现<code>Objective-C Bridge</code>桥接，这个<code>Swift</code>已经帮我们实现了。</li>
+<li><code>Array</code>中的元素如果是数值类型或结构类型，必须实现<code>Objective-C Bridge</code>桥接。而如果是类类型或者是<code>@objc protocol</code>类型，则不管这个类型是<code>Objective-C</code>体系中的，还是纯<code>Swift</code>类型(不继承自<code>NSObject</code>)，都可以直接转换。</li>
+</ol>
+<p>另外，<code>Array</code>只能转换成<code>NSArray</code>，而不能转换成<code>NSArray</code>的子类，如<code>NSMutableArray</code>或<code>NSOrderedArray</code>。如下所示：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">var</span> objects = [<span class="type">NSObject</span>(), <span class="type">NSObject</span>(), <span class="type">NSObject</span>()]</div><div class="line"><span class="keyword">var</span> objectArray = objects <span class="keyword">as</span> <span class="type">NSMutableArray</span></div><div class="line"></div><div class="line"><span class="comment">// 编译器错误：</span></div><div class="line"><span class="comment">// '[NSObject]' is not convertible to 'NSMutableArray'</span></div></pre></td></tr></table></figure>
+<p>当然，反过来却是可以的。这个应该不需要太多的讨论。</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>在<code>Swift</code>中，我们更多的会使用<code>Array</code>，<code>Dictionary</code>，<code>Set</code>这几个集合类型来存储数据，当然也会遇到需要将它们与<code>Objective-C</code>中对应的集合类型做转换的情况，特别是在混合编程的时候。另外，<code>String</code>也是可能经常切换的一个地方。不过，<code>Apple</code>已经帮我们完成了大部分的工作。如果需要实现自定义的结构体类型与<code>Objective-C</code>类的切换，则可以让结构体实现<code>_ObjectiveCBridgeable</code>接口。</p>
+<p>这里还有个小问题，在<code>Objective-C</code>中实际上是有两个类可以用来包装数值类型的值：<code>NSNumber</code>与<code>NSValue</code>。<code>NSNumber</code>我们就不说了，<code>NSValue</code>用于包装诸如<code>CGPoint</code>，<code>CGSize</code>等，不过<code>Swift</code>并没有实现<code>CGPoint</code>类的值到<code>NSValue</code>的转换，所以这个需要我们自己去处理。</p>
+<p>在<code>Swift</code>与<code>Objective-C</code>的集合类型相互转换过程中，还涉及到一些性能问题，大家可以看看对应的注释说明。在后续的文章中，会涉及到这一主题。</p>
+<p>本文的部分实例代码已上传至<code>github</code>，可以在<a href="https://github.com/southpeak/Swift/tree/master/Basic/ObjectiveCBridgeable" target="_blank" rel="external">这里</a>下载。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ol>
+<li><a href="http://nshint.io/blog/2015/10/07/easy-cast-with-_ObjectiveCBridgeable/?utm_campaign=Swift%2BSandbox&amp;utm_medium=web&amp;utm_source=Swift_Sandbox_11" target="_blank" rel="external">Easy Cast With _ObjectiveCBridgeable</a></li>
+<li><a href="https://developer.apple.com/library/prerelease/mac/releasenotes/General/APIDiffsMacOSX10_11/Swift/Swift.html" target="_blank" rel="external">OS X v10.11 API Diffs - Swift Changes for Swift</a></li>
+</ol>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/10/20/ios-techset-6/" rel="next" title="iOS知识小集 第六期(2015.10.20)">
+                <i class="fa fa-chevron-left"></i> iOS知识小集 第六期(2015.10.20)
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/11/05/secret-of-swift-performance-part-1/" rel="prev" title="Secret of Swift Performance Part 1 - Measure">
+                Secret of Swift Performance Part 1 - Measure <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#问题"><span class="nav-number">1.</span> <span class="nav-text">问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Objective-C-Bridge"><span class="nav-number">2.</span> <span class="nav-text">Objective-C Bridge</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Objective-C类与Swift结构体的互转示例"><span class="nav-number">3.</span> <span class="nav-text">Objective-C类与Swift结构体的互转示例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#集合类型的无缝互换"><span class="nav-number">4.</span> <span class="nav-text">集合类型的无缝互换</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">5.</span> <span class="nav-text">小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">6.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

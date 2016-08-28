@@ -1,0 +1,726 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="英文作者Colin Eberhardt，原文可查看BINDING TO A UITABLEVIEW FROM A REACTIVECOCOA VIEWMODEL
+这篇博客介绍了一个工具类，这个类将ReactiveCocoa中的ViewModels绑定到UITableView，而不需要通常的datasource和delegate。下面是这个辅助类的使用方法：
+1234567// 创建一个cellUI">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Binding To A UITableView From A ReactiveCocoa ViewModel">
+<meta property="og:url" content="http://southpeak.github.io/2014/09/21/binding-to-a-uitableview-from-a-reactivecocoa-viewmodel/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="英文作者Colin Eberhardt，原文可查看BINDING TO A UITABLEVIEW FROM A REACTIVECOCOA VIEWMODEL
+这篇博客介绍了一个工具类，这个类将ReactiveCocoa中的ViewModels绑定到UITableView，而不需要通常的datasource和delegate。下面是这个辅助类的使用方法：
+1234567// 创建一个cellUI">
+<meta property="og:image" content="http://www.scottlogic.com/blog/ceberhardt/assets/mvvm/UIBinding.png">
+<meta property="og:image" content="http://www.scottlogic.com/blog/ceberhardt/assets/mvvm/CellNib.png">
+<meta property="og:image" content="http://www.scottlogic.com/blog/ceberhardt/assets/mvvm/CellBinding.png">
+<meta property="og:updated_time" content="2016-08-27T05:47:27.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Binding To A UITableView From A ReactiveCocoa ViewModel">
+<meta name="twitter:description" content="英文作者Colin Eberhardt，原文可查看BINDING TO A UITABLEVIEW FROM A REACTIVECOCOA VIEWMODEL
+这篇博客介绍了一个工具类，这个类将ReactiveCocoa中的ViewModels绑定到UITableView，而不需要通常的datasource和delegate。下面是这个辅助类的使用方法：
+1234567// 创建一个cellUI">
+<meta name="twitter:image" content="http://www.scottlogic.com/blog/ceberhardt/assets/mvvm/UIBinding.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2014/09/21/binding-to-a-uitableview-from-a-reactivecocoa-viewmodel/"/>
+
+  <title> Binding To A UITableView From A ReactiveCocoa ViewModel | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Binding To A UITableView From A ReactiveCocoa ViewModel
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-09-21T14:14:19+08:00" content="2014-09-21">
+              2014-09-21
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/translate/" itemprop="url" rel="index">
+                    <span itemprop="name">翻译</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>英文作者Colin Eberhardt，原文可查看<a href="http://www.scottlogic.com/blog/2014/05/11/reactivecocoa-tableview-binding.html" target="_blank" rel="external">BINDING TO A UITABLEVIEW FROM A REACTIVECOCOA VIEWMODEL</a></p>
+<p>这篇博客介绍了一个工具类，这个类将<code>ReactiveCocoa</code>中的<code>ViewModels</code>绑定到<code>UITableView</code>，而不需要通常的datasource和delegate。下面是这个辅助类的使用方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 创建一个cell</span></div><div class="line"><span class="built_in">UINib</span> *nib = [<span class="built_in">UINib</span> nibWithNibName:<span class="string">@"CETweetTableViewCell"</span> bundle:<span class="literal">nil</span>];</div><div class="line">	</div><div class="line"><span class="comment">// 将ViewModels的searchResults属性绑定到table view</span></div><div class="line">[CETableViewBindingHelper bindingHelperForTableView:<span class="keyword">self</span>.searchResultsTable</div><div class="line">                        sourceSignal:RACObserve(<span class="keyword">self</span>.viewModel, searchResults)</div><div class="line">                        templateCell:nib];</div></pre></td></tr></table></figure>
+<h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>我总是在不断的编写代码：在工作中，在家里，在火车上…如果我不写代码，我就会觉得不快乐！(注：这才是真正的程序员啊)</p>
+<p>在过去的几个月中，我开始在我的工程中越来越多地使用ReactiveCocoa了。这个框架可以用来创建一些非常优雅的解决方案，但同时它非常具有挑战性，因为对于任何一个问题，都有许多可用的解决方案。对于像我这样的编码狂人来说，这再好不过了。</p>
+<p>几个月之前，我在Ray Wenderlich的网站上发表了两篇关于ReactiveCocoa的文章(<a href="http://www.raywenderlich.com/62699/reactivecocoa-tutorial-pt1" target="_blank" rel="external">第一部分</a>、<a href="http://www.raywenderlich.com/62796/reactivecocoa-tutorial-pt2" target="_blank" rel="external">第二部分</a>)，以及一个<a href="http://www.raywenderlich.com/70598/reactivecocoa-tech-talk-video" target="_blank" rel="external">Tech Talk</a>视频。这些覆盖了ReactiveCocoa的基本用法，希望能让广大读者熟悉ReactiveCocoa。不过，我收到不少请求，希望能讨论一些使用ReactiveCocoa实现MVVM模式的高级话题。</p>
+<p>正因此，我开始写这篇文章。不过，在我发布之前，我想先分享一个已纠缠我很久的问题…</p>
+<p>如果将一个<code>UITableView</code>绑定到一个<code>ReactiveCocoa</code>的<code>ViewModel</code>中？</p>
+<h2 id="视图模式"><a href="#视图模式" class="headerlink" title="视图模式"></a>视图模式</h2><p>我以一个简单的例子开头–一个允许我们搜索Twitter的<code>ViewModel</code>：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/// A view model which provides a mechanism for searching twitter</span></div><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">CETwitterSearchViewModel</span> : <span class="title">NSObject</span></span></div><div class="line">	</div><div class="line"><span class="comment">/// The current search text</span></div><div class="line"><span class="keyword">@property</span> <span class="built_in">NSString</span> *searchText;</div><div class="line">	</div><div class="line"><span class="comment">/// An array of CETweetViewModel instances which indicate</span></div><div class="line"><span class="comment">/// the current search results</span></div><div class="line"><span class="keyword">@property</span> <span class="built_in">NSArray</span> *searchResults;</div><div class="line">	</div><div class="line"><span class="comment">/// A command which when executed searches twitter using the current searchText</span></div><div class="line"><span class="keyword">@property</span> RACCommand *searchCommand;</div><div class="line">	</div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>这个<code>ViewModel</code>的实现重用了我在<code>ReactiveCocoa</code>指南第二部分所创建的信号，所以我不在此重复。如果想要看详细的代码，可以在github上查找。</p>
+<p>将<code>ViewModel</code>绑定到一个带有<code>UITextField</code>和<code>UIButton</code>的UI是使用<code>ReactiveCocoa</code>最普通不过工作了</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// bind the UITextField text updates to the view model</span></div><div class="line">RAC(<span class="keyword">self</span>.viewModel, searchText) = <span class="keyword">self</span>.searchTextField.rac_textSignal;</div><div class="line">	</div><div class="line"><span class="comment">// bind a button to the search command</span></div><div class="line"><span class="keyword">self</span>.searchButton.rac_command = <span class="keyword">self</span>.viewModel.searchCommand;</div><div class="line">	</div><div class="line"><span class="comment">// when the search executes hide the keyboard</span></div><div class="line">[<span class="keyword">self</span>.viewModel.searchCommand.executing subscribeNext:^(<span class="keyword">id</span> x) &#123;</div><div class="line">  [<span class="keyword">self</span>.searchTextField resignFirstResponder];</div><div class="line">&#125;];</div><div class="line">	</div><div class="line"><span class="comment">// show a network activity indicator when the search is being executed</span></div><div class="line">RAC([<span class="built_in">UIApplication</span> sharedApplication], networkActivityIndicatorVisible) =</div><div class="line">  <span class="keyword">self</span>.viewModel.searchCommand.executing;</div></pre></td></tr></table></figure>
+<p>在上面的代码中，当点击go按钮时，我们处理了诸如隐藏键盘这样的操作，并将网络连接的<code>activity indicator</code>绑定到了<code>searchCommand.executing</code>信号。</p>
+<p><img src="http://www.scottlogic.com/blog/ceberhardt/assets/mvvm/UIBinding.png" alt="image"></p>
+<p>这样就将<code>ViewModel</code>三个属性中的两个绑定到了UI，到目前为止，一切都还不错！</p>
+<p>最后一个属性是<code>searchResults</code>；这个属性是一个数组，包含了搜索结果。我们可以通过<code>RACObserve</code>来观察这个属性的修改，<code>RACObserve</code>创建了一个信号，该信号会在每次更新时发出一个next事件。但不幸的是，我们不能只给<code>UITableView</code>一个对象的数组，并告诉它去渲染自己。</p>
+<p>如果我们在StackOverflow上搜索相关帖子，或者查看别人的<code>ReactiveCocoa</code>实例，可以看到传统的方式似乎是我们需要自己去实现<code>table view</code>的代理和数据源。换句话说，我们之前优雅的只需要几行绑定代码的视图类代码会由于需要实现<code>table view</code>的各种逻辑而显示异常丑陋。</p>
+<p>不过，我们有更好的方法。</p>
+<h2 id="一个Table-View绑定辅助类"><a href="#一个Table-View绑定辅助类" class="headerlink" title="一个Table View绑定辅助类"></a>一个Table View绑定辅助类</h2><p>在MVVM模式中，每一个View都由一个<code>ViewModel</code>支撑着。一个视图可能占据整个屏幕(此时我们将一个视图控制器绑定到一个<code>ViewModel</code>)，或者只占据屏幕的一部分。</p>
+<p>我们的顶层<code>ViewModel</code>的<code>searchResults</code>属性包含了一个对象数组，其中每一个元素都是一个<code>ViewModel</code>。为了解决这个问题，我们需要的是一个通用的机制来为每个视图创建一个<code>ViewModel</code>，并将这两者绑定在一起。</p>
+<p>Nib提供了一种便捷的机制来定义可重用的视图。可以方便地使用nib来定义一个table view的单元格。</p>
+<p>一个合理的table view绑定辅助类的接口如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/// A helper class for binding view models with NSArray properties</span></div><div class="line"><span class="comment">/// to a UITableView.</span></div><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">CETableViewBindingHelper</span> : <span class="title">NSObject</span></span></div><div class="line">	</div><div class="line">- (<span class="keyword">instancetype</span>) initWithTableView:(<span class="built_in">UITableView</span> *)tableView</div><div class="line">                      sourceSignal:(RACSignal *)source</div><div class="line">                      templateCell:(<span class="built_in">UINib</span> *)templateCellNib;</div><div class="line">	</div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>这个绑定类使用提供的table view来渲染由源信号所提供的view model，另外templeteCell定义了视图。让我们来看看这个辅助类的实现：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div></pre></td><td class="code"><pre><div class="line">＠interface CETableViewBindingHelper () &lt;<span class="built_in">UITableViewDataSource</span>&gt;</div><div class="line">	</div><div class="line">＠end</div><div class="line">	</div><div class="line">＠implementation CETableViewBindingHelper &#123;</div><div class="line">  <span class="built_in">UITableView</span> *_tableView;</div><div class="line">  <span class="built_in">NSArray</span> *_data;</div><div class="line">  <span class="built_in">UITableViewCell</span> *_templateCell;</div><div class="line">&#125;</div><div class="line">	</div><div class="line">- (<span class="keyword">instancetype</span>)initWithTableView:(<span class="built_in">UITableView</span> *)tableView</div><div class="line">                     sourceSignal:(RACSignal *)source</div><div class="line">                     templateCell:(<span class="built_in">UINib</span> *)templateCellNib &#123;</div><div class="line">  </div><div class="line">  <span class="keyword">if</span> (<span class="keyword">self</span> = [<span class="keyword">super</span> init]) &#123;</div><div class="line">    _tableView = tableView;</div><div class="line">    _data = [<span class="built_in">NSArray</span> array];</div><div class="line">    </div><div class="line">    <span class="comment">// each time the view model updates the array property, store the latest</span></div><div class="line">    <span class="comment">// value and reload the table view</span></div><div class="line">    [source subscribeNext:^(<span class="keyword">id</span> x) &#123;</div><div class="line">      _data = x;</div><div class="line">      [_tableView reloadData];</div><div class="line">    &#125;];</div><div class="line">    </div><div class="line">    <span class="comment">// create an instance of the template cell and register</span></div><div class="line">    <span class="comment">// with the table view</span></div><div class="line">    _templateCell = [[templateCellNib instantiateWithOwner:<span class="literal">nil</span></div><div class="line">                                          options:<span class="literal">nil</span>] firstObject];</div><div class="line">    [_tableView registerNib:templateCellNib</div><div class="line">              forCellReuseIdentifier:_templateCell.reuseIdentifier];</div><div class="line">    </div><div class="line">    <span class="comment">// use the template cell to set the row height</span></div><div class="line">    _tableView.rowHeight = _templateCell.bounds.size.height;</div><div class="line">    </div><div class="line">    _tableView.dataSource = <span class="keyword">self</span>;</div><div class="line">  &#125;</div><div class="line">  <span class="keyword">return</span> <span class="keyword">self</span>;</div><div class="line">&#125;</div><div class="line">	</div><div class="line"><span class="meta">#pragma mark - UITableViewDataSource implementation</span></div><div class="line">	</div><div class="line">- (<span class="built_in">NSInteger</span>)tableView:(<span class="built_in">UITableView</span> *)tableView</div><div class="line">                       numberOfRowsInSection:(<span class="built_in">NSInteger</span>)section &#123;</div><div class="line">  <span class="keyword">return</span> _data.count;</div><div class="line">&#125;</div><div class="line">	</div><div class="line">- (<span class="built_in">UITableViewCell</span> *)tableView:(<span class="built_in">UITableView</span> *)tableView</div><div class="line">                        cellForRowAtIndexPath:(<span class="built_in">NSIndexPath</span> *)indexPath &#123;</div><div class="line">  <span class="keyword">id</span>&lt;CEReactiveView&gt; cell = [tableView</div><div class="line">      dequeueReusableCellWithIdentifier:_templateCell.reuseIdentifier];</div><div class="line">  [cell bindViewModel:_data[indexPath.row]];</div><div class="line">  <span class="keyword">return</span> (<span class="built_in">UITableViewCell</span> *)cell;</div><div class="line">&#125;</div><div class="line">	</div><div class="line">＠end</div></pre></td></tr></table></figure>
+<p>注意，初始化方法是内在逻辑所在。在这里，<code>sourceSignal</code>添加了一个<code>subscriber</code>，这样每次<code>ViewModel</code>的数组属性变化时，当前属性值的引用都会被保存，而table view也会重新加载。同样，也会创建<code>templeteCell</code>实例，来确定单元格的高度。</p>
+<p>最后，这个类实现了table view的数据源方法，并通过信号来获取数据。</p>
+<p>其中，单元格Cell必须实现以下协议，该协议提供了一个信号方法来将Cell绑定到相应的<code>ViewModel</code>上。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/// A protocol which is adopted by views which are backed by view models.</span></div><div class="line"><span class="class"><span class="keyword">@protocol</span> <span class="title">CEReactiveView</span> &lt;<span class="title">NSObject</span>&gt;</span></div><div class="line">	</div><div class="line"><span class="comment">/// Binds the given view model to the view</span></div><div class="line">- (<span class="keyword">void</span>)bindViewModel:(<span class="keyword">id</span>)viewModel;</div><div class="line">	</div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>将这个用于实际当中，现在只需要几行代码就可以将一个数组属性绑定到一个table view上了。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// create a cell template</span></div><div class="line"><span class="built_in">UINib</span> *nib = [<span class="built_in">UINib</span> nibWithNibName:<span class="string">@"CETweetTableViewCell"</span> bundle:<span class="literal">nil</span>];</div><div class="line">	</div><div class="line"><span class="comment">// bind the view models 'searchResults' property to a table view</span></div><div class="line">[[CETableViewBindingHelper alloc]</div><div class="line">      initWithTableView:<span class="keyword">self</span>.searchResultsTable</div><div class="line">           sourceSignal:RACObserve(<span class="keyword">self</span>.viewModel, searchResults)</div><div class="line">           templateCell:nib];</div></pre></td></tr></table></figure>
+<p>注意，源信号是通过<code>RACObserver</code>宏来创建的。这个信号在每次属性通过setter来改变都会发出一个next事件。</p>
+<p>cell的实现类似于视图控制器；它们的UI控件定义在一个nib文件中并连接到相应的outlet属性。下图是该示例程序中定义cell的nib：</p>
+<p><img src="http://www.scottlogic.com/blog/ceberhardt/assets/mvvm/CellNib.png" alt="image"></p>
+<p>定义在<code>CEReactiveView</code>协议中的<code>ViewModel</code>绑定方法实现如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)bindViewModel:(<span class="keyword">id</span>)viewModel &#123;</div><div class="line">  </div><div class="line">  CETweetViewModel *tweet = (CETweetViewModel *)viewModel;</div><div class="line">  </div><div class="line">  <span class="comment">// set the tweet 'status' label, sizing it to fit the text</span></div><div class="line">  <span class="keyword">self</span>.titleTextField.frame =</div><div class="line">                 <span class="built_in">CGRectInset</span>(<span class="keyword">self</span>.titleBackgroundView.frame, <span class="number">5.0</span>f, <span class="number">5.0</span>f) ;</div><div class="line">  <span class="keyword">self</span>.titleTextField.text = tweet.status;</div><div class="line">  [<span class="keyword">self</span>.titleTextField sizeToFit];</div><div class="line">  </div><div class="line">  <span class="comment">// set the username</span></div><div class="line">  <span class="keyword">self</span>.usernameTextField.text = tweet.username;</div><div class="line">  </div><div class="line">  <span class="comment">// use signals to fetch the images for each image view</span></div><div class="line">  <span class="keyword">self</span>.profileImage.image = <span class="literal">nil</span>;</div><div class="line">  [[<span class="keyword">self</span> signalForImage:[<span class="built_in">NSURL</span> URLWithString:tweet.profileBannerUrl]]</div><div class="line">    subscribeNext:^(<span class="keyword">id</span> x) &#123;</div><div class="line">      <span class="keyword">self</span>.ghostImageView.image = x;</div><div class="line">    &#125;];</div><div class="line">  </div><div class="line">  <span class="keyword">self</span>.ghostImageView.image = <span class="literal">nil</span>;</div><div class="line">  [[<span class="keyword">self</span> signalForImage:[<span class="built_in">NSURL</span> URLWithString:tweet.profileImageUrl]]</div><div class="line">    subscribeNext:^(<span class="keyword">id</span> x) &#123;</div><div class="line">      <span class="keyword">self</span>.profileImage.image = x;</div><div class="line">    &#125;];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>注意，由于<code>CETweetViewModel</code>的属性不会发生变化，因此它们的值直接被拷贝到相应的UI控件上。当然，如果它们的值会改变，我们也可以使用<code>ReactiveCocoa</code>来将两者绑定到一起。</p>
+<p>cell的实现同样使用了<code>ReactiveCocoa</code>在后台加载图片：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// creates a signal that fetches an image in the background, delivering</span></div><div class="line"><span class="comment">// it on the UI thread. This signal 'cancels' itself if the cell is re-used before the</span></div><div class="line"><span class="comment">// image is downloaded.</span></div><div class="line">-(RACSignal *)signalForImage:(<span class="built_in">NSURL</span> *)imageUrl &#123;</div><div class="line">  </div><div class="line">  RACScheduler *scheduler = [RACScheduler </div><div class="line">                 schedulerWithPriority:RACSchedulerPriorityBackground];</div><div class="line">  </div><div class="line">  RACSignal *imageDownloadSignal = [[RACSignal</div><div class="line">    createSignal:^RACDisposable *(<span class="keyword">id</span>&lt;RACSubscriber&gt; subscriber) &#123;</div><div class="line">      <span class="built_in">NSData</span> *data = [<span class="built_in">NSData</span> dataWithContentsOfURL:imageUrl];</div><div class="line">      <span class="built_in">UIImage</span> *image = [<span class="built_in">UIImage</span> imageWithData:data];</div><div class="line">      [subscriber sendNext:image];</div><div class="line">      [subscriber sendCompleted];</div><div class="line">      <span class="keyword">return</span> <span class="literal">nil</span>;</div><div class="line">    &#125;] subscribeOn:scheduler];</div><div class="line">  </div><div class="line">  <span class="keyword">return</span> [[imageDownloadSignal</div><div class="line">          takeUntil:<span class="keyword">self</span>.rac_prepareForReuseSignal]</div><div class="line">          deliverOn:[RACScheduler mainThreadScheduler]]; </div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>通过这种方式，我们就可以让我们的视图控制器保持少量的代码。看，是不是很整洁。</p>
+<p>下面是完整的程序的实现效果：</p>
+<p><img src="http://www.scottlogic.com/blog/ceberhardt/assets/mvvm/CellBinding.png" alt="image"></p>
+<h2 id="处理选中事件"><a href="#处理选中事件" class="headerlink" title="处理选中事件"></a>处理选中事件</h2><p>当前的绑定辅助类允许我们在一个table view中渲染<code>ViewModel</code>的数组，但如果我们需要处理选中事件呢？传统的方法是在视图控制器的手动处理，实现table view的代理方法，并执行相关的<code>ViewModel</code>的命令。</p>
+<p>不过，这部分逻辑代码也可以放入到绑定辅助类中。</p>
+<p>首先，我们在初始化方法中添加一个选择命令：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">instancetype</span>) initWithTableView:(<span class="built_in">UITableView</span> *)tableView</div><div class="line">                      sourceSignal:(RACSignal *)source</div><div class="line">                  selectionCommand:(RACCommand *)selection                  </div><div class="line">                      templateCell:(<span class="built_in">UINib</span> *)templateCellNib;</div></pre></td></tr></table></figure>
+<p>这个初始化方法的实现现在存储了这个命令的引用。辅助类同样也实现了table view的代理，即<code>tableView:didSelectRowAtIndexPath:</code>方法的实现如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)tableView:(<span class="built_in">UITableView</span> *)tableView</div><div class="line">               didSelectRowAtIndexPath:(<span class="built_in">NSIndexPath</span> *)indexPath &#123;</div><div class="line">  [_selection execute:_data[indexPath.row]];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>即当命令被调用时，会将选择的<code>ViewModel</code>作为执行参数传入。</p>
+<p>在顶层<code>ViewModel</code>中，我已经添加了一个命令，这个操作只是简单地记录一下日志：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// create the tweet selected command, that simply logs</span></div><div class="line"><span class="keyword">self</span>.tweetSelectedCommand = [[RACCommand alloc]</div><div class="line">        initWithSignalBlock:^RACSignal *(CETweetViewModel *selected) &#123;</div><div class="line">	 <span class="built_in">NSLog</span>(selected.status);</div><div class="line">	 <span class="keyword">return</span> [RACSignal empty];</div><div class="line">&#125;];</div></pre></td></tr></table></figure>
+<h2 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h2><p>希望这个table view绑定辅助类能够帮助那些使用<code>MVVM</code>和<code>ReactiveCocoa</code>来开发iOS应用的开发者们。所有的代码都在github上。如果您有任何意见、想法或建议，请让我知道。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2014/09/18/random-mac-in-ios8/" rel="next" title="iOS8中扫描Wi-Fi时MAC地址的随机化">
+                <i class="fa fa-chevron-left"></i> iOS8中扫描Wi-Fi时MAC地址的随机化
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2014/09/23/tutorial-performance-and-time/" rel="prev" title="Tutorial performance and time">
+                Tutorial performance and time <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#介绍"><span class="nav-number">1.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#视图模式"><span class="nav-number">2.</span> <span class="nav-text">视图模式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#一个Table-View绑定辅助类"><span class="nav-number">3.</span> <span class="nav-text">一个Table View绑定辅助类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#处理选中事件"><span class="nav-number">4.</span> <span class="nav-text">处理选中事件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#结论"><span class="nav-number">5.</span> <span class="nav-text">结论</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,735 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="UIImage对象是iOS中用来显示图像数据的高级接口。我们可以从文件，NSData，Quartz图片对象中创建UIImage对象。可以说这个类是我们接触频率非常高的一个类。
+UIImage的不可变性UIImage对象是不可变的，所以一旦创建后，我们就不能再改变它的属性。这也就意味着，我们只能在初始化方法中提供属性值或依赖于图片自身的属性值。同样，由于其不可变，所以在任何线程中都可以安全地使用它。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="UIKit: UIImage">
+<meta property="og:url" content="http://southpeak.github.io/2015/11/22/cocoa-uikit-uiimage/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="UIImage对象是iOS中用来显示图像数据的高级接口。我们可以从文件，NSData，Quartz图片对象中创建UIImage对象。可以说这个类是我们接触频率非常高的一个类。
+UIImage的不可变性UIImage对象是不可变的，所以一旦创建后，我们就不能再改变它的属性。这也就意味着，我们只能在初始化方法中提供属性值或依赖于图片自身的属性值。同样，由于其不可变，所以在任何线程中都可以安全地使用它。">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/UIKit_UIImage.png?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/UIKit_UIImage_Deform.png?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/UIKit_UIImage_Resized.png?raw=true">
+<meta property="og:updated_time" content="2016-08-28T04:36:01.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="UIKit: UIImage">
+<meta name="twitter:description" content="UIImage对象是iOS中用来显示图像数据的高级接口。我们可以从文件，NSData，Quartz图片对象中创建UIImage对象。可以说这个类是我们接触频率非常高的一个类。
+UIImage的不可变性UIImage对象是不可变的，所以一旦创建后，我们就不能再改变它的属性。这也就意味着，我们只能在初始化方法中提供属性值或依赖于图片自身的属性值。同样，由于其不可变，所以在任何线程中都可以安全地使用它。">
+<meta name="twitter:image" content="https://github.com/southpeak/Blog-images/blob/master/UIKit_UIImage.png?raw=true">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2015/11/22/cocoa-uikit-uiimage/"/>
+
+  <title> UIKit: UIImage | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                UIKit: UIImage
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-11-22T09:20:56+08:00" content="2015-11-22">
+              2015-11-22
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/cocoa/" itemprop="url" rel="index">
+                    <span itemprop="name">Cocoa</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p><code>UIImage</code>对象是iOS中用来显示图像数据的高级接口。我们可以从文件，<code>NSData</code>，<code>Quartz</code>图片对象中创建<code>UIImage</code>对象。可以说这个类是我们接触频率非常高的一个类。</p>
+<h2 id="UIImage的不可变性"><a href="#UIImage的不可变性" class="headerlink" title="UIImage的不可变性"></a>UIImage的不可变性</h2><p><code>UIImage</code>对象是不可变的，所以一旦创建后，我们就不能再改变它的属性。这也就意味着，我们只能在初始化方法中提供属性值或依赖于图片自身的属性值。同样，由于其不可变，所以在任何线程中都可以安全地使用它。</p>
+<p>如果我们想修改<code>UIImage</code>对象的一些属性，则可以使用便捷方法和自定义的参数值来创建图像的一份拷贝。</p>
+<p>另外，由于<code>UIImage</code>对象是不可变的，所以它没有提供访问底层图片数据的方法。不过我们可以使用<code>UIImagePNGRepresentation</code>或<code>UIImageJPEGRepresentation</code>方法来获取包含PNG或JPG格式的数据的<code>NSData</code>对象。如下代码所示：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> image = <span class="type">UIImage</span>(named: <span class="string">"swift"</span>);</div><div class="line"></div><div class="line"><span class="keyword">let</span> imageData:<span class="type">NSData</span>? = <span class="type">UIImageJPEGRepresentation</span>(image!, <span class="number">1.0</span>)</div></pre></td></tr></table></figure>
+<h2 id="创建UIImage对象"><a href="#创建UIImage对象" class="headerlink" title="创建UIImage对象"></a>创建UIImage对象</h2><p>对于一个UIImage对象来说，它的数据源主要有以下几种：</p>
+<ol>
+<li>文件：我们可以使用<code>init(contentsOfFile:)</code>方法来从指定文件中创建对象。</li>
+<li>纯图片数据(<code>NSData</code>)：如果在内存中有图片的原始数据(表示为<code>NSData</code>对象)，则可以使用<code>init(data:)</code>来创建。需要注意的是这个方法会对象图片数据做缓存。</li>
+<li><code>CGImage</code>对象：如果我们有一个<code>CGImage</code>对象，则可以使用<code>init(CGImage:)</code>或<code>init(CGImage:scale:orientation:)</code>创建<code>UIImage</code>对象。</li>
+<li><code>CIImage</code>对象：如果我们有一个<code>CIImage</code>对象，则可以使用<code>init(CIImage:)</code>或<code>init(CIImage:scale:orientation:)</code>创建<code>UIImage</code>对象。</li>
+</ol>
+<p>需要注意的是，如果是从文件或者纯图片数据中创建<code>UIImage</code>对象，则要求对应的图片格式是系统支持的图片类型。</p>
+<p>对于<code>Objective-C</code>来说，<code>UIImage</code>对象也提供了这些初始化方法对应的便捷类方法来创建对象。</p>
+<h2 id="内存管理"><a href="#内存管理" class="headerlink" title="内存管理"></a>内存管理</h2><p>在实际的应用中，特别是图片类应用中，我们可能需要使用大量的图片。我们都知道，图片通常都是非常占内存的。如果同一时间加载大量的图片，就可能占用大量的系统内存。</p>
+<p>为此，Apple采用了一种比较巧妙的策略。在低内存的情况下，系统会强制清除<code>UIImage</code>对象所指向的图片数据，以释放部分内存。注意，这种清除行为影响到的只是图片数据，而不会影响到<code>UIImage</code>对象本身。当我们需要绘制那些图片数据已经被清除的<code>UIImage</code>对象时，对象会自动从源文件中重新加载数据。当然，这是以时间换空间的一种策略，会导致一定的性能损耗。</p>
+<p>说到这里，我们不得不提一下<code>init(named:)</code>方法了。可以说我们平时创建<code>UIImage</code>对象用得最多的应该就是这个方法。这个方法主要是使用<code>bundle</code>中的文件创建图片的快捷方式。关于这个方法，有几点需要注意：</p>
+<ol>
+<li><strong>缓存</strong>：这个方法会首先去系统缓存中查找是否有图片名对应的图片。如果有就返回缓存中的图片；如果没有，则该方法从磁盘或者<code>asset catalog</code>中加载图片并返回，同时将图片缓存到系统中。缓存的图片只有在收到内存警告时才会释放。因此，如果图片的使用频率比较低，则可以考虑使用<code>imageWithContentsOfFile:</code>方法来加载图片，这样可以减少内存资源的消耗。当然，这需要权衡考虑，毕竟读写磁盘也是有性能消耗的，而且现在的高端机内存已经不小了。</li>
+<li><strong>多分辨率图片处理</strong>：在iOS 4.0后，该方法会根据屏幕的分辨率来查找对应尺寸的图片。即我们使用时，只需要写图片名，而不需要指定是1x, 2x还是3x图，该方法会自己判断。</li>
+<li><strong>png图片后缀</strong>：在iOS 4.0以后，如果图片是png格式的，则图片文件名不需要附带扩展名。</li>
+<li><strong>线程安全性</strong>：该方法在iOS 9.0之前并不是线程安全的，在二级线程中调用可能会导致崩溃。在iOS 9.0之后，Apple作了优化处理，将其改为线程安全的方法。为了避免不必要的麻烦，尽量在主线程中调用这个方法。</li>
+</ol>
+<h2 id="图片拉伸"><a href="#图片拉伸" class="headerlink" title="图片拉伸"></a>图片拉伸</h2><p>当我们的图片比所要填充的区域小时，会导致图片变形。如以下图片，原始大小为100*30，将其放到一个300*50的<code>UIImageView</code>中时，整个图片被拉伸。</p>
+<p><strong>原始图片</strong></p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/UIKit_UIImage.png?raw=true" alt="image"></p>
+<p><strong>拉伸后的图片</strong></p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/UIKit_UIImage_Deform.png?raw=true" alt="image"></p>
+<p>这时我们就需要做特殊的处理。</p>
+<p><code>Android</code>的同学应该都知道.9图，这种图片可以只拉伸中间的部分，而保持四个角不变形。在iOS中也支持这种操作。在早期的iOS版本中，<code>UIImage</code>提供了如下方法来执行此操作：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">stretchableImageWithLeftCapWidth</span><span class="params">(<span class="number">_</span> leftCapWidth: Int, topCapHeight topCapHeight: Int)</span></span> -&gt; <span class="type">UIImage</span></div></pre></td></tr></table></figure>
+<p>这个方法通过<code>leftCapWidth</code>和<code>topCapHeight</code>两个参数来定义四个角的大小。不过这个方法在iOS 5中就被<code>Deprecated</code>了，对应的两个属性<code>leftCapWidth</code>和<code>topCapHeight</code>也是相同的命运。所以现在不建议使用它们。另外，对于如何解释<code>leftCapWidth</code>和<code>topCapHeight</code>，大家可以参考一下<a href="http://weibo.com/exceptions" target="_blank" rel="external">@M了个J</a>的<a href="http://blog.csdn.net/q199109106q/article/details/8615661" target="_blank" rel="external">iOS图片拉伸技巧</a>。</p>
+<p>在iOS 5中，我们可以使用以下方法来执行相同的操作：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">resizableImageWithCapInsets</span><span class="params">(<span class="number">_</span> capInsets: UIEdgeInsets)</span></span> -&gt; <span class="type">UIImage</span></div></pre></td></tr></table></figure>
+<p>这个方法通过一个<code>UIEdgeInsets</code>来指定上下左右不变形的宽度或高度。它会返回一个新的图像。而如果图像被拉伸，则会以平铺的方式来处理中间的拉伸区域。</p>
+<p>我们对上面的图片做如下处理：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> resizedButtonImageView = <span class="type">UIImageView</span>(image: normalButtonImage?.resizableImageWithCapInsets(<span class="type">UIEdgeInsets</span>(top: <span class="number">15</span>, <span class="keyword">left</span>: <span class="number">15</span>, bottom: <span class="number">15</span>, <span class="keyword">right</span>: <span class="number">15</span>)))</div><div class="line">resizedButtonImageView.frame = <span class="type">CGRectMake</span>(<span class="number">0</span>, <span class="number">60</span>, <span class="number">300</span>, <span class="number">50</span>)</div></pre></td></tr></table></figure>
+<p>其得到的结果如下所示：</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/UIKit_UIImage_Resized.png?raw=true" alt="image"></p>
+<p>在iOS 6，<code>Apple</code>又为我们提供了一个新的方法，相较于上面这个方法，只是多一个<code>resizingMode</code>参数，允许我们指定拉伸模式。</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">resizableImageWithCapInsets</span><span class="params">(<span class="number">_</span> capInsets: UIEdgeInsets, resizingMode resizingMode: UIImageResizingMode)</span></span> -&gt; <span class="type">UIImage</span></div></pre></td></tr></table></figure>
+<p>这个方法的拉伸模式分两种：平铺(<code>Tile</code>)和拉伸(<code>Stretch</code>)。如果是平铺模式，则跟前一个方法是一样的效果。</p>
+<h2 id="动效图片对象"><a href="#动效图片对象" class="headerlink" title="动效图片对象"></a>动效图片对象</h2><p>如果我们有一组大小和缩放因子相同的图片，就可以将这些图片加载到同一个<code>UIImage</code>对象中，形成一个动态的<code>UIImage</code>对象。为此，<code>UIImage</code>提供了以下方法：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">func</span> <span class="title">animatedImageNamed</span>(<span class="title">_</span> <span class="title">name</span>: <span class="title">String</span>, <span class="title">duration</span> <span class="title">duration</span>: <span class="title">NSTimeInterval</span>) -&gt; <span class="title">UIImage</span>?</span></div></pre></td></tr></table></figure>
+<p>这个方法会加载以name为基准文件名的一系列文件。如，假设我们的<code>name</code>参数值为”swift”，则这个方法会加载诸如”swift0”, “swift1”,…, “swift1024”这样的一系列的文件。</p>
+<p>这里有两个问题需要注意：</p>
+<ol>
+<li>文件的序号必须是从0开始的连续数字，如果不从0开始，则在<code>Playground</code>中是会报错的。而如果中间序号有断，而中断后的图片是不会被加载的。</li>
+<li>所有文件的大小和缩放因子应该是相同的，否则显示时会有不可预期的结果，这种结果主要表现为播放的顺序可能是杂乱的。</li>
+</ol>
+<p>如果我们有一组基准文件名不同的文件，但其大小和缩放因子相同，则可能使用以下方法：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">func</span> <span class="title">animatedImageWithImages</span>(<span class="title">_</span> <span class="title">images</span>: [<span class="title">UIImage</span>], <span class="title">duration</span> <span class="title">duration</span>: <span class="title">NSTimeInterval</span>) -&gt; <span class="title">UIImage</span>?</span></div></pre></td></tr></table></figure>
+<p>传入一个<code>UIImage</code>数组来拼装一个动效<code>UIImage</code>对象。</p>
+<p>另外，<code>UIImage</code>也提供了<code>resizable</code>版本的动效方法，如下所示：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">func</span> <span class="title">animatedResizableImageNamed</span>(<span class="title">_</span> <span class="title">name</span>: <span class="title">String</span>, <span class="title">capInsets</span> <span class="title">capInsets</span>: <span class="title">UIEdgeInsets</span>, <span class="title">duration</span> <span class="title">duration</span>: <span class="title">NSTimeInterval</span>) -&gt; <span class="title">UIImage</span>?</span></div><div class="line"></div><div class="line"><span class="title">class</span> <span class="title">func</span> <span class="title">animatedResizableImageNamed</span>(<span class="title">_</span> <span class="title">name</span>: <span class="title">String</span>, <span class="title">capInsets</span> <span class="title">capInsets</span>: <span class="title">UIEdgeInsets</span>, <span class="title">resizingMode</span> <span class="title">resizingMode</span>: <span class="title">UIImageResizingMode</span>, <span class="title">duration</span> <span class="title">duration</span>: <span class="title">NSTimeInterval</span>) -&gt; <span class="title">UIImage</span>?</div></pre></td></tr></table></figure>
+<p>第一个方法的<code>UIImageResizingMode</code>默认是<code>UIImageResizingModeTile</code>，所以如果想对图片做拉伸处理，可以使用第二个的方法，并传入<code>UIImageResizingModeStretch</code>。</p>
+<h2 id="图片大小的限制"><a href="#图片大小的限制" class="headerlink" title="图片大小的限制"></a>图片大小的限制</h2><p><code>UIImage</code>对象使用的图片大小尽量小于1024*1024。因为这么大的图片消耗的内存过大，在将其作为<code>OpenGL</code>中的贴图或者是绘制到<code>view/layer</code>中时，可以会出现问题。如果仅仅是代码层面的操作的话，则没有这个限制。比如，将一个大于1024*1024的图片绘制到位图图形上下文中以重新设定其大小。事实上，我们需要通过这种操作来改变图片大小，以将其绘制到视图中。</p>
+<h2 id="支持的图片格式"><a href="#支持的图片格式" class="headerlink" title="支持的图片格式"></a>支持的图片格式</h2><p><code>UIImage</code>支持的图片格式在<a href="https://developer.apple.com/library/prerelease/ios/documentation/UIKit/Reference/UIImage_Class" target="_blank" rel="external">UIImage Class Reference</a>中列出来了，大家可以直接参考。</p>
+<p>需要注意的一点是<code>RGB-565</code>格式的BMP文件在加载时会被转换成<code>ARGB-1555</code>格式。</p>
+<h2 id="示例代码"><a href="#示例代码" class="headerlink" title="示例代码"></a>示例代码</h2><p>本文的示例代码已上传到github，可点击<a href="https://github.com/southpeak/Swift/tree/master/UIKit/UIImage.playground" target="_blank" rel="external">这里</a>查看。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ol>
+<li><a href="https://developer.apple.com/library/prerelease/ios/documentation/UIKit/Reference/UIImage_Class" target="_blank" rel="external">UIImage Class Reference</a></li>
+<li><a href="http://blog.csdn.net/q199109106q/article/details/8615661" target="_blank" rel="external">iOS图片拉伸技巧</a></li>
+<li><a href="http://blog.ibireme.com/2015/11/02/ios_image_tips/" target="_blank" rel="external">iOS 处理图片的一些小 Tip</a></li>
+</ol>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/11/05/secret-of-swift-performance-part-2/" rel="next" title="Secret of Swift Performance Part 2 - Look under the hood">
+                <i class="fa fa-chevron-left"></i> Secret of Swift Performance Part 2 - Look under the hood
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/12/13/cocoa-uikit-uicontrol/" rel="prev" title="UIKit: UIControl">
+                UIKit: UIControl <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#UIImage的不可变性"><span class="nav-number">1.</span> <span class="nav-text">UIImage的不可变性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#创建UIImage对象"><span class="nav-number">2.</span> <span class="nav-text">创建UIImage对象</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#内存管理"><span class="nav-number">3.</span> <span class="nav-text">内存管理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#图片拉伸"><span class="nav-number">4.</span> <span class="nav-text">图片拉伸</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#动效图片对象"><span class="nav-number">5.</span> <span class="nav-text">动效图片对象</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#图片大小的限制"><span class="nav-number">6.</span> <span class="nav-text">图片大小的限制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#支持的图片格式"><span class="nav-number">7.</span> <span class="nav-text">支持的图片格式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#示例代码"><span class="nav-number">8.</span> <span class="nav-text">示例代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">9.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

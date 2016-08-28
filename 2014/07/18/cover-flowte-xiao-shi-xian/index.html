@@ -1,0 +1,756 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="原文发表在cocoachina上，现在把它整理过来。
+Cover Flow介绍Cover flow是苹果首创的将多首歌曲的封面以3D界面的形式显示出来的方式。
+ 
+随处可见的Cover Flow特效iTunes:在iTunes音乐中点击搜索框左边“查看”项第三个，即以cover flow形式显示专辑封面（前提是你得添加插图或音乐自带插图），也可以在全屏模式使用
+iPhone/iPod Touch:">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Cover Flow特效实现">
+<meta property="og:url" content="http://southpeak.github.io/2014/07/18/cover-flowte-xiao-shi-xian/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="原文发表在cocoachina上，现在把它整理过来。
+Cover Flow介绍Cover flow是苹果首创的将多首歌曲的封面以3D界面的形式显示出来的方式。
+ 
+随处可见的Cover Flow特效iTunes:在iTunes音乐中点击搜索框左边“查看”项第三个，即以cover flow形式显示专辑封面（前提是你得添加插图或音乐自带插图），也可以在全屏模式使用
+iPhone/iPod Touch:">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/Cove%20flow.png?raw=true">
+<meta property="og:updated_time" content="2016-08-27T05:01:55.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Cover Flow特效实现">
+<meta name="twitter:description" content="原文发表在cocoachina上，现在把它整理过来。
+Cover Flow介绍Cover flow是苹果首创的将多首歌曲的封面以3D界面的形式显示出来的方式。
+ 
+随处可见的Cover Flow特效iTunes:在iTunes音乐中点击搜索框左边“查看”项第三个，即以cover flow形式显示专辑封面（前提是你得添加插图或音乐自带插图），也可以在全屏模式使用
+iPhone/iPod Touch:">
+<meta name="twitter:image" content="https://github.com/southpeak/Blog-images/blob/master/Cove%20flow.png?raw=true">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2014/07/18/cover-flowte-xiao-shi-xian/"/>
+
+  <title> Cover Flow特效实现 | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Cover Flow特效实现
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-07-18T22:12:57+08:00" content="2014-07-18">
+              2014-07-18
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/sourcecode/" itemprop="url" rel="index">
+                    <span itemprop="name">源码分析</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p><a href="http://www.cocoachina.com/bbs/read.php?tid=74500" target="_blank" rel="external">原文</a>发表在cocoachina上，现在把它整理过来。</p>
+<h2 id="Cover-Flow介绍"><a href="#Cover-Flow介绍" class="headerlink" title="Cover Flow介绍"></a>Cover Flow介绍</h2><p>Cover flow是苹果首创的将多首歌曲的封面以3D界面的形式显示出来的方式。</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/Cove%20flow.png?raw=true" alt="image"> </p>
+<h3 id="随处可见的Cover-Flow特效"><a href="#随处可见的Cover-Flow特效" class="headerlink" title="随处可见的Cover Flow特效"></a>随处可见的Cover Flow特效</h3><p>iTunes:在iTunes音乐中点击搜索框左边“查看”项第三个，即以cover flow形式显示专辑封面（前提是你得添加插图或音乐自带插图），也可以在全屏模式使用</p>
+<p>iPhone/iPod Touch:在竖屏模式播放音乐，iPhone只会显示一张专辑的封面；但当用户将机身旋转为横屏模式后，则能看到多首歌曲的封面以3D界面的形式显示出来，用手指左右的滑动能够进行歌曲的选择，点击相应的专辑封面则会显示该张唱片的曲目，点击相应歌曲即可开始播放。</p>
+<p>苹果官网:官网上有以Flash展示的cover flow界面iPod NANO3/4/5:基本类似于在iphone中的操作，利用触摸轮滑动使封面转换Safari </p>
+<p>使用 Cover Flow，您可以像在 iTunes 中翻看专辑插图一样轻松地翻看网站。Cover Flow 可以将您的书签和历史记录显示为大图预览，这样您就能立即找到网站。要查看 Cover Flow 如何工作，请单击 Safari“书签”栏左端的打开书本图标来打开书签列表。在“精选”列表中选择“历史记录”或您要查看其标签的精选。使用水平滚动条来翻看网页预览。您还可以使用鼠标上的滚动按钮来翻看预览。如果您的触控板已配置为支持触控板手势，则您可以左右扫动。</p>
+<h2 id="特效制作"><a href="#特效制作" class="headerlink" title="特效制作"></a>特效制作</h2><h3 id="方法一：UICoverFlowLayer"><a href="#方法一：UICoverFlowLayer" class="headerlink" title="方法一：UICoverFlowLayer"></a>方法一：UICoverFlowLayer</h3><p>正式的SDK并未包含UICoverFlowLayer，但是它仍然是标准的UIKit。通过steve nygard的类转储(class-dump), 能从UIKit框架中提取 UICoverFlowLayer头文件。</p>
+<p>由于UICoverFlowLayer是私有的，无法应用于应用程序(无法通过苹果的审查)，所以在此简单介绍使用方法：</p>
+<ol>
+<li>将UICoverFlowLayer.h文件拷贝到工程中创建cover flow视图，并将UICoverFlowLayer图层分配到视图图层中</li>
+<li>视图发送dragFlow:atPoint消息，以处理与Cover Flow图层的触摸和拖动的交互过程构建cover flow视图控制器，分配和初始化视图，并提供委托和数据源方法</li>
+</ol>
+<p>使用UICoverFlowLayer的方法如下代码所示</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">UICoverFlowLayer</span> *cfLayer = [[<span class="built_in">UICoverFlowLayer</span> alloc] initWithFrame:frame numberOfCovers:count];</div><div class="line">	</div><div class="line">[[<span class="keyword">self</span> layer] addSublayer:cfLayer];</div></pre></td></tr></table></figure>
+<h3 id="方法二：OpenFlow"><a href="#方法二：OpenFlow" class="headerlink" title="方法二：OpenFlow"></a>方法二：OpenFlow</h3><p>OpenFlow是一个用于实现Cover Flow特效的开源库，它是基于Quartz实现的，能很好的实现Cover Flow特效，同时又易于使用。</p>
+<p>下载地址：<a href="https://github.com/thefaj/OpenFlow" target="_blank" rel="external">https://github.com/thefaj/OpenFlow</a></p>
+<p>使用OpenFlow的基本步骤如下：</p>
+<ol>
+<li>创建工程</li>
+<li>添加OpenFlow源代码到工程中</li>
+<li>添加QuartzCore和CoreGraphics框架到工程中</li>
+<li>定义CoverFlowViewController(自定义)类</li>
+<li>在CoverFlowViewController.h中导入”AFOpenFlowView.h”</li>
+<li>实现AFOpenFlowViewDelegate类和AFOpenFlowDataSource协议</li>
+</ol>
+<p>定义CoverFlowViewController类的代码如下所示</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line"><span class="comment">//  CoverFlowViewController.h</span></div><div class="line"><span class="comment">//  CoverFlow</span></div><div class="line"><span class="comment">//</span></div><div class="line"><span class="comment">//  Created by Avinash on 4/7/10.</span></div><div class="line"><span class="comment">//  Copyright Apple Inc 2010. All rights reserved.</span></div><div class="line"><span class="comment">//</span></div><div class="line">	</div><div class="line"><span class="meta">#import <span class="meta-string">"AFOpenFlowView.h"</span></span></div><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">CoverFlowViewController</span> : <span class="title">UIViewController</span>  </span>&#123;</div><div class="line">    <span class="comment">// Queue to hold the cover flow p_w_picpath</span></div><div class="line">    <span class="built_in">NSOperationQueue</span> *loadImagesOperationQueue;</div><div class="line">&#125;</div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>实现CoverFlowViewController类</p>
+<p>加载图片</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)viewDidLoad &#123;</div><div class="line">    [<span class="keyword">super</span> viewDidLoad];</div><div class="line">     <span class="comment">// loading p_w_picpath into the queue</span></div><div class="line">    loadImagesOperationQueue = [[<span class="built_in">NSOperationQueue</span> alloc] init];</div><div class="line">    <span class="built_in">NSString</span> *imageName;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i=<span class="number">0</span>; i &lt; <span class="number">10</span>; i++) &#123;</div><div class="line">        imageName = [[<span class="built_in">NSString</span> alloc] initWithFormat:<span class="string">@"cover_%d.jpg"</span>, i];</div><div class="line">        [(AFOpenFlowView *)<span class="keyword">self</span>.view setImage:[<span class="built_in">UIImage</span> imageNamed:imageName] forIndex:i];</div><div class="line">        [imageName release];</div><div class="line">        <span class="built_in">NSLog</span>(<span class="string">@"%d is the index"</span>,i); </div><div class="line">   &#125;</div><div class="line">    [(AFOpenFlowView *)<span class="keyword">self</span>.view setNumberOfImages:<span class="number">10</span>];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>实现委托方法，以设置Cover Flow默认图片及通知哪幅图片被选中</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="comment">//delegate protocols</span></div><div class="line"><span class="comment">// delegate protocol to tell which image is selected</span></div><div class="line">- (<span class="keyword">void</span>)openFlowView:(AFOpenFlowView *)openFlowView selectionDidChange:(<span class="keyword">int</span>)index&#123;</div><div class="line">    <span class="built_in">NSLog</span>(<span class="string">@"%d is selected"</span>,index);</div><div class="line">&#125;</div><div class="line"><span class="comment">// setting the image 1 as the default pic</span></div><div class="line">- (<span class="built_in">UIImage</span> *)defaultImage&#123;</div><div class="line">    <span class="keyword">return</span> [<span class="built_in">UIImage</span> imageNamed:<span class="string">@"cover_1.jpg"</span>];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>修改xib文件中视图的类UIView为AFOpenFlowView(重要)</p>
+<p>完成上述步骤之后，就可以运行一下程序看一下效果了。虽然与苹果的Cover Flow效果还是有点差距，但还是不错哦。</p>
+<h3 id="方法三：FlowCover"><a href="#方法三：FlowCover" class="headerlink" title="方法三：FlowCover"></a>方法三：FlowCover</h3><p>FlowCover也是一个开源库，它是基于OpenGL ES。FlowCover的源代码非常简单，只有FlowCoverView和DataCache两个类。这两个类的功能如下：</p>
+<ol>
+<li>FlowCoverView：定义主视图。这是一个OpenGL ES视点，可以被嵌套在其它视图中。</li>
+<li>DataCache：提供一个简单的数据缓存方案，保存一定量的对象，当对象超过最大值时，旧的对象会被舍弃。</li>
+</ol>
+<p>使用FlowCover的基本步骤如下：</p>
+<ol>
+<li>创建工程</li>
+<li>添加FlowCover源代码到工程中</li>
+<li>然后就可以像用其它UIView一样使用FlowCoverView了</li>
+</ol>
+<p>FlowCover中需要实现FlowCoverViewDelegate协议，该协议中主要有三个方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">-(<span class="keyword">int</span>)flowCoverNumberImages:(FlowCoverView *)view;</div></pre></td></tr></table></figure>
+<p>返回FlowCoverView视图中显示的图片数量</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">-(<span class="built_in">UIImage</span> *)flowCover:(FlowCoverView *)view cover:(<span class="keyword">int</span>)cover;</div></pre></td></tr></table></figure>
+<p>返回FlowCoverView视图中用cover指定的图片</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">-(<span class="keyword">void</span>)flowCover:(FlowCoverView *)view didSelect:(<span class="keyword">int</span>)cover;</div></pre></td></tr></table></figure>
+<p>当用户触击FlowCoverView中的cover时调用。</p>
+<h3 id="方法四：Tapku框架"><a href="#方法四：Tapku框架" class="headerlink" title="方法四：Tapku框架"></a>方法四：Tapku框架</h3><p>Tapku库是一个开源的iOS框架，它包含CoverFlow, Calendar Grid, Char View等等API，总之还是一个比较强大的库。把Tapku加下工程中还是比较复杂的，有兴趣的童鞋可以去网上搜一下。</p>
+<p>Tapku下载地址：<a href="https://github.com/devinross/tapkulibrary" target="_blank" rel="external">https://github.com/devinross/tapkulibrary</a></p>
+<p>Tapku中与Cover Flow相关的类主要有如下两个：</p>
+<ol>
+<li>TKCoverflowCoverView: 该类表示的是单个cover。相当于UITableViewCell</li>
+<li>TKCoverflowView:该类相当于UITableView类，用来管理和显示cover flow中图片及实现cover flow效果。</li>
+</ol>
+<p>同时还有两个相关的协议：TKCoverflowViewDelegate， TKCoverflowViewDataSource，分别是 TKCoverflowView的代理及数据源。这两个协议分别有一个必须实现的方法，分别是<br>TKCoverflowViewDelegate协议的</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>) coverflowView:(TKCoverflowView*)coverflowView coverAtIndexWasBroughtToFront:(<span class="keyword">int</span>)index;</div></pre></td></tr></table></figure>
+<p>TKCoverflowViewDataSource协议的</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>) coverflowView:(TKCoverflowView*)coverflowView coverAtIndexWasDoubleTapped:(<span class="keyword">int</span>)index</div></pre></td></tr></table></figure>
+<p>在工程中使用Tapku的CoverFlow步骤如下</p>
+<ol>
+<li>创建工程</li>
+<li>添加Tapku库到工程中(该步骤有点麻烦，而且Tapku库比较大，个人认为可以只把CoverFlow相关的类抽取出来直接用)。</li>
+<li>新建一个视图控制器CoverflowViewController，在该控制器中添加如下代码</li>
+</ol>
+<p>在头文件CoverflowViewController.h中</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">CoverflowViewController</span> : <span class="title">UIViewController</span> &lt;<span class="title">TKCoverflowViewDelegate</span>,<span class="title">TKCoverflowViewDataSource</span>,<span class="title">UIScrollViewDelegate</span>&gt; </span>&#123;</div><div class="line">    TKCoverflowView *coverflow; </div><div class="line">    <span class="built_in">NSMutableArray</span> *covers; <span class="comment">// album covers p_w_picpath</span></div><div class="line">    ......</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>在CoverflowViewController.m文件中主要有如下处理</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="comment">//创建视图</span></div><div class="line">- (<span class="keyword">void</span>) loadView&#123;</div><div class="line">   [<span class="keyword">super</span> loadView];</div><div class="line">    ......</div><div class="line">    coverflow = [[TKCoverflowView alloc] initWithFrame:<span class="keyword">self</span>.view.bounds];</div><div class="line">    coverflow.autoresizingMask = <span class="built_in">UIViewAutoresizingFlexibleWidth</span> | <span class="built_in">UIViewAutoresizingFlexibleHeight</span>;</div><div class="line">    coverflow.coverflowDelegate = <span class="keyword">self</span>;</div><div class="line">    coverflow.dataSource = <span class="keyword">self</span>;</div><div class="line">    <span class="keyword">if</span>([<span class="built_in">UIDevice</span> currentDevice].userInterfaceIdiom == <span class="built_in">UIUserInterfaceIdiomPad</span>)&#123;</div><div class="line">       coverflow.coverSpacing = <span class="number">100</span>;</div><div class="line">      coverflow.coverSize = <span class="built_in">CGSizeMake</span>(<span class="number">300</span>, <span class="number">300</span>);</div><div class="line">    &#125;</div><div class="line">    [<span class="keyword">self</span>.view addSubview:coverflow];</div><div class="line">   ......</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>实现代理方法</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>) coverflowView:(TKCoverflowView*)coverflowView coverAtIndexWasBroughtToFront:(<span class="keyword">int</span>)index&#123;</div><div class="line">&#125;</div><div class="line"><span class="comment">//生成单个cover flow</span></div><div class="line">- (TKCoverflowCoverView*) coverflowView:(TKCoverflowView*)coverflowView coverAtIndex:(<span class="keyword">int</span>)index&#123;</div><div class="line">    TKCoverflowCoverView *cover = [coverflowView dequeueReusableCoverView];</div><div class="line">    <span class="keyword">if</span>(cover == <span class="literal">nil</span>)&#123;</div><div class="line">       <span class="built_in">BOOL</span> phone = [<span class="built_in">UIDevice</span> currentDevice].userInterfaceIdiom == <span class="built_in">UIUserInterfaceIdiomPhone</span>;</div><div class="line">       <span class="built_in">CGRect</span> rect = phone ? <span class="built_in">CGRectMake</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="number">224</span>, <span class="number">300</span>) : <span class="built_in">CGRectMake</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="number">300</span>, <span class="number">600</span>);</div><div class="line">  </div><div class="line">      cover = [[[TKCoverflowCoverView alloc] initWithFrame:rect] autorelease]; <span class="comment">// 224</span></div><div class="line">       cover.baseline = <span class="number">224</span>;  </div><div class="line">    &#125;</div><div class="line">    cover.image = [covers objectAtIndex:index%[covers count]];</div><div class="line">   <span class="keyword">return</span> cover;</div><div class="line">&#125;</div><div class="line">- (<span class="keyword">void</span>) coverflowView:(TKCoverflowView*)coverflowView coverAtIndexWasDoubleTapped:(<span class="keyword">int</span>)index&#123;</div><div class="line">   TKCoverflowCoverView *cover = [coverflowView coverAtIndex:index];</div><div class="line">    <span class="keyword">if</span>(cover == <span class="literal">nil</span>) <span class="keyword">return</span>;</div><div class="line">    [<span class="built_in">UIView</span> beginAnimations:<span class="literal">nil</span> context:<span class="literal">nil</span>];</div><div class="line">    [<span class="built_in">UIView</span> setAnimationDuration:<span class="number">1</span>];</div><div class="line">    [<span class="built_in">UIView</span> setAnimationTransition:<span class="built_in">UIViewAnimationTransitionFlipFromLeft</span> forView:cover cache:<span class="literal">YES</span>];</div><div class="line">    [<span class="built_in">UIView</span> commitAnimations];</div><div class="line">   <span class="built_in">NSLog</span>(<span class="string">@"Index: %d"</span>,index);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="效果比较"><a href="#效果比较" class="headerlink" title="效果比较"></a>效果比较</h2><p>在效果上个人感觉Tapku会好些，渲染流畅，美中不足的是在快速拖动时，停止下来的时候会有抖动的感觉（当然快速拖动这一功能是否需要可视情况而定，如果将此功能禁掉，跟苹果自身的效果还是差不多的）。</p>
+<p>OpenFlow的问题在于当改变图像时，新选中的图像会先放大并置于表层，然后才缓动到中间。这是其一个瑕疵。</p>
+<p>总体感觉上来讲，苹果自身的CoverFlow的缓动效果还是最好的，有那种渐进渐出的效果，而如上几个开源的库其动画显得有点生硬，有兴趣的童鞋可以试着改进一下。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2014/07/17/ioszhong-liu-stream-de-shi-yong/" rel="next" title="iOS中流(Stream)的使用">
+                <i class="fa fa-chevron-left"></i> iOS中流(Stream)的使用
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2014/07/19/bonjour-1/" rel="prev" title="Bonjour理论1：基本概念">
+                Bonjour理论1：基本概念 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Cover-Flow介绍"><span class="nav-number">1.</span> <span class="nav-text">Cover Flow介绍</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#随处可见的Cover-Flow特效"><span class="nav-number">1.1.</span> <span class="nav-text">随处可见的Cover Flow特效</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#特效制作"><span class="nav-number">2.</span> <span class="nav-text">特效制作</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#方法一：UICoverFlowLayer"><span class="nav-number">2.1.</span> <span class="nav-text">方法一：UICoverFlowLayer</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#方法二：OpenFlow"><span class="nav-number">2.2.</span> <span class="nav-text">方法二：OpenFlow</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#方法三：FlowCover"><span class="nav-number">2.3.</span> <span class="nav-text">方法三：FlowCover</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#方法四：Tapku框架"><span class="nav-number">2.4.</span> <span class="nav-text">方法四：Tapku框架</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#效果比较"><span class="nav-number">3.</span> <span class="nav-text">效果比较</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

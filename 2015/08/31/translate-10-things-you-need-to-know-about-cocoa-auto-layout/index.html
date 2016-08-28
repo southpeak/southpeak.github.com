@@ -1,0 +1,700 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="原文由Ole Begemann在2013.3.31发表于其个人博客，地址是10 Things You Need to Know About Cocoa Auto Layout
+
+译注：原文发表的时间有点早，主要是针对Xcode 4.x时代的Auto Layout，特别是第二部分”Interface Builder中的Auto Layout“，所以有些内容已经过时了。不过还是有很多可借鉴的地方。特别">
+<meta property="og:type" content="article">
+<meta property="og:title" content="10 Things You Need to Know About Cocoa Auto Layout">
+<meta property="og:url" content="http://southpeak.github.io/2015/08/31/translate-10-things-you-need-to-know-about-cocoa-auto-layout/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="原文由Ole Begemann在2013.3.31发表于其个人博客，地址是10 Things You Need to Know About Cocoa Auto Layout
+
+译注：原文发表的时间有点早，主要是针对Xcode 4.x时代的Auto Layout，特别是第二部分”Interface Builder中的Auto Layout“，所以有些内容已经过时了。不过还是有很多可借鉴的地方。特别">
+<meta property="og:image" content="http://oleb.net/media/interface-builder-constraints-editor-context-menu.png">
+<meta property="og:image" content="http://oleb.net/media/interface-builder-create-constraints-ui.png">
+<meta property="og:updated_time" content="2016-08-28T04:21:38.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="10 Things You Need to Know About Cocoa Auto Layout">
+<meta name="twitter:description" content="原文由Ole Begemann在2013.3.31发表于其个人博客，地址是10 Things You Need to Know About Cocoa Auto Layout
+
+译注：原文发表的时间有点早，主要是针对Xcode 4.x时代的Auto Layout，特别是第二部分”Interface Builder中的Auto Layout“，所以有些内容已经过时了。不过还是有很多可借鉴的地方。特别">
+<meta name="twitter:image" content="http://oleb.net/media/interface-builder-constraints-editor-context-menu.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2015/08/31/translate-10-things-you-need-to-know-about-cocoa-auto-layout/"/>
+
+  <title> 10 Things You Need to Know About Cocoa Auto Layout | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                10 Things You Need to Know About Cocoa Auto Layout
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-08-31T22:49:30+08:00" content="2015-08-31">
+              2015-08-31
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/translate/" itemprop="url" rel="index">
+                    <span itemprop="name">翻译</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>原文由<a href="http://oleb.net/" target="_blank" rel="external">Ole Begemann</a>在<code>2013.3.31</code>发表于其个人博客，地址是<a href="http://oleb.net/blog/2013/03/things-you-need-to-know-about-cocoa-autolayout/" target="_blank" rel="external">10 Things You Need to Know About Cocoa Auto Layout</a></p>
+<blockquote>
+<p>译注：原文发表的时间有点早，主要是针对<code>Xcode 4.x</code>时代的<code>Auto Layout</code>，特别是第二部分”<code>Interface Builder</code>中的<code>Auto Layout</code>“，所以有些内容已经过时了。不过还是有很多可借鉴的地方。特别感谢<a href="http://weibo.com/u/1438670852" target="_blank" rel="external">@叶孤城</a> 叶大在微博中的分享，以及对译文的校对。</p>
+</blockquote>
+<p>第一次使用<code>Cocoa Auto Layout</code>时，感觉它与<code>Cocoa</code>开发者所熟知的<code>springs-struts</code>模式有很大的不同。尽管<code>Auto Layout</code>有点复杂，但我发现只需要了解一些基本规则就可以使用它。本文就来列出这些规则。</p>
+<h2 id="Auto-Layout通用概念"><a href="#Auto-Layout通用概念" class="headerlink" title="Auto Layout通用概念"></a>Auto Layout通用概念</h2><h3 id="1-经验法则：每个维度至少有两个约束"><a href="#1-经验法则：每个维度至少有两个约束" class="headerlink" title="1.经验法则：每个维度至少有两个约束"></a>1.经验法则：每个维度至少有两个约束</h3><p>在每个维度(水平与竖直)上，一个视图的位置和大小由三个值来定义：头部空间(<code>leading space</code>)，大小和尾部空间(<code>trailing space</code>)<em>[注释1]</em>。一个视图的<code>leading</code>和<code>trailing</code>空间可以相对于父视图来定义，也可以相对于视图层级架构中的兄弟视图来定义。一般来说，我们的布局约束必须满足这两个值，以便计算第三个值(<code>size</code>)。其结果是，一个标准的视图在每个维度上必须至少有两个约束，以明确视图的布局。</p>
+<h3 id="2-拥抱固有大小-Intrinsic-Size"><a href="#2-拥抱固有大小-Intrinsic-Size" class="headerlink" title="2.拥抱固有大小(Intrinsic Size)"></a>2.拥抱固有大小(Intrinsic Size)</h3><p>一些控件，如标签和按钮，都有一个所谓的固有大小(<code>Intrinsic Size</code>)。视控件的不同，固有大小可以在水平或竖直或同时两个方向上有效。当一个控件没有明确的宽度和高度约束时，就会使用它的固有大小作为约束。这允许我们在每个方向上只使用一个显式约束就可以创建明确的布局(相对于上面第1条规则)，并让控件可以根据自身的内容来自动调整大小。这是在本地化中创建一个最佳布局的关键。</p>
+<h2 id="Interface-Builder中的Auto-Layout"><a href="#Interface-Builder中的Auto-Layout" class="headerlink" title="Interface Builder中的Auto Layout"></a>Interface Builder中的Auto Layout</h2><blockquote>
+<p>更新于2014.3.3：当我写这篇文章时，<code>Xcode</code>的版本是4.x。到了<code>Xcode 5</code>时，<code>Interface Builder</code>对<code>Auto Layout</code>的处理已以有了显著的改变，所以下面的一些内容已经不再有效(特别是第3、4条)。<code>Xcode</code>现在允许<code>Interface Builder</code>在创建模棱两可的布局，并在编译时添加<code>missing constraints</code>来明确一个布局。这使得在开发过程中，原型的设计和快速变更来得更加简单。第5、6条在<code>Xcode 5</code>中仍然是有效的。</p>
+</blockquote>
+<p><code>Interface Builder</code>中的<code>Auto Layout</code>编辑器似乎有自己的想法。理解<code>Xcode</code>的工程师为什么这样设计，可以让我们使用它是不至于太过沮丧。</p>
+<p><img src="http://oleb.net/media/interface-builder-constraints-editor-context-menu.png" alt="image"></p>
+<p>图1：如果某个约束会导致模棱两可的布局，<code>IB</code>是不允许我们删除它的</p>
+<h3 id="3-IB总是不让你创建一个模棱两可的布局"><a href="#3-IB总是不让你创建一个模棱两可的布局" class="headerlink" title="3.IB总是不让你创建一个模棱两可的布局"></a>3.IB总是不让你创建一个模棱两可的布局</h3><p><code>IB</code>的主要目标是保护我们自己。它决不会让我们创建一个模棱两可的布局。这意味着<code>IB</code>在我们将一个视图放到一个布局中时，会自动为我们创建约束。沿着IB的自动引导来放置我们的视图，以帮助<code>IB</code>正确的猜测我们想把视图放哪。</p>
+<h3 id="4-在我们删除一个已存在的约束之前，必须创建另外一个约束"><a href="#4-在我们删除一个已存在的约束之前，必须创建另外一个约束" class="headerlink" title="4.在我们删除一个已存在的约束之前，必须创建另外一个约束"></a>4.在我们删除一个已存在的约束之前，必须创建另外一个约束</h3><p>使用<code>Size Inspector</code>来查看一个指定视图的所有约束。当一个约束的<code>Delete</code>菜单项是置灰时，就表示删除这个约束会导致混乱，因此这是不允许的。在删除它之前，我们必须创建至少一个自定义约束来取代它。</p>
+<p><img src="http://oleb.net/media/interface-builder-create-constraints-ui.png" alt="image"></p>
+<p>图2：创建新的布局约束的<code>IB</code>界面</p>
+<p>为了创建一个新的约束，在布局中选择一个或多个视图，然后使用画布右下角的三个不显眼按钮来创建约束。这都是很容易被忽视的。</p>
+<h3 id="5-不要显式地调整控件的大小"><a href="#5-不要显式地调整控件的大小" class="headerlink" title="5.不要显式地调整控件的大小"></a>5.不要显式地调整控件的大小</h3><p>尝试不要显式地设置一个控件的大小。只要我们不手动去改变它们的大小，大部分控件都会根据它们的内容来调整自己的大小，并使用固有大小(<code>intrinsic size</code>)来创建一个完美的、内容敏感的布局。这对于需要做本地化的UI尤其重要。一旦我们(无意或有意地)手动调整了控件的大小，<code>IB</code>将创建一个很难摆脱的显式大小约束。为了回归到固有大小，可以使用<code>Editor</code> &gt; <code>Size to Fit Content</code>命令。</p>
+<h3 id="6-避免过早优化"><a href="#6-避免过早优化" class="headerlink" title="6.避免过早优化"></a>6.避免过早优化</h3><p>不幸的是，使用<code>Interface Builder</code>来做自动布局将迫使我们更加小心。例如，如果我们发现需要使用一个控件来替换另一个，从布局中删除原始控件可能导致IB自动创建一组新的约束，当我们插入新的控件时，需要再次手动修改这些约束。因此，在我们的布局仍处于不稳定状态时去优化我们的约束，可能并不是一个好主意。更好的是在它更稳定时再去优化它。</p>
+<h2 id="代码中的Auto-Layout"><a href="#代码中的Auto-Layout" class="headerlink" title="代码中的Auto Layout"></a>代码中的Auto Layout</h2><p>在<code>Interface Builder</code>中使用<code>Auto Layout</code>中可能很快就会有种挫折感，因此更多的开发者喜欢在代码中使用<code>Auto Layout</code>。</p>
+<h3 id="7-忘记Frame吧"><a href="#7-忘记Frame吧" class="headerlink" title="7.忘记Frame吧"></a>7.忘记Frame吧</h3><p>忘记<code>frame</code>属性吧。不要直接设置它。一个视图的<code>frame</code>在自动布局过程中会被自动设置，而不是一个输入结果。我们可以通过改变约束来改变<code>frame</code>。这将强迫我们改变看待<code>UI</code>的方式。不用再去考虑位置和大小了，而是考虑每个视图相对于它的兄弟视图和父视图的位置。这与<code>CSS</code>没有什么不同。</p>
+<h3 id="8-别忘了禁用Autoresizing-Masks"><a href="#8-别忘了禁用Autoresizing-Masks" class="headerlink" title="8.别忘了禁用Autoresizing Masks"></a>8.别忘了禁用Autoresizing Masks</h3><p>为了保证代码的向后兼容性，<code>sprints-struts</code>模式仍然是默认的。对于每一个代码创建的需要使用<code>Auto Layout</code>的视图，请调用<code>setTranslatesAutoresizingMaskIntoConstraints:NO</code>。</p>
+<h3 id="9-多留意Debugger控制台"><a href="#9-多留意Debugger控制台" class="headerlink" title="9.多留意Debugger控制台"></a>9.多留意Debugger控制台</h3><p>当我们写约束时，应该多留意<code>Debugger</code>控制台。我发现<code>Apple</code>关于模棱两可的约束或未满足的约束的错误日志总是可以帮助我们快速定位问题。这个可以参考<a href="https://developer.apple.com/library/ios/documentation/userexperience/conceptual/AutolayoutPG/ResolvingIssues/ResolvingIssues.html#//apple_ref/doc/uid/TP40010853-CH17-SW14" target="_blank" rel="external">Apple’s debugging tips in the Cocoa Auto Layout Guide</a>。</p>
+<h3 id="10-让约束动起来，而不是frame"><a href="#10-让约束动起来，而不是frame" class="headerlink" title="10.让约束动起来，而不是frame"></a>10.让约束动起来，而不是frame</h3><p>在<code>Auto Layout</code>中，我们需要重新考虑动画。我们不再可以简单的动画一个视图的<code>frame</code>了；如果我们这样做了，视图将在动画完成后自动恢复到<code>Auto Layout</code>计算出来的位置和大小上。相反，我们需要直接动画布局的约束。要做到这一点，或者修改已存在的约束（我们可以为<code>IB</code>中创建的约束声明<code>IBOutlet</code>变量），也可以添加一个新的约束，然后在一个动画<code>block</code>中给我们的视图发送<code>layoutIfNeeded</code>消息。</p>
+<h3 id="注释"><a href="#注释" class="headerlink" title="注释"></a>注释</h3><ol>
+<li>在垂直维度，<code>leading</code>和<code>trailing</code>空间分别表示为<code>top</code>和<code>bottom</code>空间。在水平维度，我们可以选择两个方向：“<code>Leading to Trailing</code>” 或者是 “<code>Left to Right</code>”。这两者的不同之处在于，如果本地语言是从右到左的，则”<code>Leading to Trailing</code>”表示的就是”<code>Right to Left</code>”。在大多数时候，我们需要的是“<code>Leading to Trailing</code>”。</li>
+</ol>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/08/15/ios-techset-4/" rel="next" title="iOS知识小集 第四期(2015.08.15)">
+                <i class="fa fa-chevron-left"></i> iOS知识小集 第四期(2015.08.15)
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/09/14/app-transport-security-ats/" rel="prev" title="App Transport Security(ATS)">
+                App Transport Security(ATS) <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Auto-Layout通用概念"><span class="nav-number">1.</span> <span class="nav-text">Auto Layout通用概念</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-经验法则：每个维度至少有两个约束"><span class="nav-number">1.1.</span> <span class="nav-text">1.经验法则：每个维度至少有两个约束</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-拥抱固有大小-Intrinsic-Size"><span class="nav-number">1.2.</span> <span class="nav-text">2.拥抱固有大小(Intrinsic Size)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Interface-Builder中的Auto-Layout"><span class="nav-number">2.</span> <span class="nav-text">Interface Builder中的Auto Layout</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-IB总是不让你创建一个模棱两可的布局"><span class="nav-number">2.1.</span> <span class="nav-text">3.IB总是不让你创建一个模棱两可的布局</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-在我们删除一个已存在的约束之前，必须创建另外一个约束"><span class="nav-number">2.2.</span> <span class="nav-text">4.在我们删除一个已存在的约束之前，必须创建另外一个约束</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-不要显式地调整控件的大小"><span class="nav-number">2.3.</span> <span class="nav-text">5.不要显式地调整控件的大小</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-避免过早优化"><span class="nav-number">2.4.</span> <span class="nav-text">6.避免过早优化</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#代码中的Auto-Layout"><span class="nav-number">3.</span> <span class="nav-text">代码中的Auto Layout</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#7-忘记Frame吧"><span class="nav-number">3.1.</span> <span class="nav-text">7.忘记Frame吧</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#8-别忘了禁用Autoresizing-Masks"><span class="nav-number">3.2.</span> <span class="nav-text">8.别忘了禁用Autoresizing Masks</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#9-多留意Debugger控制台"><span class="nav-number">3.3.</span> <span class="nav-text">9.多留意Debugger控制台</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#10-让约束动起来，而不是frame"><span class="nav-number">3.4.</span> <span class="nav-text">10.让约束动起来，而不是frame</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#注释"><span class="nav-number">3.5.</span> <span class="nav-text">注释</span></a></li></ol></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

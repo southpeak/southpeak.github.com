@@ -1,0 +1,746 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="一个Graphics Context表示一个绘制目标。它包含绘制系统用于完成绘制指令的绘制参数和设备相关信息。Graphics Context定义了基本的绘制属性，如颜色、裁减区域、线条宽度和样式信息、字体信息、混合模式等。
+我们可以通过几种方式来获取Graphics Context：Quartz提供的创建函数、Mac OS X框架或IOS的UIKit框架提供的函数。Quartz提供了多种Grap">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Quartz 2D编程指南之二：图形上下文(Graphics Contexts)">
+<meta property="og:url" content="http://southpeak.github.io/2014/11/11/quartz2d-2/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="一个Graphics Context表示一个绘制目标。它包含绘制系统用于完成绘制指令的绘制参数和设备相关信息。Graphics Context定义了基本的绘制属性，如颜色、裁减区域、线条宽度和样式信息、字体信息、混合模式等。
+我们可以通过几种方式来获取Graphics Context：Quartz提供的创建函数、Mac OS X框架或IOS的UIKit框架提供的函数。Quartz提供了多种Grap">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/cocoa_draw.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pdf_context_draw.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/cocoa_draw.gif">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/quartz-2d-table2-1.png?raw=true">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/antialias.jpg">
+<meta property="og:updated_time" content="2016-08-27T07:56:56.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Quartz 2D编程指南之二：图形上下文(Graphics Contexts)">
+<meta name="twitter:description" content="一个Graphics Context表示一个绘制目标。它包含绘制系统用于完成绘制指令的绘制参数和设备相关信息。Graphics Context定义了基本的绘制属性，如颜色、裁减区域、线条宽度和样式信息、字体信息、混合模式等。
+我们可以通过几种方式来获取Graphics Context：Quartz提供的创建函数、Mac OS X框架或IOS的UIKit框架提供的函数。Quartz提供了多种Grap">
+<meta name="twitter:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/cocoa_draw.gif">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2014/11/11/quartz2d-2/"/>
+
+  <title> Quartz 2D编程指南之二：图形上下文(Graphics Contexts) | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Quartz 2D编程指南之二：图形上下文(Graphics Contexts)
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-11-11T23:14:44+08:00" content="2014-11-11">
+              2014-11-11
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/translate/" itemprop="url" rel="index">
+                    <span itemprop="name">翻译</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>一个Graphics Context表示一个绘制目标。它包含绘制系统用于完成绘制指令的绘制参数和设备相关信息。Graphics Context定义了基本的绘制属性，如颜色、裁减区域、线条宽度和样式信息、字体信息、混合模式等。</p>
+<p>我们可以通过几种方式来获取Graphics Context：Quartz提供的创建函数、Mac OS X框架或IOS的UIKit框架提供的函数。Quartz提供了多种Graphics Context的创建函数，包括bitmap和PDF，我们可以使用这些Graphics Context创建自定义的内容。</p>
+<p>本章介绍了如何为不同的绘制目标创建Graphics Context。在代码中，我们用CGContextRef来表示一个Graphics Context。当获得一个Graphics Context后，可以使用Quartz 2D函数在上下文(context)中进行绘制、完成操作(如平移)、修改图形状态参数(如线宽和填充颜色)等。</p>
+<h2 id="在iOS中的视图Graphics-Context进行绘制"><a href="#在iOS中的视图Graphics-Context进行绘制" class="headerlink" title="在iOS中的视图Graphics Context进行绘制"></a>在iOS中的视图Graphics Context进行绘制</h2><p>在iOS应用程序中，如果要在屏幕上进行绘制，需要创建一个UIView对象，并实现它的drawRect:方法。视图的drawRect:方法在视图显示在屏幕上及它的内容需要更新时被调用。在调用自定义的drawRect:后，视图对象自动配置绘图环境以便代码能立即执行绘图操作。作为配置的一部分，视图对象将为当前的绘图环境创建一个Graphics Context。我们可以通过调用UIGraphicsGetCurrentContext函数来获取这个Graphics Context。</p>
+<p>UIKit默认的坐标系统与Quartz不同。在UIKit中，原点位于左上角，y轴正方向为向下。UIView通过将修改Quartz的Graphics Context的CTM[原点平移到左下角，同时将y轴反转(y值乘以-1)]以使其与UIView匹配。</p>
+<h2 id="在Mac-OS-X中创建一个窗口Graphics-Context"><a href="#在Mac-OS-X中创建一个窗口Graphics-Context" class="headerlink" title="在Mac OS X中创建一个窗口Graphics Context"></a>在Mac OS X中创建一个窗口Graphics Context</h2><p>在Mac OS X中绘制时，我们需要创建一个窗口Graphics Context。Quartz 2D API 没有提供函数来获取窗口Graphics Context。取而代之的是用Cocoa框架来获取一个窗口上下文。</p>
+<p>我们可以在Cocoa应用程序的drawRect:中获取一个Quartz Graphics Context，如下代码所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">CGContextRef</span> myContext = [[<span class="built_in">NSGraphicsContext</span> currentContext] graphicsPort];</div></pre></td></tr></table></figure>
+<p>currentContext方法在当前线程中返回NSGraphicsContext实例。graphicsPort方法返回一个低级别、平台相关的Graphics Context(Quartz Graphics Context)。</p>
+<p>在获取到Graphics Context后，我们可以在Cocoa应用程序中调用任何Quartz 2D的绘制函数。我们同样可以将Quartz 2D与Cocoa绘制操作混合使用。如图2-1是一个在Cocoa视图中用Quartz 2D绘制的实例。绘图由两个长方形组成(一个不透明的红色长方形和半透明的蓝色长方形)。</p>
+<p><strong>Figure 2-1  A view in the Cocoa framework that contains Quartz drawing</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/cocoa_draw.gif" alt="image"></p>
+<p>为了实现图2-1实例，需要先创建一个Cocoa应用程序。在Interface Builder中，拖动一个Custom View到窗口中，并子类化。然后实现子类视图的，如代码清单2-1所示。视图的drawRect:包含了所有的Quartz绘制代码。</p>
+<p><em>注：NSView的drawRect:方法在每次视图需要绘制时自动调用。</em></p>
+<p><strong>Listing 2-1  Drawing to a window graphics context</strong></p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">MyQuartzView</span></span></div><div class="line">- (<span class="keyword">id</span>)initWithFrame:(<span class="built_in">NSRect</span>)frameRect</div><div class="line">&#123;</div><div class="line">    <span class="keyword">self</span> = [<span class="keyword">super</span> initWithFrame:frameRect];</div><div class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</div><div class="line">&#125;</div><div class="line">- (<span class="keyword">void</span>)drawRect:(<span class="built_in">NSRect</span>)rec</div><div class="line">&#123;</div><div class="line">    <span class="built_in">CGContextRef</span> myContext = [[<span class="built_in">NSGraphicsContext</span>  currentContext] graphicsPort]; <span class="comment">//1</span></div><div class="line">   <span class="comment">// ********** Your drawing code here **********       //2</span></div><div class="line">    <span class="built_in">CGContextSetRGBFillColor</span> (myContext, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>);     <span class="comment">//3</span></div><div class="line">    <span class="built_in">CGContextFillRect</span> (myContext, <span class="built_in">CGRectMake</span> (<span class="number">0</span>, <span class="number">0</span>, <span class="number">200</span>, <span class="number">100</span> ));   <span class="comment">//4</span></div><div class="line">    <span class="built_in">CGContextSetRGBFillColor</span> (myContext, <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">.5</span>);     <span class="comment">//5</span></div><div class="line">    <span class="built_in">CGContextFillRect</span> (myContext, <span class="built_in">CGRectMake</span> (<span class="number">0</span>, <span class="number">0</span>, <span class="number">100</span>, <span class="number">200</span>));   <span class="comment">//6</span></div><div class="line">&#125;</div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>代码说明：</p>
+<ol>
+<li>为视图获取一个Graphics Context</li>
+<li>插入绘图代码的地方。以下四行是使用Quartz 2D函数的例子</li>
+<li>设置完全不透明的红色填充色。</li>
+<li>填充一个长方形，其原点为(0, 0), 大小为(200, 100)</li>
+<li>设置半透明的蓝色填充色。</li>
+<li>填充一个长方形，其原点为(0, 0), 大小为(100, 200)</li>
+</ol>
+<h2 id="创建一个PDF-Graphics-Context"><a href="#创建一个PDF-Graphics-Context" class="headerlink" title="创建一个PDF Graphics Context"></a>创建一个PDF Graphics Context</h2><p>当创建一个PDF Graphics Context并绘制时，Quartz将绘制操作记录为一系列的PDF绘制命令并写入文件中。我们需要提供一个PDF输出的位置及一个默认的media box(用于指定页面边界的长方形)。图2-2显示了在PDF Graphics Context中绘制及在preview打开PDF的结果。</p>
+<p><strong>Figure 2-2  A PDF created by using CGPDFContextCreateWithURL</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pdf_context_draw.gif" alt="image"></p>
+<p>Quartz 2D API提供了两个函数来创建PDF Graphics Context:</p>
+<ul>
+<li>CGPDFContextCreateWithURL：当你需要用Core Foundation URL指定pdf输出的位置时使用该函数。代码清单2-2显示了该函数的使用方法(代码2-2及后面代码的详细解释略)：</li>
+</ul>
+<p><strong>Listing 2-2  Calling CGPDFContextCreateWithURL to create a PDF graphics context</strong></p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">CGContextRef</span> MyPDFContextCreate (<span class="keyword">const</span> <span class="built_in">CGRect</span> *inMediaBox, <span class="built_in">CFStringRef</span> path)</div><div class="line">&#123;</div><div class="line">    <span class="built_in">CGContextRef</span> myOutContext = <span class="literal">NULL</span>;</div><div class="line">    <span class="built_in">CFURLRef</span> url;</div><div class="line">    url = <span class="built_in">CFURLCreateWithFileSystemPath</span> (<span class="literal">NULL</span>, path, kCFURLPOSIXPathStyle, <span class="literal">false</span>);</div><div class="line">    <span class="keyword">if</span> (url != <span class="literal">NULL</span>) &#123;</div><div class="line">        myOutContext = <span class="built_in">CGPDFContextCreateWithURL</span> (url,  inMediaBox,  <span class="literal">NULL</span>);</div><div class="line">        <span class="built_in">CFRelease</span>(url);</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> myOutContext;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<ul>
+<li>CGPDFContextCreate：当需要将pdf输出发送给数据用户时使用该方法。代码清单2-3显示了该函数的使用方法：</li>
+</ul>
+<p><strong>Listing 2-3  Calling CGPDFContextCreate to create a PDF graphics context</strong></p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">CGContextRef</span> MyPDFContextCreate (<span class="keyword">const</span> <span class="built_in">CGRect</span> *inMediaBox, <span class="built_in">CFStringRef</span> path)</div><div class="line">&#123;</div><div class="line">    <span class="built_in">CGContextRef</span>        myOutContext = <span class="literal">NULL</span>;</div><div class="line">    <span class="built_in">CFURLRef</span>            url;</div><div class="line">    <span class="built_in">CGDataConsumerRef</span>   dataConsumer;</div><div class="line">    url = <span class="built_in">CFURLCreateWithFileSystemPath</span> (<span class="literal">NULL</span>,  path, kCFURLPOSIXPathStyle, <span class="literal">false</span>);</div><div class="line">    <span class="keyword">if</span> (url != <span class="literal">NULL</span>)</div><div class="line">    &#123;</div><div class="line">        dataConsumer = <span class="built_in">CGDataConsumerCreateWithURL</span> (url);</div><div class="line">        <span class="keyword">if</span> (dataConsumer != <span class="literal">NULL</span>)</div><div class="line">        &#123;</div><div class="line">            myOutContext = <span class="built_in">CGPDFContextCreate</span> (dataConsumer, inMediaBox, <span class="literal">NULL</span>);</div><div class="line">            <span class="built_in">CGDataConsumerRelease</span> (dataConsumer);</div><div class="line">        &#125;</div><div class="line">        <span class="built_in">CFRelease</span>(url);</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> myOutContext;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>代码清单2-4显示是如何调用MyPDFContextCreate程序及绘制操作。</p>
+<p><strong>Listing 2-4  Drawing to a PDF graphics context</strong></p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">CGRect</span> mediaBox;</div><div class="line">    </div><div class="line">mediaBox = <span class="built_in">CGRectMake</span> (<span class="number">0</span>, <span class="number">0</span>, myPageWidth, myPageHeight);</div><div class="line">myPDFContext = MyPDFContextCreate (&amp;mediaBox, <span class="built_in">CFSTR</span>(<span class="string">"test.pdf"</span>));</div><div class="line"><span class="built_in">CFStringRef</span> myKeys[<span class="number">1</span>];</div><div class="line"><span class="built_in">CFTypeRef</span> myValues[<span class="number">1</span>];</div><div class="line">myKeys[<span class="number">0</span>] = kCGPDFContextMediaBox;</div><div class="line">myValues[<span class="number">0</span>] = (<span class="built_in">CFTypeRef</span>) <span class="built_in">CFDataCreate</span>(<span class="literal">NULL</span>,(<span class="keyword">const</span> <span class="built_in">UInt8</span> *)&amp;mediaBox, <span class="keyword">sizeof</span> (<span class="built_in">CGRect</span>));</div><div class="line"><span class="built_in">CFDictionaryRef</span> pageDictionary = <span class="built_in">CFDictionaryCreate</span>(<span class="literal">NULL</span>, (<span class="keyword">const</span> <span class="keyword">void</span> **) myKeys,</div><div class="line">                                                   (<span class="keyword">const</span> <span class="keyword">void</span> **) myValues, <span class="number">1</span>,</div><div class="line">                                                   &amp;kCFTypeDictionaryKeyCallBacks,</div><div class="line">                                                   &amp; kCFTypeDictionaryValueCallBacks);</div><div class="line"><span class="built_in">CGPDFContextBeginPage</span>(myPDFContext, &amp;pageDictionary);</div><div class="line">   <span class="comment">// ********** Your drawing code here **********</span></div><div class="line">   <span class="built_in">CGContextSetRGBFillColor</span> (myPDFContext, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>);</div><div class="line">   <span class="built_in">CGContextFillRect</span> (myPDFContext, <span class="built_in">CGRectMake</span> (<span class="number">0</span>, <span class="number">0</span>, <span class="number">200</span>, <span class="number">100</span> ));</div><div class="line">   <span class="built_in">CGContextSetRGBFillColor</span> (myPDFContext, <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">.5</span>);</div><div class="line">   <span class="built_in">CGContextFillRect</span> (myPDFContext, <span class="built_in">CGRectMake</span> (<span class="number">0</span>, <span class="number">0</span>, <span class="number">100</span>, <span class="number">200</span> ));</div><div class="line"><span class="built_in">CGPDFContextEndPage</span>(myPDFContext);</div><div class="line"><span class="built_in">CFRelease</span>(pageDictionary);</div><div class="line"><span class="built_in">CFRelease</span>(myValues[<span class="number">0</span>]);</div><div class="line"><span class="built_in">CGContextRelease</span>(myPDFContext);</div></pre></td></tr></table></figure>
+<p>我们可以将任何内容(图片，文本，绘制路径)绘制到pdf中，并能添加链接及加密。</p>
+<h2 id="创建位图Graphics-Context"><a href="#创建位图Graphics-Context" class="headerlink" title="创建位图Graphics Context"></a>创建位图Graphics Context</h2><p>一个位图Graphics Context接受一个指向内存缓存(包含位图存储空间)的指针，当我们绘制一个位图Graphics Context时，该缓存被更新。在释放Graphics Context后，我们将得到一个我们指定像素格式的全新的位图。</p>
+<p><em>注：位图Graphics Context有时用于后台绘制。CGLayer对象优化了后台绘制，因为Quartz在显卡上缓存了层。</em></p>
+<blockquote>
+<p>iOS提示：iOS应用程序使用了UIGraphicsBeginImageContextWithOptions取代Quartz低层函数。如果使用Quartz创建一下后台bitmap，bitmap Graphics Context使用的坐标系统是Quartz默认的坐标系统。而使用UIGraphicsBeginImageContextWithOptions创建图形上下文，UIKit将会对坐标系统使用与UIView对象的图形上下文一样的转换。这允许应用程序使用相同的绘制代码而不需要担心坐标系统问题。虽然我们的应用程序可以手动调整CTM达到相同的效果，但这种做没有任何好处。</p>
+</blockquote>
+<p>我们使用CGBitmapContextCreate来创建位图Graphics Context，该函数有如下参数：</p>
+<ul>
+<li>data：一个指向内存目标的指针，该内存用于存储需要渲染的图形数据。内存块的大小至少需要(bytePerRow * height)字节。</li>
+<li>width：指定位图的宽度，单位是像素(pixel)。</li>
+<li>height：指定位图的高度， 单位是像素(pixel)。</li>
+<li>bitsPerComponent：指定内存中一个像素的每个组件使用的位数。例如，一个32位的像素格式和一个rgb颜色空间，我们可以指定每个组件为8位。</li>
+<li>bytesPerRow：指定位图每行的字节数。</li>
+<li>colorspace：颜色空间用于位图上下文。在创建位图Graphics Context时，我们可以使用灰度(gray), RGB, CMYK, NULL颜色空间。</li>
+<li>bitmapInfo：位图的信息，这些信息用于指定位图是否需要包含alpha组件，像素中alpha组件的相对位置(如果有的话)，alpha组件是否是预乘的，及颜色组件是整型值还是浮点值。</li>
+</ul>
+<p>代码清单2-5显示了如何创建位图Graphics Context。当向位图Graphics Context绘图时，Quartz将绘图记录到内存中指定的块中。</p>
+<p><strong>Listing 2-5  Creating a bitmap graphics context</strong></p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">CGContextRef</span> MyCreateBitmapContext (<span class="keyword">int</span> pixelsWide, <span class="keyword">int</span> pixelsHigh)</div><div class="line">&#123;</div><div class="line">    <span class="built_in">CGContextRef</span>    context = <span class="literal">NULL</span>;</div><div class="line">    <span class="built_in">CGColorSpaceRef</span> colorSpace;</div><div class="line">    <span class="keyword">void</span> *          bitmapData;</div><div class="line">    <span class="keyword">int</span>             bitmapByteCount;</div><div class="line">    <span class="keyword">int</span>             bitmapBytesPerRow;</div><div class="line">    bitmapBytesPerRow   = (pixelsWide * <span class="number">4</span>);</div><div class="line">    bitmapByteCount     = (bitmapBytesPerRow * pixelsHigh);</div><div class="line">    colorSpace = <span class="built_in">CGColorSpaceCreateWithName</span>(kCGColorSpaceGenericRGB);</div><div class="line">    bitmapData = calloc( bitmapByteCount );</div><div class="line">    <span class="keyword">if</span> (bitmapData == <span class="literal">NULL</span>)</div><div class="line">    &#123;</div><div class="line">        fprintf (stderr, <span class="string">"Memory not allocated!"</span>);</div><div class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</div><div class="line">    &#125;</div><div class="line">    context = <span class="built_in">CGBitmapContextCreate</span> (bitmapData, pixelsWide, pixelsHigh, <span class="number">8</span>, bitmapBytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast);</div><div class="line">    <span class="keyword">if</span> (context== <span class="literal">NULL</span>)</div><div class="line">    &#123;</div><div class="line">        free (bitmapData);</div><div class="line">        fprintf (stderr, <span class="string">"Context not created!"</span>);</div><div class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</div><div class="line">    &#125;</div><div class="line">    <span class="built_in">CGColorSpaceRelease</span>( colorSpace );</div><div class="line">    <span class="keyword">return</span> context;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>代码清单2-6显示了调用MyCreateBitmapContext 创建一个位图Graphics Context，使用位图Graphics Context来创建CGImage对象，然后将图片绘制到窗口Graphics Context中。绘制结果如图2-3所示：</p>
+<p><strong>Listing 2-6  Drawing to a bitmap graphics context</strong></p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">CGRect</span> myBoundingBox;</div><div class="line">myBoundingBox = <span class="built_in">CGRectMake</span> (<span class="number">0</span>, <span class="number">0</span>, myWidth, myHeight);</div><div class="line">myBitmapContext = MyCreateBitmapContext (<span class="number">400</span>, <span class="number">300</span>);</div><div class="line"><span class="comment">// ********** Your drawing code here ********** </span></div><div class="line"><span class="built_in">CGContextSetRGBFillColor</span> (myBitmapContext, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>);</div><div class="line"><span class="built_in">CGContextFillRect</span> (myBitmapContext, <span class="built_in">CGRectMake</span> (<span class="number">0</span>, <span class="number">0</span>, <span class="number">200</span>, <span class="number">100</span> ));</div><div class="line"><span class="built_in">CGContextSetRGBFillColor</span> (myBitmapContext, <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">.5</span>);</div><div class="line"><span class="built_in">CGContextFillRect</span> (myBitmapContext, <span class="built_in">CGRectMake</span> (<span class="number">0</span>, <span class="number">0</span>, <span class="number">100</span>, <span class="number">200</span> ));</div><div class="line">myImage = <span class="built_in">CGBitmapContextCreateImage</span> (myBitmapContext);</div><div class="line"><span class="built_in">CGContextDrawImage</span>(myContext, myBoundingBox, myImage);</div><div class="line"><span class="keyword">char</span> *bitmapData = <span class="built_in">CGBitmapContextGetData</span>(myBitmapContext); </div><div class="line"><span class="built_in">CGContextRelease</span> (myBitmapContext);</div><div class="line"><span class="keyword">if</span> (bitmapData) free(bitmapData); </div><div class="line"><span class="built_in">CGImageRelease</span>(myImage);</div></pre></td></tr></table></figure>
+<p><strong>Figure 2-3  An image created from a bitmap graphics context and drawn to a window graphics context</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/cocoa_draw.gif" alt="image"></p>
+<h2 id="支持的像素格式"><a href="#支持的像素格式" class="headerlink" title="支持的像素格式"></a>支持的像素格式</h2><p>表2-1总结了位图Graphics Context支持的像素格式，相关的颜色空间及像素格式支持的Mac OS X最早版本。像素格式用bpp(每像素的位数)和bpc(每个组件的位数)来表示。表格同时也包含与像素格式相关的位图信息常量。</p>
+<p>表2-1：位图Graphics Context支持的像素格式</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/quartz-2d-table2-1.png?raw=true" alt="image"></p>
+<h2 id="反锯齿"><a href="#反锯齿" class="headerlink" title="反锯齿"></a>反锯齿</h2><p>位图Graphics Context支持反锯齿，这一操作是人为的较正在位图中绘制文本或形状时产生的锯齿边缘。当位图的分辩率明显低于人眼的分辩率时就会产生锯齿。为了使位图中的对象显得平滑，Quartz使用不同的颜色来填充形状周边的像素。通过这种方式来混合颜色，使形状看起来更平滑。如图2-4显示的效果。我们可以通过调用CGContextSetShouldAntialias来关闭位图Graphics Context的反锯齿效果。反锯齿设置是图形状态的一部分。</p>
+<p>可以调用函数CGContextSetAllowsAntialiasing来控制一个特定Graphics Context是否支持反锯齿；false表示不支持。该设置不是图形状态的一部分。当上下文及图形状态设置为true时，Quartz执行反锯齿。</p>
+<p><strong>Figure 2-4  A comparison of aliased and anti-aliasing drawing</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/antialias.jpg" alt="image"></p>
+<h2 id="获取打印的Graphics-Context"><a href="#获取打印的Graphics-Context" class="headerlink" title="获取打印的Graphics Context"></a>获取打印的Graphics Context</h2><p>Mac OS X中的Cocoa应用程序通过自定义的NSView子类来实现打印。一个视图通过调用print:方法来进行打印。然后视图以打印机为目标创建一个Graphics Context，并调用drawRect:方法。应用程序使用与在屏幕进行绘制相同的绘制代码。我们同样可以自定义drawRect: 方法将图形绘制到打印机。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2014/11/10/quartz2d-1/" rel="next" title="Quartz 2D编程指南之一：概览">
+                <i class="fa fa-chevron-left"></i> Quartz 2D编程指南之一：概览
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2014/11/16/quartz2d-3/" rel="prev" title="Quartz 2D编程指南之三：路径(Path)">
+                Quartz 2D编程指南之三：路径(Path) <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#在iOS中的视图Graphics-Context进行绘制"><span class="nav-number">1.</span> <span class="nav-text">在iOS中的视图Graphics Context进行绘制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#在Mac-OS-X中创建一个窗口Graphics-Context"><span class="nav-number">2.</span> <span class="nav-text">在Mac OS X中创建一个窗口Graphics Context</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#创建一个PDF-Graphics-Context"><span class="nav-number">3.</span> <span class="nav-text">创建一个PDF Graphics Context</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#创建位图Graphics-Context"><span class="nav-number">4.</span> <span class="nav-text">创建位图Graphics Context</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#支持的像素格式"><span class="nav-number">5.</span> <span class="nav-text">支持的像素格式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#反锯齿"><span class="nav-number">6.</span> <span class="nav-text">反锯齿</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#获取打印的Graphics-Context"><span class="nav-number">7.</span> <span class="nav-text">获取打印的Graphics Context</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

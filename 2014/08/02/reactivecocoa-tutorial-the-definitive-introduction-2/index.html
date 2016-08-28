@@ -1,0 +1,826 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="原文由Colin Eberhardt发表于raywenderlich，ReactiveCocoa Tutorial – The Definitive Introduction: Part 2/2
+第一部分我们学习了ReactiveCocoa处理信号的基本流程，如何发送流事件，以及分割及组合信号。在这一部分中，我们将继续学习ReactiveCocoa更多的特性，包括：
+
+error和complete">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ReactiveCocoa Tutorial – The Definitive Introduction: Part 2/2">
+<meta property="og:url" content="http://southpeak.github.io/2014/08/02/reactivecocoa-tutorial-the-definitive-introduction-2/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="原文由Colin Eberhardt发表于raywenderlich，ReactiveCocoa Tutorial – The Definitive Introduction: Part 2/2
+第一部分我们学习了ReactiveCocoa处理信号的基本流程，如何发送流事件，以及分割及组合信号。在这一部分中，我们将继续学习ReactiveCocoa更多的特性，包括：
+
+error和complete">
+<meta property="og:image" content="http://cdn4.raywenderlich.com/wp-content/uploads/2014/01/TwitterInstantStarter.png">
+<meta property="og:image" content="http://cdn3.raywenderlich.com/wp-content/uploads/2014/01/ValidatedTextField.png">
+<meta property="og:image" content="http://cdn5.raywenderlich.com/wp-content/uploads/2014/01/TextValidationPipeline.png">
+<meta property="og:image" content="http://cdn4.raywenderlich.com/wp-content/uploads/2014/01/PipelineFormatting.png">
+<meta property="og:image" content="http://cdn3.raywenderlich.com/wp-content/uploads/2014/01/AvoidRetainSelf.png">
+<meta property="og:image" content="http://cdn3.raywenderlich.com/wp-content/uploads/2014/01/TwitterCredentials.png">
+<meta property="og:image" content="http://cdn1.raywenderlich.com/wp-content/uploads/2014/01/RequestAccessToTwitter.png">
+<meta property="og:image" content="http://cdn3.raywenderlich.com/wp-content/uploads/2014/01/PipelineWithThen.png">
+<meta property="og:image" content="http://cdn4.raywenderlich.com/wp-content/uploads/2014/01/BreakpointLocation.png">
+<meta property="og:image" content="http://cdn5.raywenderlich.com/wp-content/uploads/2014/01/BreakpointResult.png">
+<meta property="og:image" content="http://cdn3.raywenderlich.com/wp-content/uploads/2014/01/BreakpointNowOnUIThread.png">
+<meta property="og:image" content="http://cdn4.raywenderlich.com/wp-content/uploads/2014/01/FinallyWeSeeTweets.png">
+<meta property="og:image" content="http://cdn1.raywenderlich.com/wp-content/uploads/2014/01/AvatarsAtAlast.png">
+<meta property="og:image" content="http://cdn2.raywenderlich.com/wp-content/uploads/2014/01/CompletePipeline.png">
+<meta property="og:updated_time" content="2016-08-27T05:32:17.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="ReactiveCocoa Tutorial – The Definitive Introduction: Part 2/2">
+<meta name="twitter:description" content="原文由Colin Eberhardt发表于raywenderlich，ReactiveCocoa Tutorial – The Definitive Introduction: Part 2/2
+第一部分我们学习了ReactiveCocoa处理信号的基本流程，如何发送流事件，以及分割及组合信号。在这一部分中，我们将继续学习ReactiveCocoa更多的特性，包括：
+
+error和complete">
+<meta name="twitter:image" content="http://cdn4.raywenderlich.com/wp-content/uploads/2014/01/TwitterInstantStarter.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2014/08/02/reactivecocoa-tutorial-the-definitive-introduction-2/"/>
+
+  <title> ReactiveCocoa Tutorial – The Definitive Introduction: Part 2/2 | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                ReactiveCocoa Tutorial – The Definitive Introduction: Part 2/2
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-08-02T23:20:48+08:00" content="2014-08-02">
+              2014-08-02
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/translate/" itemprop="url" rel="index">
+                    <span itemprop="name">翻译</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>原文由<code>Colin Eberhardt</code>发表于<code>raywenderlich</code>，<a href="http://www.raywenderlich.com/62796/reactivecocoa-tutorial-pt2" target="_blank" rel="external">ReactiveCocoa Tutorial – The Definitive Introduction: Part 2/2</a></p>
+<p><a href="http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-%5B%3F%5D-:xin-hao/">第一部分</a>我们学习了<code>ReactiveCocoa</code>处理信号的基本流程，如何发送流事件，以及分割及组合信号。在这一部分中，我们将继续学习<code>ReactiveCocoa</code>更多的特性，包括：</p>
+<ol>
+<li><code>error</code>和<code>completed</code>事件类型</li>
+<li>节流(<code>Throttling</code>)</li>
+<li>线程</li>
+<li>扩展</li>
+</ol>
+<h2 id="Twitter-Instant"><a href="#Twitter-Instant" class="headerlink" title="Twitter Instant"></a>Twitter Instant</h2><p>本部分我们将要开发的是一个称为<code>Twitter Instant</code>的程序，这是一个<code>Twitter</code>搜索应用，用于裡更新搜索结果。可以在<a href="http://cdn5.raywenderlich.com/wp-content/uploads/2014/01/TwitterInstant-Starter2.zip" target="_blank" rel="external">这里</a>下载初始程序，同时我们需要通过<code>Cocoapods</code>来下载依赖库，这个过程与第一部分相同。完成之后，运行程序，将得到下面的界面：</p>
+<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/01/TwitterInstantStarter.png" alt="image"></p>
+<p>我们花点时间熟悉一下。这个程序很简单。左侧控制面板是<code>RWSearchFormViewController</code>，有一个搜索框。右侧是<code>RWSearchResultsViewController</code>。如果我们打开<code>RWSearchFormViewController.m</code>，我们可以看到<code>viewDidLoad</code>方法中指定了<code>resultsViewController</code>属性，这个程序的主要逻辑是在<code>RWSearchFormViewController</code>中，这个属性将搜索结果提供给<code>RWSearchResultsViewController</code>。</p>
+<h2 id="验证搜索框"><a href="#验证搜索框" class="headerlink" title="验证搜索框"></a>验证搜索框</h2><p>首先我们来校验输入框的字符长度是否大于<code>2</code>。我们在<code>RWSearchFormViewController.m</code>的<code>viewDidLoad</code>方法下面添加以下代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">- (<span class="built_in">BOOL</span>)isValidSearchText:(<span class="built_in">NSString</span> *)text</div><div class="line">&#123;</div><div class="line">    <span class="keyword">return</span> text.length &gt; <span class="number">2</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>接下来，我们在<code>RWSearchFormViewController.m</code>中导入<code>ReactiveCocoa</code></p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">&lt;ReactiveCocoa/ReactiveCocoa.h&gt;</span></span></div></pre></td></tr></table></figure>
+<p>同时在viewDidLoad方法最后加上以下代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">[[<span class="keyword">self</span>.searchText.rac_textSignal map:^<span class="keyword">id</span>(<span class="built_in">NSString</span> *text) &#123;</div><div class="line">    <span class="keyword">return</span> [<span class="keyword">self</span> isValidSearchText:text] ? [<span class="built_in">UIColor</span> whiteColor] : [<span class="built_in">UIColor</span> yellowColor];</div><div class="line">&#125;] subscribeNext:^(<span class="built_in">UIColor</span> *color) &#123;</div><div class="line">    <span class="keyword">self</span>.searchText.backgroundColor = color;</div><div class="line">&#125;];</div></pre></td></tr></table></figure>
+<p>这段代码通过信号来检测输入是否有效，并设置相应的输入框背影颜色值。运行后，可以看到如下效果：</p>
+<p><img src="http://cdn3.raywenderlich.com/wp-content/uploads/2014/01/ValidatedTextField.png" alt="image"></p>
+<p>其管道流程图如下所示：</p>
+<p><img src="http://cdn5.raywenderlich.com/wp-content/uploads/2014/01/TextValidationPipeline.png" alt="image"></p>
+<p><code>rac_textSignal</code>在每次输入时发出<code>next</code>事件，并包含当前输入框的文本。然后<code>map</code>操作将其转换为颜色值，最后<code>subscribeNext:</code>获取这个颜色值并用它来设置输入框的背景颜色。</p>
+<p>在添加Twitter查找逻辑之前，我们先看看一些有趣的东西。</p>
+<h2 id="格式化管道代码"><a href="#格式化管道代码" class="headerlink" title="格式化管道代码"></a>格式化管道代码</h2><p>在调用信号的方法时，我们建议每个操作都新起一行，并排列所有的步骤。如下图所示，一个复杂的管道通过分行，看起来会更加清晰</p>
+<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/01/PipelineFormatting.png" alt="image"></p>
+<h2 id="内存管理"><a href="#内存管理" class="headerlink" title="内存管理"></a>内存管理</h2><p>考虑下我们添加到<code>TwitterInstant</code>程序中的代码，想知道我们创建的管道是如何被保存的么？当然，因为它没有被指定给变量或属性，所以它没有增加引用计数，因此注定被销毁？<code>ReactiveCocoa</code>设计的目的之一是允许这样一种编程样式，即管道可以匿名创建。到目前为止，我们的管道都是这么处理的。为了支持这种模式，<code>ReactiveCocoa</code>维护了一个全局的信号集合。如果信号有一个或多个订阅者，它就是可用的。如果所有订阅者都被移除了，信号就被释放了。</p>
+<p>剩下最后一个问题：如何取消对信号的订阅？在一个<code>completed</code>事件或<code>error</code>事件后，一个订阅者会自动将自己移除。手动移除可能通过<strong>RACDisposable</strong>来完成。<code>RACSignal</code>的所有订阅方法都返回一个<code>RACDisposable</code>实例，我们可以调用它的<code>dispose</code>方法来手动移除订阅者。如下代码所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">RACSignal *backgroundColorSignal =</div><div class="line">    [<span class="keyword">self</span>.searchText.rac_textSignal</div><div class="line">     map:^<span class="keyword">id</span>(<span class="built_in">NSString</span> *text) &#123;</div><div class="line">         <span class="keyword">return</span> [<span class="keyword">self</span> isValidSearchText:text] ? [<span class="built_in">UIColor</span> whiteColor] : [<span class="built_in">UIColor</span> yellowColor];</div><div class="line">     &#125;];</div><div class="line"></div><div class="line">RACDisposable *subscripion =</div><div class="line">    [backgroundColorSignal subscribeNext:^(<span class="built_in">UIColor</span> *color) &#123;</div><div class="line">        <span class="keyword">self</span>.searchText.backgroundColor = color;</div><div class="line">    &#125;];</div><div class="line"></div><div class="line"><span class="comment">// 在某个位置调用</span></div><div class="line">[subscripion dispose];</div></pre></td></tr></table></figure>
+<p>当然实际上我们不需要这样来写，只需要知道是这么回事就行。</p>
+<p><em>注意：如果我们创建了一个管道，但不去订阅它，则管理永远不会执行，包括任何如doNext:块这样的附加操作。</em></p>
+<h2 id="避免循环引用"><a href="#避免循环引用" class="headerlink" title="避免循环引用"></a>避免循环引用</h2><p><code>ReactiveCocoa</code>在幕后做了许多事情，让我们不需要担心信号的内存管理问题，但有一点关于内存管理的问题需要特别注意。我们先来看看下面的代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">[[<span class="keyword">self</span>.searchText.rac_textSignal map:^<span class="keyword">id</span>(<span class="built_in">NSString</span> *text) &#123;</div><div class="line">    <span class="keyword">return</span> [<span class="keyword">self</span> isValidSearchText:text] ? [<span class="built_in">UIColor</span> whiteColor] : [<span class="built_in">UIColor</span> yellowColor];</div><div class="line">&#125;] subscribeNext:^(<span class="built_in">UIColor</span> *color) &#123;</div><div class="line">    <span class="keyword">self</span>.searchText.backgroundColor = color;</div><div class="line">&#125;];</div></pre></td></tr></table></figure>
+<p><code>subscribeNext:</code>块使用了<code>self</code>，以获取文本输入域。<code>Block</code>会捕获并保留闭包中的值，因此如果在<code>self</code>与信号之间有一个强引用，则会导致循环引用问题。这是不是问题取决于<code>self</code>对象的生命周期。如果<code>self</code>的生命周期是整个程序生存期，则没问题，好好用吧。但在大多数情况下，它确实是一个问题。</p>
+<p>为了避循环引用，根据苹果的文档中推荐的捕获<code>self</code>的一个弱引用。如下代码所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">__<span class="keyword">typeof</span>(<span class="keyword">self</span>) __<span class="keyword">weak</span> weakSelf = <span class="keyword">self</span>;</div><div class="line"></div><div class="line">[[<span class="keyword">self</span>.searchText.rac_textSignal map:^<span class="keyword">id</span>(<span class="built_in">NSString</span> *text) &#123;</div><div class="line">    <span class="keyword">return</span> [weakSelf isValidSearchText:text] ? [<span class="built_in">UIColor</span> whiteColor] : [<span class="built_in">UIColor</span> yellowColor];</div><div class="line">&#125;] subscribeNext:^(<span class="built_in">UIColor</span> *color) &#123;</div><div class="line">    weakSelf.searchText.backgroundColor = color;</div><div class="line">&#125;];</div></pre></td></tr></table></figure>
+<p>在上面的代码中<code>weakSelf</code>是<code>self</code>对象的一个弱引用。现在<code>subscribeNext:</code>中使用了这个变量。不过<code>ReactiveCocoa</code>框架给我们提供了一个更好的选择。首先导入以下头文件：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">&lt;RACEXTScope.h&gt;</span></span></div></pre></td></tr></table></figure>
+<p>然后使用以下代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">@weakify(<span class="keyword">self</span>)</div><div class="line"></div><div class="line">[[<span class="keyword">self</span>.searchText.rac_textSignal map:^<span class="keyword">id</span>(<span class="built_in">NSString</span> *text) &#123;</div><div class="line">    <span class="keyword">return</span> [<span class="keyword">self</span> isValidSearchText:text] ? [<span class="built_in">UIColor</span> whiteColor] : [<span class="built_in">UIColor</span> yellowColor];</div><div class="line">&#125;] subscribeNext:^(<span class="built_in">UIColor</span> *color) &#123;</div><div class="line">    @strongify(<span class="keyword">self</span>)</div><div class="line">    <span class="keyword">self</span>.searchText.backgroundColor = color;</div><div class="line">&#125;];</div></pre></td></tr></table></figure>
+<p>宏<code>@weakify</code>与<code>@strongify</code>在<a href="https://github.com/jspahrsummers/libextobjc" target="_blank" rel="external">Extendedobjc</a>库中引用，它们包含在<code>ReactiveCocoa</code>框架中。<code>@weakify</code>允许我们创建一些影子变量，它是都是弱引用(可以同时创建多个)，<code>@strongify</code>允许创建变量的强引用，这些变量是先前传递给<code>@weakify</code>的。</p>
+<p>最后需要注意的是，当在<code>block</code>中使用实例变量时，<code>block</code>同样会捕获<code>self</code>的一个强引用。我们可以打开编译器警告，来提示我们这种情况。如下所求来处理</p>
+<p><img src="http://cdn3.raywenderlich.com/wp-content/uploads/2014/01/AvoidRetainSelf.png" alt="image"></p>
+<p>OK，内存问题说得差不多了，现在我们回到正题。</p>
+<h2 id="请求访问Twitter"><a href="#请求访问Twitter" class="headerlink" title="请求访问Twitter"></a>请求访问Twitter</h2><p>我们将使用<code>Social Framework</code>以允许<code>TwitterInstant</code>程序搜索<code>Tweets</code>，同时使用<code>Accounts Framework</code>来获取对<code>Twitter</code>的访问。</p>
+<p>在添加代码前，我们需要先登录<code>Twitter</code>。可以在系统的设置中登录，如下图所示：</p>
+<p><img src="http://cdn3.raywenderlich.com/wp-content/uploads/2014/01/TwitterCredentials.png" alt="image"></p>
+<p>我们的工程已经添加了所需要的框架，所以只需要在<code>RWSearchFormViewController.m</code>导入头文件。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">&lt;Accounts/Accounts.h&gt;</span></span></div><div class="line"><span class="meta">#import <span class="meta-string">&lt;Social/Social.h&gt;</span></span></div></pre></td></tr></table></figure>
+<p>然后在下面添加枚举及常量用于标识错误：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">typedef</span> <span class="built_in">NS_ENUM</span>(<span class="built_in">NSInteger</span>, RWTwitterInstantError) &#123;</div><div class="line">    RWTwitterInstantErrorAccessDenied,</div><div class="line">    RWTwitterInstantErrorNoTwitterAccounts,</div><div class="line">    RWTwitterInstantErrorInvalidResponse</div><div class="line">&#125;;</div><div class="line"></div><div class="line"><span class="keyword">static</span> <span class="built_in">NSString</span> * <span class="keyword">const</span> RWTwitterInstantDomain = <span class="string">@"TwitterInstant"</span>;</div></pre></td></tr></table></figure>
+<p>然后我们<code>RWSearchFormViewController()</code>分类中添加以下代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">@property</span> (<span class="keyword">strong</span>, <span class="keyword">nonatomic</span>) ACAccountStore *accountStore;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">strong</span>, <span class="keyword">nonatomic</span>) ACAccountType *twitterAccountType;</div></pre></td></tr></table></figure>
+<p><code>ACAccountsStore</code>类提供了我们的设备可连接的多种社交账号，<code>ACAccountType</code>类表示账号的指定类型。</p>
+<p>我们在<code>viewDidLoad</code>的结尾处添加以下代码，来创建账户存储及<code>Twitter</code>账户标识：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">self</span>.accountStore = [[ACAccountStore alloc] init];</div><div class="line"><span class="keyword">self</span>.twitterAccountType = [<span class="keyword">self</span>.accountStore accountTypeWithAccountTypeIdentifier:ACAccountTypeIdentifierTwitter];</div></pre></td></tr></table></figure>
+<p>当账户请求社账号时，用户可以看到一个弹出框。这是一个异步操作，所以将其包装到一个信号中是很好的选择。</p>
+<p>仍然在这个文件中，添加以下代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div></pre></td><td class="code"><pre><div class="line">- (RACSignal *)requestAccessToTwitterSignal</div><div class="line">&#123;</div><div class="line">    <span class="comment">// 定义一个错误，如果用户拒绝访问则发送</span></div><div class="line">    <span class="built_in">NSError</span> *accessError = [<span class="built_in">NSError</span> errorWithDomain:RWTwitterInstantDomain code:RWTwitterInstantErrorAccessDenied userInfo:<span class="literal">nil</span>];</div><div class="line">    </div><div class="line">    <span class="comment">// 创建并返回信号</span></div><div class="line">    @weakify(<span class="keyword">self</span>)</div><div class="line">    <span class="keyword">return</span> [RACSignal createSignal:^RACDisposable *(<span class="keyword">id</span>&lt;RACSubscriber&gt; subscriber) &#123;</div><div class="line">        </div><div class="line">        <span class="comment">// 请求访问twitter</span></div><div class="line">        @strongify(<span class="keyword">self</span>)</div><div class="line">        [<span class="keyword">self</span>.accountStore requestAccessToAccountsWithType:<span class="keyword">self</span>.twitterAccountType</div><div class="line">                                                   options:<span class="literal">nil</span></div><div class="line">                                                completion:^(<span class="built_in">BOOL</span> granted, <span class="built_in">NSError</span> *error) &#123;</div><div class="line">                                                    <span class="comment">// 处理响应</span></div><div class="line">                                                    <span class="keyword">if</span> (!granted)</div><div class="line">                                                    &#123;</div><div class="line">                                                        [subscriber sendError:accessError];</div><div class="line">                                                    &#125;</div><div class="line">                                                    <span class="keyword">else</span></div><div class="line">                                                    &#123;</div><div class="line">                                                        [subscriber sendNext:<span class="literal">nil</span>];</div><div class="line">                                                        [subscriber sendCompleted];</div><div class="line">                                                    &#125;</div><div class="line">                                                &#125;];</div><div class="line">        <span class="keyword">return</span> <span class="literal">nil</span>;</div><div class="line">    &#125;];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>一个信号可以发送三种事件类型：<code>next</code>, <code>completed</code>, <code>error</code>。</p>
+<p>在信号的整个生命周期中，都可能不会发送事件，或者发送一个或多个<code>next</code>事件，其后跟着<code>completed</code>或<code>error</code>事件。</p>
+<p>最后，为了使用这个信号，在<code>viewDidLoad</code>中添加以下代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">[[<span class="keyword">self</span> requestAccessToTwitterSignal]</div><div class="line"> subscribeNext:^(<span class="keyword">id</span> x) &#123;</div><div class="line">     <span class="built_in">NSLog</span>(<span class="string">@"Access granted"</span>);</div><div class="line"> &#125; error:^(<span class="built_in">NSError</span> *error) &#123;</div><div class="line">     <span class="built_in">NSLog</span>(<span class="string">@"An error occurred: %@"</span>, error);</div><div class="line"> &#125;];</div></pre></td></tr></table></figure>
+<p>运行程序，可以看到下面的提示</p>
+<p><img src="http://cdn1.raywenderlich.com/wp-content/uploads/2014/01/RequestAccessToTwitter.png" alt="image"></p>
+<p>如果点击OK，<code>subscribeNext:</code>块中的日志会打印出来。如果点击<code>Don&#39;t allow</code>，则会执行错误块并打印期望的信息。</p>
+<h2 id="链接信号"><a href="#链接信号" class="headerlink" title="链接信号"></a>链接信号</h2><p>一旦用户获取了<code>Twitter</code>账户的访问权限，程序需要继续监听搜索框的输入，以查询<code>twitter</code>。程序需要等待请求访问<code>Twitter</code>的信号来发出完成事件，然后订阅广西输入框的信号。不同信号的顺序链接是一个问题，但<code>ReactiveCocoa</code>已经做了很好的处理。</p>
+<p>在<code>viewDidLoad</code>中用下面代码来替换当前的管道：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">[[[<span class="keyword">self</span> requestAccessToTwitterSignal]</div><div class="line"> then:^RACSignal *&#123;</div><div class="line">     @strongify(<span class="keyword">self</span>)</div><div class="line">     <span class="keyword">return</span> <span class="keyword">self</span>.searchText.rac_textSignal;</div><div class="line"> &#125;]</div><div class="line"> subscribeNext:^(<span class="keyword">id</span> x) &#123;</div><div class="line">     <span class="built_in">NSLog</span>(<span class="string">@"%@"</span>, x);</div><div class="line"> &#125; error:^(<span class="built_in">NSError</span> *error) &#123;</div><div class="line">     <span class="built_in">NSLog</span>(<span class="string">@"An error occurred: %@"</span>, error);</div><div class="line"> &#125;];</div></pre></td></tr></table></figure>
+<p><code>then</code>方法会等到<code>completed</code>事件发出后调用，然后订阅由<code>block</code>参数返回的信号。这有效地将控制从一个信号传递给下一个信号。运行程序，获取访问，然后在输入框输入，会在控制台看到以下输出：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="number">2014</span><span class="number">-01</span><span class="number">-04</span> <span class="number">08</span>:<span class="number">16</span>:<span class="number">11.444</span> TwitterInstant[<span class="number">39118</span>:a0b] m</div><div class="line"><span class="number">2014</span><span class="number">-01</span><span class="number">-04</span> <span class="number">08</span>:<span class="number">16</span>:<span class="number">12.276</span> TwitterInstant[<span class="number">39118</span>:a0b] ma</div><div class="line"><span class="number">2014</span><span class="number">-01</span><span class="number">-04</span> <span class="number">08</span>:<span class="number">16</span>:<span class="number">12.413</span> TwitterInstant[<span class="number">39118</span>:a0b] mag</div><div class="line"><span class="number">2014</span><span class="number">-01</span><span class="number">-04</span> <span class="number">08</span>:<span class="number">16</span>:<span class="number">12.548</span> TwitterInstant[<span class="number">39118</span>:a0b] magi</div><div class="line"><span class="number">2014</span><span class="number">-01</span><span class="number">-04</span> <span class="number">08</span>:<span class="number">16</span>:<span class="number">12.628</span> TwitterInstant[<span class="number">39118</span>:a0b] magic</div><div class="line"><span class="number">2014</span><span class="number">-01</span><span class="number">-04</span> <span class="number">08</span>:<span class="number">16</span>:<span class="number">13.172</span> TwitterInstant[<span class="number">39118</span>:a0b] magic!</div></pre></td></tr></table></figure>
+<p>下一步，我们添加一个<code>filter</code>操作到管道，以移除无效的搜索字符串。在这个实例中，是要求输入长度不小于<code>3</code>：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">[[[[<span class="keyword">self</span> requestAccessToTwitterSignal]</div><div class="line"> then:^RACSignal *&#123;</div><div class="line">     @strongify(<span class="keyword">self</span>)</div><div class="line">     <span class="keyword">return</span> <span class="keyword">self</span>.searchText.rac_textSignal;</div><div class="line"> &#125;]</div><div class="line"> filter:^<span class="built_in">BOOL</span>(<span class="built_in">NSString</span> *text) &#123;</div><div class="line">     @strongify(<span class="keyword">self</span>)</div><div class="line">     <span class="keyword">return</span> [<span class="keyword">self</span> isValidSearchText:text];</div><div class="line"> &#125;]</div><div class="line"> subscribeNext:^(<span class="keyword">id</span> x) &#123;</div><div class="line">     <span class="built_in">NSLog</span>(<span class="string">@"%@"</span>, x);</div><div class="line"> &#125; error:^(<span class="built_in">NSError</span> *error) &#123;</div><div class="line">     <span class="built_in">NSLog</span>(<span class="string">@"An error occurred: %@"</span>, error);</div><div class="line"> &#125;];</div></pre></td></tr></table></figure>
+<p>运行后的输出是</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="number">2014</span><span class="number">-01</span><span class="number">-04</span> <span class="number">08</span>:<span class="number">16</span>:<span class="number">12.548</span> TwitterInstant[<span class="number">39118</span>:a0b] magi</div><div class="line"><span class="number">2014</span><span class="number">-01</span><span class="number">-04</span> <span class="number">08</span>:<span class="number">16</span>:<span class="number">12.628</span> TwitterInstant[<span class="number">39118</span>:a0b] magic</div><div class="line"><span class="number">2014</span><span class="number">-01</span><span class="number">-04</span> <span class="number">08</span>:<span class="number">16</span>:<span class="number">13.172</span> TwitterInstant[<span class="number">39118</span>:a0b] magic!</div></pre></td></tr></table></figure>
+<p>当前管道如下图所示：</p>
+<p><img src="http://cdn3.raywenderlich.com/wp-content/uploads/2014/01/PipelineWithThen.png" alt="image"></p>
+<p>现在我们有一个发送搜索文本的信号了，是时候用它来搜索<code>Twitter</code>了。接下来才是正题。</p>
+<h2 id="搜索Twitter"><a href="#搜索Twitter" class="headerlink" title="搜索Twitter"></a>搜索Twitter</h2><p><code>Social Framework</code>是访问<code>Twitter</code>搜索<code>API</code>的一个选择。但是<code>Social Framework</code>不是响应式的。接下来是封装所需要的<code>API</code>方法到信号中。现在，我们需要挂起这个过程。</p>
+<p>在<code>RWSearchFormViewController.m</code>中，添加以下方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">- (SLRequest *)requestforTwitterSearchWithText:(<span class="built_in">NSString</span> *)text</div><div class="line">&#123;</div><div class="line">    <span class="built_in">NSURL</span> *url = [<span class="built_in">NSURL</span> URLWithString:<span class="string">@"https://api.twitter.com/1.1/search/tweets.json"</span>];</div><div class="line">    <span class="built_in">NSDictionary</span> *params = @&#123;<span class="string">@"q"</span>: text&#125;;</div><div class="line">    </div><div class="line">    SLRequest *request = [SLRequest requestForServiceType:SLServiceTypeTwitter</div><div class="line">                                            requestMethod:SLRequestMethodGET</div><div class="line">                                                      URL:url</div><div class="line">                                               parameters:params];</div><div class="line">    <span class="keyword">return</span> request;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这个方法通过<a href="https://dev.twitter.com/docs/api/1.1" target="_blank" rel="external">v1.1 REST API</a>创建了一个搜索<code>Twitter</code>的请求。关于这个<code>API</code>，可以在<a href="https://dev.twitter.com/docs/api/1.1/get/search/tweets" target="_blank" rel="external">Twitter API docs</a>中查看更多信息。</p>
+<p>接下来创建一个基于请求的信号。在同一文件中，添加以下代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div></pre></td><td class="code"><pre><div class="line">- (RACSignal *)signalForSearchWithText:(<span class="built_in">NSString</span> *)text &#123;</div><div class="line">    <span class="comment">// 定义错误</span></div><div class="line">    <span class="built_in">NSError</span> *noAccountError = [<span class="built_in">NSError</span> errorWithDomain:RWTwitterInstantDomain code:RWTwitterInstantErrorNoTwitterAccounts userInfo:<span class="literal">nil</span>];</div><div class="line">    </div><div class="line">    <span class="built_in">NSError</span> *invalidResponseError = [<span class="built_in">NSError</span> errorWithDomain:RWTwitterInstantDomain code:RWTwitterInstantErrorInvalidResponse userInfo:<span class="literal">nil</span>];</div><div class="line">    </div><div class="line">    <span class="comment">// 创建信号block</span></div><div class="line">    @weakify(<span class="keyword">self</span>)</div><div class="line">    <span class="keyword">return</span> [RACSignal createSignal:^RACDisposable *(<span class="keyword">id</span>&lt;RACSubscriber&gt; subscriber) &#123;</div><div class="line">        @strongify(<span class="keyword">self</span>)</div><div class="line">        </div><div class="line">        <span class="comment">// 创建请求</span></div><div class="line">        SLRequest *request = [<span class="keyword">self</span> requestforTwitterSearchWithText:text];</div><div class="line">        </div><div class="line">        <span class="comment">// 提供Twitter账户</span></div><div class="line">        <span class="built_in">NSArray</span> *twitterAccounts = [<span class="keyword">self</span>.accountStore accountsWithAccountType:<span class="keyword">self</span>.twitterAccountType];</div><div class="line">        <span class="keyword">if</span> (twitterAccounts.count == <span class="number">0</span>) &#123;</div><div class="line">            [subscriber sendError:noAccountError];</div><div class="line">        &#125; <span class="keyword">else</span> &#123;</div><div class="line">            [request setAccount:[twitterAccounts lastObject]];</div><div class="line">            </div><div class="line">            <span class="comment">// 执行请求</span></div><div class="line">            [request performRequestWithHandler:^(<span class="built_in">NSData</span> *responseData, <span class="built_in">NSHTTPURLResponse</span> *urlResponse, <span class="built_in">NSError</span> *error) &#123;</div><div class="line">                <span class="keyword">if</span> (urlResponse.statusCode == <span class="number">200</span>) &#123;</div><div class="line">                    <span class="comment">// 成功，解析响应</span></div><div class="line">                    <span class="built_in">NSDictionary</span> *timelineData = [<span class="built_in">NSJSONSerialization</span> JSONObjectWithData:responseData options:<span class="built_in">NSJSONReadingAllowFragments</span> error:<span class="literal">nil</span>];</div><div class="line">                    [subscriber sendNext:timelineData];</div><div class="line">                    [subscriber sendCompleted];</div><div class="line">                &#125; <span class="keyword">else</span> &#123;</div><div class="line">                    <span class="comment">// 失败，发送一个错误</span></div><div class="line">                    [subscriber sendError:invalidResponseError];</div><div class="line">                &#125;</div><div class="line">            &#125;];</div><div class="line">        &#125;</div><div class="line">        </div><div class="line">        <span class="keyword">return</span> <span class="literal">nil</span>;</div><div class="line">    &#125;];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>现在我们来使用这个新信号。</p>
+<p>在第一部分中我们学习了如何使用<code>flattenMap</code>来将每个<code>next</code>事件映射到一个新的被订阅的信号。这里我们再次使用它们。在<code>viewDidLoad</code>的最后用如下代码更新：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line">[[[[[<span class="keyword">self</span> requestAccessToTwitterSignal]</div><div class="line"> then:^RACSignal *&#123;</div><div class="line">     @strongify(<span class="keyword">self</span>)</div><div class="line">     <span class="keyword">return</span> <span class="keyword">self</span>.searchText.rac_textSignal;</div><div class="line"> &#125;]</div><div class="line"> filter:^<span class="built_in">BOOL</span>(<span class="built_in">NSString</span> *text) &#123;</div><div class="line">     @strongify(<span class="keyword">self</span>)</div><div class="line">     <span class="keyword">return</span> [<span class="keyword">self</span> isValidSearchText:text];</div><div class="line"> &#125;]</div><div class="line"> flattenMap:^RACStream *(<span class="built_in">NSString</span> *text ) &#123;</div><div class="line">     @strongify(<span class="keyword">self</span>)</div><div class="line">     <span class="keyword">return</span> [<span class="keyword">self</span> signalForSearchWithText:text];</div><div class="line"> &#125;]</div><div class="line"> subscribeNext:^(<span class="keyword">id</span> x) &#123;</div><div class="line">     <span class="built_in">NSLog</span>(<span class="string">@"%@"</span>, x);</div><div class="line"> &#125; error:^(<span class="built_in">NSError</span> *error) &#123;</div><div class="line">     <span class="built_in">NSLog</span>(<span class="string">@"An error occurred: %@"</span>, error);</div><div class="line"> &#125;];</div></pre></td></tr></table></figure>
+<p>运行并在搜索框中输入一些文本。一旦文本字符串长度大于<code>3</code>后，我们可以在控制台查看搜索的结果。如下显示了返回数据的一个片断：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line"><span class="number">2014</span><span class="number">-01</span><span class="number">-05</span> <span class="number">07</span>:<span class="number">42</span>:<span class="number">27.697</span> TwitterInstant[<span class="number">40308</span>:<span class="number">5403</span>] &#123;</div><div class="line">    <span class="string">"search_metadata"</span> =     &#123;</div><div class="line">        <span class="string">"completed_in"</span> = <span class="string">"0.019"</span>;</div><div class="line">        count = <span class="number">15</span>;</div><div class="line">        <span class="string">"max_id"</span> = <span class="number">419735546840117248</span>;</div><div class="line">        <span class="string">"max_id_str"</span> = <span class="number">419735546840117248</span>;</div><div class="line">        <span class="string">"next_results"</span> = <span class="string">"?max_id=419734921599787007&amp;q=asd&amp;include_entities=1"</span>;</div><div class="line">        query = asd;</div><div class="line">        <span class="string">"refresh_url"</span> = <span class="string">"?since_id=419735546840117248&amp;q=asd&amp;include_entities=1"</span>;</div><div class="line">        <span class="string">"since_id"</span> = <span class="number">0</span>;</div><div class="line">        <span class="string">"since_id_str"</span> = <span class="number">0</span>;</div><div class="line">    &#125;;</div><div class="line">    statuses =     (</div><div class="line">                &#123;</div><div class="line">            contributors = <span class="string">"&lt;null&gt;"</span>;</div><div class="line">            coordinates = <span class="string">"&lt;null&gt;"</span>;</div><div class="line">            <span class="string">"created_at"</span> = <span class="string">"Sun Jan 05 07:42:07 +0000 2014"</span>;</div><div class="line">            entities =             &#123;</div><div class="line">                hashtags = ...</div></pre></td></tr></table></figure>
+<p><code>signalForSearchText:</code>方法同样发出了一个<code>error</code>事件，其由<code>subscribeNext:error:</code>块来处理。</p>
+<h2 id="线程"><a href="#线程" class="headerlink" title="线程"></a>线程</h2><p>现在一定想把返回的<code>JSON</code>数据显示到<code>UI</code>上了吧，不过，在此之前我们还有一件事情需要处理。要了解这是什么，我们还需要探索一下。</p>
+<p>在下图的<code>subscribeNext:error:</code>中打个断点：</p>
+<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/01/BreakpointLocation.png" alt="image"></p>
+<p>重新运行程序，如果需要则再次输入<code>Twitter</code>账号密码，在搜索框中输入一些文本。当程序运行到断点位置时可以看到类似于下图的场景：</p>
+<p><img src="http://cdn5.raywenderlich.com/wp-content/uploads/2014/01/BreakpointResult.png" alt="image"></p>
+<p>注意，从左侧的线程列表中我们可以看到<code>debugger</code>到的代码并没有运行在主线程，即线程<code>Thread 1</code>。记住，更新<code>UI</code>的操作一定得在主线程中操作；因此，如果要在<code>UI</code>上显示<code>tweet</code>列表，则必须切换线程。</p>
+<p>这说明了<code>ReactiveCocoa</code>框架的一个重要点。上面显示的操作是在信号初始发出事件时的那个线程执行。尝试在管道的其它步骤添加断点，我们会很惊奇的发现它们会运行在多个不同的线程上。</p>
+<p>因此，我们应该如何来更新UI呢？当然<code>ReactiveCocoa</code>也为我们解决了这个问题。我们只需要在<code>flattenMap:</code>后面添加<code>deliverOn:</code>操作：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line">[[[[[[<span class="keyword">self</span> requestAccessToTwitterSignal]</div><div class="line"> then:^RACSignal *&#123;</div><div class="line">     @strongify(<span class="keyword">self</span>)</div><div class="line">     <span class="keyword">return</span> <span class="keyword">self</span>.searchText.rac_textSignal;</div><div class="line"> &#125;]</div><div class="line"> filter:^<span class="built_in">BOOL</span>(<span class="built_in">NSString</span> *text) &#123;</div><div class="line">     @strongify(<span class="keyword">self</span>)</div><div class="line">     <span class="keyword">return</span> [<span class="keyword">self</span> isValidSearchText:text];</div><div class="line"> &#125;] flattenMap:^RACStream *(<span class="built_in">NSString</span> *text) &#123;</div><div class="line">     @strongify(<span class="keyword">self</span>)</div><div class="line">     <span class="keyword">return</span> [<span class="keyword">self</span> signalForSearchWithText:text];</div><div class="line"> &#125;]</div><div class="line"> deliverOn:[RACScheduler mainThreadScheduler]]</div><div class="line"> subscribeNext:^(<span class="keyword">id</span> x) &#123;</div><div class="line">     <span class="built_in">NSLog</span>(<span class="string">@"%@"</span>, x);</div><div class="line"> &#125; error:^(<span class="built_in">NSError</span> *error) &#123;</div><div class="line">     <span class="built_in">NSLog</span>(<span class="string">@"An error occurred: %@"</span>, error);</div><div class="line"> &#125;];</div></pre></td></tr></table></figure>
+<p>现在重新运行，此时我们可以看到<code>subscribeNext:error:</code>是运行在主线程了。</p>
+<p><img src="http://cdn3.raywenderlich.com/wp-content/uploads/2014/01/BreakpointNowOnUIThread.png" alt="image"></p>
+<p>这样我们就可以安全地更新我们的UI了。</p>
+<h2 id="更新UI"><a href="#更新UI" class="headerlink" title="更新UI"></a>更新UI</h2><p>打开<code>RWSearchResultsViewController.h</code>文件，我们可以看到<code>displayTweets:</code>方法，这个方法会让右侧的<code>ViewController</code>来渲染<code>tweet</code>数组。实现非常简单，它只是一个标准<code>UITableView</code>数据源。<code>displayTweets:</code>只需要一个包含<code>RWTweet</code>实例的数组作为参数。我们同样发现<code>RWTweet</code>实例是作为初始工程的一部分提供的。</p>
+<p>在<code>subscibeNext:error:</code>步骤中获取到的数据现在是一个<code>NSDictionary</code>，它是在<code>signalForSearchWithText:</code>解析<code>JSON</code>数据时构造的。那么，我们如何处理这个字典的内容呢？</p>
+<p>如果看一看<a href="https://dev.twitter.com/docs/api/1.1/get/search/tweets" target="_blank" rel="external">Twitter API documentation</a>，我们可以发现一个示例响应。在<code>NSDictionary</code>反映了这种结构，所以我们需要找到一个键名为<code>statues</code>的字典，其值为一个<code>tweets</code>数组。具体如何解析我们就不在此说明。这里给个更好的实现方式。</p>
+<p>我们现在讲的是<code>ReactiveCocoa</code>及函数式编程。当我们使用函数式<code>API</code>时，数据从一种格式转换到另一种格式会变得更优雅。我们可以使用<a href="https://github.com/ColinEberhardt/LinqToObjectiveC" target="_blank" rel="external">LinqToObjectiveC</a>来执行这个任务。</p>
+<p>我们需要使用<code>Cocoapods</code>来导入<code>LinqToObjectiveC</code>。在配置文件中加入以下代码：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">pod 'LinqToObjectiveC', '2.0.0'</div></pre></td></tr></table></figure>
+<p>关闭工程，在终端执行<code>pod update</code>命令，完成后在我们的<code>Pods</code>工程中就可以看到<code>LinqToObjectiveC</code>了。</p>
+<p>打开<code>RWSearchFormViewController.m</code>并导入以下文件：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">"RWTweet.h"</span></span></div><div class="line"><span class="meta">#import <span class="meta-string">"NSArray+LinqExtensions.h"</span></span></div></pre></td></tr></table></figure>
+<p><code>NSArray+LinqExtensions.h</code>头文件来自于<code>LinqToObjectiveC</code>，并为<code>NSArray</code>添加了许多方法以允许我们使用一个流畅的<code>API</code>来转换、排序、分组及过滤数组的数据。</p>
+<p>现在我们使用这些<code>API</code>来更新当前管道操作，在<code>viewDidLoad</code>代码中做如下修改：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div></pre></td><td class="code"><pre><div class="line">[[[[[[<span class="keyword">self</span> requestAccessToTwitterSignal]</div><div class="line">     then:^RACSignal *&#123;</div><div class="line">         @strongify(<span class="keyword">self</span>)</div><div class="line">         <span class="keyword">return</span> <span class="keyword">self</span>.searchText.rac_textSignal;</div><div class="line">     &#125;]</div><div class="line">    filter:^<span class="built_in">BOOL</span>(<span class="built_in">NSString</span> *text) &#123;</div><div class="line">        @strongify(<span class="keyword">self</span>)</div><div class="line">        <span class="keyword">return</span> [<span class="keyword">self</span> isValidSearchText:text];</div><div class="line">    &#125;]</div><div class="line">   flattenMap:^RACStream *(<span class="built_in">NSString</span> *text) &#123;</div><div class="line">       @strongify(<span class="keyword">self</span>)</div><div class="line">       <span class="keyword">return</span> [<span class="keyword">self</span> signalForSearchWithText:text];</div><div class="line">   &#125;]</div><div class="line">  deliverOn:[RACScheduler mainThreadScheduler]]</div><div class="line"> subscribeNext:^(<span class="built_in">NSDictionary</span> *jsonSearchResult) &#123;</div><div class="line">     <span class="built_in">NSArray</span> *statuses = jsonSearchResult[<span class="string">@"statuses"</span>];</div><div class="line">     <span class="built_in">NSArray</span> *tweets = [statuses linq_select:^<span class="keyword">id</span>(<span class="keyword">id</span> tweet) &#123;</div><div class="line">         <span class="keyword">return</span> [RWTweet tweetWithStatus:tweet];</div><div class="line">     &#125;];</div><div class="line">     [<span class="keyword">self</span>.resultsViewController displayTweets:tweets];</div><div class="line"> &#125; error:^(<span class="built_in">NSError</span> *error) &#123;</div><div class="line">     <span class="built_in">NSLog</span>(<span class="string">@"An error occurred: %@"</span>, error);</div><div class="line"> &#125;];</div></pre></td></tr></table></figure>
+<p>如上所看到的，<code>subscribeNext:</code>块首先获取<code>tweets</code>的<code>NSArray</code>对象。<code>linq_select</code>方法通过执行应用于每个数组元素的<code>block</code>来转换<code>NSDictionary</code>字典的数组，并生成一个<code>RWTweet</code>实例的数组。</p>
+<p>一旦转换完成，<code>tweets</code>将结果发送给<code>ViewController</code>。</p>
+<p>运行程序后我们可以看到以下<code>UI</code>：</p>
+<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/01/FinallyWeSeeTweets.png" alt="image"></p>
+<h2 id="异步加载图片"><a href="#异步加载图片" class="headerlink" title="异步加载图片"></a>异步加载图片</h2><p>在上图中，我们可以看到每行数据前面有一片空白，这是用来显示用户头像的。<code>RWTweet</code>类已经有一个<code>profileImageUrl</code>属性，它是一个图片的<code>URL</code>地址。为了让<code>UITableTable</code>滑动得更平滑，我们需要让获取指定<code>URL</code>的图片的操作不运行在主线程中。这可以使用<code>GCD</code>或者是<code>NSOperationQueue</code>。不过，<code>ReactiveCocoa</code>同样为我们提供了解决方案。</p>
+<p>打开<code>RWSearchResultsViewController.m</code>，添加以下代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">-(RACSignal *)signalForLoadingImage:(<span class="built_in">NSString</span> *)imageUrl &#123;</div><div class="line">    </div><div class="line">    RACScheduler *scheduler = [RACScheduler</div><div class="line">                               schedulerWithPriority:RACSchedulerPriorityBackground];</div><div class="line">    </div><div class="line">    <span class="keyword">return</span> [[RACSignal createSignal:^RACDisposable *(<span class="keyword">id</span>&lt;RACSubscriber&gt; subscriber) &#123;</div><div class="line">        <span class="built_in">NSData</span> *data = [<span class="built_in">NSData</span> dataWithContentsOfURL:[<span class="built_in">NSURL</span> URLWithString:imageUrl]];</div><div class="line">        <span class="built_in">UIImage</span> *image = [<span class="built_in">UIImage</span> imageWithData:data];</div><div class="line">        [subscriber sendNext:image];</div><div class="line">        [subscriber sendCompleted];</div><div class="line">        <span class="keyword">return</span> <span class="literal">nil</span>;</div><div class="line">    &#125;] subscribeOn:scheduler];</div><div class="line">    </div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>现在我们应该熟悉这种模式了。以上的方法首先获取一个后台<code>scheduler</code>作为信号执行的线程，而不是主线程。接下来，创建一个下载图片数据的信号并在其有订阅者时创建一个<code>UIImage</code>。最后我们调用<code>subscribeOn:</code>，以确保信号在给定的<code>scheduler</code>上执行。</p>
+<p>现在，我们可以更新<code>tableView:cellForRowAtIndex:</code>，在<code>return</code>之前添加以下代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">cell.twitterAvatarView.image = <span class="literal">nil</span>;</div><div class="line"> </div><div class="line">[[[<span class="keyword">self</span> signalForLoadingImage:tweet.profileImageUrl]</div><div class="line">  deliverOn:[RACScheduler mainThreadScheduler]]</div><div class="line">  subscribeNext:^(<span class="built_in">UIImage</span> *image) &#123;</div><div class="line">   cell.twitterAvatarView.image = image;</div><div class="line">  &#125;];</div></pre></td></tr></table></figure>
+<p>上面的代码首先重新设置图片，因为重用的单元格可能包含之前的数据。然后创建一个请求信号去获取数据，在<code>deliverOn:</code>中我们将后面的<code>next</code>事件运行在主线程，这样<code>subscribeNext:</code>可以安全运行。</p>
+<p>运行后得到如下结果：</p>
+<p><img src="http://cdn1.raywenderlich.com/wp-content/uploads/2014/01/AvatarsAtAlast.png" alt="image"></p>
+<h2 id="节流"><a href="#节流" class="headerlink" title="节流"></a>节流</h2><p>你可能已经发现每次我们输入一个新的字符时，搜索操作都会立即执行。如果我们快速输入，可能会导致程序在一秒钟内执行了多次搜索操作。这当然是不好的，因为：</p>
+<ol>
+<li>我们多次调用了<code>Twitter</code>搜索<code>API</code>，同时扔掉了大部分结果。</li>
+<li>我们不断更新结果会分散用户的注意力。</li>
+</ol>
+<p>一个更好的方案是如果搜索文本在一个较短时间内没有改变时我们再去执行搜索操作，如<code>500</code>毫秒。<code>ReactiveCocoa</code>框架让这一任务变得相当简单。</p>
+<p>打开<code>RWSearchFormViewController.m</code>并更新管道操作：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div></pre></td><td class="code"><pre><div class="line">[[[[[[[<span class="keyword">self</span> requestAccessToTwitterSignal]</div><div class="line">      then:^RACSignal *&#123;</div><div class="line">          @strongify(<span class="keyword">self</span>)</div><div class="line">          <span class="keyword">return</span> <span class="keyword">self</span>.searchText.rac_textSignal;</div><div class="line">      &#125;]</div><div class="line">     filter:^<span class="built_in">BOOL</span>(<span class="built_in">NSString</span> *text) &#123;</div><div class="line">         @strongify(<span class="keyword">self</span>)</div><div class="line">         <span class="keyword">return</span> [<span class="keyword">self</span> isValidSearchText:text];</div><div class="line">     &#125;]</div><div class="line">    throttle:<span class="number">0.5</span>]</div><div class="line">   flattenMap:^RACStream *(<span class="built_in">NSString</span> *text) &#123;</div><div class="line">       @strongify(<span class="keyword">self</span>)</div><div class="line">       <span class="keyword">return</span> [<span class="keyword">self</span> signalForSearchWithText:text];</div><div class="line">   &#125;]</div><div class="line">  deliverOn:[RACScheduler mainThreadScheduler]]</div><div class="line"> subscribeNext:^(<span class="built_in">NSDictionary</span> *jsonSearchResult) &#123;</div><div class="line">     <span class="built_in">NSArray</span> *statuses = jsonSearchResult[<span class="string">@"statuses"</span>];</div><div class="line">     <span class="built_in">NSArray</span> *tweets = [statuses linq_select:^<span class="keyword">id</span>(<span class="keyword">id</span> tweet) &#123;</div><div class="line">         <span class="keyword">return</span> [RWTweet tweetWithStatus:tweet];</div><div class="line">     &#125;];</div><div class="line">     [<span class="keyword">self</span>.resultsViewController displayTweets:tweets];</div><div class="line"> &#125; error:^(<span class="built_in">NSError</span> *error) &#123;</div><div class="line">     <span class="built_in">NSLog</span>(<span class="string">@"An error occurred: %@"</span>, error);</div><div class="line"> &#125;];</div></pre></td></tr></table></figure>
+<p><code>throttle</code>操作只有在两次<code>next</code>事件间隔指定的时间时才会发送第二个<code>next</code>事件。相当简单吧。运行程序看看效果吧。    </p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>在庆祝胜利前，看看程序最终的管道是值得的。</p>
+<p><img src="http://cdn2.raywenderlich.com/wp-content/uploads/2014/01/CompletePipeline.png" alt="image"></p>
+<p>这是一个相当复杂的数据流，但可以作为一个响应管道简洁地表示出来。看起来不错吧。如果使用非响应式技术，你会觉得这会有多复杂呢？在这样一个程序中，数据流的流动又会是多难以理解呢？听起来很麻烦吧。但有了<code>ReactiveCocoa</code>，我们不必再考虑这些了。现在我们知道<code>ReactiveCocoa</code>有多棒了吧。</p>
+<p>最后，<code>ReactiveCocoa</code>让使用<code>Model View ViewModel(MVVM)</code>设计模式变成可能。如果有兴趣研究<code>MVVM</code>，可以去网上搜索相关的文章。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2014/08/02/reactivecocoa-tutorial-the-definitive-introduction-1/" rel="next" title="ReactiveCocoa Tutorial – The Definitive Introduction: Part 1/2">
+                <i class="fa fa-chevron-left"></i> ReactiveCocoa Tutorial – The Definitive Introduction: Part 1/2
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2014/08/08/mvvm-tutorial-with-reactivecocoa-1/" rel="prev" title="MVVM Tutorial with ReactiveCocoa: Part 1/2">
+                MVVM Tutorial with ReactiveCocoa: Part 1/2 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Twitter-Instant"><span class="nav-number">1.</span> <span class="nav-text">Twitter Instant</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#验证搜索框"><span class="nav-number">2.</span> <span class="nav-text">验证搜索框</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#格式化管道代码"><span class="nav-number">3.</span> <span class="nav-text">格式化管道代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#内存管理"><span class="nav-number">4.</span> <span class="nav-text">内存管理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#避免循环引用"><span class="nav-number">5.</span> <span class="nav-text">避免循环引用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#请求访问Twitter"><span class="nav-number">6.</span> <span class="nav-text">请求访问Twitter</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#链接信号"><span class="nav-number">7.</span> <span class="nav-text">链接信号</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#搜索Twitter"><span class="nav-number">8.</span> <span class="nav-text">搜索Twitter</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#线程"><span class="nav-number">9.</span> <span class="nav-text">线程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#更新UI"><span class="nav-number">10.</span> <span class="nav-text">更新UI</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#异步加载图片"><span class="nav-number">11.</span> <span class="nav-text">异步加载图片</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#节流"><span class="nav-number">12.</span> <span class="nav-text">节流</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">13.</span> <span class="nav-text">小结</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

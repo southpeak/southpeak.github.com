@@ -1,0 +1,834 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="Quartz提供了两个不透明数据odgago创建渐变：CGShadingRef和CGGradientRef。我们可以使用任何一个来创建轴向(axial)或径向(radial)渐变。一个渐变是从一个颜色到另外一种颜色的填充。
+一个轴向渐变(也称为线性渐变)沿着由两个端点连接的轴线渐变。所有位于垂直于轴线的某条线上的点都具有相同的颜色值。
+一个径向渐变也是沿着两个端点连接的轴线渐变，不过路径通常由两个">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Quartz 2D编程指南之八：渐变">
+<meta property="og:url" content="http://southpeak.github.io/2014/12/10/quartz2d-8/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="Quartz提供了两个不透明数据odgago创建渐变：CGShadingRef和CGGradientRef。我们可以使用任何一个来创建轴向(axial)或径向(radial)渐变。一个渐变是从一个颜色到另外一种颜色的填充。
+一个轴向渐变(也称为线性渐变)沿着由两个端点连接的轴线渐变。所有位于垂直于轴线的某条线上的点都具有相同的颜色值。
+一个径向渐变也是沿着两个端点连接的轴线渐变，不过路径通常由两个">
+<meta property="og:image" content="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/two_color_gradient.jpg">
+<meta property="og:image" content="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rainbow_gradient.jpg">
+<meta property="og:image" content="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/cylinder6.gif">
+<meta property="og:image" content="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/alpha_only.jpg">
+<meta property="og:image" content="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/shaded_sphere.gif">
+<meta property="og:image" content="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/torus.gif">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/quartz-2d-table8-1.png?raw=true">
+<meta property="og:image" content="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/extend_axial2.gif">
+<meta property="og:image" content="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/extend_radial.gif">
+<meta property="og:image" content="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/radial_cggradient.jpg">
+<meta property="og:image" content="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/gray_gradient_3.jpg">
+<meta property="og:image" content="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/axial_shading_arc.gif">
+<meta property="og:image" content="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/radial_shading.gif">
+<meta property="og:updated_time" content="2016-08-27T08:43:26.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Quartz 2D编程指南之八：渐变">
+<meta name="twitter:description" content="Quartz提供了两个不透明数据odgago创建渐变：CGShadingRef和CGGradientRef。我们可以使用任何一个来创建轴向(axial)或径向(radial)渐变。一个渐变是从一个颜色到另外一种颜色的填充。
+一个轴向渐变(也称为线性渐变)沿着由两个端点连接的轴线渐变。所有位于垂直于轴线的某条线上的点都具有相同的颜色值。
+一个径向渐变也是沿着两个端点连接的轴线渐变，不过路径通常由两个">
+<meta name="twitter:image" content="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/two_color_gradient.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2014/12/10/quartz2d-8/"/>
+
+  <title> Quartz 2D编程指南之八：渐变 | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Quartz 2D编程指南之八：渐变
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-12-10T09:00:26+08:00" content="2014-12-10">
+              2014-12-10
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/translate/" itemprop="url" rel="index">
+                    <span itemprop="name">翻译</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>Quartz提供了两个不透明数据odgago创建渐变：CGShadingRef和CGGradientRef。我们可以使用任何一个来创建轴向(axial)或径向(radial)渐变。一个渐变是从一个颜色到另外一种颜色的填充。</p>
+<p>一个轴向渐变(也称为线性渐变)沿着由两个端点连接的轴线渐变。所有位于垂直于轴线的某条线上的点都具有相同的颜色值。</p>
+<p>一个径向渐变也是沿着两个端点连接的轴线渐变，不过路径通常由两个圆来定义。</p>
+<p>本章提供了一些我们使用Quartz能够创建的轴向和径向渐变的类型的例子，并比较绘制渐变的两种方法，然后演示了如何使用每种不透明数据类型来创建渐变。</p>
+<h2 id="轴向和径向渐变实例"><a href="#轴向和径向渐变实例" class="headerlink" title="轴向和径向渐变实例"></a>轴向和径向渐变实例</h2><p>Quartz函数提供了一个丰富的功能来创建渐变效果。这一部分显示了一些我们能达到的效果。图8-1中的轴向渐变由橙色向黄色渐变。在这个例子中，渐变轴相对于原点倾斜了45度角。</p>
+<p><strong>Figure 8-1  An axial gradient along a 45 degree axis</strong></p>
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/two_color_gradient.jpg" alt="image"></p>
+<p>Quartz也允许我们指定一系列的颜色和位置值，以沿着轴来创建更复杂的轴向渐变，如图8-2所示。起始点的颜色值是红色，结束点的颜色是紫罗兰色。同时，在轴上有五个位置，它们的颜色值分别被设置为橙、黄、绿、蓝和靛蓝。我们可以把它看成沿着同一轴线的六段连续的线性渐变。虽然这里的轴线与图8-1是一样的，但这不是必须的。轴线的角度由我们提供的两个端点定义。</p>
+<p><strong>Figure 8-2  An axial gradient created with seven locations and colors</strong></p>
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rainbow_gradient.jpg" alt="image"></p>
+<p>图8-3显示了一个径向渐变，它从一个小的明亮的红色圆渐变到一个大小黑色的圆。</p>
+<p><strong>Figure 8-3  A radial gradient that varies between two circles</strong></p>
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/cylinder6.gif" alt="image"></p>
+<p>使用Quartz，我们不局限于创建颜色值改变的渐变；我们可以只修改alpha值，或者创建alpha值与其它颜色组件一起改变的渐变。图8-4显示了一个渐变，其红、绿、蓝组件的值是不变的，但alpha值从1.0渐变到0.1。</p>
+<p>注意：如果我们使用alpha值来改变一个渐变，则在绘制一个PDF内容时我们不能捕获这个渐变。因此，这样的渐变无法打印。如果需要绘制一个渐变到PDF，则需要让alpha值为1.0。</p>
+<p><strong>Figure 8-4  A radial gradient created by varying only the alpha component</strong></p>
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/alpha_only.jpg" alt="image"></p>
+<p>我们可以把一个圆放置到一个径向渐变中来创建各种形状。如果一个圆是另一个的一部分或者完全在另一个的外面，则Quartz创建了圆锥和一个圆柱。径向渐变的一个通常用法就是创建一个球体阴影，如图8-5所示。在这种情况下，一个单一的点(半径为0的圆)位于一个大圆以内。</p>
+<p><strong>Figure 8-5  A radial gradient that varies between a point and a circle</strong></p>
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/shaded_sphere.gif" alt="image"></p>
+<p>我们可以像图8-6一样通过内嵌几个径向渐变来创建更复杂的效果。它使用同心圆来创建图形中的各环形部分。</p>
+<p><strong>Figure 8-6  Nested radial gradients</strong></p>
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/torus.gif" alt="image"></p>
+<h2 id="CGShading和CGGradient对象的对比"><a href="#CGShading和CGGradient对象的对比" class="headerlink" title="CGShading和CGGradient对象的对比"></a>CGShading和CGGradient对象的对比</h2><p>我们有两个对象类型用于创建渐变，你可能想知道哪一个更好用。本节就来回答这个问题。</p>
+<p>CGShadingRef这个不透明数据类型给我们更多的控制权，以确定如何计算每个端点的颜色。在我们创建CGShading对象之前，我们必须创建一个CGFunction对象(CGFunctionRef)，这个对象定义了一个用于计算渐变颜色的函数。写一个自定义的函数让我们能够创建平滑的渐变，如图8-3，8-3和8-5及更多非传统的效果，如图8-12所示。</p>
+<p>当创建一个CGShading对象时，我们指定其是轴向还是径向。除了计算函数外，我们还需要提供一个颜色空间、起始点和结束点或者是半径，这取决于是绘制轴向还是径向渐变。在绘制时，我们只是简单地传递CGShading对象及绘制上下文给CGContextDrawShading函数。Quartz为渐变上的每个点调用渐变计算函数。</p>
+<p>一个CGGradient对象是CGShading对象的子集，其更易于使用。CGGradientRef不透明类型易于作用，因为Quartz在渐变的每一个顶点上计算颜色值。我们不需要提供一个渐变计算函数。当创建一个渐变对象时，我们提供一个位置和颜色的数组。Quartz使用对应的颜色值来计算每个梯度的渐变，。我们可以使用单一的起始与结束点来设置一个渐变对象，如图8-1所示，或者提供一组端点来创建一个类似于图8-2的的效果。使用CGShading对象可以提供多于两个位置的能力。</p>
+<p>当我们创建一个CGGradient对象时，我们需要设置一个颜色空间、位置、和每个位置对应的颜色值。当使用一个渐变对象绘制上下文时，我们指定Quartz是绘制一个轴向还是径向渐变。在绘制时，我们指定开始结束点或半径，这取决于我们是绘制轴向还是径向渐变。而CGShading的几何形状是在创建时定义的，而不是绘制时。</p>
+<p>表8-1总结了两种不透明数据类型之间的区别。</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/quartz-2d-table8-1.png?raw=true" alt="image"></p>
+<h2 id="扩展渐变端点外部的颜色"><a href="#扩展渐变端点外部的颜色" class="headerlink" title="扩展渐变端点外部的颜色"></a>扩展渐变端点外部的颜色</h2><p>当我们创建一个渐变时，我们可以选择使用纯色来填充渐变端点外部的空间。Quartz使用使用渐变边界上的颜色作为填充颜色。我们可以扩展渐变起点、终点或两端的颜色。我们可以扩展使用CGShading对象或CGGradient对象创建的轴向或径向渐变。</p>
+<p>图8-7演示了一个轴向渐变，它扩展了起点和终点两侧的区域。图片中的线段显示了渐变的轴线。我们可以看到，填充颜色与起点和终点的颜色是对应的。</p>
+<p><strong>Figure 8-7  Extending an axial gradient</strong></p>
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/extend_axial2.gif" alt="image"></p>
+<p>图8-8对比了一个未使用扩展的径向渐变和一个在起点和终点两侧使用扩展的径向渐变。Quartz获取了起点和终点的颜色值，并使用这边纯色值来扩展立面。</p>
+<p><strong>Figure 8-8  Extending a radial gradient</strong></p>
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/extend_radial.gif" alt="image"></p>
+<h2 id="使用CGGradient对象"><a href="#使用CGGradient对象" class="headerlink" title="使用CGGradient对象"></a>使用CGGradient对象</h2><p>一个CGGradient对象是一个渐变的抽象定义–它简单地指定了颜色值和位置，但没有指定几何形状。我们可以在轴向和径向几何形状中使用这个对象。作为一个抽象定义，CGGradient对象可能比CGShading对象更容易重用。没有将几何形状存储在CGGradient对象中，这样允许我们使用相同的颜色方案来绘制不同的几何图形，而不需要为多个图形创建多个CGGradient对象。</p>
+<p>因为Quartz为我们计算渐变，使用一个CGGradient对象来创建和绘制一个渐变则更直接，只需要以下几步：</p>
+<ol>
+<li>创建一个CGGradient对象，提供一个颜色空间，一个饱含两个或更多颜色组件的数组，一个包含两个或多个位置的数组，和两个数组中元素的个数。</li>
+<li>调用CGContextDrawLinearGradient或CGContextDrawRadialGradient函数并提供一个上下文、一个CGGradient对象、绘制选项和开始结束几何图形来绘制渐变。</li>
+<li>当不再需要时释放CGGradient对象。</li>
+</ol>
+<p>一个位置是一个值区间在0.0到1.0之间的CGFloat值，它指定了沿着渐变的轴线的标准化距离。值0.0指定的轴线的起点，1.0指定了轴线的终点。其它的值指定了一个距离的比例。最低限度情况下，Quartz使用两个位置值。如果我们传递NULL值作为位置数组参数，则Quartz使用0作为第一个位置，1作为第二个位置。</p>
+<p>每个颜色的颜色组件的数目取决于颜色空间。对于离屏绘制，我们使用一个RGB颜色空间。因为Quartz使用alpha来绘制，每个离屏颜色都有四个组件–红、绿、蓝和alpha。所以，对于离屏绘制，我们提供的颜色组件数组的元素的数目必须是位置数目的4倍。Quartz的RGBA颜色组件可以在0.0到1.0之间改变。</p>
+<p>代码清单8-1是创建一个CGGradient对象的代码片断。在声明了必须的变量后，代码设置了位置和颜色组件数组。然后创建了一个通用的RGB颜色空间。(在iOS中，不管RGB颜色空间是否可用，我们都应该调用CGColorSpaceCreateDeviceRGB)。然后，它传递必要的参数到CGGradientCreateWithColorComponents函数。我们同样可以使用CGGradientCreateWithColors，如果我们的程序设置了CGColor对象，这是一种便捷的方法。</p>
+<p><strong>Listing 8-1  Creating a CGGradient object</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">CGGradientRef myGradient;</div><div class="line">CGColorSpaceRef myColorspace;</div><div class="line"><span class="keyword">size_t</span> num_locations = <span class="number">2</span>;</div><div class="line">CGFloat locations[<span class="number">2</span>] = &#123; <span class="number">0.0</span>, <span class="number">1.0</span> &#125;;</div><div class="line">CGFloat components[<span class="number">8</span>] = &#123; <span class="number">1.0</span>, <span class="number">0.5</span>, <span class="number">0.4</span>, <span class="number">1.0</span>,  <span class="comment">// Start color</span></div><div class="line">                          <span class="number">0.8</span>, <span class="number">0.8</span>, <span class="number">0.3</span>, <span class="number">1.0</span> &#125;; <span class="comment">// End color</span></div><div class="line"> </div><div class="line">myColorspace = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);</div><div class="line">myGradient = CGGradientCreateWithColorComponents (myColorspace, components,</div><div class="line">                          locations, num_locations);</div></pre></td></tr></table></figure>
+<p>在创建了CGGradient对象后，我们可以使用它来绘制一个轴向或线性渐变。代码清单8-2声明并设置了线性渐变的起始点然后绘制渐变。图8-1显示了结果。代码没有演示如何获取CGContext对象。</p>
+<p><strong>Listing 8-2  Painting an axial gradient using a CGGradient object</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">CGPoint myStartPoint, myEndPoint;</div><div class="line">myStartPoint.x = <span class="number">0.0</span>;</div><div class="line">myStartPoint.y = <span class="number">0.0</span>;</div><div class="line">myEndPoint.x = <span class="number">1.0</span>;</div><div class="line">myEndPoint.y = <span class="number">1.0</span>;</div><div class="line">CGContextDrawLinearGradient (myContext, myGradient, myStartPoint, myEndPoint, <span class="number">0</span>);</div></pre></td></tr></table></figure>
+<p>代码清单8-3使用代码清单8-1中创建的CGGradient对象来绘制图8-9中径向渐变。这个例子同时也演示了使用纯色来填充渐变的扩展区域。</p>
+<p><strong>Listing 8-3  Painting a radial gradient using a CGGradient object</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">CGPoint myStartPoint, myEndPoint;</div><div class="line">CGFloat myStartRadius, myEndRadius;</div><div class="line">myStartPoint.x = <span class="number">0.15</span>;</div><div class="line">myStartPoint.y = <span class="number">0.15</span>;</div><div class="line">myEndPoint.x = <span class="number">0.5</span>;</div><div class="line">myEndPoint.y = <span class="number">0.5</span>;</div><div class="line">myStartRadius = <span class="number">0.1</span>;</div><div class="line">myEndRadius = <span class="number">0.25</span>;</div><div class="line">CGContextDrawRadialGradient (myContext, myGradient, myStartPoint,</div><div class="line">                         myStartRadius, myEndPoint, myEndRadius,</div><div class="line">                         kCGGradientDrawsAfterEndLocation);</div></pre></td></tr></table></figure>
+<p><strong>Figure 8-9  A radial gradient painted using a CGGradient object</strong></p>
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/radial_cggradient.jpg" alt="image"></p>
+<p>图8-4中的径向渐变使用代码清单8-4中的变量来创建。</p>
+<p><strong>Listing 8-4  The variables used to create a radial gradient by varying alpha</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">CGPoint myStartPoint, myEndPoint;</div><div class="line">CGFloat myStartRadius, myEndRadius;</div><div class="line">myStartPoint.x = <span class="number">0.2</span>;</div><div class="line">myStartPoint.y = <span class="number">0.5</span>;</div><div class="line">myEndPoint.x = <span class="number">0.65</span>;</div><div class="line">myEndPoint.y = <span class="number">0.5</span>;</div><div class="line">myStartRadius = <span class="number">0.1</span>;</div><div class="line">myEndRadius = <span class="number">0.25</span>;</div><div class="line"><span class="keyword">size_t</span> num_locations = <span class="number">2</span>;</div><div class="line">CGFloat locations[<span class="number">2</span>] = &#123; <span class="number">0</span>, <span class="number">1.0</span> &#125;;</div><div class="line">CGFloat components[<span class="number">8</span>] = &#123; <span class="number">0.95</span>, <span class="number">0.3</span>, <span class="number">0.4</span>, <span class="number">1.0</span>,</div><div class="line">                          <span class="number">0.95</span>, <span class="number">0.3</span>, <span class="number">0.4</span>, <span class="number">0.1</span> &#125;;</div></pre></td></tr></table></figure>
+<p>代码清单8-5显示了用于创建图8-10中的灰色渐变的变量，其中有3个位置。</p>
+<p><strong>Listing 8-5  The variables used to create a gray gradient</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">size_t</span> num_locations = <span class="number">3</span>;</div><div class="line">CGFloat locations[<span class="number">3</span>] = &#123; <span class="number">0.0</span>, <span class="number">0.5</span>, <span class="number">1.0</span>&#125;;</div><div class="line">CGFloat components[<span class="number">12</span>] = &#123;  <span class="number">1.0</span>, <span class="number">1.0</span>, <span class="number">1.0</span>, <span class="number">1.0</span>,</div><div class="line">                            <span class="number">0.5</span>, <span class="number">0.5</span>, <span class="number">0.5</span>, <span class="number">1.0</span>,</div><div class="line">                            <span class="number">1.0</span>, <span class="number">1.0</span>, <span class="number">1.0</span>, <span class="number">1.0</span> &#125;;</div></pre></td></tr></table></figure>
+<p><strong>Figure 8-10  An axial gradient with three locations</strong></p>
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/gray_gradient_3.jpg" alt="image"></p>
+<h2 id="使用CGShading对象"><a href="#使用CGShading对象" class="headerlink" title="使用CGShading对象"></a>使用CGShading对象</h2><p>我们通过调用函数CGShadingCreateAxial或CGShadingCreateRadial创建一个CGShading对象来设置一个渐变，调用这些函数需要提供以下参数：</p>
+<ol>
+<li>CGColorSpace对象：颜色空间</li>
+<li>起始点和终点。对于轴向渐变，有轴线的起始点和终点的坐标。对于径向渐变，有起始圆和终点圆中心的坐标。</li>
+<li>用于定义渐变区域的圆的起始半径与终止半径。</li>
+<li>一个CGFunction对象，可以通过CGFunctionCreate函数来获取。这个回调例程必须返回绘制到特定点的颜色值。</li>
+<li>一个布尔值，用于指定是否使用纯色来绘制起始点与终点的扩展区域。</li>
+</ol>
+<p>我们提供给CGShading创建函数的CGFunction对象包含一个回调结构体，及Quartz需要实现这个回调的所有信息。也许设置CGShasing对象的最棘手的部分是创建CGFunction对象。当我们调用CGFunctionCreate函数时，我们提供以下参数： </p>
+<ol>
+<li>指向回调所需要的数据的指针</li>
+<li>回调的输入值的个数。Quartz要求回调携带一个输入值。</li>
+<li>一个浮点数的数组。Quartz只会提供数组中的一个元素给回调函数。一个转入值的范围是0(渐变的开始点的颜色)到1(渐变的结束点的颜色)。</li>
+<li>回调提供的输出值的数目。对于每一个输入值，我们的回调必须为每个颜色组件提供一个值，以及一个alpha值来指定透明度。颜色组件值由Quartz提供的颜色空间来解释，并会提供给CGShading创建函数。例如，如果我们使用RGB颜色空间，则我们提供值4作为输出值(R,G,B,A)的数目。</li>
+<li>一个浮点数的数组，用于指定每个颜色组件的值及alpha值。</li>
+<li>一个回调数据结构，包含结构体的版本(设置为0)、生成颜色组件值的回调、一个可选的用于释放回调中info参数表示的数据。该回调类似于以下格式：</li>
+</ol>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">myCalculateShadingValues</span> <span class="params">(<span class="keyword">void</span> *info, <span class="keyword">const</span> CGFloat *in, CGFloat *out)</span></span></div></pre></td></tr></table></figure>
+<p>在创建CGShading对象后，如果需要我们可以设置额外的裁减操作。然后调用CGContextDrawShading函数来使用渐变来绘制上下文的裁减区域。当调用这个函数时，Quartz调用回调函数来获取从起点到终点这个范围内的颜色值。</p>
+<p>当不再需要CGShading对象时，我们调用CGShadingRelease来释放它。</p>
+<p>下面我们将一步步地通过代码来看看如何使用CGShading对象来绘制渐变。</p>
+<h3 id="使用CGShading对象绘制一个轴向渐变"><a href="#使用CGShading对象绘制一个轴向渐变" class="headerlink" title="使用CGShading对象绘制一个轴向渐变"></a>使用CGShading对象绘制一个轴向渐变</h3><p>绘制轴向和径向渐变的步骤是差不多的。这个例子演示了如何使用一个CGShading对象来绘制一个轴向渐变，并在图形上下文中绘制一个半圆形的裁减路径，然后将渐变绘制到裁减区域来达到图8-11的效果。</p>
+<p><strong>Figure 8-11  An axial gradient that is clipped and painted</strong></p>
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/axial_shading_arc.gif" alt="image"></p>
+<p>为了绘制图中的轴向渐变，需要按以下步骤来处理：</p>
+<ol>
+<li>设置CGFunction对象来计算颜色值</li>
+<li>创建轴向渐变的CGShading对象</li>
+<li>裁减上下文</li>
+<li>使用CGShading对象来绘制轴向渐变</li>
+<li>释放对象</li>
+</ol>
+<h4 id="设置CGFunction对象来计算颜色值"><a href="#设置CGFunction对象来计算颜色值" class="headerlink" title="设置CGFunction对象来计算颜色值"></a>设置CGFunction对象来计算颜色值</h4><p>我们可以以我们想要的方式来计算颜色值，我们的颜色计算函数包含以下三个参数：</p>
+<ol>
+<li>void *info：这个值可以为NULL或者是一个指向传递给CGShading创建函数的数据。</li>
+<li>const CGFloat *in：Quartz传递in数组给回调。数组中的值必须在为CGFunction对象定义的输入值范围内。例如，输入范围是0到1；看代码清单8-7</li>
+<li>CGFloat *out：我们的回调函数传递out数组给Quartz。它包含用于颜色空间中每个颜色组件的元素及一个alpha值。输出值应该在CGFunction对象中定义的输出值的范围内，例如，输出范围是0到1；看代码清单8-7。</li>
+</ol>
+<p>更多关于参数的信息可以查看CGFunctionEvaluateCallback。</p>
+<p>代码清单8-6演示了一个函数，它通过将一个常数数组中的值乘以输入值来计算颜色组件值。因为输入值在0到1之间，所以输入值位于黑色(对于RGB来说值为0, 0, 0)和紫色(1, 0, 0.5)之间。注意最后一个组件通常设置为1，表示颜色总是完全不透明的。</p>
+<p><strong>Listing 8-6  Computing color component values</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">myCalculateShadingValues</span> <span class="params">(<span class="keyword">void</span> *info,</span></span></div><div class="line">                            <span class="keyword">const</span> CGFloat *in,</div><div class="line">                            CGFloat *out)</div><div class="line">&#123;</div><div class="line">    CGFloat v;</div><div class="line">    <span class="keyword">size_t</span> k, components;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">const</span> CGFloat c[] = &#123;<span class="number">1</span>, <span class="number">0</span>, <span class="number">.5</span>, <span class="number">0</span> &#125;;</div><div class="line"> </div><div class="line">    components = (<span class="keyword">size_t</span>)info;</div><div class="line"> </div><div class="line">    v = *in;</div><div class="line">    <span class="keyword">for</span> (k = <span class="number">0</span>; k &lt; components <span class="number">-1</span>; k++)</div><div class="line">        *out++ = c[k] * v;</div><div class="line">     *out++ = <span class="number">1</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>在写完回调计算颜色值后，我们将其打包以作为CGFunction对象的一部分。代码清单显示了一个函数，它创建了一个包含代码清单8-6中的回调函数的CGFunction对象。</p>
+<p><strong>Listing 8-7  Creating a CGFunction object</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">static</span> CGFunctionRef <span class="title">myGetFunction</span> <span class="params">(CGColorSpaceRef colorspace)</span></span></div><div class="line">&#123;</div><div class="line">    <span class="keyword">size_t</span> numComponents;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">const</span> CGFloat input_value_range [<span class="number">2</span>] = &#123; <span class="number">0</span>, <span class="number">1</span> &#125;;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">const</span> CGFloat output_value_ranges [<span class="number">8</span>] = &#123; <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">1</span> &#125;;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">const</span> CGFunctionCallbacks callbacks = &#123; <span class="number">0</span>,</div><div class="line">                                &amp;myCalculateShadingValues,</div><div class="line">                                <span class="literal">NULL</span> &#125;;</div><div class="line"> </div><div class="line">    numComponents = <span class="number">1</span> + CGColorSpaceGetNumberOfComponents (colorspace);</div><div class="line">    <span class="keyword">return</span> CGFunctionCreate ((<span class="keyword">void</span> *) numComponents,</div><div class="line">                                <span class="number">1</span>, </div><div class="line">                                input_value_range, </div><div class="line">                                numComponents, </div><div class="line">                                output_value_ranges, </div><div class="line">                                &amp;callbacks);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h4 id="创建一个轴向渐变的CGShading对象"><a href="#创建一个轴向渐变的CGShading对象" class="headerlink" title="创建一个轴向渐变的CGShading对象"></a>创建一个轴向渐变的CGShading对象</h4><p>为了创建一个CGShading对象，我们调用CGShadingCreateAxial函数，如代码清单8-8所示。我们传递一个颜色空间，开始点和结束点，一个CGFunction对象，和一个用于指定是否填充渐变的开始点和结束点扩展的布尔值。</p>
+<p><strong>Listing 8-8  Creating a CGShading object for an axial gradient</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">CGPoint     startPoint,</div><div class="line">            endPoint;</div><div class="line">CGFunctionRef myFunctionObject;</div><div class="line">CGShadingRef myShading;</div><div class="line"> </div><div class="line">startPoint = CGPointMake(<span class="number">0</span>,<span class="number">0.5</span>);</div><div class="line">endPoint = CGPointMake(<span class="number">1</span>,<span class="number">0.5</span>);</div><div class="line">colorspace = CGColorSpaceCreateDeviceRGB();</div><div class="line">myFunctionObject = myGetFunction (colorspace);</div><div class="line"> </div><div class="line">myShading = CGShadingCreateAxial (colorspace,</div><div class="line">                        startPoint, endPoint,</div><div class="line">                        myFunctionObject,</div><div class="line">                        <span class="literal">false</span>, <span class="literal">false</span>);</div></pre></td></tr></table></figure>
+<h4 id="裁减上下文"><a href="#裁减上下文" class="headerlink" title="裁减上下文"></a>裁减上下文</h4><p>当绘制一个渐变时，Quartz填充当前上下文。绘制一个渐变与操作颜色和模式不同，后者是用于描边或填充一个路径对象。因此，如果要我们的渐变出现在一个特定形状中，我们需要裁减上下文。代码清单8-9的代码添加了一个半圆形到当前上下文，以便渐变绘制到这个裁减区域，如图8-11。</p>
+<p>如果我们仔细看，会发现代码绘制的是一个半圆，而图中显示的是一个半椭圆形。为什么呢？我们会看到，当我们查看后面完整的绘制代码时，上下文被缩放了。稍后会详细说明。虽然我们不需要使用缩放或裁减，这些在Quartz 2D中的选项可以帮助我们达到有趣的效果。</p>
+<p><strong>Listing 8-9  Adding a semicircle clip to the graphics context</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">CGContextBeginPath (myContext);</div><div class="line">CGContextAddArc (myContext, <span class="number">.5</span>, <span class="number">.5</span>, <span class="number">.3</span>, <span class="number">0</span>,</div><div class="line">               my_convert_to_radians (<span class="number">180</span>), <span class="number">0</span>);</div><div class="line">CGContextClosePath (myContext);</div><div class="line">CGContextClip (myContext);</div></pre></td></tr></table></figure>
+<h4 id="使用CGShading对象来绘制轴向渐变"><a href="#使用CGShading对象来绘制轴向渐变" class="headerlink" title="使用CGShading对象来绘制轴向渐变"></a>使用CGShading对象来绘制轴向渐变</h4><p>调用函数CGContextDrawShading使用CGShading对象为指定的颜色渐变来填充当前上下文：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">CGContextDrawShading (myContext, myShading);</div></pre></td></tr></table></figure>
+<h4 id="释放对象"><a href="#释放对象" class="headerlink" title="释放对象"></a>释放对象</h4><p>当我们不再需要CGShading对象时，可以调用函数CGShadingRelease来释放它。我们需要同时释放CGColorSpace对象和CGFunction对象，如代码清单8-10所示：</p>
+<p><strong>Listing 8-10  Releasing objects</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">CGShadingRelease (myShading);</div><div class="line">CGColorSpaceRelease (colorspace);</div><div class="line">CGFunctionRelease (myFunctionObject);</div></pre></td></tr></table></figure>
+<h4 id="使用CGShading对象绘制轴向渐变的完整例程"><a href="#使用CGShading对象绘制轴向渐变的完整例程" class="headerlink" title="使用CGShading对象绘制轴向渐变的完整例程"></a>使用CGShading对象绘制轴向渐变的完整例程</h4><p>代码清单8-11显示了绘制一个轴向渐变的完整例程，使用8-7中的CGFunction对象和8-6中的回调函数。</p>
+<p><strong>Listing 8-11  Painting an axial gradient using a CGShading object</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">myPaintAxialShading</span> <span class="params">(CGContextRef myContext,</span></span></div><div class="line">                            CGRect bounds)</div><div class="line">&#123;</div><div class="line">    CGPoint     startPoint,</div><div class="line">                endPoint;</div><div class="line">    CGAffineTransform myTransform;</div><div class="line">    CGFloat width = bounds.size.width;</div><div class="line">    CGFloat height = bounds.size.height;</div><div class="line"> </div><div class="line"> </div><div class="line">    startPoint = CGPointMake(<span class="number">0</span>,<span class="number">0.5</span>); </div><div class="line">    endPoint = CGPointMake(<span class="number">1</span>,<span class="number">0.5</span>);</div><div class="line"> </div><div class="line">    colorspace = CGColorSpaceCreateDeviceRGB();</div><div class="line">    myShadingFunction = myGetFunction(colorspace);</div><div class="line"> </div><div class="line">    shading = CGShadingCreateAxial (colorspace, </div><div class="line">                                 startPoint, endPoint,</div><div class="line">                                 myShadingFunction,</div><div class="line">                                 <span class="literal">false</span>, <span class="literal">false</span>);</div><div class="line"> </div><div class="line">    myTransform = CGAffineTransformMakeScale (width, height);</div><div class="line">    CGContextConcatCTM (myContext, myTransform);</div><div class="line">    CGContextSaveGState (myContext);</div><div class="line"> </div><div class="line">    CGContextClipToRect (myContext, CGRectMake(<span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">1</span>));</div><div class="line">    CGContextSetRGBFillColor (myContext, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>);</div><div class="line">    CGContextFillRect (myContext, CGRectMake(<span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">1</span>));</div><div class="line"> </div><div class="line">    CGContextBeginPath (myContext);</div><div class="line">    CGContextAddArc (myContext, <span class="number">.5</span>, <span class="number">.5</span>, <span class="number">.3</span>, <span class="number">0</span>,</div><div class="line">                        my_convert_to_radians (<span class="number">180</span>), <span class="number">0</span>);</div><div class="line">    CGContextClosePath (myContext);</div><div class="line">    CGContextClip (myContext);</div><div class="line"> </div><div class="line">    CGContextDrawShading (myContext, shading);</div><div class="line">    CGColorSpaceRelease (colorspace);</div><div class="line">    CGShadingRelease (shading);</div><div class="line">    CGFunctionRelease (myShadingFunction);</div><div class="line"> </div><div class="line">    CGContextRestoreGState (myContext); </div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="使用CGShading对象绘制一个径向渐变"><a href="#使用CGShading对象绘制一个径向渐变" class="headerlink" title="使用CGShading对象绘制一个径向渐变"></a>使用CGShading对象绘制一个径向渐变</h3><p>这个例子演示了如何使用CGShading对象来生成如图8-12所示的输出</p>
+<p><strong>Figure 8-12  A radial gradient created using a CGShading object</strong></p>
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/radial_shading.gif" alt="image"></p>
+<p>为了绘制一个径向渐变，我们需要按以下步骤来处理：</p>
+<ol>
+<li>设置CGFunction对象来计算颜色值</li>
+<li>创建径向渐变的CGShading对象</li>
+<li>使用CGShading对象来绘制径向渐变</li>
+<li>释放对象</li>
+</ol>
+<h4 id="设置CGFunction对象来计算颜色值-1"><a href="#设置CGFunction对象来计算颜色值-1" class="headerlink" title="设置CGFunction对象来计算颜色值"></a>设置CGFunction对象来计算颜色值</h4><p>计算径向渐变和轴向渐变颜色值的函数没有什么区别。事实上，我们可以依照上面的轴向的”设置CGFunction对象来计算颜色值”。代码清单8-12用于计算颜色，使用颜色按正弦变化。图8-12与图8-11的结果非常不同。虽然颜色输出值不同，代码清单8-12的代码与8-6中的函数遵循相同的原型。每个函数获取一个输入值并计算N个值，即颜色空间的每个颜色组件加一个alpha值。</p>
+<p><strong>Listing 8-12  Computing color component values</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span>  <span class="title">myCalculateShadingValues</span> <span class="params">(<span class="keyword">void</span> *info,</span></span></div><div class="line">                                <span class="keyword">const</span> CGFloat *in,</div><div class="line">                                CGFloat *out)</div><div class="line">&#123;</div><div class="line">    <span class="keyword">size_t</span> k, components;</div><div class="line">    <span class="keyword">double</span> frequency[<span class="number">4</span>] = &#123; <span class="number">55</span>, <span class="number">220</span>, <span class="number">110</span>, <span class="number">0</span> &#125;;</div><div class="line">    components = (<span class="keyword">size_t</span>)info;</div><div class="line">    <span class="keyword">for</span> (k = <span class="number">0</span>; k &lt; components - <span class="number">1</span>; k++)</div><div class="line">        *out++ = (<span class="number">1</span> + <span class="built_in">sin</span>(*in * frequency[k]))/<span class="number">2</span>;</div><div class="line">     *out++ = <span class="number">1</span>; <span class="comment">// alpha</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>在写完颜色计算函数后调用它，我们需要创建一个CGFunction对象，如在轴向中”设置CGFunction对象来计算颜色值”所描述的一样。</p>
+<h4 id="创建径向渐变的CGShading对象"><a href="#创建径向渐变的CGShading对象" class="headerlink" title="创建径向渐变的CGShading对象"></a>创建径向渐变的CGShading对象</h4><p>为了创建一个CGShading对象或者一个径向渐变，我们调用CGShadingCreateRadial函数，如代码清单8-13所求，传递一个颜色空间、开始点和结束点，开始半径和结束半径，一个CGFunction对象，和一个用于指定是否填充渐变的开始点和结束点扩展的布尔值。</p>
+<p><strong>Listing 8-13  Creating a CGShading object for a radial gradient</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line">CGPoint startPoint, endPoint;</div><div class="line">CGFloat startRadius, endRadius;</div><div class="line"> </div><div class="line">startPoint = CGPointMake(<span class="number">0.25</span>,<span class="number">0.3</span>);</div><div class="line">startRadius = <span class="number">.1</span>;</div><div class="line">endPoint = CGPointMake(<span class="number">.7</span>,<span class="number">0.7</span>);</div><div class="line">endRadius = <span class="number">.25</span>;</div><div class="line">colorspace = CGColorSpaceCreateDeviceRGB();</div><div class="line">myShadingFunction = myGetFunction (colorspace);</div><div class="line">CGShadingCreateRadial (colorspace,</div><div class="line">               startPoint,</div><div class="line">               startRadius,</div><div class="line">               endPoint,</div><div class="line">               endRadius,</div><div class="line">               myShadingFunction,</div><div class="line">               <span class="literal">false</span>,</div><div class="line">               <span class="literal">false</span>);</div></pre></td></tr></table></figure>
+<h4 id="使用CGShading对象来绘制径向渐变"><a href="#使用CGShading对象来绘制径向渐变" class="headerlink" title="使用CGShading对象来绘制径向渐变"></a>使用CGShading对象来绘制径向渐变</h4><p>调用函数CGContextDrawShading使用CGShading对象为指定的颜色渐变来填充当前上下文：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">CGContextDrawShading (myContext, myShading);</div></pre></td></tr></table></figure>
+<p>注意我们使用相同的函数来绘制渐变，而不管它是轴向还是径向。</p>
+<h4 id="释放对象-1"><a href="#释放对象-1" class="headerlink" title="释放对象"></a>释放对象</h4><p>当我们不再需要CGShading对象时，可以调用函数CGShadingRelease来释放它。我们需要同时释放CGColorSpace对象和CGFunction对象，如代码清单8-14所示：</p>
+<p><strong>Listing 8-10  Releasing objects</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">CGShadingRelease (myShading);</div><div class="line">CGColorSpaceRelease (colorspace);</div><div class="line">CGFunctionRelease (myFunctionObject);</div></pre></td></tr></table></figure>
+<h4 id="使用CGShading对象绘制径向渐变的完整例程"><a href="#使用CGShading对象绘制径向渐变的完整例程" class="headerlink" title="使用CGShading对象绘制径向渐变的完整例程"></a>使用CGShading对象绘制径向渐变的完整例程</h4><p>代码清单8-15显示了绘制一个轴径向渐变的完整例程，使用8-7中的CGFunction对象和8-12中的回调函数。</p>
+<p><strong>Listing 8-15  A routine that paints a radial gradient using a CGShading object</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">myPaintRadialShading</span> <span class="params">(CGContextRef myContext,</span></span></div><div class="line">                            CGRect bounds);</div><div class="line">&#123;</div><div class="line">    CGPoint startPoint,</div><div class="line">            endPoint;</div><div class="line">    CGFloat startRadius,</div><div class="line">            endRadius;</div><div class="line">    CGAffineTransform myTransform;</div><div class="line">    CGFloat width = bounds.size.width;</div><div class="line">    CGFloat height = bounds.size.height;</div><div class="line"> </div><div class="line">    startPoint = CGPointMake(<span class="number">0.25</span>,<span class="number">0.3</span>); </div><div class="line">    startRadius = <span class="number">.1</span>;  </div><div class="line">    endPoint = CGPointMake(<span class="number">.7</span>,<span class="number">0.7</span>); </div><div class="line">    endRadius = <span class="number">.25</span>; </div><div class="line"> </div><div class="line">    colorspace = CGColorSpaceCreateDeviceRGB(); </div><div class="line">    myShadingFunction = myGetFunction (colorspace);</div><div class="line"> </div><div class="line">    shading = CGShadingCreateRadial (colorspace, </div><div class="line">                            startPoint, startRadius,</div><div class="line">                            endPoint, endRadius,</div><div class="line">                            myShadingFunction,</div><div class="line">                            <span class="literal">false</span>, <span class="literal">false</span>);</div><div class="line"> </div><div class="line">    myTransform = CGAffineTransformMakeScale (width, height); </div><div class="line">    CGContextConcatCTM (myContext, myTransform); </div><div class="line">    CGContextSaveGState (myContext); </div><div class="line"> </div><div class="line">    CGContextClipToRect (myContext, CGRectMake(<span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">1</span>)); </div><div class="line">    CGContextSetRGBFillColor (myContext, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>);</div><div class="line">    CGContextFillRect (myContext, CGRectMake(<span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">1</span>));</div><div class="line"> </div><div class="line">    CGContextDrawShading (myContext, shading); </div><div class="line">    CGColorSpaceRelease (colorspace); </div><div class="line">    CGShadingRelease (shading);</div><div class="line">    CGFunctionRelease (myShadingFunction);</div><div class="line"> </div><div class="line">    CGContextRestoreGState (myContext); </div><div class="line">&#125;</div></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2014/12/05/quartz2d-7/" rel="next" title="Quartz 2D编程指南之七：阴影">
+                <i class="fa fa-chevron-left"></i> Quartz 2D编程指南之七：阴影
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2014/12/10/quartz2d-9/" rel="prev" title="Quartz 2D编程指南之九：透明层">
+                Quartz 2D编程指南之九：透明层 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#轴向和径向渐变实例"><span class="nav-number">1.</span> <span class="nav-text">轴向和径向渐变实例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#CGShading和CGGradient对象的对比"><span class="nav-number">2.</span> <span class="nav-text">CGShading和CGGradient对象的对比</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#扩展渐变端点外部的颜色"><span class="nav-number">3.</span> <span class="nav-text">扩展渐变端点外部的颜色</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#使用CGGradient对象"><span class="nav-number">4.</span> <span class="nav-text">使用CGGradient对象</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#使用CGShading对象"><span class="nav-number">5.</span> <span class="nav-text">使用CGShading对象</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#使用CGShading对象绘制一个轴向渐变"><span class="nav-number">5.1.</span> <span class="nav-text">使用CGShading对象绘制一个轴向渐变</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#设置CGFunction对象来计算颜色值"><span class="nav-number">5.1.1.</span> <span class="nav-text">设置CGFunction对象来计算颜色值</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#创建一个轴向渐变的CGShading对象"><span class="nav-number">5.1.2.</span> <span class="nav-text">创建一个轴向渐变的CGShading对象</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#裁减上下文"><span class="nav-number">5.1.3.</span> <span class="nav-text">裁减上下文</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#使用CGShading对象来绘制轴向渐变"><span class="nav-number">5.1.4.</span> <span class="nav-text">使用CGShading对象来绘制轴向渐变</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#释放对象"><span class="nav-number">5.1.5.</span> <span class="nav-text">释放对象</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#使用CGShading对象绘制轴向渐变的完整例程"><span class="nav-number">5.1.6.</span> <span class="nav-text">使用CGShading对象绘制轴向渐变的完整例程</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用CGShading对象绘制一个径向渐变"><span class="nav-number">5.2.</span> <span class="nav-text">使用CGShading对象绘制一个径向渐变</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#设置CGFunction对象来计算颜色值-1"><span class="nav-number">5.2.1.</span> <span class="nav-text">设置CGFunction对象来计算颜色值</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#创建径向渐变的CGShading对象"><span class="nav-number">5.2.2.</span> <span class="nav-text">创建径向渐变的CGShading对象</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#使用CGShading对象来绘制径向渐变"><span class="nav-number">5.2.3.</span> <span class="nav-text">使用CGShading对象来绘制径向渐变</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#释放对象-1"><span class="nav-number">5.2.4.</span> <span class="nav-text">释放对象</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#使用CGShading对象绘制径向渐变的完整例程"><span class="nav-number">5.2.5.</span> <span class="nav-text">使用CGShading对象绘制径向渐变的完整例程</span></a></li></ol></li></ol></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

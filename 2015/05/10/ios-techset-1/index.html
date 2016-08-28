@@ -1,0 +1,831 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="一直想做这样一个小册子，来记录自己平时开发、阅读博客、看书、代码分析和与人交流中遇到的各种问题。之前有过这样的尝试，但都是无疾而终。不过，每天接触的东西多，有些东西不记下来，忘得也是很快，第二次遇到同样的问题时，还得再查一遍。好记性不如烂笔头，所以又决定重拾此事，时不时回头看看，温故而知新。
+这里面的每个问题，不会太长。或是读书笔记，或是摘抄，亦或是验证，每个问题的篇幅争取在六七百字的样子。笔记和">
+<meta property="og:type" content="article">
+<meta property="og:title" content="iOS知识小集 第一期(2015.05.10)">
+<meta property="og:url" content="http://southpeak.github.io/2015/05/10/ios-techset-1/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="一直想做这样一个小册子，来记录自己平时开发、阅读博客、看书、代码分析和与人交流中遇到的各种问题。之前有过这样的尝试，但都是无疾而终。不过，每天接触的东西多，有些东西不记下来，忘得也是很快，第二次遇到同样的问题时，还得再查一遍。好记性不如烂笔头，所以又决定重拾此事，时不时回头看看，温故而知新。
+这里面的每个问题，不会太长。或是读书笔记，或是摘抄，亦或是验证，每个问题的篇幅争取在六七百字的样子。笔记和">
+<meta property="og:updated_time" content="2016-08-27T02:40:32.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="iOS知识小集 第一期(2015.05.10)">
+<meta name="twitter:description" content="一直想做这样一个小册子，来记录自己平时开发、阅读博客、看书、代码分析和与人交流中遇到的各种问题。之前有过这样的尝试，但都是无疾而终。不过，每天接触的东西多，有些东西不记下来，忘得也是很快，第二次遇到同样的问题时，还得再查一遍。好记性不如烂笔头，所以又决定重拾此事，时不时回头看看，温故而知新。
+这里面的每个问题，不会太长。或是读书笔记，或是摘抄，亦或是验证，每个问题的篇幅争取在六七百字的样子。笔记和">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2015/05/10/ios-techset-1/"/>
+
+  <title> iOS知识小集 第一期(2015.05.10) | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                iOS知识小集 第一期(2015.05.10)
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-05-10T22:06:42+08:00" content="2015-05-10">
+              2015-05-10
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/techset/" itemprop="url" rel="index">
+                    <span itemprop="name">知识小集</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>一直想做这样一个小册子，来记录自己平时开发、阅读博客、看书、代码分析和与人交流中遇到的各种问题。之前有过这样的尝试，但都是无疾而终。不过，每天接触的东西多，有些东西不记下来，忘得也是很快，第二次遇到同样的问题时，还得再查一遍。好记性不如烂笔头，所以又决定重拾此事，时不时回头看看，温故而知新。</p>
+<p>这里面的每个问题，不会太长。或是读书笔记，或是摘抄，亦或是验证，每个问题的篇幅争取在六七百字的样子。笔记和摘抄的出处会详细标明。问题的个数不限，凑齐<code>3000</code>字左右就发一篇。争取每月至少发两篇吧，权当是对自己学习的一个整理。</p>
+<p>本期主要记录了以下几个问题：</p>
+<ol>
+<li><code>NSString</code>属性什么时候用<code>copy</code>，什么时候用<code>strong?</code></li>
+<li><code>Foundation</code>中的断言处理</li>
+<li><code>IBOutletCollection</code></li>
+<li><code>NSRecursiveLock</code>递归锁的使用</li>
+<li><code>NSHashTable</code></li>
+</ol>
+<h2 id="NSString属性什么时候用copy，什么时候用strong"><a href="#NSString属性什么时候用copy，什么时候用strong" class="headerlink" title="NSString属性什么时候用copy，什么时候用strong?"></a>NSString属性什么时候用copy，什么时候用strong?</h2><p>我们在声明一个<code>NSString</code>属性时，对于其内存相关特性，通常有两种选择(基于<code>ARC</code>环境)：<code>strong</code>与<code>copy</code>。那这两者有什么区别呢？什么时候该用<code>strong</code>，什么时候该用<code>copy</code>呢？让我们先来看个例子。</p>
+<h3 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h3><p>我们定义一个类，并为其声明两个字符串属性，如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">@interface TestStringClass ()</div><div class="line">@property (nonatomic, strong) NSString *strongString;</div><div class="line">@property (nonatomic, copy) NSString *copyedString;</div><div class="line">@end</div></pre></td></tr></table></figure>
+<p>上面的代码声明了两个字符串属性，其中一个内存特性是<code>strong</code>，一个是<code>copy</code>。下面我们来看看它们的区别。</p>
+<p>首先，我们用一个不可变字符串来为这两个属性赋值，</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">- (void)test &#123;</div><div class="line">    NSString *string = [NSString stringWithFormat:@&quot;abc&quot;];</div><div class="line">    self.strongString = string;</div><div class="line">    self.copyedString = string;</div><div class="line"></div><div class="line">    NSLog(@&quot;origin string: %p, %p&quot;, string, &amp;string);</div><div class="line">    NSLog(@&quot;strong string: %p, %p&quot;, strongString, &amp;strongString);</div><div class="line">    NSLog(@&quot;copy string: %p, %p&quot;, copyedString, &amp;copyedString);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>其输出结果是：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">origin string: 0x7fe441592e20, 0x7fff57519a48</div><div class="line">strong string: 0x7fe441592e20, 0x7fe44159e1f8</div><div class="line">copy string: 0x7fe441592e20, 0x7fe44159e200</div></pre></td></tr></table></figure>
+<p>我们要以看到，这种情况下，不管是<code>strong</code>还是<code>copy</code>属性的对象，其指向的地址都是同一个，即为<code>string</code>指向的地址。如果我们换作<code>MRC</code>环境，打印<code>string</code>的引用计数的话，会看到其引用计数值是<code>3</code>，即<code>strong</code>操作和<code>copy</code>操作都使原字符串对象的引用计数值加了<code>1</code>。</p>
+<p>接下来，我们把<code>string</code>由不可变改为可变对象，看看会是什么结果。即将下面这一句</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">NSString *string = [NSString stringWithFormat:@&quot;abc&quot;];</div></pre></td></tr></table></figure>
+<p>改成：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">NSMutableString *string = [NSMutableString stringWithFormat:@&quot;abc&quot;];</div></pre></td></tr></table></figure>
+<p>其输出结果是：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">origin string: 0x7ff5f2e33c90, 0x7fff59937a48</div><div class="line">strong string: 0x7ff5f2e33c90, 0x7ff5f2e2aec8</div><div class="line">copy string: 0x7ff5f2e2aee0, 0x7ff5f2e2aed0</div></pre></td></tr></table></figure>
+<p>可以发现，此时<code>copy</code>属性字符串已不再指向<code>string</code>字符串对象，而是深拷贝了<code>string</code>字符串，并让<code>_copyedString</code>对象指向这个字符串。在<code>MRC</code>环境下，打印两者的引用计数，可以看到<code>string</code>对象的引用计数是<code>2</code>，而<code>_copyedString</code>对象的引用计数是<code>1</code>。</p>
+<p>此时，我们如果去修改string字符串的话，可以看到：因为_strongString与string是指向同一对象，所以<code>_strongString</code>的值也会跟随着改变(需要注意的是，此时<code>_strongString</code>的类型实际上是<code>NSMutableString</code>，而不是<code>NSString</code>)；而<code>_copyedString</code>是指向另一个对象的，所以并不会改变。</p>
+<h3 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h3><p>由于<code>NSMutableString</code>是<code>NSString</code>的子类，所以一个<code>NSString</code>指针可以指向<code>NSMutableString</code>对象，让我们的<code>strongString</code>指针指向一个可变字符串是OK的。</p>
+<p>而上面的例子可以看出，当源字符串是<code>NSString</code>时，由于字符串是不可变的，所以，不管是<code>strong</code>还是<code>copy</code>属性的对象，都是指向源对象，<code>copy</code>操作只是做了次<strong>浅拷贝</strong>。</p>
+<p>当源字符串是<code>NSMutableString</code>时，<code>strong</code>属性只是增加了源字符串的引用计数，而<code>copy</code>属性则是对源字符串做了次<strong>深拷贝</strong>，产生一个新的对象，且<code>copy</code>属性对象指向这个新的对象。另外需要注意的是，这个<code>copy</code>属性对象的类型始终是<code>NSString</code>，而不是<code>NSMutableString</code>，因此其是不可变的。</p>
+<p>这里还有一个性能问题，即在源字符串是<code>NSMutableString</code>，<code>strong</code>是单纯的增加对象的引用计数，而<code>copy</code>操作是执行了一次深拷贝，所以性能上会有所差异。而如果源字符串是<code>NSString</code>时，则没有这个问题。</p>
+<p>所以，在声明<code>NSString</code>属性时，到底是选择<code>strong</code>还是<code>copy</code>，可以根据实际情况来定。不过，一般我们将对象声明为<code>NSString</code>时，都不希望它改变，所以大多数情况下，我们建议用<code>copy</code>，以免因可变字符串的修改导致的一些非预期问题。</p>
+<p>关于字符串的内存管理，还有些有意思的东西，可以参考<a href="http://blog.cnbluebox.com/blog/2014/04/16/nsstringte-xing-fen-xi-xue-xi/" target="_blank" rel="external">NSString特性分析学习</a>。</p>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><ol>
+<li><a href="http://stackoverflow.com/questions/2521468/nsstring-copy-not-copying" target="_blank" rel="external">NSString copy not copying?</a></li>
+<li><a href="http://blog.cnbluebox.com/blog/2014/04/16/nsstringte-xing-fen-xi-xue-xi/" target="_blank" rel="external">NSString特性分析学习</a></li>
+<li><a href="http://blog.csdn.net/itianyi/article/details/9018567" target="_blank" rel="external">NSString什么时候用copy，什么时候用strong</a></li>
+</ol>
+<h2 id="Foundation中的断言处理"><a href="#Foundation中的断言处理" class="headerlink" title="Foundation中的断言处理"></a>Foundation中的断言处理</h2><p>经常在看一些第三方库的代码时，或者自己在写一些基础类时，都会用到断言。所以在此总结一下<code>Objective-C</code>中关于断言的一些问题。</p>
+<p><code>Foundation</code>中定义了两组断言相关的宏，分别是：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">NSAssert / NSCAssert</div><div class="line">NSParameterAssert / NSCParameterAssert</div></pre></td></tr></table></figure>
+<p>这两组宏主要在功能和语义上有所差别，这些区别主要有以下两点：</p>
+<ol>
+<li>如果我们需要确保方法或函数的输入参数的正确性，则应该在方法(函数)的顶部使用<code>NSParameterAssert / NSCParameterAssert</code>；而在其它情况下，使用<code>NSAssert / NSCAssert</code>。</li>
+<li>另一个不同是介于<code>C</code>和<code>Objective-C</code>之间。<code>NSAssert / NSParameterAssert</code>应该用于<code>Objective-C</code>的上下文(方法)中，而<code>NSCAssert / NSCParameterAssert</code>应该用于<code>C</code>的上下文(函数)中。</li>
+</ol>
+<p>当断言失败时，通常是会抛出一个如下所示的异常：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">*** Terminating app due to uncaught exception &apos;NSInternalInconsistencyException&apos;, reason: &apos;true is not equal to false&apos;</div></pre></td></tr></table></figure>
+<p><code>Foundation</code>为了处理断言，专门定义了一个<code>NSAssertionHandler</code>来处理断言的失败情况。<code>NSAssertionHandler</code>对象是自动创建的，用于处理失败的断言。当断言失败时，会传递一个字符串给<code>NSAssertionHandler</code>对象来描述失败的原因。<strong>每个线程都有自己的NSAssertionHandler对象</strong>。当调用时，一个断言处理器会打印包含方法和类(或函数)的错误消息，并引发一个<code>NSInternalInconsistencyException</code>异常。就像上面所看到的一样。</p>
+<p>我们很少直接去调用<code>NSAssertionHandler</code>的断言处理方法，通常都是自动调用的。</p>
+<p><code>NSAssertionHandler</code>提供的方法并不多，就三个，如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">// 返回与当前线程的NSAssertionHandler对象。</div><div class="line">// 如果当前线程没有相关的断言处理器，则该方法会创建一个并指定给当前线程</div><div class="line">+ (NSAssertionHandler *)currentHandler</div><div class="line"></div><div class="line">// 当NSCAssert或NSCParameterAssert断言失败时，会调用这个方法</div><div class="line">- (void)handleFailureInFunction:(NSString *)functionName file:(NSString *)object lineNumber:(NSInteger)fileName description:(NSString *)line, format,...</div><div class="line"></div><div class="line">// 当NSAssert或NSParameterAssert断言失败时，会调用这个方法</div><div class="line">- (void)handleFailureInMethod:(SEL)selector object:(id)object file:(NSString *)fileName lineNumber:(NSInteger)line description:(NSString *)format, ...</div></pre></td></tr></table></figure>
+<p>另外，还定义了一个常量字符串，</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">NSString * const NSAssertionHandlerKey;</div></pre></td></tr></table></figure>
+<p>主要是用于在线程的<code>threadDictionary</code>字典中获取或设置断言处理器。</p>
+<p>关于断言，还需要注意的一点是在<code>Xcode 4.2</code>以后，在<code>release</code>版本中断言是默认关闭的，这是由宏<code>NS_BLOCK_ASSERTIONS</code>来处理的。也就是说，当编译<code>release</code>版本时，所有的断言调用都是无效的。</p>
+<p>我们可以自定义一个继承自<code>NSAssertionHandler</code>的断言处理类，来实现一些我们自己的需求。如<code>Mattt Thompson</code>的<a href="http://nshipster.com/nsassertionhandler/" target="_blank" rel="external">NSAssertionHandler</a>实例一样：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div></pre></td><td class="code"><pre><div class="line">@interface LoggingAssertionHandler : NSAssertionHandler</div><div class="line"></div><div class="line">@end</div><div class="line"></div><div class="line">@implementation LoggingAssertionHandler</div><div class="line"></div><div class="line">- (void)handleFailureInMethod:(SEL)selector</div><div class="line">                       object:(id)object</div><div class="line">                         file:(NSString *)fileName</div><div class="line">                   lineNumber:(NSInteger)line</div><div class="line">                  description:(NSString *)format, ...</div><div class="line">&#123;</div><div class="line">    NSLog(@&quot;NSAssert Failure: Method %@ for object %@ in %@#%i&quot;, NSStringFromSelector(selector), object, fileName, line);</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (void)handleFailureInFunction:(NSString *)functionName</div><div class="line">                           file:(NSString *)fileName</div><div class="line">                     lineNumber:(NSInteger)line</div><div class="line">                    description:(NSString *)format, ...</div><div class="line">&#123;</div><div class="line">    NSLog(@&quot;NSCAssert Failure: Function (%@) in %@#%i&quot;, functionName, fileName, line);</div><div class="line">&#125;</div><div class="line"></div><div class="line">@end</div></pre></td></tr></table></figure>
+<p>上面说过，每个线程都有自己的断言处理器。我们可以通过为线程的<code>threadDictionary</code>字典中的<code>NSAssertionHandlerKey</code>指定一个新值，来改变线程的断言处理器。</p>
+<p>如下代码所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">- (BOOL)application:(UIApplication *)application</div><div class="line">didFinishLaunchingWithOptions:(NSDictionary *)launchOptions</div><div class="line">&#123;</div><div class="line">  NSAssertionHandler *assertionHandler = [[LoggingAssertionHandler alloc] init];</div><div class="line">  [[[NSThread currentThread] threadDictionary] setValue:assertionHandler</div><div class="line">                                                 forKey:NSAssertionHandlerKey];</div><div class="line">  // ...</div><div class="line">  return YES;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>而什么时候应该使用断言呢？通常我们期望程序按照我们的预期去运行时，如调用的参数为空时流程就无法继续下去时，可以使用断言。但另一方面，我们也需要考虑，在这加断言确实是需要的么？我们是否可以通过更多的容错处理来使程序正常运行呢？</p>
+<p><code>Matt Thompson</code>在<a href="http://nshipster.com/nsassertionhandler/" target="_blank" rel="external">NSAssertionHandler</a>中的倒数第二段说得挺有意思，在此摘抄一下：</p>
+<blockquote>
+<p>But if we look deeper into NSAssertionHandler—and indeed, into our own hearts, there are lessons to be learned about our capacity for kindness and compassion; about our ability to forgive others, and to recover from our own missteps. We can’t be right all of the time. We all make mistakes. By accepting limitations in ourselves and others, only then are we able to grow as individuals.</p>
+</blockquote>
+<h3 id="参考-1"><a href="#参考-1" class="headerlink" title="参考"></a>参考</h3><ol>
+<li><a href="http://nshipster.com/nsassertionhandler/" target="_blank" rel="external">NSAssertion​Handler</a></li>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/Foundation/Classes/NSAssertionHandler_Class/" target="_blank" rel="external">NSAssertionHandler Class Reference</a></li>
+</ol>
+<h2 id="IBOutletCollection"><a href="#IBOutletCollection" class="headerlink" title="IBOutletCollection"></a>IBOutletCollection</h2><p>在<code>IB</code>与相关文件做连接时，我们经常会用到两个关键字：<code>IBOutlet</code>和<code>IBAction</code>。经常用<code>xib</code>或<code>storyboard</code>的童鞋应该用这两上关键字非常熟悉了。不过<code>UIKit</code>还提供了另一个伪关键字<strong>IBOutletCollection</strong>，我们使用这个关键字，可以将界面上一组相同的控件连接到同一个数组中。</p>
+<p>我们先来看看这个伪关键字的定义，可以从<code>UIKit.framework</code>的头文件<code>UINibDeclarations.h</code>找到如下定义：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">#ifndef IBOutletCollection</div><div class="line">#define IBOutletCollection(ClassName)</div><div class="line">#endif</div></pre></td></tr></table></figure>
+<p>另外，在<code>Clang</code>源码中，有更安全的定义方式，如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">#define IBOutletCollection(ClassName) attribute((iboutletcollection(ClassName)))</div></pre></td></tr></table></figure>
+<p>从上面的定义可以看到，与<code>IBOutlet</code>不同的是，<code>IBOutletCollection</code>带有一个参数，该参数是一个类名。</p>
+<p>通常情况下，我们使用一个<code>IBOutletCollection</code>属性时，属性必须是<code>strong</code>的，且类型是<code>NSArray</code>，如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">@property (strong, nonatomic) IBOutletCollection(UIScrollView) NSArray *scrollViews;</div></pre></td></tr></table></figure>
+<p>假定我们的<code>xib</code>文件中有三个横向的<code>scrollView</code>，我们便可以将这三个<code>scrollView</code>都连接至<code>scrollViews</code>属性，然后在我们的代码中便可以做一些统一处理，如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">- (void)setupScrollViewImages</div><div class="line">&#123;</div><div class="line">    for (UIScrollView *scrollView in self.scrollViews) &#123;</div><div class="line">        [self.imagesData enumerateObjectsUsingBlock:^(NSString *imageName, NSUInteger idx, BOOL *stop) &#123;</div><div class="line"></div><div class="line">            UIImageView *imageView = [[UIImageView alloc] initWithFrame:CGRectMake(CGRectGetWidth(scrollView.frame) * idx, 0, CGRectGetWidth(scrollView.frame), CGRectGetHeight(scrollView.frame))];</div><div class="line">            imageView.contentMode = UIViewContentModeScaleAspectFill;</div><div class="line">            imageView.image = [UIImage imageNamed:imageName];</div><div class="line">            [scrollView addSubview:imageView];</div><div class="line">        &#125;];</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这段代码会影响到三个<code>scrollView</code>。这样做的好处是我们不需要手动通过<code>addObject:</code>方法将<code>scrollView</code>添加到<code>scrollViews</code>中。</p>
+<p>不过在使用<code>IBOutletCollection</code>时，需要注意两点：</p>
+<ol>
+<li><code>IBOutletCollection</code>集合中对象的顺序是不确定的。我们通过调试方法可以看到集合中对象的顺序跟我们连接的顺序是一样的。但是这个顺序可能会因为不同版本的<code>Xcode</code>而有所不同。所以我们不应该试图在代码中去假定这种顺序。</li>
+<li>不管<code>IBOutletCollection(ClassName)</code>中的控件是什么，属性的类型始终是<code>NSArray</code>。实际上，我们可以声明是任何类型，如<code>NSSet</code>，<code>NSMutableArray</code>，甚至可以是<code>UIColor</code>，但不管我们在此设置的是什么类，<code>IBOutletCollection</code>属性总是指向一个<code>NSArray</code>数组。</li>
+</ol>
+<p>关于第二点，我们以上面的<code>scrollViews</code>为例，作如下修改：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">@property (strong, nonatomic) IBOutletCollection(UIScrollView) NSSet *scrollViews;</div></pre></td></tr></table></figure>
+<p>实际上我们在控制台打印这个<code>scrollViews</code>时，结果如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">(lldb) po self.scrollViews</div><div class="line">&lt;__NSArrayI 0x1740573d0&gt;(</div><div class="line">&lt;UIScrollView: 0x12d60d770; frame = (0 0; 320 162); clipsToBounds = YES; autoresize = W+H; gestureRecognizers = &lt;NSArray: 0x1740574f0&gt;; layer = &lt;CALayer: 0x174229480&gt;; contentOffset: &#123;0, 0&#125;; contentSize: &#123;0, 0&#125;&gt;,</div><div class="line">&lt;UIScrollView: 0x12d60dee0; frame = (0 0; 320 161); clipsToBounds = YES; autoresize = W+H; gestureRecognizers = &lt;NSArray: 0x174057790&gt;; layer = &lt;CALayer: 0x1742297c0&gt;; contentOffset: &#123;0, 0&#125;; contentSize: &#123;0, 0&#125;&gt;,</div><div class="line">&lt;UIScrollView: 0x12d60e650; frame = (0 0; 320 163); clipsToBounds = YES; autoresize = W+H; gestureRecognizers = &lt;NSArray: 0x1740579a0&gt;; layer = &lt;CALayer: 0x1742298e0&gt;; contentOffset: &#123;0, 0&#125;; contentSize: &#123;0, 0&#125;&gt;</div><div class="line">)</div></pre></td></tr></table></figure>
+<p>可以看到，它指向的是一个<code>NSArray</code>数组。</p>
+<p>另外，<code>IBOutletCollection</code>实际上在<code>iOS 4</code>版本中就有了。不过，现在的<code>Objective-C</code>已经支持<code>object literals</code>了，所以定义数组可以直接用<code>@[]</code>，方便了许多。而且<code>object literals</code>方式可以添加不在<code>xib</code>中的用代码定义的视图，所以显得更加灵活。当然，两种方式选择哪一种，就看我们自己的实际需要和喜好了。</p>
+<h3 id="参考-2"><a href="#参考-2" class="headerlink" title="参考"></a>参考</h3><ol>
+<li><a href="http://nshipster.com/ibaction-iboutlet-iboutletcollection/" target="_blank" rel="external">IBAction / IBOutlet / IBOutlet​Collection</a></li>
+<li><a href="http://www.opensource.apple.com/source/clang/clang-318.0.45/src/tools/clang/test/Index/IBOutletCollection.m" target="_blank" rel="external">IBOutletCollection.m</a></li>
+</ol>
+<h2 id="NSRecursiveLock递归锁的使用"><a href="#NSRecursiveLock递归锁的使用" class="headerlink" title="NSRecursiveLock递归锁的使用"></a>NSRecursiveLock递归锁的使用</h2><p><code>NSRecursiveLock</code>实际上定义的是一个递归锁，这个锁可以被同一线程多次请求，而不会引起死锁。这主要是用在循环或递归操作中。我们先来看一个示例：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line">NSLock *lock = [[NSLock alloc] init];</div><div class="line"></div><div class="line">dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^&#123;</div><div class="line"></div><div class="line">    static void (^RecursiveMethod)(int);</div><div class="line"></div><div class="line">    RecursiveMethod = ^(int value) &#123;</div><div class="line"></div><div class="line">        [lock lock];</div><div class="line">        if (value &gt; 0) &#123;</div><div class="line"></div><div class="line">            NSLog(@&quot;value = %d&quot;, value);</div><div class="line">            sleep(2);</div><div class="line">            RecursiveMethod(value - 1);</div><div class="line">        &#125;</div><div class="line">        [lock unlock];</div><div class="line">    &#125;;</div><div class="line"></div><div class="line">    RecursiveMethod(5);</div><div class="line">&#125;);</div></pre></td></tr></table></figure>
+<p>这段代码是一个典型的死锁情况。在我们的线程中，<code>RecursiveMethod</code>是递归调用的。所以每次进入这个<code>block</code>时，都会去加一次锁，而从第二次开始，由于锁已经被使用了且没有解锁，所以它需要等待锁被解除，这样就导致了死锁，线程被阻塞住了。调试器中会输出如下信息：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">value = 5</div><div class="line">* -[NSLock lock]: deadlock (&lt;NSLock: 0x1700ceee0&gt; &apos;(null)&apos;)	* Break on _NSLockError() to debug.</div></pre></td></tr></table></figure>
+<p>在这种情况下，我们就可以使用<code>NSRecursiveLock</code>。它可以允许同一线程多次加锁，而不会造成死锁。递归锁会跟踪它被<code>lock</code>的次数。每次成功的<code>lock</code>都必须平衡调用<code>unlock</code>操作。只有所有达到这种平衡，锁最后才能被释放，以供其它线程使用。</p>
+<p>所以，对上面的代码进行一下改造，</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">NSRecursiveLock *lock = [[NSRecursiveLock alloc] init];</div></pre></td></tr></table></figure>
+<p>这样，程序就能正常运行了，其输出如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">value = 5</div><div class="line">value = 4</div><div class="line">value = 3</div><div class="line">value = 2</div><div class="line">value = 1</div></pre></td></tr></table></figure>
+<p><code>NSRecursiveLock</code>除了实现<code>NSLocking</code>协议的方法外，还提供了两个方法，分别如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">// 在给定的时间之前去尝试请求一个锁</div><div class="line">- (BOOL)lockBeforeDate:(NSDate *)limit</div><div class="line"></div><div class="line">// 尝试去请求一个锁，并会立即返回一个布尔值，表示尝试是否成功</div><div class="line">- (BOOL)tryLock</div></pre></td></tr></table></figure>
+<p>这两个方法都可以用于在多线程的情况下，去尝试请求一个递归锁，然后根据返回的布尔值，来做相应的处理。如下代码所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div></pre></td><td class="code"><pre><div class="line">NSRecursiveLock *lock = [[NSRecursiveLock alloc] init];</div><div class="line"></div><div class="line">dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^&#123;</div><div class="line"></div><div class="line">    static void (^RecursiveMethod)(int);</div><div class="line"></div><div class="line">    RecursiveMethod = ^(int value) &#123;</div><div class="line"></div><div class="line">        [lock lock];</div><div class="line">        if (value &gt; 0) &#123;</div><div class="line"></div><div class="line">            NSLog(@&quot;value = %d&quot;, value);</div><div class="line">            sleep(2);</div><div class="line">            RecursiveMethod(value - 1);</div><div class="line">        &#125;</div><div class="line">        [lock unlock];</div><div class="line">    &#125;;</div><div class="line"></div><div class="line">    RecursiveMethod(5);</div><div class="line">&#125;);</div><div class="line"></div><div class="line">dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^&#123;</div><div class="line"></div><div class="line">    sleep(2);</div><div class="line">    BOOL flag = [lock lockBeforeDate:[NSDate dateWithTimeIntervalSinceNow:1]];</div><div class="line">    if (flag) &#123;</div><div class="line">        NSLog(@&quot;lock before date&quot;);</div><div class="line"></div><div class="line">        [lock unlock];</div><div class="line">    &#125; else &#123;</div><div class="line">        NSLog(@&quot;fail to lock before date&quot;);</div><div class="line">    &#125;</div><div class="line">&#125;);</div></pre></td></tr></table></figure>
+<p>在前面的代码中，我们又添加了一段代码，增加一个线程来获取递归锁。我们在第二个线程中尝试去获取递归锁，当然这种情况下是会失败的，输出结果如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">value = 5</div><div class="line">value = 4</div><div class="line">fail to lock before date</div><div class="line">value = 3</div><div class="line">value = 2</div><div class="line">value = 1</div></pre></td></tr></table></figure>
+<p>另外，<code>NSRecursiveLock</code>还声明了一个<code>name</code>属性，如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">@property(copy) NSString *name</div></pre></td></tr></table></figure>
+<p>我们可以使用这个字符串来标识一个锁。<code>Cocoa</code>也会使用这个<code>name</code>作为错误描述信息的一部分。</p>
+<h3 id="参考-3"><a href="#参考-3" class="headerlink" title="参考"></a>参考</h3><ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/Foundation/Classes/NSRecursiveLock_Class/" target="_blank" rel="external">NSRecursiveLock Class Reference</a></li>
+<li><a href="http://www.tanhao.me/pieces/643.html/" target="_blank" rel="external">Objective-C中不同方式实现锁(二)</a></li>
+</ol>
+<h2 id="NSHashTable"><a href="#NSHashTable" class="headerlink" title="NSHashTable"></a>NSHashTable</h2><p>在看<code>KVOController</code>的代码时，又看到了<code>NSHashTable</code>这个类，所以就此整理一下。</p>
+<p><code>NSHashTable</code>效仿了<code>NSSet(NSMutableSet)</code>，但提供了比<code>NSSet</code>更多的操作选项，尤其是在对弱引用关系的支持上，<code>NSHashTable</code>在对象/内存处理时更加的灵活。相较于<code>NSSet</code>，<code>NSHashTable</code>具有以下特性：</p>
+<ol>
+<li><code>NSSet(NSMutableSet)</code>持有其元素的强引用，同时这些元素是使用<code>hash</code>值及<code>isEqual:</code>方法来做<code>hash</code>检测及判断是否相等的。</li>
+<li><code>NSHashTable</code>是可变的，它没有不可变版本。</li>
+<li>它可以持有元素的弱引用，而且在对象被销毁后能正确地将其移除。而这一点在<code>NSSet</code>是做不到的。</li>
+<li>它的成员可以在添加时被拷贝。</li>
+<li>它的成员可以使用指针来标识是否相等及做<code>hash</code>检测。</li>
+<li>它可以包含任意指针，其成员没有限制为对象。我们可以配置一个<code>NSHashTable</code>实例来操作任意的指针，而不仅仅是对象。</li>
+</ol>
+<p>初始化<code>NSHashTable</code>时，我们可以设置一个初始选项，这个选项确定了这个<code>NSHashTable</code>对象后面所有的行为。这个选项是由<code>NSHashTableOptions</code>枚举来定义的，如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">enum &#123;</div><div class="line">    // 默认行为，强引用集合中的对象，等同于NSSet</div><div class="line">    NSHashTableStrongMemory             = 0,</div><div class="line">    </div><div class="line">    // 在将对象添加到集合之前，会拷贝对象</div><div class="line">    NSHashTableCopyIn                   = NSPointerFunctionsCopyIn,</div><div class="line"></div><div class="line">    // 使用移位指针(shifted pointer)来做hash检测及确定两个对象是否相等；</div><div class="line">    // 同时使用description方法来做描述字符串</div><div class="line">    NSHashTableObjectPointerPersonality = NSPointerFunctionsObjectPointerPersonality,</div><div class="line"></div><div class="line">    // 弱引用集合中的对象，且在对象被释放后，会被正确的移除。</div><div class="line">    NSHashTableWeakMemory               = NSPointerFunctionsWeakMemory </div><div class="line">&#125;;</div><div class="line"></div><div class="line">typedef NSUInteger NSHashTableOptions;</div></pre></td></tr></table></figure>
+<p>当然，我们还可以使用<code>NSPointerFunctions</code>来初始化，但只有使用<code>NSHashTableOptions</code>定义的这些值，才能确保<code>NSHashTable</code>的各个<code>API</code>可以正确的工作–包括拷贝、归档及快速枚举。</p>
+<p>个人认为<code>NSHashTable</code>吸引人的地方在于可以持有元素的弱引用，而且在对象被销毁后能正确地将其移除。我们来写个示例：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div></pre></td><td class="code"><pre><div class="line">// 具体调用如下</div><div class="line">@implementation TestHashAndMapTableClass &#123;</div><div class="line">    NSMutableDictionary *_dic;</div><div class="line">    NSSet               *_set;</div><div class="line">    NSHashTable         *_hashTable;</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (instancetype)init &#123;</div><div class="line">    self = [super init];</div><div class="line"></div><div class="line">    if (self) &#123;</div><div class="line">        [self testWeakMemory];</div><div class="line">        NSLog(@&quot;hash table [init]: %@&quot;, _hashTable);</div><div class="line">    &#125;</div><div class="line">    return self;</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (void)testWeakMemory &#123;</div><div class="line">    if (!_hashTable) &#123;</div><div class="line">        _hashTable = [NSHashTable weakObjectsHashTable];</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    NSObject *obj = [[NSObject alloc] init];</div><div class="line">    [_hashTable addObject:obj];</div><div class="line">    NSLog(@&quot;hash table [testWeakMemory] : %@&quot;, _hashTable);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这段代码的输出结果如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">hash table [testWeakMemory] : NSHashTable &#123;</div><div class="line">[6] &lt;NSObject: 0x7fa2b1562670&gt;</div><div class="line">&#125;</div><div class="line">hash table [init]: NSHashTable &#123;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>可以看到，在离开<code>testWeakMemory</code>方法，<code>obj</code>对象被释放，同时对象在集合中的引用也被安全的删除。</p>
+<p>这样看来，<code>NSHashTable</code>似乎比<code>NSSet(NSMutableSet)</code>要好啊。那是不是我们就应用都使用<code>NSHashTable</code>呢？<code>Peter Steinberger</code>在<a href="http://www.objc.io/issue-7/collections.html" target="_blank" rel="external">The Foundation Collection Classes</a>给了我们一组数据，显示在添加对象的操作中，<code>NSHashTable</code>所有的时间差不多是<code>NSMutableSet</code>的<code>2</code>倍，而在其它操作中，性能大体相近。所以，如果我们只需要<code>NSSet</code>的特性，就尽量用<code>NSSet</code>。</p>
+<p>另外，<code>Mattt Thompson</code>在<a href="http://nshipster.com/nshashtable-and-nsmaptable/" target="_blank" rel="external">NSHashTable &amp; NSMapTable</a>的结尾也写了段挺有意思的话，在此直接摘抄过来：</p>
+<blockquote>
+<p>As always, it’s important to remember that programming is not about being clever: always approach a problem from the highest viable level of abstraction. NSSet and NSDictionary are great classes. For 99% of problems, they are undoubtedly the correct tool for the job. If, however, your problem has any of the particular memory management constraints described above, then NSHashTable &amp; NSMapTable may be worth a look.</p>
+</blockquote>
+<h3 id="参考-4"><a href="#参考-4" class="headerlink" title="参考"></a>参考</h3><ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/NSHashTable_class/" target="_blank" rel="external">NSHashTable Class Reference</a></li>
+<li><a href="http://nshipster.com/nshashtable-and-nsmaptable/" target="_blank" rel="external">NSHash​Table &amp; NSMap​Table</a></li>
+<li><a href="http://billwang1990.github.io/blog/2014/03/31/nshashtable-and-nsmaptable/" target="_blank" rel="external">NSHashTable &amp; NSMapTable</a></li>
+<li><a href="http://www.objc.io/issue-7/collections.html" target="_blank" rel="external">The Foundation Collection Classes</a></li>
+</ol>
+<h2 id="零碎"><a href="#零碎" class="headerlink" title="零碎"></a>零碎</h2><h3 id="一-“Unknown-class-XXViewController-in-Interface-Builder-file-””-问题处理"><a href="#一-“Unknown-class-XXViewController-in-Interface-Builder-file-””-问题处理" class="headerlink" title="(一) “Unknown class XXViewController in Interface Builder file.”” 问题处理"></a>(一) “Unknown class XXViewController in Interface Builder file.”” 问题处理</h3><p>最近在静态库中写了一个<code>XXViewController</code>类，然后在主工程的<code>xib</code>中，将<code>xib</code>的类指定为<code>XXViewController</code>，程序运行时，报了如下错误：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">Unknown class XXViewController in Interface Builder file.</div></pre></td></tr></table></figure>
+<p>之前也遇到这个问题，但已记得不太清楚，所以又开始在<code>stackoverflow</code>上找答案。</p>
+<p>其实这个问题与<code>Interface Builder</code>无关，最直接的原因还是相关的<code>symbol</code>没有从静态库中加载进来。这种问题的处理就是在<code>Target</code>的<code>&quot;Build Setting&quot;</code>-&gt;<code>&quot;Other Link Flags&quot;</code>中加上<code>&quot;-all_load -ObjC&quot;</code>这两个标识位，这样就OK了。</p>
+<h3 id="二-关于Unbalanced-calls-to-begin-end-appearance-transitions-for-…问题的处理"><a href="#二-关于Unbalanced-calls-to-begin-end-appearance-transitions-for-…问题的处理" class="headerlink" title="(二)关于Unbalanced calls to begin/end appearance transitions for …问题的处理"></a>(二)关于Unbalanced calls to begin/end appearance transitions for …问题的处理</h3><p>我们的某个业务有这么一个需求，进入一个列表后需要立马又<code>push</code>一个<code>web</code>页面，做一些活动的推广。在<code>iOS 8</code>上，我们的实现是一切OK的；但到了<code>iOS 7</code>上，就发现这个<code>web</code>页面<code>push</code>不出来了，同时控制台给了一条警告消息，即如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">Unbalanced calls to begin/end appearance transitions for ...</div></pre></td></tr></table></figure>
+<p>在这种情况下，点击导航栏中的返回按钮时，直接显示一个黑屏。</p>
+<p>我们到<code>stackoverflow</code>上查了一下，有这么一段提示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">occurs when you try and display a new viewcontroller before the current view controller is finished displaying.</div></pre></td></tr></table></figure>
+<p>意思是说在当前视图控制器完成显示之前，又试图去显示一个新的视图控制器。</p>
+<p>于是我们去排查代码，果然发现，在<code>viewDidLoad</code>里面去做了次网络请求操作，且请求返回后就去<code>push</code>这个<code>web</code>活动推广页。此时，当前的视图控制器可能并未显示完成(即未完成<code>push</code>操作)。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">Basically you are trying to push two view controllers onto the stack at almost the same time.</div></pre></td></tr></table></figure>
+<p>当几乎同时将两个视图控制器<code>push</code>到当前的导航控制器栈中时，或者同时<code>pop</code>两个不同的视图控制器，就会出现不确定的结果。所以我们应该确保同一时间，对同一个导航控制器栈只有一个操作，即便当前的视图控制器正在动画过程中，也不应该再去<code>push</code>或<code>pop</code>一个新的视图控制器。</p>
+<p>所以最后我们把<code>web</code>活动的数据请求放到了<code>viewDidAppear</code>里面，并做了些处理，这样问题就解决了。</p>
+<h4 id="参考-5"><a href="#参考-5" class="headerlink" title="参考"></a>参考</h4><ol>
+<li><a href="http://stackoverflow.com/questions/9088465/unbalanced-calls-to-begin-end-appearance-transitions-for-detailviewcontroller" target="_blank" rel="external">“Unbalanced calls to begin/end appearance transitions for DetailViewController” when pushing more than one detail view controller</a></li>
+<li><a href="http://stackoverflow.com/questions/8563473/unbalanced-calls-to-begin-end-appearance-transitions-for-uitabbarcontroller" target="_blank" rel="external">Unbalanced calls to begin/end appearance transitions for UITabBarController</a></li>
+</ol>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/04/23/cocoa-foundation-nskeyvalueobserving/" rel="next" title="Foundation: NSKeyValueObserving(KVO)">
+                <i class="fa fa-chevron-left"></i> Foundation: NSKeyValueObserving(KVO)
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/05/31/ios-techset-2/" rel="prev" title="iOS知识小集 第二期(2015.05.31)">
+                iOS知识小集 第二期(2015.05.31) <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#NSString属性什么时候用copy，什么时候用strong"><span class="nav-number">1.</span> <span class="nav-text">NSString属性什么时候用copy，什么时候用strong?</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#示例"><span class="nav-number">1.1.</span> <span class="nav-text">示例</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#结论"><span class="nav-number">1.2.</span> <span class="nav-text">结论</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考"><span class="nav-number">1.3.</span> <span class="nav-text">参考</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Foundation中的断言处理"><span class="nav-number">2.</span> <span class="nav-text">Foundation中的断言处理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#参考-1"><span class="nav-number">2.1.</span> <span class="nav-text">参考</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IBOutletCollection"><span class="nav-number">3.</span> <span class="nav-text">IBOutletCollection</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#参考-2"><span class="nav-number">3.1.</span> <span class="nav-text">参考</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#NSRecursiveLock递归锁的使用"><span class="nav-number">4.</span> <span class="nav-text">NSRecursiveLock递归锁的使用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#参考-3"><span class="nav-number">4.1.</span> <span class="nav-text">参考</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#NSHashTable"><span class="nav-number">5.</span> <span class="nav-text">NSHashTable</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#参考-4"><span class="nav-number">5.1.</span> <span class="nav-text">参考</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#零碎"><span class="nav-number">6.</span> <span class="nav-text">零碎</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#一-“Unknown-class-XXViewController-in-Interface-Builder-file-””-问题处理"><span class="nav-number">6.1.</span> <span class="nav-text">(一) “Unknown class XXViewController in Interface Builder file.”” 问题处理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#二-关于Unbalanced-calls-to-begin-end-appearance-transitions-for-…问题的处理"><span class="nav-number">6.2.</span> <span class="nav-text">(二)关于Unbalanced calls to begin/end appearance transitions for …问题的处理</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#参考-5"><span class="nav-number">6.2.1.</span> <span class="nav-text">参考</span></a></li></ol></li></ol></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

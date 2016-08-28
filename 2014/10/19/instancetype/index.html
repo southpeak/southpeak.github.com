@@ -1,0 +1,694 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="注：原文由Mattt Thompson发表于nshipster：instancetype。文章是2012年写的，所以有些内容现在已不适用。
+在Objective-C中，约定(conventions)不仅仅是编码最佳实践的问题，同时对编译器来说，也是一种隐式说明。
+例如，alloc和init两个方法都返回id类型，而在Xcode中，编译器会对它们进行类型检查。这是怎么做到的呢？
+在Cocoa中，有一">
+<meta property="og:type" content="article">
+<meta property="og:title" content="instancetype">
+<meta property="og:url" content="http://southpeak.github.io/2014/10/19/instancetype/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="注：原文由Mattt Thompson发表于nshipster：instancetype。文章是2012年写的，所以有些内容现在已不适用。
+在Objective-C中，约定(conventions)不仅仅是编码最佳实践的问题，同时对编译器来说，也是一种隐式说明。
+例如，alloc和init两个方法都返回id类型，而在Xcode中，编译器会对它们进行类型检查。这是怎么做到的呢？
+在Cocoa中，有一">
+<meta property="og:updated_time" content="2016-08-27T05:59:39.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="instancetype">
+<meta name="twitter:description" content="注：原文由Mattt Thompson发表于nshipster：instancetype。文章是2012年写的，所以有些内容现在已不适用。
+在Objective-C中，约定(conventions)不仅仅是编码最佳实践的问题，同时对编译器来说，也是一种隐式说明。
+例如，alloc和init两个方法都返回id类型，而在Xcode中，编译器会对它们进行类型检查。这是怎么做到的呢？
+在Cocoa中，有一">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2014/10/19/instancetype/"/>
+
+  <title> instancetype | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                instancetype
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-10-19T00:26:03+08:00" content="2014-10-19">
+              2014-10-19
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/translate/" itemprop="url" rel="index">
+                    <span itemprop="name">翻译</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>注：原文由Mattt <code>Thompson</code>发表于<code>nshipster</code>：<a href="http://nshipster.com/instancetype/" target="_blank" rel="external">instancetype</a>。<strong>文章是2012年写的，所以有些内容现在已不适用。</strong></p>
+<p>在<code>Objective-C</code>中，约定(<code>conventions</code>)不仅仅是编码最佳实践的问题，同时对编译器来说，也是一种隐式说明。</p>
+<p>例如，<code>alloc</code>和<code>init</code>两个方法都返回<code>id</code>类型，而在<code>Xcode</code>中，编译器会对它们进行类型检查。这是怎么做到的呢？</p>
+<p>在<code>Cocoa</code>中，有一个这样的约定，命名为<code>alloc/init</code>的方法总是返回接收者类的实例。这些方法有一个相关的返回类型。</p>
+<p>而类的构造方法(类方法)，虽然他们都是返回<code>id</code>类型，但没有从类型检查中获得好处，因为他们不遵循命名约定。</p>
+<p>我们可以试试以下代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">[[[<span class="built_in">NSArray</span> alloc] init] mediaPlaybackAllowsAirPlay]; <span class="comment">// 报错： "No visible @interface for `NSArray` declares the selector `mediaPlaybackAllowsAirPlay`"</span></div><div class="line"></div><div class="line">[[<span class="built_in">NSArray</span> array] mediaPlaybackAllowsAirPlay]; <span class="comment">// (No error) 注：这个方法调用只在老的编译器上成立，新的编译器会报相同的错误。</span></div></pre></td></tr></table></figure>
+<p>由于<code>alloc</code>和<code>init</code>遵循返回相关结果类型的约定，所以会对<code>NSArray</code>执行类型检查。然而等价的类构造方法<code>array</code>则不遵循这一约定，只解释为<code>id</code>类型。</p>
+<p><code>id</code>类型在不需要确保类型安全时非常有用，但一旦需要时，就无法处理了。</p>
+<p>而另一种方法，即显示声明返回类型(如前面例子中的(<code>NSArray *</code>))稍微改善了一些，但写起来有点麻烦，而且在继承体系中表现得不是很好。</p>
+<p>这时编译器就需要去解决这种针对<code>Objective-C</code>类型系统的边界情况了:</p>
+<p><code>instancetype</code>是一个上下文关键字，可用在返回类型中以表示方法返回一个相关的结果类型，如：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">Person</span></span></div><div class="line">+ (<span class="keyword">instancetype</span>)personWithName:(<span class="built_in">NSString</span> *)name;</div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>使用<code>instancetype</code>，编译器可以正确地知道<code>personWithName:</code>的返回结果是一个<code>Person</code>实例。</p>
+<p>我们现在看<code>Foundation</code>中的类构造器，可以发现大部分已经开始使用了<code>instancetype</code>了。新的<code>API</code>，如<code>UICollectionViewLayoutAttributes</code>，都是使用<code>instancetype</code>了。</p>
+<p><em>注：<code>instancetype</code>与<code>id</code>不同的是，它只能用在方法声明的返回值中。</em></p>
+<h4 id="更进一步的启示"><a href="#更进一步的启示" class="headerlink" title="更进一步的启示"></a>更进一步的启示</h4><p>语言特性是特别有趣的，因为它不清楚在软件设计的更高层次方面会带来什么样的影响。</p>
+<p>虽然<code>instancetype</code>看上去非常一般，只是对编译器有用，但也可能被用于一些更聪明的目的。</p>
+<p><code>Jonathan Sterling</code>的文章<a href="http://www.jonmsterling.com/posts/2012-02-05-typed-collections-with-self-types-in-objective-c.html" target="_blank" rel="external">this quite interesting article</a>，详细描述了<code>instancetype</code>如何被用于编码静态类型集合，而不需要使用泛型：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">NSURL</span> &lt;MapCollection&gt; *sites = (<span class="keyword">id</span>)[<span class="built_in">NSURL</span> mapCollection];</div><div class="line">[sites put:[<span class="built_in">NSURL</span> URLWithString:<span class="string">@"http://www.jonmsterling.com/"</span>]</div><div class="line">        at:<span class="string">@"jon"</span>];</div><div class="line">[sites put:[<span class="built_in">NSURL</span> URLWithString:<span class="string">@"http://www.nshipster.com/"</span>]</div><div class="line">        at:<span class="string">@"nshipster"</span>];</div><div class="line"></div><div class="line"><span class="built_in">NSURL</span> *jonsSite = [sites at:<span class="string">@"jon"</span>]; <span class="comment">// =&gt; http://www.jonmsterling.com/</span></div></pre></td></tr></table></figure>
+<p>静态类型集合使得API更有表现力，这样开发者将不再需要去确定集合中的参数可以使用使用类型的对象了。</p>
+<p>不管这会不会成为<code>Objective-C</code>公认的约定，诸如<code>instancetype</code>这样一个低层特性可用于改变语言的形态已是非常棒的一件事了。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2014/10/17/osatomic-operation/" rel="next" title="OSAtomic原子操作">
+                <i class="fa fa-chevron-left"></i> OSAtomic原子操作
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2014/10/25/objective-c-runtime-1/" rel="prev" title="Objective-C Runtime 运行时之一：类与对象">
+                Objective-C Runtime 运行时之一：类与对象 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#更进一步的启示"><span class="nav-number">1.</span> <span class="nav-text">更进一步的启示</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

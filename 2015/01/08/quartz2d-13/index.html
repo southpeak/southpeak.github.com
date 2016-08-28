@@ -1,0 +1,720 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="PDF文档存储依赖于分辨率的向量图形、文本和位图，并用于程序的一系列指令中。一个PDF文档可以包含多页的图形和文本。PDF可用于创建跨平台、只读的文档，也可用于绘制依赖于分辨率的图形。
+Quartz为所有应用程序创建高保真的PDF文档，这些文档保留应用的绘制操作，如图13-1所示。PDF文档的结果将通过系统的其它部分或第三方法的产品来有针对性地进行优化。Quartz创建的PDF文档在Preview">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Quartz 2D编程指南之十三：PDF文档的创建、显示及转换">
+<meta property="og:url" content="http://southpeak.github.io/2015/01/08/quartz2d-13/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="PDF文档存储依赖于分辨率的向量图形、文本和位图，并用于程序的一系列指令中。一个PDF文档可以包含多页的图形和文本。PDF可用于创建跨平台、只读的文档，也可用于绘制依赖于分辨率的图形。
+Quartz为所有应用程序创建高保真的PDF文档，这些文档保留应用的绘制操作，如图13-1所示。PDF文档的结果将通过系统的其它部分或第三方法的产品来有针对性地进行优化。Quartz创建的PDF文档在Preview">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/postscript_to_PDF.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rooster_up.gif">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rooster_rotate.gif">
+<meta property="og:updated_time" content="2016-08-27T08:59:31.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Quartz 2D编程指南之十三：PDF文档的创建、显示及转换">
+<meta name="twitter:description" content="PDF文档存储依赖于分辨率的向量图形、文本和位图，并用于程序的一系列指令中。一个PDF文档可以包含多页的图形和文本。PDF可用于创建跨平台、只读的文档，也可用于绘制依赖于分辨率的图形。
+Quartz为所有应用程序创建高保真的PDF文档，这些文档保留应用的绘制操作，如图13-1所示。PDF文档的结果将通过系统的其它部分或第三方法的产品来有针对性地进行优化。Quartz创建的PDF文档在Preview">
+<meta name="twitter:image" content="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/postscript_to_PDF.gif">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2015/01/08/quartz2d-13/"/>
+
+  <title> Quartz 2D编程指南之十三：PDF文档的创建、显示及转换 | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Quartz 2D编程指南之十三：PDF文档的创建、显示及转换
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-01-08T22:51:40+08:00" content="2015-01-08">
+              2015-01-08
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/translate/" itemprop="url" rel="index">
+                    <span itemprop="name">翻译</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>PDF文档存储依赖于分辨率的向量图形、文本和位图，并用于程序的一系列指令中。一个PDF文档可以包含多页的图形和文本。PDF可用于创建跨平台、只读的文档，也可用于绘制依赖于分辨率的图形。</p>
+<p>Quartz为所有应用程序创建高保真的PDF文档，这些文档保留应用的绘制操作，如图13-1所示。PDF文档的结果将通过系统的其它部分或第三方法的产品来有针对性地进行优化。Quartz创建的PDF文档在Preview和Acrobat中都能正确的显示。</p>
+<p><strong>Figure 13-1  Quartz creates high-quality PDF documents</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/postscript_to_PDF.gif" alt="image"></p>
+<p>Quartz不仅仅只使用PDF作为它的数字页，它同样包含一些API来显示和生成PDF文件，及完成一些其它PDF相关的工作。</p>
+<h2 id="打开和查看PDF"><a href="#打开和查看PDF" class="headerlink" title="打开和查看PDF"></a>打开和查看PDF</h2><p>Quartz提供了CGPDFDocumentRef数据类型来表示PDF文档。我们可以使用CGPDFDocumentCreateWithProvider或CGPDFDocumentCreateWithURL来创建CGPDFDocument对象。在创建CGPDFDocument对象后，我们可以将其绘制到图形上下文中。图13-2显示了在一个窗体中绘制PDF文档。</p>
+<p><strong>Figure 13-2  A PDF document</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rooster_up.gif" alt="image"></p>
+<p>代码清单13-1显示了如何创建一个CGPDFDocument对象及获取文档的页数。</p>
+<p><strong>Listing 13-1  Creating a CGPDFDocument object from a PDF file</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line"><span class="function">CGPDFDocumentRef <span class="title">MyGetPDFDocumentRef</span> <span class="params">(<span class="keyword">const</span> <span class="keyword">char</span> *filename)</span></span></div><div class="line">&#123;</div><div class="line">    CFStringRef path;</div><div class="line">    CFURLRef url;</div><div class="line">    CGPDFDocumentRef document;</div><div class="line">    <span class="keyword">size_t</span> count;</div><div class="line"> </div><div class="line">    path = CFStringCreateWithCString (<span class="literal">NULL</span>, filename,</div><div class="line">                         kCFStringEncodingUTF8);</div><div class="line">    url = CFURLCreateWithFileSystemPath (<span class="literal">NULL</span>, path, </div><div class="line">                        kCFURLPOSIXPathStyle, <span class="number">0</span>);</div><div class="line">    CFRelease (path);</div><div class="line">    document = CGPDFDocumentCreateWithURL (url);</div><div class="line">    CFRelease(url);</div><div class="line">    count = CGPDFDocumentGetNumberOfPages (document);</div><div class="line">    <span class="keyword">if</span> (count == <span class="number">0</span>) &#123;</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"`%s' needs at least one page!"</span>, filename);</div><div class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> document;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>代码清单显示了如何将一个PDF页绘制到图形上下文中。</p>
+<p><strong>Listing 13-2  Drawing a PDF page</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">MyDisplayPDFPage</span> <span class="params">(CGContextRef myContext,</span></span></div><div class="line">                    <span class="keyword">size_t</span> pageNumber,</div><div class="line">                    <span class="keyword">const</span> <span class="keyword">char</span> *filename)</div><div class="line">&#123;</div><div class="line">    CGPDFDocumentRef document;</div><div class="line">    CGPDFPageRef page;</div><div class="line"> </div><div class="line">    document = MyGetPDFDocumentRef (filename);</div><div class="line">    page = CGPDFDocumentGetPage (document, pageNumber);</div><div class="line">    CGContextDrawPDFPage (myContext, page);</div><div class="line">    CGPDFDocumentRelease (document);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="为PDF页创建一个转换"><a href="#为PDF页创建一个转换" class="headerlink" title="为PDF页创建一个转换"></a>为PDF页创建一个转换</h2><p>Quartz提供了函数CGPDFPageGetDrawingTransform来创建一个仿射变换，该变换基于将PDF页的BOX映射到指定的矩形中。函数原型是：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="function">CGAffineTransform <span class="title">CGPDFPageGetDrawingTransform</span> <span class="params">(</span></span></div><div class="line">        CGPPageRef page,</div><div class="line">        CGPDFBox box,</div><div class="line">        CGRect rect,</div><div class="line">        <span class="keyword">int</span> rotate,</div><div class="line">        <span class="keyword">bool</span> preserveAspectRatio</div><div class="line">);</div></pre></td></tr></table></figure>
+<p>该函数通过如下算法来返回一个仿射变换：</p>
+<ol>
+<li>将在box参数中指定的PDF box的类型相关的矩形(media, crop, bleed, trim, art)与指定的PDF页的/MediaBox入口求交集。相交的部分即为一个有效的矩形(effectiverectangle)。</li>
+<li>将effective rectangle旋转参数/Rotate入口指定的角度。</li>
+<li>将得到的矩形放到rect参数指定的中间。</li>
+<li>如果rotate参数是一个非零且是90的倍数，函数将effective rectangel旋转该值指定的角度。正值往右旋转；负值往左旋转。需要注意的是我们传入的是角度，而不是弧度。记住PDF页的/Rotate入口也包含一个旋转，我们提供的rotate参数是与/Rotate入口接合在一起的。</li>
+<li>如果需要，可以缩放矩形，从而与我们提供的矩形保持一致。</li>
+<li>如果我们通过传递true值给preserveAspectRadio参数以指定保持长宽比，则最后的矩形将与rect参数的矩形的边一致。</li>
+</ol>
+<p>【注：上面这段翻译得不是很好】</p>
+<p>例如，我们可以使用这个函数来创建一个与图13-3类似的PDF浏览程序。如果我们提供一个Rotate Left/Rotate Right属性，则可以调用CGPDFPageGetDrawingTransform来根据当前的窗体大小和旋转设置计算出适当的转换。</p>
+<p><strong>Figure 13-3  A PDF page rotated 90 degrees to the right</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rooster_rotate.gif" alt="image"></p>
+<p>程序清单13-3显示了为一个PDF页创建及应用仿射变换，然后绘制PDF。</p>
+<p><strong>Listing 13-3  Creating an affine transform for a PDF page</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">MyDrawPDFPageInRect</span> <span class="params">(CGContextRef context,</span></span></div><div class="line">                    CGPDFPageRef page,</div><div class="line">                    CGPDFBox box,</div><div class="line">                    CGRect rect,</div><div class="line">                    <span class="keyword">int</span> rotation,</div><div class="line">                    <span class="keyword">bool</span> preserveAspectRatio)</div><div class="line">&#123;</div><div class="line">    CGAffineTransform m;</div><div class="line"> </div><div class="line">    m = CGPDFPageGetDrawingTransform (page, box, rect, rotation,</div><div class="line">                                    preserveAspectRato);</div><div class="line">    CGContextSaveGState (context);</div><div class="line">    CGContextConcatCTM (context, m);</div><div class="line">    CGContextClipToRect (context,CGPDFPageGetBoxRect (page, box));</div><div class="line">    CGContextDrawPDFPage (context, page);</div><div class="line">    CGContextRestoreGState (context);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="创建PDF文件"><a href="#创建PDF文件" class="headerlink" title="创建PDF文件"></a>创建PDF文件</h2><p>使用Quartz创建PDF与绘制其它图形上下文一下简单。我们指定一个PDF文件地址，设置一个PDF图形上下文，并使用与其它图形上下文一样的绘制程序。如代码清单13-4所示的MyCreatePDFFile函数，显示了创建一个PDF的所有工作。</p>
+<p>注意，代码在CGPDFContextBeginPage和CGPDFContextEndPage中来绘制PDF。我们可以传递一个CFDictionary对象来指定页属性，包括media, crop, bleed,trim和art boxes。</p>
+<p><strong>Listing 13-4  Creating a PDF file</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">MyCreatePDFFile</span> <span class="params">(CGRect pageRect, <span class="keyword">const</span> <span class="keyword">char</span> *filename)</span></span></div><div class="line">&#123;</div><div class="line">    CGContextRef pdfContext;</div><div class="line">    CFStringRef path;</div><div class="line">    CFURLRef url;</div><div class="line">    CFDataRef boxData = <span class="literal">NULL</span>;</div><div class="line">    CFMutableDictionaryRef myDictionary = <span class="literal">NULL</span>;</div><div class="line">    CFMutableDictionaryRef pageDictionary = <span class="literal">NULL</span>;</div><div class="line"> </div><div class="line">    path = CFStringCreateWithCString (<span class="literal">NULL</span>, filename, </div><div class="line">                                kCFStringEncodingUTF8);</div><div class="line">    url = CFURLCreateWithFileSystemPath (<span class="literal">NULL</span>, path, </div><div class="line">                     kCFURLPOSIXPathStyle, <span class="number">0</span>);</div><div class="line">    CFRelease (path);</div><div class="line">    myDictionary = CFDictionaryCreateMutable(<span class="literal">NULL</span>, <span class="number">0</span>,</div><div class="line">                        &amp;kCFTypeDictionaryKeyCallBacks,</div><div class="line">                        &amp;kCFTypeDictionaryValueCallBacks); </div><div class="line">    CFDictionarySetValue(myDictionary, kCGPDFContextTitle, CFSTR(<span class="string">"My PDF File"</span>));</div><div class="line">    CFDictionarySetValue(myDictionary, kCGPDFContextCreator, CFSTR(<span class="string">"My Name"</span>));</div><div class="line">    pdfContext = CGPDFContextCreateWithURL (url, &amp;pageRect, myDictionary); </div><div class="line">    CFRelease(myDictionary);</div><div class="line">    CFRelease(url);</div><div class="line">    pageDictionary = CFDictionaryCreateMutable(<span class="literal">NULL</span>, <span class="number">0</span>,</div><div class="line">                        &amp;kCFTypeDictionaryKeyCallBacks,</div><div class="line">                        &amp;kCFTypeDictionaryValueCallBacks); </div><div class="line">    boxData = CFDataCreate(<span class="literal">NULL</span>,(<span class="keyword">const</span> UInt8 *)&amp;pageRect, <span class="keyword">sizeof</span> (CGRect));</div><div class="line">    CFDictionarySetValue(pageDictionary, kCGPDFContextMediaBox, boxData);</div><div class="line">    CGPDFContextBeginPage (pdfContext, pageDictionary); </div><div class="line">    myDrawContent (pdfContext);</div><div class="line">    CGPDFContextEndPage (pdfContext);</div><div class="line">    CGContextRelease (pdfContext);</div><div class="line">    CFRelease(pageDictionary); </div><div class="line">    CFRelease(boxData);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="添加链接"><a href="#添加链接" class="headerlink" title="添加链接"></a>添加链接</h2><p>我们可以在PDF上下文中添加链接和锚点。Quartz提供了三个函数，每个函数都以PDF图形上下文作为参数，还有链接的信息：</p>
+<ol>
+<li>CGPDFContextSetURLForRect可以让我们指定在点击当前PDF页中的矩形时打开一个URL。</li>
+<li>CGPDFContextSetDestinationForRect指定在点击当前PDF页中的矩形区域时设置目标以进行跳转。我们需要提供一个目标名。</li>
+<li>CGPDFContextAddDestinationAtPoint指定在点击当前PDF页中的一个点时设置目标以进行跳转。我们需要提供一个目标名。</li>
+</ol>
+<h2 id="保护PDF内容"><a href="#保护PDF内容" class="headerlink" title="保护PDF内容"></a>保护PDF内容</h2><p>为了保护PDF内容，我们可以在辅助字典中指定一些安全选项并传递给CGPDFContextCreate。我们可以通过包含如下关键字来设置所有者密码、用户密码、PDF是否可以被打印或拷贝：</p>
+<ol>
+<li>kCGPDFContextOwnerPassword: 定义PDF文档的所有者密码。如果指定该值，则文档使用所有者密码来加密；否则文档不加密。该关键字的值必须是ASCII编码的CFString对象。只有前32位是用于密码的。该值没有默认值。如果该值不能表示成ASCII，则无法创建文档并返回NULL。Quartz使用40-bit加密。</li>
+<li>kCGPDFContextUserPassword: 定义PDF文档的用户密码。如果文档加密了，则该值是文档的用户密码。如果没有指定，则用户密码为空。该关键字的值必须是ASCII编码的CFString对象。只有前32位是用于密码的。如果该值不能表示成ASCII，则无法创建文档并返回NULL。</li>
+<li>kCGPDFContextAllowsPrinting:指定当使用用户密码锁定时文档是否可以打印。该值必须是CFBoolean对象。默认值是kCGBooleanTrue。</li>
+<li>kCGPDFContextAllowsCopying: 指定当使用用户密码锁定时文档是否可以拷贝。该值必须是CFBoolean对象。默认值是kCGBooleanTrue。</li>
+</ol>
+<p>代码清单14-4(下一章)显示了确认PDF文档是否被锁定，及用密码打开文档。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/01/08/quartz2d-12/" rel="next" title="Quartz 2D编程指南之十二：Core Graphics层绘制">
+                <i class="fa fa-chevron-left"></i> Quartz 2D编程指南之十二：Core Graphics层绘制
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/01/11/tool-mantle/" rel="prev" title="工具篇：Mantle">
+                工具篇：Mantle <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#打开和查看PDF"><span class="nav-number">1.</span> <span class="nav-text">打开和查看PDF</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#为PDF页创建一个转换"><span class="nav-number">2.</span> <span class="nav-text">为PDF页创建一个转换</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#创建PDF文件"><span class="nav-number">3.</span> <span class="nav-text">创建PDF文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#添加链接"><span class="nav-number">4.</span> <span class="nav-text">添加链接</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#保护PDF内容"><span class="nav-number">5.</span> <span class="nav-text">保护PDF内容</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

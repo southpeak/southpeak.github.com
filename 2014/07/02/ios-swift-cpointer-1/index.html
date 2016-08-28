@@ -1,0 +1,821 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="Swift尽可能避免让我们直接去访问指针。但当我们需要直接访问内存时，我们可以使用Swift提供的几种指针类型。在下面几个表中列出了各种情况下C类型指针语法与Swift语法对应关系，其中Type作为实际类型的占位符
+对于函数参数，有以下对应关系
+
+
+
+C语法
+Swift语法
+
+
+
+
+const void *
+CConstVoidPointer
+
+
+void *
+CMutableVoidPointe">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Swift中C指针的基本使用方法">
+<meta property="og:url" content="http://southpeak.github.io/2014/07/02/ios-swift-cpointer-1/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="Swift尽可能避免让我们直接去访问指针。但当我们需要直接访问内存时，我们可以使用Swift提供的几种指针类型。在下面几个表中列出了各种情况下C类型指针语法与Swift语法对应关系，其中Type作为实际类型的占位符
+对于函数参数，有以下对应关系
+
+
+
+C语法
+Swift语法
+
+
+
+
+const void *
+CConstVoidPointer
+
+
+void *
+CMutableVoidPointe">
+<meta property="og:updated_time" content="2016-08-27T03:35:35.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Swift中C指针的基本使用方法">
+<meta name="twitter:description" content="Swift尽可能避免让我们直接去访问指针。但当我们需要直接访问内存时，我们可以使用Swift提供的几种指针类型。在下面几个表中列出了各种情况下C类型指针语法与Swift语法对应关系，其中Type作为实际类型的占位符
+对于函数参数，有以下对应关系
+
+
+
+C语法
+Swift语法
+
+
+
+
+const void *
+CConstVoidPointer
+
+
+void *
+CMutableVoidPointe">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2014/07/02/ios-swift-cpointer-1/"/>
+
+  <title> Swift中C指针的基本使用方法 | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Swift中C指针的基本使用方法
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-07-02T20:51:30+08:00" content="2014-07-02">
+              2014-07-02
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/swift/" itemprop="url" rel="index">
+                    <span itemprop="name">Swift</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>Swift尽可能避免让我们直接去访问指针。但当我们需要直接访问内存时，我们可以使用Swift提供的几种指针类型。在下面几个表中列出了各种情况下C类型指针语法与Swift语法对应关系，其中Type作为实际类型的占位符</p>
+<p>对于函数参数，有以下对应关系</p>
+<table>
+<thead>
+<tr>
+<th>C语法</th>
+<th>Swift语法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>const void *</td>
+<td>CConstVoidPointer</td>
+</tr>
+<tr>
+<td>void *</td>
+<td>CMutableVoidPointer</td>
+</tr>
+<tr>
+<td>const Type *</td>
+<td>CConstPointer<type></type></td>
+</tr>
+<tr>
+<td>Type *</td>
+<td>CMutablePointer<type></type></td>
+</tr>
+</tbody>
+</table>
+<p>对于返回值，变量，二级以上的指针参数，有以下对应关系</p>
+<table>
+<thead>
+<tr>
+<th>C语法</th>
+<th>Swift语法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>void *</td>
+<td>COpaquePointer</td>
+</tr>
+<tr>
+<td>Type *</td>
+<td>UnsafePointer<type></type></td>
+</tr>
+</tbody>
+</table>
+<p>对于类类型，有以下对应关系</p>
+<table>
+<thead>
+<tr>
+<th>C语法</th>
+<th>Swift语法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Type <em> const </em></td>
+<td>CConstPointer<type></type></td>
+</tr>
+<tr>
+<td>Type <em> __strong </em></td>
+<td>CMutablePointer<type></type></td>
+</tr>
+<tr>
+<td>Type **</td>
+<td>AutoreleasingUnsafePointer<type></type></td>
+</tr>
+</tbody>
+</table>
+<p>下面简单介绍一下这几种类型的指针</p>
+<h2 id="C可变指针"><a href="#C可变指针" class="headerlink" title="C可变指针"></a>C可变指针</h2><p>当我们声明一个包含CMutablePointer<type>参数的指针时，可以接收以下类型的值</type></p>
+<ol>
+<li>nil, 作为空指针传入</li>
+<li>一个CMutablePointer<type>值</type></li>
+<li>一个in-out表达式，它的操作数是Type类型的左值。该表达式作为左值地址传入</li>
+<li>一个in-out Type[]值，它作为数组的首地址指针传入，且在调用时扩展了数据的生命周期</li>
+</ol>
+<p>假如我们声明了如下一个函数：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">takesAMutablePointer</span><span class="params">(x: CMutablePointer&lt;Float&gt;)</span></span> &#123; <span class="comment">/*...*/</span> &#125;</div></pre></td></tr></table></figure>
+<p>那么我们可以用以下任何一种方式来调用</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">var x: Float = 0.0</div><div class="line">var p: CMutablePointer&lt;Float&gt; = &amp;x</div><div class="line">var a: Float[] = [1.0, 2.0, 3.0]</div><div class="line">	</div><div class="line">takesAMutablePointer(nil)</div><div class="line">takesAMutablePointer(p)</div><div class="line">takesAMutablePointer(&amp;x)</div><div class="line">takesAMutablePointer(&amp;a)</div></pre></td></tr></table></figure>
+<p>当声明一个包含CMutableVoidPointer参数的函数时，它可以接收与CMutablePointer<type>相同的形参，其中Type为任意类型。需要注意的是如果直接传递CMutablePointer<type>，目前的编译器会直接报编译错误</type></type></p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">takesAMutableVoidPointer</span><span class="params">(x: CMutableVoidPointer)</span></span> &#123; <span class="comment">/* ... */</span> &#125;</div><div class="line">	</div><div class="line"><span class="keyword">var</span> x: <span class="type">Float</span> = <span class="number">0.0</span>, y: <span class="type">Int</span> = <span class="number">0</span></div><div class="line"><span class="keyword">var</span> p: <span class="type">CMutablePointer</span>&lt;<span class="type">Float</span>&gt; = &amp;x, q: <span class="type">CMutablePointer</span>&lt;<span class="type">Int</span>&gt; = &amp;y</div><div class="line"><span class="keyword">var</span> a: <span class="type">Float</span>[] = [<span class="number">1.0</span>, <span class="number">2.0</span>, <span class="number">3.0</span>], b: <span class="type">Int</span>[] = [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>]</div><div class="line">	</div><div class="line">takesAMutableVoidPointer(<span class="literal">nil</span>)</div><div class="line"><span class="comment">//takesAMutableVoidPointer(p)	编辑错误:CMutablePointer&lt;Float&gt; is not convertible to CMutableVoidPointer</span></div><div class="line"><span class="comment">//takesAMutableVoidPointer(q)</span></div><div class="line">takesAMutableVoidPointer(&amp;x)</div><div class="line">takesAMutableVoidPointer(&amp;y)</div><div class="line">takesAMutableVoidPointer(&amp;a)</div><div class="line">takesAMutableVoidPointer(&amp;b)</div></pre></td></tr></table></figure>
+<h2 id="C常量指针"><a href="#C常量指针" class="headerlink" title="C常量指针"></a>C常量指针</h2><p>当我们声明一个带有CConstPointer<type>参数的函数时，可以接收以下类型的值：</type></p>
+<ol>
+<li>nil, 作为空指针传入</li>
+<li>一个CMutablePointer<type>, CMutableVoidPointer, CConstPointer<type>, CConstVoidPointer, 或者AutoreleasingUnsafePointer<type>类型的值，如果需要则会转换成CConstPointer<type></type></type></type></type></li>
+<li>一个in-out表达式，它的操作数是Type类型的左值。该表达式作为左值地址传入</li>
+<li>一个in-out Type[]值，它作为数组的首地址指针传入，且在调用时扩展了数据的生命周期</li>
+</ol>
+<p>假如我们声明如下函数:</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">takesAConstPointer</span><span class="params">(x: CConstPointer&lt;Float&gt;)</span></span> &#123; <span class="comment">/*...*/</span> &#125;</div></pre></td></tr></table></figure>
+<p>那么我们可以用以下任何一种方式来调用</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">var</span> x: <span class="type">Float</span> = <span class="number">0.0</span></div><div class="line"><span class="keyword">var</span> p: <span class="type">CConstPointer</span>&lt;<span class="type">Float</span>&gt; = <span class="literal">nil</span></div><div class="line">	</div><div class="line">takesAConstPointer(<span class="literal">nil</span>)</div><div class="line">takesAConstPointer(p)</div><div class="line">takesAConstPointer(&amp;x)</div><div class="line">takesAConstPointer([<span class="number">1.0</span>, <span class="number">2.0</span>, <span class="number">3.0</span>])</div></pre></td></tr></table></figure>
+<p>当声明一个包含CConstVoidPointer参数的函数时，它可以接收与CConstPointer<type>相同的形参，其中Type为任意类型。</type></p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">takesAConstVoidPointer</span><span class="params">(x: CConstVoidPointer)</span></span> &#123; <span class="comment">/* ... */</span> &#125;</div><div class="line">	</div><div class="line"><span class="keyword">var</span> x: <span class="type">Float</span> = <span class="number">0.0</span>, y: <span class="type">Int</span> = <span class="number">0</span></div><div class="line"><span class="keyword">var</span> p:<span class="type">CConstPointer</span>&lt;<span class="type">Float</span>&gt; = <span class="literal">nil</span>, q: <span class="type">CConstPointer</span>&lt;<span class="type">Int</span>&gt; = <span class="literal">nil</span></div><div class="line">	</div><div class="line">takesAConstVoidPointer(<span class="literal">nil</span>)</div><div class="line"><span class="comment">//takesAConstVoidPointer(p)</span></div><div class="line"><span class="comment">//takesAConstVoidPointer(q)</span></div><div class="line">takesAConstVoidPointer(&amp;x)</div><div class="line">takesAConstVoidPointer(&amp;y)</div><div class="line">takesAConstVoidPointer([<span class="number">1.0</span>, <span class="number">2.0</span>, <span class="number">3.0</span>])</div><div class="line">takesAConstVoidPointer([<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>])</div></pre></td></tr></table></figure>
+<h2 id="AutoreleasingUnsafePointer"><a href="#AutoreleasingUnsafePointer" class="headerlink" title="AutoreleasingUnsafePointer"></a>AutoreleasingUnsafePointer</h2><p>当我们声明一个带有AutoreleasingUnsafePointer参数的函数时，可以接收以下类型的值：</p>
+<ol>
+<li>nil, 作为空指针传入</li>
+<li>一个AutoreleasingUnsafePointer<type>值</type></li>
+<li>一个in-out表达式，其操作数是临时非所属(nonowning)缓冲区，存储了原始值的拷贝。缓冲区的地址被传递给调用函数，且在返回时，缓冲区的值被加载(loaded)、保留(retained)并重新指派(reassigned)给操作数</li>
+</ol>
+<p>注意上面清单中不包含数组</p>
+<p>如果我们声明了以下函数</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">takesAnAutoreleasingUnsafePointer</span><span class="params">(x: AutoreleasingUnsafePointer&lt;NSDate?&gt;)</span></span> &#123; <span class="comment">/*...*/</span> &#125;</div></pre></td></tr></table></figure>
+<p>则可以用以下方式来调用</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">var</span> x: <span class="type">NSDate</span>? = <span class="literal">nil</span></div><div class="line"><span class="keyword">var</span> p: <span class="type">AutoreleasingUnsafePointer</span>&lt;<span class="type">NSDate</span>?&gt; = <span class="literal">nil</span></div><div class="line">	</div><div class="line">takesAnAutoreleasingUnsafePointer(<span class="literal">nil</span>)</div><div class="line">takesAnAutoreleasingUnsafePointer(p)</div><div class="line">takesAnAutoreleasingUnsafePointer(&amp;x)</div></pre></td></tr></table></figure>
+<p>最后需要注意的是在Swift中，没有导入C函数指针。</p>
+<p>参考文档：<a href="https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/BuildingCocoaApps/index.html" target="_blank" rel="external">Using Swift with Cocoa and Objective-C</a></p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2014/07/02/ios-swift-protocol/" rel="next" title="Swift协议基础">
+                <i class="fa fa-chevron-left"></i> Swift协议基础
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2014/07/05/cover-flow/" rel="prev" title="Cover flow基本原理及Tapku实现方法">
+                Cover flow基本原理及Tapku实现方法 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#C可变指针"><span class="nav-number">1.</span> <span class="nav-text">C可变指针</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#C常量指针"><span class="nav-number">2.</span> <span class="nav-text">C常量指针</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AutoreleasingUnsafePointer"><span class="nav-number">3.</span> <span class="nav-text">AutoreleasingUnsafePointer</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

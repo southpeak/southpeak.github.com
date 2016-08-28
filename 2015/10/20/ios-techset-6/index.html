@@ -1,0 +1,778 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="天气有点冷啊，冬天快来了～～然后貌似互联网的冬天也来了啊。阿里缩减校招名额，美团融资失败，大众点评与美团报团，百度腾讯调整招聘，一丝丝的凉意啊～～再然后就是网易邮箱密码泄漏，这又是要搞哪样？不过话说我都不记得自己是不是有网易邮箱啊。额，不知道这个冬天的第一场雪什么时候会来。不管怎样，这个冬天还是窝一窝，等来年春暖花开之时再出去浪了。
+这一期的主要内容还是三点：
+
+Xcode 7中Playgroun">
+<meta property="og:type" content="article">
+<meta property="og:title" content="iOS知识小集 第六期(2015.10.20)">
+<meta property="og:url" content="http://southpeak.github.io/2015/10/20/ios-techset-6/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="天气有点冷啊，冬天快来了～～然后貌似互联网的冬天也来了啊。阿里缩减校招名额，美团融资失败，大众点评与美团报团，百度腾讯调整招聘，一丝丝的凉意啊～～再然后就是网易邮箱密码泄漏，这又是要搞哪样？不过话说我都不记得自己是不是有网易邮箱啊。额，不知道这个冬天的第一场雪什么时候会来。不管怎样，这个冬天还是窝一窝，等来年春暖花开之时再出去浪了。
+这一期的主要内容还是三点：
+
+Xcode 7中Playgroun">
+<meta property="og:image" content="https://raw.githubusercontent.com/southpeak/Blog-images/master/playground%20resource%201.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/southpeak/Blog-images/master/playground%20resource%203.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/southpeak/Blog-images/master/playground%20resource%202.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/southpeak/Blog-images/master/Literals%20in%20playerground%20-%20image%20literal%201.png">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/Literals%20in%20playerground%20-%20image%20literal%202.png?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/Literals%20in%20playerground%20-%20image%20literal%203.png?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/Literals%20in%20playerground%20-%20image%20literal%204.png?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/CAEmitterLayer%201.jpg?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/CAEmitterLayer%202.jpg?raw=true">
+<meta property="og:updated_time" content="2016-08-27T02:40:57.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="iOS知识小集 第六期(2015.10.20)">
+<meta name="twitter:description" content="天气有点冷啊，冬天快来了～～然后貌似互联网的冬天也来了啊。阿里缩减校招名额，美团融资失败，大众点评与美团报团，百度腾讯调整招聘，一丝丝的凉意啊～～再然后就是网易邮箱密码泄漏，这又是要搞哪样？不过话说我都不记得自己是不是有网易邮箱啊。额，不知道这个冬天的第一场雪什么时候会来。不管怎样，这个冬天还是窝一窝，等来年春暖花开之时再出去浪了。
+这一期的主要内容还是三点：
+
+Xcode 7中Playgroun">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/southpeak/Blog-images/master/playground%20resource%201.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2015/10/20/ios-techset-6/"/>
+
+  <title> iOS知识小集 第六期(2015.10.20) | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                iOS知识小集 第六期(2015.10.20)
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-10-20T17:45:14+08:00" content="2015-10-20">
+              2015-10-20
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/techset/" itemprop="url" rel="index">
+                    <span itemprop="name">知识小集</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>天气有点冷啊，冬天快来了～～然后貌似互联网的冬天也来了啊。阿里缩减校招名额，美团融资失败，大众点评与美团报团，百度腾讯调整招聘，一丝丝的凉意啊～～再然后就是网易邮箱密码泄漏，这又是要搞哪样？不过话说我都不记得自己是不是有网易邮箱啊。额，不知道这个冬天的第一场雪什么时候会来。不管怎样，这个冬天还是窝一窝，等来年春暖花开之时再出去浪了。</p>
+<p>这一期的主要内容还是三点：</p>
+<ol>
+<li><code>Xcode 7</code>中<code>Playground</code>中导入并使用图片</li>
+<li><code>Playground</code>中的字面量(<code>Xcode 7.1</code>)</li>
+<li><code>CAEmitterLayer</code>实现粒子动画</li>
+</ol>
+<p>内容不是很多，都是些小东西，主要还是一些知识碎片，这也是知识小集的出发点。所以大家就当是饭后的小点心吧。以后争取勤快一点，至少每个月出个两篇吧（what?不是说过好多次了么？）。</p>
+<h2 id="Xcode-7中Playground中导入并使用图片"><a href="#Xcode-7中Playground中导入并使用图片" class="headerlink" title="Xcode 7中Playground中导入并使用图片"></a>Xcode 7中Playground中导入并使用图片</h2><p>在<code>Playground</code>中做测试时，可能需要显示图片，这时我们就需要导入一些图片资源。在<code>Playground</code>中，没有像普通工程那样有个单独的<code>Images.xcassets</code>文件夹来存储图片，不过添加图片也是件非常简单的事情。</p>
+<p>如果没有显示<code>project navigator</code>，则可以使用快捷键<code>cmd + 0</code>打开。默认情况下，我们可以在<code>project navigator</code>看到两个<code>group</code>。一个是<code>Source</code>，另一个是<code>Resources</code>。其中<code>Resources</code>这个<code>group</code>就是用来放置资源的(包括图片资源)，如下图所示：</p>
+<p><img src="https://raw.githubusercontent.com/southpeak/Blog-images/master/playground%20resource%201.png" alt="image"></p>
+<p>选中这个<code>group</code>，然后点击左下角的<code>+</code>按钮，在弹出的菜单中选择<code>Add Files to &#39;Resource&#39;</code>，然后选择要添加的文件，点确定。这样就把资源文件添加到我们的<code>Playground</code>了。</p>
+<p>添加完成后，我们就可以使用这些资源了。如要显示图片，则可以使用以下代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">let image: UIImage = UIImage(named: &quot;test.png&quot;)!</div></pre></td></tr></table></figure>
+<p>在<code>Playground</code>中显示如下：</p>
+<p><img src="https://raw.githubusercontent.com/southpeak/Blog-images/master/playground%20resource%203.png" alt="image"></p>
+<p>另外，初始情况下，<code>Playground</code>的包里面并没有<code>Resources</code>文件夹，在我们添加资源后，会自动创建这个文件夹。然后我们可以在<code>File Inspector</code>中查看文件夹的具体位置，如下所示：</p>
+<p><img src="https://raw.githubusercontent.com/southpeak/Blog-images/master/playground%20resource%202.png" alt="image"></p>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><ol>
+<li><a href="https://developer.apple.com/library/ios/recipes/Playground_Help/Chapters/AddResource.html#//apple_ref/doc/uid/TP40015166-CH29-SW1" target="_blank" rel="external">Playground Help - Adding Resources to a Playground</a></li>
+<li><a href="http://stackoverflow.com/questions/24069479/swift-playgrounds-with-uiimage" target="_blank" rel="external">Swift playgrounds with UIImage</a></li>
+<li><a href="http://natashatherobot.com/xcode-6-add-image-assets-to-playground/" target="_blank" rel="external">XCode 6: How To Add Image Assets To Your Playground</a></li>
+</ol>
+<h2 id="Playground中的字面量-Xcode-7-1"><a href="#Playground中的字面量-Xcode-7-1" class="headerlink" title="Playground中的字面量(Xcode 7.1)"></a>Playground中的字面量(Xcode 7.1)</h2><p><code>Xcode 7.1</code>新增了一项特性，让我们可以在<code>playground</code>代码中嵌入文件、图片和颜色的字面量。</p>
+<p>以图片字面量为例，以往如果需要在<code>playground</code>使用图片资源，我们总是需要通过文件名来指定图片，如下代码所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">let image = UIImage(named: &quot;swift.png&quot;)</div></pre></td></tr></table></figure>
+<p>其效果如下：</p>
+<p><img src="https://raw.githubusercontent.com/southpeak/Blog-images/master/Literals%20in%20playerground%20-%20image%20literal%201.png" alt="image"></p>
+<p>而在<code>Xcode 7.1</code>中，我们无需在编辑器中键入<code>&quot;swift.png&quot;</code>，而只需将图片从<code>Finder</code>或是资源中拖到我们的代码里面，就可以直接生成一个<code>UIImage</code>对象，如下所示：</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/Literals%20in%20playerground%20-%20image%20literal%202.png?raw=true" alt="image"></p>
+<p>可以看到，代码中<code>=</code>右侧的那个类似于小图标的东东就是一个图片字面量。是不是很酷来着？</p>
+<p>与图片字面量类似，我们同样可以添加颜色字面量和文件字面量，添加方法可以参考<a href="https://developer.apple.com/library/prerelease/ios/recipes/Playground_Help/Chapters/AddColorLiteral.html#//apple_ref/doc/uid/TP40015166-CH50-SW1" target="_blank" rel="external">Adding Color Literals</a>和<a href="https://developer.apple.com/library/prerelease/ios/recipes/Playground_Help/Chapters/AddFileLiteral.html#//apple_ref/doc/uid/TP40015166-CH51-SW1" target="_blank" rel="external">Adding File Literals</a>。</p>
+<p>当然，除了看上去很酷之外，这也让我们在<code>playground</code>中写代码时能够更快地去编辑这些资源。我们可以通过颜色选择器来插入我们想要的颜色，可以直接从<code>Finder</code>中将文件或图片拖到我们的代码中，而不再需要手动输入颜色值或文件名等。而如果我们想替换资源，只需要双击这些字面量就可以轻松地选择其它的资源。</p>
+<h3 id="字面量的表示"><a href="#字面量的表示" class="headerlink" title="字面量的表示"></a>字面量的表示</h3><p>这里有一个问题，在代码中，这些字面量是如何表示的呢？</p>
+<p>我们还是以图片字面量为例。选中一个图片字面量，<code>cmd+C</code>一下，然后找个文本编辑器，再<code>cmd+V</code>一下，发现拷贝出来的是如下信息：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">[#Image(imageLiteral: &quot;swift.png&quot;)#]</div></pre></td></tr></table></figure>
+<p>类似于一个构造器。我们再到<code>UIImage</code>中找找，可以看到<code>UIImage</code>有一个扩展，如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">extension UIImage : _ImageLiteralConvertible &#123;</div><div class="line">    required public convenience init(imageLiteral name: String)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这个扩展让<code>UIImage</code>类实现了<code>_ImageLiteralConvertible</code>协议，看这命名，貌似是一个私有的协议。我们来看看它的字义，如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">/// Conforming types can be initialized with image literals (e.g.</div><div class="line">/// `[#Image(imageLiteral: &quot;hi.png&quot;)#]`).</div><div class="line">public protocol _ImageLiteralConvertible &#123;</div><div class="line">    public init(imageLiteral: String)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>可以看到，实现这个协议的类型就可以使用图片字面量来初始化，即我们上面所看到。当然，我们没办法看到源码是怎么实现的，只能到此为止。</p>
+<p>实际上，这些字面量会被转换成平台指定的类型，在官方的<code>swift blog</code>中列出了一个清单，如下所示：</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/Literals%20in%20playerground%20-%20image%20literal%203.png?raw=true" alt="image"></p>
+<p>还有件看起来很酷但似乎并不太实用的事是：这些字面量不但可以用在<code>playground</code>中，而且还有可用在工程代码中。不过之所有不太实用，是因为在工程代码中只能以纯文本的形式来展现，而不是像在<code>playground</code>中那样能直观的显示。这种纯文本形式即我们上面拷贝出来的信息，我们再贴一次：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">[#Image(imageLiteral: &quot;swift.png&quot;)#]</div></pre></td></tr></table></figure>
+<p>我们码段代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">let image = [#Image(imageLiteral: &quot;swift.png&quot;)#]</div><div class="line"></div><div class="line">let imageView = UIImageView(image: image)</div><div class="line">imageView.frame = CGRect(x: 100, y: 100, width: 100, height: 100)</div><div class="line"></div><div class="line">self.view.addSubview(imageView)</div></pre></td></tr></table></figure>
+<p>其效果如下所示：</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/Literals%20in%20playerground%20-%20image%20literal%204.png?raw=true" alt="image"></p>
+<p>从代码实践的角度来看，这种写法看上去并不是那么美啊。不过由于这种写法是与平台相关的，所以如果工程需要同时支持<code>OSX</code>、<code>iOS</code>和<code>tvOS</code>，还是可以考虑用一下的。</p>
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p>总之，在<code>playground</code>中使用图片、颜色、文件字面量还是一件很酷的事，它大大提高了我们使用资源的效率，同时也更加直观，用起来还是满爽的。</p>
+<p>这里附上官方的实例:<a href="https://developer.apple.com/swift/blog/downloads/Literals.zip" target="_blank" rel="external">Literals.playground</a></p>
+<h3 id="参考-1"><a href="#参考-1" class="headerlink" title="参考"></a>参考</h3><ol>
+<li><a href="https://developer.apple.com/swift/blog/" target="_blank" rel="external">Literals in Playgrounds</a></li>
+<li><a href="https://developer.apple.com/library/prerelease/ios/recipes/Playground_Help/Chapters/AddImageLiteral.html#//apple_ref/doc/uid/TP40015166-CH49-SW1" target="_blank" rel="external">Adding Image Literals</a></li>
+<li><a href="https://developer.apple.com/library/prerelease/ios/recipes/Playground_Help/Chapters/AddColorLiteral.html#//apple_ref/doc/uid/TP40015166-CH50-SW1" target="_blank" rel="external">Adding Color Literals</a></li>
+<li><a href="https://developer.apple.com/library/prerelease/ios/recipes/Playground_Help/Chapters/AddFileLiteral.html#//apple_ref/doc/uid/TP40015166-CH51-SW1" target="_blank" rel="external">Adding File Literals</a></li>
+</ol>
+<h2 id="CAEmitterLayer实现粒子动画"><a href="#CAEmitterLayer实现粒子动画" class="headerlink" title="CAEmitterLayer实现粒子动画"></a>CAEmitterLayer实现粒子动画</h2><p>前段时间<a href="http://weibo.com/u/1956547962" target="_blank" rel="external">@MartinRGB</a>做了个带粒子效果的删除单元格动画，今天问他具体的实现方式，然后他把参考的原始工程发我看了一下。于是就找到了这个：<a href="https://github.com/icanzilb/UIEffectDesignerView" target="_blank" rel="external">UIEffectDesignerView</a>。是<code>github</code>上的一个粒子动画的开源代码。其效果如下图所示：</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/CAEmitterLayer%201.jpg?raw=true" alt="image"></p>
+<p>这个动画的实现基于<code>CAEmitterLayer</code>类，它继承自<code>CALayer</code>。这个类是<code>Core Animation</code>提供的用于实现一个粒子发射器系统的类。这个类主要提供了一些属性来设置粒子系统的几何特性。我们可以如下处理：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">let emitter = CAEmitterLayer()</div><div class="line"></div><div class="line">// setup the emitter metrics</div><div class="line">emitter.emitterPosition = CGPoint(x: self.bounds.size.width / 2, y: self.bounds.height / 2)</div><div class="line">emitter.emitterSize = self.bounds.size</div><div class="line"></div><div class="line">// setup the emitter type and mode</div><div class="line">let kEmitterModes = [ kCAEmitterLayerUnordered, kCAEmitterLayerAdditive, kCAEmitterLayerOldestLast, kCAEmitterLayerOldestFirst ]</div><div class="line">emitter.emitterMode = kEmitterModes[ Int(valueFromEffect(&quot;emitterMode&quot;)) ]</div></pre></td></tr></table></figure>
+<p><em>需要注意的就是粒子系统会被绘制到层的背影颜色及边框之上。</em></p>
+<p>当然，要想发射粒子，就需要有粒子源。一个粒子源定义了发射的粒子的方向及其它属性。在<code>Core Animation</code>中，使用<code>CAEmitterCell</code>对象来表示一个粒子源。<code>CAEmitterCell</code>定义了大量的属性来设置一个粒子源的特性，如粒子的显示特性(<code>color</code>, <code>scale</code>, <code>style</code>)、运动特性(如<code>spin</code>, <code>emissionLatitude</code>)、时间特性(如<code>lifetime</code>, <code>birthRate</code>, <code>velocity</code>)等。我们可以手动来设置这些值，也可以从文件中获取。在<code>UIEffectDesignerView</code>工程中，粒子发射器的信息是放在一个<code>ped</code>文件中，这个文件以<code>JSON</code>格式存储了粒子信息，如下所示：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line">&#123;</div><div class="line">    "latitude": 0, </div><div class="line">    "alphaSpeed": 0, </div><div class="line">    "scaleSpeed": 0, </div><div class="line">    "blueRange": 0.33, </div><div class="line">    "width": 120, </div><div class="line">    "texture": "....", </div><div class="line">    "spinRange": 0, </div><div class="line">    "lifetime": 5, </div><div class="line">    "greenSpeed": 0, </div><div class="line">    "aux3": null, </div><div class="line">    "emitterType": 0, </div><div class="line">    "version": 0.1, </div><div class="line">    "zAcceleration": 0, </div><div class="line">    "velocity": 100, </div><div class="line">    "velocityRange": 150, </div><div class="line">    ...</div><div class="line">    "y": 390, </div><div class="line">    "aux2": null</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>我们从文件中把粒子信息读取出来放到一个字典中，然后再将值赋给一个<code>CAEmitterCell</code>对象，如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">// create new emitter cell</div><div class="line">let emitterCell: CAEmitterCell = CAEmitterCell()</div><div class="line"></div><div class="line">let effect: [String: AnyObject] = loadFile(filename)</div><div class="line"></div><div class="line">...</div><div class="line">emitterCell.birthRate           = effect(&quot;birthRate&quot;)</div><div class="line">emitterCell.lifetime            = effect(&quot;lifetime&quot;)</div><div class="line">emitterCell.lifetimeRange       = effect(&quot;lifetimeRange&quot;)</div><div class="line">emitterCell.velocity            = effect(&quot;velocity&quot;)</div><div class="line">emitterCell.velocityRange       = effect(&quot;velocityRange&quot;)</div><div class="line">...</div></pre></td></tr></table></figure>
+<p>之后，我们便可以把这个粒子源添加到粒子系统中，如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">emitter.emitterCells = [ emitterCell ]</div></pre></td></tr></table></figure>
+<p>这样就可以发射粒子了。</p>
+<p>当然对于一个粒子的特性，除了受粒子源设置的属性影响外，同样也还受粒子系统的一些属性的影响，如下代码所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">emitter.scale = 0.5</div></pre></td></tr></table></figure>
+<p>其效果如下图所示：</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/CAEmitterLayer%202.jpg?raw=true" alt="image"></p>
+<p>另外，一个粒子源也可以包含一个子粒子源的数组，每个子源都可以作为一个独立的发射源。</p>
+<h3 id="参考-2"><a href="#参考-2" class="headerlink" title="参考"></a>参考</h3><ol>
+<li><a href="https://github.com/icanzilb/UIEffectDesignerView" target="_blank" rel="external">UIEffectDesignerView</a></li>
+<li><a href="https://developer.apple.com/library/prerelease/ios/documentation/GraphicsImaging/Reference/CAEmitterLayer_class/" target="_blank" rel="external">CAEmitterLayer Class Reference</a></li>
+<li><a href="https://developer.apple.com/library/prerelease/ios/documentation/GraphicsImaging/Reference/CAEmitterCell_class/index.html" target="_blank" rel="external">CAEmitterCell Class Reference</a></li>
+</ol>
+<h2 id="零碎"><a href="#零碎" class="headerlink" title="零碎"></a>零碎</h2><h3 id="C语言的int类型在Swift中的对应类型"><a href="#C语言的int类型在Swift中的对应类型" class="headerlink" title="C语言的int类型在Swift中的对应类型"></a>C语言的int类型在Swift中的对应类型</h3><p>一言以蔽之，<code>C</code>语言的<code>int</code>类型在<code>Swift</code>中的对应类型是<code>CInt</code>，它是<code>Int32</code>的一个别名。今天一哥们用<code>Swift</code>写了一段测试代码来调用<code>C</code>方法，方法中有个参数是<code>int</code>类型，类似于如下代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">let str = &quot;Hello, World!&quot;</div><div class="line">let a = str.characters.count</div><div class="line">Test.test(a)		// test方法接受一个int类型的参数</div><div class="line"></div><div class="line">// 编译器错误：Cannot convert value of type &apos;Distance&apos;(aka &apos;Int&apos;) to expected argument type Int32</div></pre></td></tr></table></figure>
+<p>可以看到我们需要传入一个<code>Int32</code>类型的参数。</p>
+<p>之所以使用<code>Int32</code>，是因为在<code>C</code>语言中，<code>int</code>是<code>4</code>个字节，而<code>Swift</code>中的<code>Int</code>则依赖于平台，可能是<code>4</code>个字节，也可能是<code>8</code>个字节。嗯，这个问题是凑数的，点到为止吧。</p>
+<h3 id="Swift中获取类型的大小"><a href="#Swift中获取类型的大小" class="headerlink" title="Swift中获取类型的大小"></a>Swift中获取类型的大小</h3><p>在<code>C</code>语言中，如果我们想获取一个变量或数据类型的大小，则可以使用<code>sizeof</code>函数。如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">int a = 10;</div><div class="line">printf(&quot;%lu, %lu&quot;, sizeof(int), sizeof(a));</div><div class="line"></div><div class="line">// 输出：4,4</div></pre></td></tr></table></figure>
+<p>在<code>Swift</code>中，也提供了相应的函数。我们可以使用<code>sizeof</code>来获取给定类型的大小，使用<code>sizeofValue</code>来获取给定值的类型的大小。如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">sizeof(Int)				// 8</div><div class="line"></div><div class="line">let c: Int = 10</div><div class="line">sizeofValue(c)			// 8</div></pre></td></tr></table></figure>
+<p>不过，与<code>C</code>语言中的<code>sizeof</code>不同的是，<code>Siwft</code>中的<code>sizeof</code>与<code>sizeofValue</code>不包含任何内存对齐的填充部分。如<code>timeval</code>结构体，在<code>C</code>语言中的大小是<code>16</code>，而在<code>Swift</code>中，则是<code>12</code>，并未包含<code>4</code>个填充字节。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">sizeof(timeval)			// 12</div></pre></td></tr></table></figure>
+<p>不过，<code>Swift</code>提供了两个对应的函数，来计算经过内存对齐的类型的大小，即<code>strideof</code>秘<code>strideofValue</code>，如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">let time = timeval(tv_sec: 10, tv_usec: 10)</div><div class="line"></div><div class="line">strideof(timeval)		// 16</div><div class="line">strideofValue(time)		// 16</div></pre></td></tr></table></figure>
+<h4 id="参考-3"><a href="#参考-3" class="headerlink" title="参考"></a>参考</h4><ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/Swift/Conceptual/BuildingCocoaApps/InteractingWithCAPIs.html" target="_blank" rel="external">Using Swift with Cocoa and Objective-C (Swift 2)</a></li>
+</ol>
+<h3 id="问题：纯Playground中使用Objective-C-C代码"><a href="#问题：纯Playground中使用Objective-C-C代码" class="headerlink" title="问题：纯Playground中使用Objective-C/C代码"></a>问题：纯Playground中使用Objective-C/C代码</h3><p>今天想在纯<code>Playground</code>中测试一下<code>CC_MD5</code>方法，发现没招。因为<code>CC_MD5</code>实际上是一个<code>C</code>方法，需要导入<code>&lt;CommonCrypto/CommonCrypto.h&gt;</code>头文件。这就涉及到<code>Swift</code>与<code>Objective-C</code>混编，需要创建一个桥接文件。但是纯<code>Playground</code>貌似并不支持这么做（搜了一下没搜着解决方法）。于是只能采取曲线救国策略，建立一个基于<code>Swift</code>的工程，在这里面创建桥接文件，导入头文件。然后在工程中创建一个<code>Playground</code>来做测试了。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/09/26/ios-techset-5/" rel="next" title="iOS知识小集 第五期(2015.09.26)">
+                <i class="fa fa-chevron-left"></i> iOS知识小集 第五期(2015.09.26)
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/10/26/objectivecbridgeable-protocol-for-objectivec-class-and-swift-struct/" rel="prev" title="使用_ObjectiveCBridgeable协议实现Objective-C类与Swift结构体的无缝互转">
+                使用_ObjectiveCBridgeable协议实现Objective-C类与Swift结构体的无缝互转 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Xcode-7中Playground中导入并使用图片"><span class="nav-number">1.</span> <span class="nav-text">Xcode 7中Playground中导入并使用图片</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#参考"><span class="nav-number">1.1.</span> <span class="nav-text">参考</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Playground中的字面量-Xcode-7-1"><span class="nav-number">2.</span> <span class="nav-text">Playground中的字面量(Xcode 7.1)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#字面量的表示"><span class="nav-number">2.1.</span> <span class="nav-text">字面量的表示</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#小结"><span class="nav-number">2.2.</span> <span class="nav-text">小结</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考-1"><span class="nav-number">2.3.</span> <span class="nav-text">参考</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#CAEmitterLayer实现粒子动画"><span class="nav-number">3.</span> <span class="nav-text">CAEmitterLayer实现粒子动画</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#参考-2"><span class="nav-number">3.1.</span> <span class="nav-text">参考</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#零碎"><span class="nav-number">4.</span> <span class="nav-text">零碎</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#C语言的int类型在Swift中的对应类型"><span class="nav-number">4.1.</span> <span class="nav-text">C语言的int类型在Swift中的对应类型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Swift中获取类型的大小"><span class="nav-number">4.2.</span> <span class="nav-text">Swift中获取类型的大小</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#参考-3"><span class="nav-number">4.2.1.</span> <span class="nav-text">参考</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#问题：纯Playground中使用Objective-C-C代码"><span class="nav-number">4.3.</span> <span class="nav-text">问题：纯Playground中使用Objective-C/C代码</span></a></li></ol></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

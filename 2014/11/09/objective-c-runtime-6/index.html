@@ -1,0 +1,736 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="前面几篇基本介绍了runtime中的大部分功能，包括对类与对象、成员变量与属性、方法与消息、分类与协议的处理。runtime大部分的功能都是围绕这几点来实现的。
+本章的内容并不算重点，主要针对前文中对Objective-C Runtime Reference内容遗漏的地方做些补充。当然这并不能包含所有的内容。runtime还有许多内容，需要读者去研究发现。
+super在Objective-C中，如">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Objective-C Runtime 运行时之六：拾遗">
+<meta property="og:url" content="http://southpeak.github.io/2014/11/09/objective-c-runtime-6/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="前面几篇基本介绍了runtime中的大部分功能，包括对类与对象、成员变量与属性、方法与消息、分类与协议的处理。runtime大部分的功能都是围绕这几点来实现的。
+本章的内容并不算重点，主要针对前文中对Objective-C Runtime Reference内容遗漏的地方做些补充。当然这并不能包含所有的内容。runtime还有许多内容，需要读者去研究发现。
+super在Objective-C中，如">
+<meta property="og:updated_time" content="2016-08-27T07:40:23.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Objective-C Runtime 运行时之六：拾遗">
+<meta name="twitter:description" content="前面几篇基本介绍了runtime中的大部分功能，包括对类与对象、成员变量与属性、方法与消息、分类与协议的处理。runtime大部分的功能都是围绕这几点来实现的。
+本章的内容并不算重点，主要针对前文中对Objective-C Runtime Reference内容遗漏的地方做些补充。当然这并不能包含所有的内容。runtime还有许多内容，需要读者去研究发现。
+super在Objective-C中，如">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2014/11/09/objective-c-runtime-6/"/>
+
+  <title> Objective-C Runtime 运行时之六：拾遗 | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Objective-C Runtime 运行时之六：拾遗
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-11-09T14:44:53+08:00" content="2014-11-09">
+              2014-11-09
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/objectivec/" itemprop="url" rel="index">
+                    <span itemprop="name">Objective-C</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>前面几篇基本介绍了runtime中的大部分功能，包括对类与对象、成员变量与属性、方法与消息、分类与协议的处理。runtime大部分的功能都是围绕这几点来实现的。</p>
+<p>本章的内容并不算重点，主要针对前文中对<code>Objective-C Runtime Reference</code>内容遗漏的地方做些补充。当然这并不能包含所有的内容。runtime还有许多内容，需要读者去研究发现。</p>
+<h2 id="super"><a href="#super" class="headerlink" title="super"></a>super</h2><p>在Objective-C中，如果我们需要在类的方法中调用父类的方法时，通常都会用到<code>super</code>，如下所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">MyViewController</span>: <span class="title">UIViewController</span></span></div><div class="line"></div><div class="line"><span class="keyword">@end</span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@implementation</span>	<span class="title">MyViewController</span></span></div><div class="line"></div><div class="line">- (<span class="keyword">void</span>)viewDidLoad &#123;</div><div class="line"></div><div class="line">	[<span class="keyword">super</span> viewDidLoad];</div><div class="line"></div><div class="line">	<span class="comment">// do something</span></div><div class="line">	...</div><div class="line">&#125;</div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>如何使用<code>super</code>我们都知道。现在的问题是，它是如何工作的呢？</p>
+<p>首先我们需要知道的是<code>super</code>与<code>self</code>不同。<code>self</code>是类的一个隐藏参数，每个方法的实现的第一个参数即为<code>self</code>。而<code>super</code>并不是隐藏参数，它实际上只是一个”编译器标示符”，它负责告诉编译器，当调用viewDidLoad方法时，去调用父类的方法，而不是本类中的方法。而它实际上与<code>self</code>指向的是相同的消息接收者。为了理解这一点，我们先来看看<code>super</code>的定义：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">struct</span> objc_super &#123; <span class="keyword">id</span> receiver; Class superClass; &#125;;</div></pre></td></tr></table></figure>
+<p>这个结构体有两个成员：</p>
+<ol>
+<li>receiver：即消息的实际接收者</li>
+<li>superClass：指针当前类的父类</li>
+</ol>
+<p>当我们使用<code>super</code>来接收消息时，编译器会生成一个<code>objc_super</code>结构体。就上面的例子而言，这个结构体的<code>receiver</code>就是MyViewController对象，与<code>self</code>相同；<code>superClass</code>指向MyViewController的父类UIViewController。</p>
+<p>接下来，发送消息时，不是调用<code>objc_msgSend</code>函数，而是调用<code>objc_msgSendSuper</code>函数，其声明如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">id</span> objc_msgSendSuper ( <span class="keyword">struct</span> objc_super *<span class="keyword">super</span>, SEL op, ... );</div></pre></td></tr></table></figure>
+<p>该函数第一个参数即为前面生成的<code>objc_super</code>结构体，第二个参数是方法的<code>selector</code>。该函数实际的操作是：从<code>objc_super</code>结构体指向的<code>superClass</code>的方法列表开始查找viewDidLoad的<code>selector</code>，找到后以<code>objc-&gt;receiver</code>去调用这个<code>selector</code>，而此时的操作流程就是如下方式了</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">objc_msgSend(objc_super-&gt;receiver, <span class="keyword">@selector</span>(viewDidLoad))</div></pre></td></tr></table></figure>
+<p>由于<code>objc_super-&gt;receiver</code>就是<code>self</code>本身，所以该方法实际与下面这个调用是相同的：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">objc_msgSend(<span class="keyword">self</span>, <span class="keyword">@selector</span>(viewDidLoad))</div></pre></td></tr></table></figure>
+<p>为了便于理解，我们看以下实例：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">MyClass</span> : <span class="title">NSObject</span></span></div><div class="line"></div><div class="line"><span class="keyword">@end</span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">MyClass</span></span></div><div class="line"></div><div class="line">- (<span class="keyword">void</span>)test &#123;</div><div class="line">    <span class="built_in">NSLog</span>(<span class="string">@"self class: %@"</span>, <span class="keyword">self</span>.class);</div><div class="line">    <span class="built_in">NSLog</span>(<span class="string">@"super class: %@"</span>, <span class="keyword">super</span>.class);</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>调用MyClass的test方法后，其输出是：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="number">2014</span><span class="number">-11</span><span class="number">-08</span> <span class="number">15</span>:<span class="number">55</span>:<span class="number">03.256</span> [<span class="number">824</span>:<span class="number">209297</span>] <span class="keyword">self</span> <span class="keyword">class</span>: MyClass</div><div class="line"><span class="number">2014</span><span class="number">-11</span><span class="number">-08</span> <span class="number">15</span>:<span class="number">55</span>:<span class="number">03.256</span> [<span class="number">824</span>:<span class="number">209297</span>] <span class="keyword">super</span> <span class="keyword">class</span>: MyClass</div></pre></td></tr></table></figure>
+<p>从上例中可以看到，两者的输出都是MyClass。大家可以自行用上面介绍的内容来梳理一下。</p>
+<h2 id="库相关操作"><a href="#库相关操作" class="headerlink" title="库相关操作"></a>库相关操作</h2><p>库相关的操作主要是用于获取由系统提供的库相关的信息，主要包含以下函数：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 获取所有加载的Objective-C框架和动态库的名称</span></div><div class="line"><span class="keyword">const</span> <span class="keyword">char</span> ** objc_copyImageNames ( <span class="keyword">unsigned</span> <span class="keyword">int</span> *outCount );</div><div class="line"></div><div class="line"><span class="comment">// 获取指定类所在动态库</span></div><div class="line"><span class="keyword">const</span> <span class="keyword">char</span> * class_getImageName ( Class cls );</div><div class="line"></div><div class="line"><span class="comment">// 获取指定库或框架中所有类的类名</span></div><div class="line"><span class="keyword">const</span> <span class="keyword">char</span> ** objc_copyClassNamesForImage ( <span class="keyword">const</span> <span class="keyword">char</span> *image, <span class="keyword">unsigned</span> <span class="keyword">int</span> *outCount );</div></pre></td></tr></table></figure>
+<p>通过这几个函数，我们可以了解到某个类所有的库，以及某个库中包含哪些类。如下代码所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">NSLog</span>(<span class="string">@"获取指定类所在动态库"</span>);</div><div class="line"></div><div class="line"><span class="built_in">NSLog</span>(<span class="string">@"UIView's Framework: %s"</span>, class_getImageName(<span class="built_in">NSClassFromString</span>(<span class="string">@"UIView"</span>)));</div><div class="line"></div><div class="line"><span class="built_in">NSLog</span>(<span class="string">@"获取指定库或框架中所有类的类名"</span>);</div><div class="line"><span class="keyword">const</span> <span class="keyword">char</span> ** classes = objc_copyClassNamesForImage(class_getImageName(<span class="built_in">NSClassFromString</span>(<span class="string">@"UIView"</span>)), &amp;outCount);</div><div class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; outCount; i++) &#123;</div><div class="line">    <span class="built_in">NSLog</span>(<span class="string">@"class name: %s"</span>, classes[i]);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>其输出结果如下：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">2014-11-08 12:57:32.689 [747:184013] 获取指定类所在动态库</div><div class="line">2014-11-08 12:57:32.690 [747:184013] UIView's Framework: /System/Library/Frameworks/UIKit.framework/UIKit</div><div class="line">2014-11-08 12:57:32.690 [747:184013] 获取指定库或框架中所有类的类名</div><div class="line">2014-11-08 12:57:32.691 [747:184013] class name: UIKeyboardPredictiveSettings</div><div class="line">2014-11-08 12:57:32.691 [747:184013] class name: _UIPickerViewTopFrame</div><div class="line">2014-11-08 12:57:32.691 [747:184013] class name: _UIOnePartImageView</div><div class="line">2014-11-08 12:57:32.692 [747:184013] class name: _UIPickerViewSelectionBar</div><div class="line">2014-11-08 12:57:32.692 [747:184013] class name: _UIPickerWheelView</div><div class="line">2014-11-08 12:57:32.692 [747:184013] class name: _UIPickerViewTestParameters</div><div class="line">......</div></pre></td></tr></table></figure>
+<h2 id="块操作"><a href="#块操作" class="headerlink" title="块操作"></a>块操作</h2><p>我们都知道block给我们带到极大的方便，苹果也不断提供一些使用block的新的API。同时，苹果在runtime中也提供了一些函数来支持针对block的操作，这些函数包括：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 创建一个指针函数的指针，该函数调用时会调用特定的block</span></div><div class="line">IMP imp_implementationWithBlock ( <span class="keyword">id</span> block );</div><div class="line"></div><div class="line"><span class="comment">// 返回与IMP(使用imp_implementationWithBlock创建的)相关的block</span></div><div class="line"><span class="keyword">id</span> imp_getBlock ( IMP anImp );</div><div class="line"></div><div class="line"><span class="comment">// 解除block与IMP(使用imp_implementationWithBlock创建的)的关联关系，并释放block的拷贝</span></div><div class="line"><span class="built_in">BOOL</span> imp_removeBlock ( IMP anImp );</div></pre></td></tr></table></figure>
+<ul>
+<li><code>imp_implementationWithBlock</code>函数：参数block的签名必须是<code>method_return_type ^(id self, method_args …)</code>形式的。该方法能让我们使用block作为<code>IMP</code>。如下代码所示：</li>
+</ul>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">MyRuntimeBlock</span> : <span class="title">NSObject</span></span></div><div class="line"></div><div class="line"><span class="keyword">@end</span>	</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">MyRuntimeBlock</span></span></div><div class="line"></div><div class="line"><span class="keyword">@end</span></div><div class="line"></div><div class="line"><span class="comment">// 测试代码</span></div><div class="line">IMP imp = imp_implementationWithBlock(^(<span class="keyword">id</span> obj, <span class="built_in">NSString</span> *str) &#123;</div><div class="line">    <span class="built_in">NSLog</span>(<span class="string">@"%@"</span>, str);</div><div class="line">&#125;);</div><div class="line"></div><div class="line">class_addMethod(MyRuntimeBlock.class, <span class="keyword">@selector</span>(testBlock:), imp, <span class="string">"v@:@"</span>);</div><div class="line"></div><div class="line">MyRuntimeBlock *runtime = [[MyRuntimeBlock alloc] init];</div><div class="line">[runtime performSelector:<span class="keyword">@selector</span>(testBlock:) withObject:<span class="string">@"hello world!"</span>];</div></pre></td></tr></table></figure>
+<p>输出结果是</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="number">2014</span><span class="number">-11</span><span class="number">-09</span> <span class="number">14</span>:<span class="number">03</span>:<span class="number">19.779</span> [<span class="number">1172</span>:<span class="number">395446</span>] hello world!</div></pre></td></tr></table></figure>
+<h2 id="弱引用操作"><a href="#弱引用操作" class="headerlink" title="弱引用操作"></a>弱引用操作</h2><figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 加载弱引用指针引用的对象并返回</span></div><div class="line"><span class="keyword">id</span> objc_loadWeak ( <span class="keyword">id</span> *location );</div><div class="line"></div><div class="line"><span class="comment">// 存储__weak变量的新值</span></div><div class="line"><span class="keyword">id</span> objc_storeWeak ( <span class="keyword">id</span> *location, <span class="keyword">id</span> obj );</div></pre></td></tr></table></figure>
+<ul>
+<li><code>objc_loadWeak</code>函数：该函数加载一个弱指针引用的对象，并在对其做<code>retain</code>和<code>autoreleasing</code>操作后返回它。这样，对象就可以在调用者使用它时保持足够长的生命周期。该函数典型的用法是在任何有使用<code>__weak</code>变量的表达式中使用。</li>
+</ul>
+<p>● <code>objc_storeWeak</code>函数：该函数的典型用法是用于<code>__weak</code>变量做为赋值对象时。</p>
+<p>这两个函数的具体实施在此不举例，有兴趣的小伙伴可以参考<code>《Objective-C高级编程：iOS与OS X多线程和内存管理》</code>中对<code>__weak</code>实现的介绍。</p>
+<h2 id="宏定义"><a href="#宏定义" class="headerlink" title="宏定义"></a>宏定义</h2><p>在runtime中，还定义了一些宏定义供我们使用，有些值我们会经常用到，如表示BOOL值的YES/NO；而有些值不常用，如<code>OBJC_ROOT_CLASS</code>。在此我们做一个简单的介绍。</p>
+<h3 id="布尔值"><a href="#布尔值" class="headerlink" title="布尔值"></a>布尔值</h3><figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#define YES  (BOOL)1</span></div><div class="line"><span class="meta">#define NO   (BOOL)0</span></div></pre></td></tr></table></figure>
+<p>这两个宏定义定义了表示布尔值的常量，需要注意的是YES的值是1，而不是非0值。</p>
+<h3 id="空值"><a href="#空值" class="headerlink" title="空值"></a>空值</h3><figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#define nil  __DARWIN_NULL</span></div><div class="line"><span class="meta">#define Nil  __DARWIN_NULL</span></div></pre></td></tr></table></figure>
+<p>其中nil用于空的实例对象，而Nil用于空类对象。</p>
+<h3 id="分发函数原型"><a href="#分发函数原型" class="headerlink" title="分发函数原型"></a>分发函数原型</h3><figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#define OBJC_OLD_DISPATCH_PROTOTYPES  1</span></div></pre></td></tr></table></figure>
+<p>该宏指明分发函数是否必须转换为合适的函数指针类型。当值为0时，必须进行转换</p>
+<h3 id="Objective-C根类"><a href="#Objective-C根类" class="headerlink" title="Objective-C根类"></a>Objective-C根类</h3><figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#define OBJC_ROOT_CLASS</span></div></pre></td></tr></table></figure>
+<p>如果我们定义了一个Objective-C根类，则编译器会报错，指明我们定义的类没有指定一个基类。这种情况下，我们就可以使用这个宏定义来避过这个编译错误。该宏在iOS 7.0后可用。</p>
+<p>其实在NSObject的声明中，我们就可以看到这个宏的身影，如下所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">__OSX_AVAILABLE_STARTING(__MAC_10_0, __IPHONE_2_0)</div><div class="line"></div><div class="line">OBJC_ROOT_CLASS</div><div class="line">OBJC_EXPORT</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">NSObject</span> &lt;<span class="title">NSObject</span>&gt; </span>&#123;</div><div class="line">    Class isa  OBJC_ISA_AVAILABILITY;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>我们可以参考这种方式来定义我们自己的根类。</p>
+<h3 id="局部变量存储时长"><a href="#局部变量存储时长" class="headerlink" title="局部变量存储时长"></a>局部变量存储时长</h3><figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#define NS_VALID_UNTIL_END_OF_SCOPE</span></div></pre></td></tr></table></figure>
+<p>该宏表明存储在某些局部变量中的值在优化时不应该被编译器强制释放。</p>
+<p>我们将局部变量标记为id类型或者是指向<code>ObjC</code>对象类型的指针，以便存储在这些局部变量中的值在优化时不会被编译器强制释放。相反，这些值会在变量再次被赋值之前或者局部变量的作用域结束之前都会被保存。</p>
+<h3 id="关联对象行为"><a href="#关联对象行为" class="headerlink" title="关联对象行为"></a>关联对象行为</h3><figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">enum</span> &#123;</div><div class="line">   OBJC_ASSOCIATION_ASSIGN  = <span class="number">0</span>,</div><div class="line">   OBJC_ASSOCIATION_RETAIN_NONATOMIC  = <span class="number">1</span>,</div><div class="line">   OBJC_ASSOCIATION_COPY_NONATOMIC  = <span class="number">3</span>,</div><div class="line">   OBJC_ASSOCIATION_RETAIN  = <span class="number">01401</span>,</div><div class="line">   OBJC_ASSOCIATION_COPY  = <span class="number">01403</span></div><div class="line">&#125;;</div></pre></td></tr></table></figure>
+<p>这几个值在前面已介绍过，在此不再重复。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>至此，本系列对runtime的整理已完结。当然这只是对runtime的一些基础知识的归纳，力图起个抛砖引玉的作用。还有许多关于runtime有意思东西还需要读者自己去探索发现。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/ObjCRuntimeRef/" target="_blank" rel="external">Objective-C Runtime Reference</a></li>
+<li><a href="http://blog.csdn.net/itianyi/article/details/8678452" target="_blank" rel="external">iOS:Objective-C中Self和Super详解</a></li>
+<li><a href="http://www.cocoachina.com/industry/20130819/6824.html" target="_blank" rel="external">Objective-C的动态特性</a></li>
+</ol>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2014/11/08/objective-c-runtime-5/" rel="next" title="Objective-C Runtime 运行时之五：协议与分类">
+                <i class="fa fa-chevron-left"></i> Objective-C Runtime 运行时之五：协议与分类
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2014/11/10/quartz2d-1/" rel="prev" title="Quartz 2D编程指南之一：概览">
+                Quartz 2D编程指南之一：概览 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#super"><span class="nav-number">1.</span> <span class="nav-text">super</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#库相关操作"><span class="nav-number">2.</span> <span class="nav-text">库相关操作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#块操作"><span class="nav-number">3.</span> <span class="nav-text">块操作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#弱引用操作"><span class="nav-number">4.</span> <span class="nav-text">弱引用操作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#宏定义"><span class="nav-number">5.</span> <span class="nav-text">宏定义</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#布尔值"><span class="nav-number">5.1.</span> <span class="nav-text">布尔值</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#空值"><span class="nav-number">5.2.</span> <span class="nav-text">空值</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#分发函数原型"><span class="nav-number">5.3.</span> <span class="nav-text">分发函数原型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Objective-C根类"><span class="nav-number">5.4.</span> <span class="nav-text">Objective-C根类</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#局部变量存储时长"><span class="nav-number">5.5.</span> <span class="nav-text">局部变量存储时长</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#关联对象行为"><span class="nav-number">5.6.</span> <span class="nav-text">关联对象行为</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">6.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">7.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

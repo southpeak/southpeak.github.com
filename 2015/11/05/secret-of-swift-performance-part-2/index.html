@@ -1,0 +1,745 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="原文由Kostiantyn Koval发表于Medium，地址为Secret of Swift Performance ：Part 2 - Look under the hood。
+当想要分析一个App的性能时，Instruments和Measure绝对是我们最好的朋友。我希望每个人都了解Instruments并至少使用过一次。Instruments提供了许多非常有用的工具，来告诉我们：“我们的A">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Secret of Swift Performance Part 2 - Look under the hood">
+<meta property="og:url" content="http://southpeak.github.io/2015/11/05/secret-of-swift-performance-part-2/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="原文由Kostiantyn Koval发表于Medium，地址为Secret of Swift Performance ：Part 2 - Look under the hood。
+当想要分析一个App的性能时，Instruments和Measure绝对是我们最好的朋友。我希望每个人都了解Instruments并至少使用过一次。Instruments提供了许多非常有用的工具，来告诉我们：“我们的A">
+<meta property="og:image" content="https://cdn-images-1.medium.com/max/600/1*LLrYPKt2oVbzU5CcOrixdQ.png">
+<meta property="og:image" content="https://cdn-images-1.medium.com/max/600/1*CcC_vQGU8CWz1qkshLNDWQ.png">
+<meta property="og:image" content="https://cdn-images-1.medium.com/max/600/1*oEF3HyJj3t0pKWUwMyft7w.png">
+<meta property="og:image" content="https://cdn-images-1.medium.com/max/600/1*Zv5uaktNpsTZ9f5KE7xqeg.png">
+<meta property="og:image" content="https://cdn-images-1.medium.com/max/800/1*DiIcK4QP2UQ2glHxwgW4rQ.png">
+<meta property="og:image" content="https://cdn-images-1.medium.com/max/800/1*uzIzPacXGRgXGa_tVi9wlw.png">
+<meta property="og:image" content="https://cdn-images-1.medium.com/max/800/1*Sm4MRfqUCjjf3DCB3udDLA.png">
+<meta property="og:image" content="https://cdn-images-1.medium.com/max/800/1*ev3n_N8Ai6NCN6tJeFLCVg.png">
+<meta property="og:image" content="https://cdn-images-1.medium.com/max/800/1*e5LfhINe2u_73NBzP8aNNQ.png">
+<meta property="og:image" content="https://cdn-images-1.medium.com/max/800/1*zZTA8GKacYtlFL5QgPaHtg.png">
+<meta property="og:updated_time" content="2016-08-28T04:26:22.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Secret of Swift Performance Part 2 - Look under the hood">
+<meta name="twitter:description" content="原文由Kostiantyn Koval发表于Medium，地址为Secret of Swift Performance ：Part 2 - Look under the hood。
+当想要分析一个App的性能时，Instruments和Measure绝对是我们最好的朋友。我希望每个人都了解Instruments并至少使用过一次。Instruments提供了许多非常有用的工具，来告诉我们：“我们的A">
+<meta name="twitter:image" content="https://cdn-images-1.medium.com/max/600/1*LLrYPKt2oVbzU5CcOrixdQ.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2015/11/05/secret-of-swift-performance-part-2/"/>
+
+  <title> Secret of Swift Performance Part 2 - Look under the hood | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Secret of Swift Performance Part 2 - Look under the hood
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-11-05T22:56:20+08:00" content="2015-11-05">
+              2015-11-05
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/translate/" itemprop="url" rel="index">
+                    <span itemprop="name">翻译</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>原文由<code>Kostiantyn Koval</code>发表于<code>Medium</code>，地址为<a href="https://medium.com/swift-programming/secret-of-swift-performance-fcc5d2a437a8" target="_blank" rel="external">Secret of Swift Performance ：Part 2 - Look under the hood</a>。</p>
+<p>当想要分析一个<code>App</code>的性能时，<code>Instruments</code>和<code>Measure</code>绝对是我们最好的朋友。我希望每个人都了解<code>Instruments</code>并至少使用过一次。<code>Instruments</code>提供了许多非常有用的工具，来告诉我们：“我们的<code>App</code>使用了多少内存”，“<code>App</code>有多快”，“有没有内存泄漏”等等。</p>
+<p>但作为一个软件攻城狮，我们同样需要知道“为什么…？”，“为什么它发生了？”</p>
+<p>在我使用<code>Swift</code>时，我曾经看到一些我当时无法理解但很有意思的东西。“为什么这段代码运行这么快？”为了回答这个问题，我必须查看编译出来的汇编代码。这其实并不难，而且非常有用。接下来就来看看是如何做的。</p>
+<h2 id="编译Swift代码"><a href="#编译Swift代码" class="headerlink" title="编译Swift代码"></a>编译Swift代码</h2><p>我们只是想编译并分析部分代码，而不是整个工程。为此我们需要做几件事：</p>
+<ul>
+<li>创建一个新的<code>Swift</code>文件。</li>
+<li>创建一个简单的测试函数<code>func test() { ... // 具体代码 }</code>。</li>
+<li>将需要编译和分析的代码拷贝到函数体中。</li>
+<li>调用函数。</li>
+</ul>
+<p>这里我们做的是定义一个测试函数，函数体是我们想要检查和分析的代码。当然，我们需要在顶层调用这个函数。</p>
+<p>现在我们需要编译这个文件。可以借助于<code>xcrun</code>(Xcode工具)和<code>swiftc</code>(Swift编译器命令行工具)。</p>
+<ul>
+<li>打开终端并通过<code>cd</code>命令切换到<code>Swift</code>文件所在的目录。</li>
+<li>运行命令”<code>xcrun swiftc -Onone inputFile.swift -o resultFileName</code>“。如<strong>xcrun swiftc -Onone Assembly.swift -o result</strong>。</li>
+</ul>
+<p>这个命令将会编译我们的<code>Swift</code>文件。</p>
+<p>我们可以使用<code>xcrun swiftc -help</code>命令来查看<code>xcrun swiftc</code>命令的帮助文档。当前我们最感兴趣的是一些优化选项：</p>
+<ul>
+<li><strong>-O</strong>：编译时优化</li>
+<li><strong>-Onone</strong>：编译时不做任何优化</li>
+<li><strong>-Ounchecked</strong>：编译时优化并移除运行时安全检查</li>
+</ul>
+<p>使用<strong>-O</strong>选项很重要。它就跟编译<code>App</code>时使用<code>Release</code>模式一样。通常用来分析要上传到<code>AppStore</code>上的代码。</p>
+<p>作为测试，我们使用<strong>-Onone</strong>模式，因为它生成的汇编代码非常类似于我们的源代码。也可以分别生成两种模式下的代码来做比较。这样我们可以学习下<code>Swift</code>编译器是如何做优化的。</p>
+<p>运行：<strong>xcrun swiftc -Onone Assembly.swift -o none</strong></p>
+<p>会生成一个可执行文件，可以双击运行它。</p>
+<p><img src="https://cdn-images-1.medium.com/max/600/1*LLrYPKt2oVbzU5CcOrixdQ.png" alt="image"></p>
+<p>当编译一个<code>Swift</code>文件时，<code>Swift</code>编译器做了以下几件事：</p>
+<ul>
+<li>创建一个带有<strong>int main(int arg0, int arg1)</strong>函数的控制台应用。这是应用的起点。</li>
+<li>创建<strong>_top_level_code</strong>函数。该函数的函数体是<code>Swift</code>文件的顶层可执行代码。在我们的示例中就是调用了<code>test()</code>函数。</li>
+</ul>
+<h2 id="获取汇编代码"><a href="#获取汇编代码" class="headerlink" title="获取汇编代码"></a>获取汇编代码</h2><p>有许多办法来获取汇编代码。我建议使用<code>Hopper</code>。可以在<a href="http://www.hopperapp.com/download.html" target="_blank" rel="external">这里</a>下载并使用<code>Demo</code>模式。使用<code>Hopper</code>最棒的是它可以显示汇编的伪代码，使用起来比较方便。</p>
+<p>让我们来获取汇编代码：</p>
+<ul>
+<li>打开<code>Hopper</code> &gt; <code>File</code> &gt; <code>Read Executable to Disassemble</code>，选择可执行文件，点击OK</li>
+</ul>
+<p><img src="https://cdn-images-1.medium.com/max/600/1*CcC_vQGU8CWz1qkshLNDWQ.png" alt="image"></p>
+<p><img src="https://cdn-images-1.medium.com/max/600/1*oEF3HyJj3t0pKWUwMyft7w.png" alt="image"></p>
+<p><img src="https://cdn-images-1.medium.com/max/600/1*Zv5uaktNpsTZ9f5KE7xqeg.png" alt="image"></p>
+<h2 id="Hopper概述"><a href="#Hopper概述" class="headerlink" title="Hopper概述"></a>Hopper概述</h2><p><img src="https://cdn-images-1.medium.com/max/800/1*DiIcK4QP2UQ2glHxwgW4rQ.png" alt="image"></p>
+<p><code>Hopper</code>的界面类似于<code>Xcode</code>，左侧是导航面板，中间是编辑面板，右侧是帮助和<code>Inspector</code>面板。</p>
+<p><strong>左侧面板</strong>—在这里可以找到所有函数，串标记和字符串，可以点击它们导航到对应的汇编代码。</p>
+<p><strong>编辑区</strong>— 显示汇编代码，它类似于<code>Xcode</code>的<code>Swift</code>或其它。我们可以使用箭头来导航。</p>
+<h2 id="分析代码"><a href="#分析代码" class="headerlink" title="分析代码"></a>分析代码</h2><p>首先我们需要找到应用入口，在我们的示例中是<code>_main</code>函数。在左侧导航面板中选择它。下面是<code>_main</code>函数的汇编代码。</p>
+<p><img src="https://cdn-images-1.medium.com/max/800/1*uzIzPacXGRgXGa_tVi9wlw.png" alt="image"></p>
+<p>汇编代码很难分析，不过<code>Hopper</code>可以生成伪代码。使用快捷键”<code>Alt+Enter</code>“或者”<code>Window</code> &gt; <code>Show Pseudo Code of Procedure</code>“。现在可以看到<code>_main</code>函数的伪代码了。</p>
+<p><img src="https://cdn-images-1.medium.com/max/800/1*Sm4MRfqUCjjf3DCB3udDLA.png" alt="image"></p>
+<p>这样好多了!!</p>
+<p>前4行是提取<code>_main</code>函数的参数，我们对此不感兴趣。然后调用了<strong>_top_level_code()</strong>，正如前面提到的，这应该就是我们的代码。让我们来看看。关闭伪代码视图，选择<strong>_top_level_code</strong>函数并显示其伪代码。</p>
+<p><img src="https://cdn-images-1.medium.com/max/800/1*ev3n_N8Ai6NCN6tJeFLCVg.png" alt="image"></p>
+<p>它只调用了<strong>__TF4none4testFT_T_()_</strong>函数。</p>
+<p><code>Swift</code>生成的函数有特定的命名规范。即模块名+函数名+字符数+参数类型+其它东西。<a href="https://mikeash.com/pyblog/friday-qa-2014-08-15-swift-name-mangling.html" target="_blank" rel="external">Mike Ash</a>详细介绍了这一规范。</p>
+<p>这里可以看到的是<strong>none</strong>(文件名)， <strong>test</strong>(函数名)。基于这一点，我们可以说它就是<code>test()</code>函数。让我们来检查一下。查找<code>__TF4none4testFT_T_</code>并显示其伪代码。</p>
+<p><img src="https://cdn-images-1.medium.com/max/800/1*e5LfhINe2u_73NBzP8aNNQ.png" alt="image"></p>
+<p>它有3个变量，是16进制格式的，转换一下：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">var_8 = <span class="number">10</span>,</div><div class="line">var_10 = <span class="number">10</span>,</div><div class="line">var_18 = <span class="number">20</span></div></pre></td></tr></table></figure>
+<p>这和我们的源代码非常相似，但源代码有一个相加操作，<code>Swift</code>在编译期直接计算出结果了。</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">var</span> x = <span class="number">10</span></div><div class="line"><span class="keyword">var</span> y = <span class="number">10</span></div><div class="line"><span class="keyword">var</span> <span class="built_in">c</span> = x + y</div></pre></td></tr></table></figure>
+<p>现在你已经知道了：编译<code>Swift</code>代码，反汇编及分析汇编代码。深入后，你可以学习并发现许多有趣的东西。作为比较，我们现在使用<strong>-O</strong>模式来编译下代码，以看看<code>Swift</code>编译器是如何优化代码的。</p>
+<p>运行<strong>xcrun swiftc -O Assembly.swift -o optimized</strong>命令。</p>
+<p><img src="https://cdn-images-1.medium.com/max/800/1*zZTA8GKacYtlFL5QgPaHtg.png" alt="image"></p>
+<p>正如你所见的，在主函数中没有调用任何函数。没有<strong>_top_level_code</strong>。没有调用<code>test()</code>函数。</p>
+<p><code>Swift</code>编译器检测到<code>test</code>函数的结果没有被使用，所以将其忽略。而<strong>_top_level_code</strong>也只调用了一个<code>test()</code>函数，所以也被忽略了。结果是我们获得了一个空的主函数。</p>
+<p>这篇文章描述了如何使用工具来分析代码。我发现了许多用这些工具优化<code>Swift</code>的方法，这些方法非常有意思。我将在第三部分中与你们分享，敬请期待……</p>
+<p><em>注：强烈建议手动操作一下，看看自己得到的结果是什么。</em></p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/11/05/secret-of-swift-performance-part-1/" rel="next" title="Secret of Swift Performance Part 1 - Measure">
+                <i class="fa fa-chevron-left"></i> Secret of Swift Performance Part 1 - Measure
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/11/22/cocoa-uikit-uiimage/" rel="prev" title="UIKit: UIImage">
+                UIKit: UIImage <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#编译Swift代码"><span class="nav-number">1.</span> <span class="nav-text">编译Swift代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#获取汇编代码"><span class="nav-number">2.</span> <span class="nav-text">获取汇编代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Hopper概述"><span class="nav-number">3.</span> <span class="nav-text">Hopper概述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#分析代码"><span class="nav-number">4.</span> <span class="nav-text">分析代码</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

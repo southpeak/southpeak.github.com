@@ -1,0 +1,737 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="流提供了一种简单的方式在不同和介质中交换数据，这种交换方式是与设备无关的。流是在通信路径中串行传输的连续的比特位序列。从编码的角度来看，流是单向的，因此流可以是输入流或输出流。除了基于文件的流外，其它形式的流都是不可查找的，这些流的数据一旦消耗完后，就无法从流对象中再次获取。
+在Cocoa中包含三个与流相关的类：NSStream、NSInputStream和NSOutputStream。NSStr">
+<meta property="og:type" content="article">
+<meta property="og:title" content="iOS中流(Stream)的使用">
+<meta property="og:url" content="http://southpeak.github.io/2014/07/17/ioszhong-liu-stream-de-shi-yong/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="流提供了一种简单的方式在不同和介质中交换数据，这种交换方式是与设备无关的。流是在通信路径中串行传输的连续的比特位序列。从编码的角度来看，流是单向的，因此流可以是输入流或输出流。除了基于文件的流外，其它形式的流都是不可查找的，这些流的数据一旦消耗完后，就无法从流对象中再次获取。
+在Cocoa中包含三个与流相关的类：NSStream、NSInputStream和NSOutputStream。NSStr">
+<meta property="og:image" content="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/Streams/Articles/Art/stream_src_dest.gif">
+<meta property="og:updated_time" content="2016-08-27T04:56:42.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="iOS中流(Stream)的使用">
+<meta name="twitter:description" content="流提供了一种简单的方式在不同和介质中交换数据，这种交换方式是与设备无关的。流是在通信路径中串行传输的连续的比特位序列。从编码的角度来看，流是单向的，因此流可以是输入流或输出流。除了基于文件的流外，其它形式的流都是不可查找的，这些流的数据一旦消耗完后，就无法从流对象中再次获取。
+在Cocoa中包含三个与流相关的类：NSStream、NSInputStream和NSOutputStream。NSStr">
+<meta name="twitter:image" content="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/Streams/Articles/Art/stream_src_dest.gif">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2014/07/17/ioszhong-liu-stream-de-shi-yong/"/>
+
+  <title> iOS中流(Stream)的使用 | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                iOS中流(Stream)的使用
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-07-17T23:30:26+08:00" content="2014-07-17">
+              2014-07-17
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/cocoa/" itemprop="url" rel="index">
+                    <span itemprop="name">Cocoa</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>流提供了一种简单的方式在不同和介质中交换数据，这种交换方式是与设备无关的。流是在通信路径中串行传输的连续的比特位序列。从编码的角度来看，流是单向的，因此流可以是输入流或输出流。除了基于文件的流外，其它形式的流都是不可查找的，这些流的数据一旦消耗完后，就无法从流对象中再次获取。</p>
+<p>在Cocoa中包含三个与流相关的类：NSStream、NSInputStream和NSOutputStream。NSStream是一个抽象基类，定义了所有流对象的基础接口和属性。NSInputStream和NSOutputStream继承自NSStream，实现了输入流和输出流的默认行为。下图描述了流的应用场景：</p>
+<p><img src="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/Streams/Articles/Art/stream_src_dest.gif" alt="image"></p>
+<p>从图中看，NSInputStream可以从文件、socket和NSData对象中获取数据；NSOutputStream可以将数据写入文件、socket、内存缓存和NSData对象中。这三处类主要处理一些比较底层的任务。</p>
+<p>流对象有一些相关的属性。大部分属性是用于处理网络安全和配置的，这些属性统称为SSL和SOCKS代理信息。两个比较重要的属性是：</p>
+<ol>
+<li>NSStreamDataWrittenToMemoryStreamKey：允许输出流查询写入到内存的数据</li>
+<li>NSStreamFileCurrentOffsetKey：允许操作基于文件的流的读写位置</li>
+</ol>
+<p>可以给流对象指定一个代理对象。如果没有指定，则流对象作为自己的代理。流对象调用唯一的代理方法stream:handleEvent:来处理流相关的事件：</p>
+<ol>
+<li>对于输入流来说，是有可用的数据可读取事件。我们可以使用read:maxLength:方法从流中获取数据</li>
+<li>对于输出流来说，是准备好写入的数据事件。我们可以使用write:maxLength:方法将数据写入流</li>
+</ol>
+<p>Cocoa中的流对象与Core Foundation中的流对象是对应的。我们可以通过toll-free桥接方法来进行相互转换。NSStream、NSInputStream和NSOutputStream分别对应CFStream、CFReadStream和CFWriteStream。但这两者间不是完全一样的。Core Foundation一般使用回调函数来处理数据。另外我们可以子类化NSStream、NSInputStream和NSOutputStream，来自定义一些属性和行为，而Core Foundation中的流对象则无法进行扩展。</p>
+<p>上面主要介绍了iOS中流的一些基本概念，我们下面将介绍流的具体使用，首先看看如何从流中读取数据。</p>
+<h2 id="从输入流中读取数据"><a href="#从输入流中读取数据" class="headerlink" title="从输入流中读取数据"></a>从输入流中读取数据</h2><p>从一个NSInputStream流中读取数据主要包括以下几个步骤：</p>
+<ol>
+<li>从数据源中创建和初始化一个NSInputStream实例</li>
+<li>将流对象放入一个run loop中并打开流</li>
+<li>处理流对象发送到其代理的事件</li>
+<li>当没有更多数据可读取时，关闭并销毁流对象。</li>
+</ol>
+<h3 id="准备流对象"><a href="#准备流对象" class="headerlink" title="准备流对象"></a>准备流对象</h3><p>要使用一个NSInputStream，必须要有数据源。数据源可以是文件、NSData对象和网络socket。创建好后，我们设置其代理对象，并将其放入到run loop中，然后打开流。代码清单1展示了这个准备过程.</p>
+<p><strong>代理清单1</strong></p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)setUpStreamForFile:(<span class="built_in">NSString</span> *)path</div><div class="line">&#123;</div><div class="line">    <span class="built_in">NSInputStream</span> *inputStream = [[<span class="built_in">NSInputStream</span> alloc] initWithFileAtPath:path];</div><div class="line">    inputStream.delegate = <span class="keyword">self</span>;</div><div class="line">    [inputStream scheduleInRunLoop:[<span class="built_in">NSRunLoop</span> currentRunLoop] forMode:<span class="built_in">NSDefaultRunLoopMode</span>];</div><div class="line">    </div><div class="line">    [inputStream open];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>在流对象放入run loop且有流事件(有可读数据)发生时，流对象会向代理对象发送stream:handleEvent:消息。在打开流之前，我们需要调用流对象的scheduleInRunLoop:forMode:方法，这样做可以避免在没有数据可读时阻塞代理对象的操作。我们需要确保的是流对象被放入正确的run loop中，即放入流事件发生的那个线程的run loop中。</p>
+<h3 id="处理流事件"><a href="#处理流事件" class="headerlink" title="处理流事件"></a>处理流事件</h3><p>打开流后，我们可以使用streamStatus属性查看流的状态，用hasBytesAvailable属性检测是否有可读的数据，用streamError来查看流处理过程中产生的错误。</p>
+<p>流一旦打开后，将会持续发送stream:handleEvent:消息给代理对象，直到流结束为止。这个消息接收一个NSStreamEvent常量作为参数，以标识事件的类型。对于NSInputStream对象，主要的事件类型包括NSStreamEventOpenCompleted、NSStreamEventHasBytesAvailable和NSStreamEventEndEncountered。通常我们会对NSStreamEventHasBytesAvailable更感兴趣。代理清单2演示了从流中获取数据的过程</p>
+<p><strong>代理清单2</strong></p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)stream:(<span class="built_in">NSStream</span> *)aStream handleEvent:(<span class="built_in">NSStreamEvent</span>)eventCode</div><div class="line">&#123;</div><div class="line">    <span class="keyword">switch</span> (eventCode) &#123;</div><div class="line">        <span class="keyword">case</span> <span class="built_in">NSStreamEventHasBytesAvailable</span>:</div><div class="line">        &#123;</div><div class="line">            <span class="keyword">if</span> (!data) &#123;</div><div class="line">                data = [<span class="built_in">NSMutableData</span> data];</div><div class="line">            &#125;</div><div class="line">            </div><div class="line">            uint8_t buf[<span class="number">1024</span>];</div><div class="line">            <span class="keyword">unsigned</span> <span class="keyword">int</span> len = <span class="number">0</span>;</div><div class="line">            len = [(<span class="built_in">NSInputStream</span> *)aStream read:buf maxLength:<span class="number">1024</span>];  <span class="comment">// 读取数据</span></div><div class="line">            <span class="keyword">if</span> (len) &#123;</div><div class="line">                [data appendBytes:(<span class="keyword">const</span> <span class="keyword">void</span> *)buf length:len];</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">            <span class="keyword">break</span>;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>当NSInputStream在处理流的过程中出现错误时，它将停止流处理并产生一个NSStreamEventErrorOccurred事件给代理。我们同样的上面的代理方法中来处理这个事件。</p>
+<h3 id="清理流对象"><a href="#清理流对象" class="headerlink" title="清理流对象"></a>清理流对象</h3><p>当NSInputStream读取到流的结尾时，会发送一个NSStreamEventEndEncountered事件给代理，代理对象应该销毁流对象，此过程应该与创建时相对应，代码清单3演示了关闭和释放流对象的过程。</p>
+<p><strong>代理清单3</strong></p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)stream:(<span class="built_in">NSStream</span> *)aStream handleEvent:(<span class="built_in">NSStreamEvent</span>)eventCode</div><div class="line">&#123;</div><div class="line">    <span class="keyword">switch</span> (eventCode) &#123;</div><div class="line">        <span class="keyword">case</span> <span class="built_in">NSStreamEventEndEncountered</span>:</div><div class="line">        &#123;</div><div class="line">            [aStream close];</div><div class="line">            [aStream removeFromRunLoop:[<span class="built_in">NSRunLoop</span> currentRunLoop] forMode:<span class="built_in">NSDefaultRunLoopMode</span>];</div><div class="line">            aStream = <span class="literal">nil</span>;</div><div class="line">        &#125;</div><div class="line">            <span class="keyword">break</span>;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="写入数据到输出流"><a href="#写入数据到输出流" class="headerlink" title="写入数据到输出流"></a>写入数据到输出流</h2><p>类似于从输入流读取数据，写入数据到输出流时，需要下面几个步骤：</p>
+<ol>
+<li>使用要写入的数据创建和初始化一个NSOutputStream实例，并设置代理对象</li>
+<li>将流对象放到run loop中并打开流</li>
+<li>处理流对象发送到代理对象中的事件</li>
+<li>如果流对象写入数据到内存，则通过请求NSStreamDataWrittenToMemoryStreamKey属性来获取数据</li>
+<li>当没有更多数据可供写入时，处理流对象</li>
+</ol>
+<p>基本流程与输入流的读取差不多，我们主要介绍不同的地方</p>
+<ol>
+<li>数据可写入的位置包括文件、C缓存、程序内存和网络socket。</li>
+<li>hasSpaceAvailable属性表示是否有空间来写入数据</li>
+<li>在stream:handleEvent:中主要处理NSStreamEventHasSpaceAvailable事件，并调用流的write:maxLength方法写数据。代码清单4演示了这一过程。</li>
+<li>如果NSOutputStream对象的目标是应用的内存时，在NSStreamEventEndEncountered事件中可能需要从内存中获取流中的数据。我们将调用NSOutputStream对象的propertyForKey:的属性，并指定key为NSStreamDataWrittenToMemoryStreamKey来获取这些数据。</li>
+</ol>
+<p><strong>代理清单4</strong></p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)stream:(<span class="built_in">NSStream</span> *)aStream handleEvent:(<span class="built_in">NSStreamEvent</span>)eventCode</div><div class="line">&#123;</div><div class="line">    <span class="keyword">switch</span> (eventCode) &#123;</div><div class="line">        <span class="keyword">case</span> <span class="built_in">NSStreamEventHasSpaceAvailable</span>:</div><div class="line">        &#123;</div><div class="line">            uint8_t *readBytes = (uint8_t *)[data mutableBytes];</div><div class="line">            readBytes += byteIndex;</div><div class="line">            <span class="keyword">int</span> data_len = [data length];</div><div class="line">            <span class="keyword">unsigned</span> <span class="keyword">int</span> len = (data_len - byteIndex &gt;= <span class="number">1024</span>) ? <span class="number">1024</span> : (data_len - byteIndex);</div><div class="line">            uint8_t buf[len];</div><div class="line">            </div><div class="line">            (<span class="keyword">void</span>)memcpy(buf, readBytes, len);</div><div class="line">            </div><div class="line">            len = [aStream write:(<span class="keyword">const</span> uint_8 *)buf maxLength:len];</div><div class="line">            byteIndex += len;</div><div class="line">            <span class="keyword">break</span>;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这里需要注意的是：当代理接收到NSStreamEventHasSpaceAvailable事件而没有写入任何数据到流时，代理将不再从run loop中接收该事件，直到NSOutputStream对象接收到更多数据，这时run loop会重启NSStreamEventHasSpaceAvailable事件。</p>
+<h2 id="流的轮循处理"><a href="#流的轮循处理" class="headerlink" title="流的轮循处理"></a>流的轮循处理</h2><p>在流的处理过程中，除了将流放入run loop来处理流事件外，还可以对流进行轮循处理。我们将流处理数据的过程放到一个循环中，并在循环中不断地去询问流是否有可用的数据供读取(hasBytesAvailable)或可用的空间供写入(hasSpaceAvailable)。当处理到流的结尾时，我们跳出循环结束流的操作。</p>
+<p>具体的过程如代码清单5所示</p>
+<p><strong>代码清单5</strong></p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)createNewFile &#123;</div><div class="line">    <span class="built_in">NSOutputStream</span> *oStream = [[<span class="built_in">NSOutputStream</span> alloc] initToMemory];</div><div class="line">    [oStream open];</div><div class="line">   </div><div class="line">    uint8_t *readBytes = (uint8_t *)[data mutableBytes];</div><div class="line">    uint8_t buf[<span class="number">1024</span>];</div><div class="line">    <span class="keyword">int</span> len = <span class="number">1024</span>;</div><div class="line">    </div><div class="line">    <span class="keyword">while</span> (<span class="number">1</span>) &#123;</div><div class="line">        <span class="keyword">if</span> (len == <span class="number">0</span>) <span class="keyword">break</span>;</div><div class="line">        </div><div class="line">        <span class="keyword">if</span> ([oStream hasSpaceAvailable])</div><div class="line">        &#123;</div><div class="line">            (<span class="keyword">void</span>)strncpy(buf, readBytes, len);</div><div class="line">            readBytes += len;</div><div class="line">            <span class="keyword">if</span> ([oStream write:(<span class="keyword">const</span> uint8_t *)buf maxLength:len] == <span class="number">-1</span>)</div><div class="line">            &#123;</div><div class="line">                [<span class="keyword">self</span> handleError:[oStream streamError]];</div><div class="line">                <span class="keyword">break</span>;</div><div class="line">            &#125;</div><div class="line">            [bytesWritten setIntValue:[bytesWritten intValue]+len];</div><div class="line">            len = (([data length] - [bytesWritten intValue] &gt;= <span class="number">1024</span>) ? <span class="number">1024</span> : [data length] - [bytesWritten intValue]);</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="built_in">NSData</span> *newData = [oStream propertyForKey:<span class="built_in">NSStreamDataWrittenToMemoryStreamKey</span>];</div><div class="line">    </div><div class="line">    <span class="keyword">if</span> (!newData) &#123;</div><div class="line">        <span class="built_in">NSLog</span>(<span class="string">@"No data written to memory!"</span>);</div><div class="line">    &#125; <span class="keyword">else</span> &#123;</div><div class="line">        [<span class="keyword">self</span> processData:newData];</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    [oStream close];</div><div class="line">    [oStream release];</div><div class="line">    oStream = <span class="literal">nil</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这种处理方法的问题在于它会阻塞当前线程，直到流处理结束为止，才继续进行后面的操作。而这种问题在处理网络socket流时尤为严重，我们必须等待服务端数据回来后才能继续操作。因此，通常情况下，建议使用run loop方式来处理流事件。</p>
+<h2 id="错误处理"><a href="#错误处理" class="headerlink" title="错误处理"></a>错误处理</h2><p>当流出现错误时，会停止对流数据的处理。一个流对象在出现错误时，不能再用于读或写操作，虽然在关闭前可以查询它的状态。</p>
+<p>NSStream和NSOutputStream类会以几种方式来告知错误的发生：</p>
+<ol>
+<li>如果流被放到run loop中，对象会发送一个NSStreamEventErrorOccurred事件到代理对象的stream:handleEvent:方法中</li>
+<li>任何时候，可以调用streamStatus属性来查看是否发生错误(返回NSStreamStatusError)</li>
+<li>如果在通过调用write:maxLength:写入数据到NSOutputStream对象时返回-1，则发生一个写错误。</li>
+</ol>
+<p>一旦确定产生错误时，我们可以调用流对象的streamError属性来查看错误的详细信息。在此我们不再举例。</p>
+<h2 id="设置Socket流"><a href="#设置Socket流" class="headerlink" title="设置Socket流"></a>设置Socket流</h2><p>在iOS中，NSStream类不支持连接到远程主机，幸运的是CFStream支持。前面已经说过这两者可以通过toll-free桥接来相互转换。使用CFStream时，我们可以调用CFStreamCreatePairWithSocketToHost函数并传递主机名和端口号，来获取一个CFReadStreamRef和一个CFWriteStreamRef来进行通信，然后我们可以将它们转换为NSInputStream和NSOutputStream对象来处理。</p>
+<p>具体的处理流程我们会在后期详细讨论。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/Streams/Streams.html" target="_blank" rel="external">Stream Programming Guide</a></p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2014/07/16/url-load-system-5/" rel="next" title="URL加载系统之五：缓存、Cookies与协议">
+                <i class="fa fa-chevron-left"></i> URL加载系统之五：缓存、Cookies与协议
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2014/07/18/cover-flowte-xiao-shi-xian/" rel="prev" title="Cover Flow特效实现">
+                Cover Flow特效实现 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#从输入流中读取数据"><span class="nav-number">1.</span> <span class="nav-text">从输入流中读取数据</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#准备流对象"><span class="nav-number">1.1.</span> <span class="nav-text">准备流对象</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#处理流事件"><span class="nav-number">1.2.</span> <span class="nav-text">处理流事件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#清理流对象"><span class="nav-number">1.3.</span> <span class="nav-text">清理流对象</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#写入数据到输出流"><span class="nav-number">2.</span> <span class="nav-text">写入数据到输出流</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#流的轮循处理"><span class="nav-number">3.</span> <span class="nav-text">流的轮循处理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#错误处理"><span class="nav-number">4.</span> <span class="nav-text">错误处理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#设置Socket流"><span class="nav-number">5.</span> <span class="nav-text">设置Socket流</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">6.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,783 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="本文由József Vesza发表于raywenderlich，原文地址是https://www.raywenderlich.com/124075/javascriptcore-tutorial
+
+自从2014年Swift发布以来，其受欢迎程度直线上升：从TIOBE的数据来看，在2016年二月份，它的排名已经上升到第16位。不过，同时我们可以看到排名第9位的是Javascript，这门语言与Sw">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JavaScriptCore Tutorial for iOS: Getting Started">
+<meta property="og:url" content="http://southpeak.github.io/2016/08/01/javascriptcore-tutorial-for-ios-getting-started/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="本文由József Vesza发表于raywenderlich，原文地址是https://www.raywenderlich.com/124075/javascriptcore-tutorial
+
+自从2014年Swift发布以来，其受欢迎程度直线上升：从TIOBE的数据来看，在2016年二月份，它的排名已经上升到第16位。不过，同时我们可以看到排名第9位的是Javascript，这门语言与Sw">
+<meta property="og:image" content="https://cdn2.raywenderlich.com/wp-content/uploads/2016/01/5.jpg">
+<meta property="og:image" content="https://cdn2.raywenderlich.com/wp-content/uploads/2016/02/Simulator-Screen-Shot-20-Feb-2016-21.25.58-1.png">
+<meta property="og:image" content="https://cdn5.raywenderlich.com/wp-content/uploads/2016/02/javascriptcore.png">
+<meta property="og:image" content="https://cdn5.raywenderlich.com/wp-content/uploads/2016/02/Simulator-Screen-Shot-19-Feb-2016-21.51.48-1-281x500.png">
+<meta property="og:image" content="https://cdn1.raywenderlich.com/wp-content/uploads/2016/01/4.jpg">
+<meta property="og:updated_time" content="2016-08-28T07:42:40.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="JavaScriptCore Tutorial for iOS: Getting Started">
+<meta name="twitter:description" content="本文由József Vesza发表于raywenderlich，原文地址是https://www.raywenderlich.com/124075/javascriptcore-tutorial
+
+自从2014年Swift发布以来，其受欢迎程度直线上升：从TIOBE的数据来看，在2016年二月份，它的排名已经上升到第16位。不过，同时我们可以看到排名第9位的是Javascript，这门语言与Sw">
+<meta name="twitter:image" content="https://cdn2.raywenderlich.com/wp-content/uploads/2016/01/5.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2016/08/01/javascriptcore-tutorial-for-ios-getting-started/"/>
+
+  <title> JavaScriptCore Tutorial for iOS: Getting Started | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                JavaScriptCore Tutorial for iOS: Getting Started
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-08-01T16:58:06+08:00" content="2016-08-01">
+              2016-08-01
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/translate/" itemprop="url" rel="index">
+                    <span itemprop="name">翻译</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <blockquote>
+<p>本文由József Vesza发表于raywenderlich，原文地址是<a href="https://www.raywenderlich.com/124075/javascriptcore-tutorial" target="_blank" rel="external">https://www.raywenderlich.com/124075/javascriptcore-tutorial</a></p>
+</blockquote>
+<p>自从2014年Swift发布以来，其受欢迎程度直线上升：从TIOBE的数据来看，在2016年二月份，它的排名已经上升到第16位。不过，同时我们可以看到排名第9位的是Javascript，这门语言与Swift有许多不同之处：Swift在编译时安全性上做了很多努力，而Javascript是弱类型且动态的。</p>
+<p>Swift与Javascript有很多不一样的地方，不过有一件事却将他们紧紧绑在一起：你可以使用他们来创建一个轻量级的iOS应用。</p>
+<p>在这篇JavaScriptCore的教程中，你将构建一个用于显示类似web页面的iOS应用，并重用web页面现存的Javascript代码。特别是你将了解以下几点：</p>
+<ul>
+<li>JavaScriptCore框架的组件</li>
+<li>如何在iOS代码中调用Javascript方法</li>
+<li>如何在Javascript代码中访问本地代码</li>
+</ul>
+<blockquote>
+<p>注：你不需要有JavaScript的经验。如果这篇JavaScriptCore教程已经激起你学习这门语言的兴趣，那么<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank" rel="external">Mozilla Developer Network</a>对于初学者来说是一个非常棒的资源 - 或者你也可以选择看<a href="http://blog.wix.engineering/wp-content/uploads/2015/04/mIuuwgx-1024x576.jpg" target="_blank" rel="external">这里</a>介绍的两本书。</p>
+</blockquote>
+<h2 id="入门"><a href="#入门" class="headerlink" title="入门"></a>入门</h2><p>下载这篇教程的<a href="http://www.raywenderlich.com/wp-content/uploads/2016/02/Showtime-Starter.zip" target="_blank" rel="external">初始工程</a>并解压。你可以看到下面的目录结构：</p>
+<ul>
+<li>Web：包含将被转换为iOS应用的web页面的HTML和CSS文件。</li>
+<li>Native：iOS工程。文章中所有的修改都是在这里。</li>
+<li>js：包含用于工程的Javascript代码。</li>
+</ul>
+<p>App名叫Showtime，用于搜索iTunes上的付费电影。为了查看它的效果，可以用浏览器打开Web/index.html页面，输入你要的价格，然后按下<code>return</code>按钮。</p>
+<p><img src="https://cdn2.raywenderlich.com/wp-content/uploads/2016/01/5.jpg" alt="image"></p>
+<p>如果想在iOS上测试Showtime，则可以打开Native/Showtime中的工程。编译并运行App来看看效果：</p>
+<p><img src="https://cdn2.raywenderlich.com/wp-content/uploads/2016/02/Simulator-Screen-Shot-20-Feb-2016-21.25.58-1.png" alt="image"></p>
+<p>正如你所看到的，手机中的App还未准备就绪，不过我们慢慢来补充它。工程已经包含了一些代码；我们会一步一步来完善。这个App的目的是提供一个类似web页面的体验：它将把搜索结果显示在一个Collection View中。</p>
+<h2 id="JavaScriptCore是什么？"><a href="#JavaScriptCore是什么？" class="headerlink" title="JavaScriptCore是什么？"></a>JavaScriptCore是什么？</h2><p>JavaScriptCore框架提供了访问WebKit的Javascript引擎的机制。最初这个框架只有一些支持Mac系统的C API，但到了iOS 7和OS X 10.9后，它提供了一个更加友好的Objective-C封装。这个框架为Swift/Objective-C和Javascript代码提供了更强大的互通性。</p>
+<blockquote>
+<p>注：React Native演示了JavaScriptCore强大功能。如果你想了解如何使用Javascript构建本地应用，你可以看看本站的<a href="http://www.raywenderlich.com/99473/introducing-react-native-building-apps-javascript" target="_blank" rel="external">Introducing React Native tutorial</a>一文。</p>
+</blockquote>
+<p>在这一节中，你将近距离于窥探一下JavaScriptCore的API。JavaScriptCore包含几个主要的组件：JSVirtualMachine、JSContext和JSValue。下面描述它们是如何整合在一起的。</p>
+<h3 id="JSVirtualMachine"><a href="#JSVirtualMachine" class="headerlink" title="JSVirtualMachine"></a>JSVirtualMachine</h3><p>JavaScript代码是在由JSVirtualMachine类表示的一个虚拟机上执行的。通常情况下你不需要直接与这个类交互，但有一种情况例外：并发执行JavaScript代码。在一个独立的JSVirtualMachine中，是不可能同一时间执行多个线程的。为了支持并行，你必须使用多个虚拟机。</p>
+<p>每一个JSVirtualMachine实例都有自己的堆和自己的垃圾回收器，这意味着你不能在虚拟机之间传递对象。一个虚拟机的垃圾收集器不知道如何去处理另一个堆上的值。</p>
+<h3 id="JSContext"><a href="#JSContext" class="headerlink" title="JSContext"></a>JSContext</h3><p>一个JSContext对象表示JavaScript代码的执行环境。它对应于一个单一的全局对象；它的web开发环境等同于一个窗口对象。不同于一个虚拟机，你可以在多个上下文之间传递对象(因为它们位于同一虚拟机)。</p>
+<h3 id="JSValue"><a href="#JSValue" class="headerlink" title="JSValue"></a>JSValue</h3><p>JSValue是我们需要处理的主要数据类型：它可以表示任何可能的Javascript值。一个JSValue被绑定到其存活的JSContext对象中。任何来源于上下文对象的值都是JSValue类型。</p>
+<p>下图显示了这几个对象是如何一起工作的：</p>
+<p><img src="https://cdn5.raywenderlich.com/wp-content/uploads/2016/02/javascriptcore.png" alt="image"></p>
+<p>现在你对JavaScriptCore框架有了一个更好的了解了，就让我们来写一些代码吧。</p>
+<h2 id="调用Javascript方法"><a href="#调用Javascript方法" class="headerlink" title="调用Javascript方法"></a>调用Javascript方法</h2><p>回到Xcode，在project navigator中展开Data group，并打开MovieService.swift。这个类将获取并处理来源于iTunes的电影结果。不过现在它几乎是空的；接下来就由你来提供这些方法的具体实现。</p>
+<p>MovieService的工作流程如下：</p>
+<ul>
+<li><code>loadMoviesWithLimit(_:onComplete:)</code>将获取电影数据。</li>
+<li><code>parseResponse(_:withLimit:)</code>将使用共享的JavaScript代码来处理响应数据。</li>
+</ul>
+<p>第一步是获取电影列表。如果你熟悉JavaScript开发，你会知道一般是使用XMLHttpRequest对象来访问网络。这个对象并不是语言本身的一部分，所以你不能将它用于一个iOS App的上下文中。相反，你应该使用本地网络代码。</p>
+<p>在MovieService类中，找到<code>loadMoviesWithLimit(_:onComplete:)</code>方法并按以下代码来修改：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">loadMoviesWithLimit</span><span class="params">(limit: Double, onComplete complete: [Movie] -&gt; <span class="params">()</span></span></span>) &#123;</div><div class="line">  <span class="keyword">guard</span> <span class="keyword">let</span> url = <span class="type">NSURL</span>(string: movieUrl) <span class="keyword">else</span> &#123;</div><div class="line">    <span class="built_in">print</span>(<span class="string">"Invalid url format: \(movieUrl)"</span>)</div><div class="line">    <span class="keyword">return</span></div><div class="line">  &#125;</div><div class="line"> </div><div class="line">  <span class="type">NSURLSession</span>.sharedSession().dataTaskWithURL(url) &#123; data, <span class="number">_</span>, <span class="number">_</span> <span class="keyword">in</span></div><div class="line">    <span class="keyword">guard</span> <span class="keyword">let</span> data = data,</div><div class="line">        jsonString = <span class="type">String</span>(data: data, encoding: <span class="type">NSUTF8StringEncoding</span>) <span class="keyword">else</span> &#123;</div><div class="line">      <span class="built_in">print</span>(<span class="string">"Error while parsing the response data."</span>)</div><div class="line">      <span class="keyword">return</span></div><div class="line">    &#125;</div><div class="line"> </div><div class="line">    <span class="keyword">let</span> movies = <span class="keyword">self</span>.parseResponse(jsonString, withLimit:limit)</div><div class="line">    complete(movies)</div><div class="line"> </div><div class="line">  &#125;.resume()</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>上面的代码片断使用默认的NSURLSession单例来获取电影列表。在你将响应数据传递给JavaScript代码之前，你需要提供一个执行上下文给响应数据。首先，在MovieService.swift文件顶部，在<code>import UIKit</code>下方添加下面这行代码来导入JavaScriptCore：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> JavaScriptCore</div></pre></td></tr></table></figure>
+<p>然后在MovieService中定义如下属性：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">lazy</span> <span class="keyword">var</span> context: <span class="type">JSContext</span>? = &#123;</div><div class="line">  <span class="keyword">let</span> context = <span class="type">JSContext</span>()</div><div class="line"> </div><div class="line">  <span class="comment">// 1</span></div><div class="line">  <span class="keyword">guard</span> <span class="keyword">let</span></div><div class="line">      commonJSPath = <span class="type">NSBundle</span>.mainBundle().pathForResource(<span class="string">"common"</span>, ofType: <span class="string">"js"</span>) <span class="keyword">else</span> &#123;</div><div class="line">    <span class="built_in">print</span>(<span class="string">"Unable to read resource files."</span>)</div><div class="line">    <span class="keyword">return</span> <span class="literal">nil</span></div><div class="line">  &#125;</div><div class="line"> </div><div class="line">  <span class="comment">// 2</span></div><div class="line">  <span class="keyword">do</span> &#123;</div><div class="line">    <span class="keyword">let</span> common = <span class="keyword">try</span> <span class="type">String</span>(contentsOfFile: commonJSPath, encoding: <span class="type">NSUTF8StringEncoding</span>)</div><div class="line">    context.evaluateScript(common)</div><div class="line">  &#125; <span class="keyword">catch</span> (<span class="keyword">let</span> error) &#123;</div><div class="line">    <span class="built_in">print</span>(<span class="string">"Error while processing script file: \(error)"</span>)</div><div class="line">  &#125;</div><div class="line"> </div><div class="line">  <span class="keyword">return</span> context</div><div class="line">&#125;()</div></pre></td></tr></table></figure>
+<p>这段代码将上下文定义为一个懒加载的JSContext属性：</p>
+<ol>
+<li>首先，你从应用的bundle中加载common.js文件，这个文件中包含你要访问的JavaScript代码。</li>
+<li>在加载文件后，上下文对象将调用<code>context.evaluateScript()</code>，并将文件内容作为其参数，以此来执行js代码。</li>
+</ol>
+<p>现在可以调用Javascript方法了。仍然是在MovieService.swift文件中，找到<code>parseResponse(_:withLimit:)</code>方法，添加以下代码：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">parseResponse</span><span class="params">(response: String, withLimit limit: Double)</span></span> -&gt; [<span class="type">Movie</span>] &#123;</div><div class="line">  <span class="comment">// 1</span></div><div class="line">  <span class="keyword">guard</span> <span class="keyword">let</span> context = context <span class="keyword">else</span> &#123;</div><div class="line">    <span class="built_in">print</span>(<span class="string">"JSContext not found."</span>)</div><div class="line">    <span class="keyword">return</span> []</div><div class="line">  &#125;</div><div class="line"> </div><div class="line">  <span class="comment">// 2</span></div><div class="line">  <span class="keyword">let</span> parseFunction = context.objectForKeyedSubscript(<span class="string">"parseJson"</span>)</div><div class="line">  <span class="keyword">let</span> parsed = parseFunction.callWithArguments([response]).toArray()</div><div class="line"> </div><div class="line">  <span class="comment">// 3</span></div><div class="line">  <span class="keyword">let</span> filterFunction = context.objectForKeyedSubscript(<span class="string">"filterByLimit"</span>)</div><div class="line">  <span class="keyword">let</span> filtered = filterFunction.callWithArguments([parsed, limit]).toArray()</div><div class="line"> </div><div class="line">  <span class="comment">// 4</span></div><div class="line">  <span class="keyword">return</span> []</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>一步一步来看看这个流程：</p>
+<ol>
+<li>首先，确保上下文对象被正确的初始化。如果在设置的时候有任何错误(如：common.js文件不在bundle中)，则返回空数组。</li>
+<li>在上下文对象中查询<code>parseJSON()</code>方法。正如上面所提到的，查询的结果将被封装在一个JSValue对象中。接着，使用<code>callWithArguments(_:)</code>来调用方法，并将一个数组作为参数。最后，将返回的JavaScript值转换为一个数组。</li>
+<li><code>filterByLimit()</code>返回匹配给定价格限制的电影列表。</li>
+<li>现在你已经获取到了电影列表，但仍然忘了一点：<code>filtered</code>常量持有一个JSValue数组，你需要将其映射为本地Movie类型。</li>
+</ol>
+<blockquote>
+<p>注：你可以发现<code>objectForKeyedSubscript()</code>方法的使用有点怪怪的。不幸的是，Swift只能用这种原始的下标方法，而不能将其转换成合适的下标方法。而Objective-C可以使用方括号的下标语法。</p>
+</blockquote>
+<h2 id="暴露本地代码"><a href="#暴露本地代码" class="headerlink" title="暴露本地代码"></a>暴露本地代码</h2><p>在JavaScript运行时运行本地代码的一种方式是使用block；它们会被自动桥接到JavaScript方法。这里有个小问题：这个方法只适用于Objective-C的block，而不适用于Swift的闭包。为了暴露一个闭包，你必须执行两个任务：</p>
+<ul>
+<li>使用<code>@convention(block)</code>特性来修饰一个闭包，以将它桥接到一个Objective-C block。</li>
+<li>在你可以将一个block映射到JavaScript方法调用前，你需要将其转换为一个AnyObject对象。</li>
+</ul>
+<p>切换到Movie.swift文件，并添加以下方法：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">static</span> <span class="keyword">let</span> movieBuilder: <span class="meta">@convention</span>(block) [[<span class="type">String</span> : <span class="type">String</span>]] -&gt; [<span class="type">Movie</span>] = &#123; object <span class="keyword">in</span></div><div class="line">  <span class="keyword">return</span> object.<span class="built_in">map</span> &#123; dict <span class="keyword">in</span></div><div class="line"> </div><div class="line">    <span class="keyword">guard</span> <span class="keyword">let</span></div><div class="line">        title = dict[<span class="string">"title"</span>],</div><div class="line">        price = dict[<span class="string">"price"</span>],</div><div class="line">        imageUrl = dict[<span class="string">"imageUrl"</span>] <span class="keyword">else</span> &#123;</div><div class="line">      <span class="built_in">print</span>(<span class="string">"unable to parse Movie objects."</span>)</div><div class="line">      <span class="built_in">fatalError</span>()</div><div class="line">    &#125;</div><div class="line"> </div><div class="line">    <span class="keyword">return</span> <span class="type">Movie</span>(title: title, price: price, imageUrl: imageUrl)</div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这个闭包维护一个JavaScript对象数组(元素为字典类型)，然后用它们构造Movie实例。</p>
+<p>切换回MovieService.swift文件。在<code>parseResponse(_:withLimit:)</code>方法中，使用以下代码来替换的返回语句：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 1</span></div><div class="line"><span class="keyword">let</span> builderBlock = <span class="built_in">unsafeBitCast</span>(<span class="type">Movie</span>.movieBuilder, <span class="type">AnyObject</span>.<span class="keyword">self</span>)</div><div class="line"> </div><div class="line"><span class="comment">// 2</span></div><div class="line">context.setObject(builderBlock, forKeyedSubscript: <span class="string">"movieBuilder"</span>)</div><div class="line"><span class="keyword">let</span> builder = context.evaluateScript(<span class="string">"movieBuilder"</span>)</div><div class="line"> </div><div class="line"><span class="comment">// 3</span></div><div class="line"><span class="keyword">guard</span> <span class="keyword">let</span> unwrappedFiltered = filtered,</div><div class="line">  <span class="keyword">let</span> movies = builder.callWithArguments([unwrappedFiltered]).toArray() <span class="keyword">as</span>? [<span class="type">Movie</span>] <span class="keyword">else</span> &#123;</div><div class="line">  <span class="built_in">print</span>(<span class="string">"Error while processing movies."</span>)</div><div class="line">  <span class="keyword">return</span> []</div><div class="line">&#125;</div><div class="line"> </div><div class="line"><span class="keyword">return</span> movies</div></pre></td></tr></table></figure>
+<ol>
+<li>你使用Swift的<code>unsafeBitCast(_:_:)</code>方法来将block转换成AnyObject。</li>
+<li>在上下文中调用<code>setObject(_:forKeyedSubscript:)</code>，将block加载到JavaScript运行时。然后使用<code>evaluateScript()</code>方法获取JavaScript中block的一个引用。</li>
+<li>最后一步是使用<code>callWithArguments(_:)</code>从JavaScript中调用你的block，这个方法传入一个JSValue对象的数组作为参数。返回值可以被转换成Movie对象的数组。</li>
+</ol>
+<p>最后来看看效果！编译并运行。在搜索框中输入一个价格，然后你可以看到将显示一些结果：</p>
+<p><img src="https://cdn5.raywenderlich.com/wp-content/uploads/2016/02/Simulator-Screen-Shot-19-Feb-2016-21.51.48-1-281x500.png" alt="image"></p>
+<p>仅仅几行代码，你就构建了一个本地应用，并使用JavaScript来解析和过滤结果。</p>
+<h2 id="使用JSExport协议"><a href="#使用JSExport协议" class="headerlink" title="使用JSExport协议"></a>使用JSExport协议</h2><p>在JavaScript使用自定义对象的另一种方式是JSExport协议。你必须创建一个继承自JSExport的协议，并声明想要暴露给Javascript的属性和方法。</p>
+<p>对于你暴露的每一个本地类，JavaScriptCore都会在适当的JSContext实例中创建一个原型。JavaScriptCore框架这样做是基于这样一个选择基础：默认情况下，你的类的方法或属性自己并不会暴露给JavaScript。相反，你必须选择暴露谁。JSExport的规则如下：</p>
+<ul>
+<li>对于被暴露的实例方法，JavaScriptCore创建一个对应的JavaScript函数作为原型对象的属性。</li>
+<li>类的属性将作为原型的访问器属性。</li>
+<li>对于类方法，JavaScriptCore将在构造器对象中创建一个JavaScript方法。</li>
+</ul>
+<p>为了看看在实践中如何处理，我们切换到Movie.swift中，并在类声明前面定义如下一个新的协议：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> JavaScriptCore</div><div class="line"> </div><div class="line"><span class="meta">@objc</span> <span class="class"><span class="keyword">protocol</span> <span class="title">MovieJSExports</span>: <span class="title">JSExport</span> </span>&#123;</div><div class="line">  <span class="keyword">var</span> title: <span class="type">String</span> &#123; <span class="keyword">get</span> <span class="keyword">set</span> &#125;</div><div class="line">  <span class="keyword">var</span> price: <span class="type">String</span> &#123; <span class="keyword">get</span> <span class="keyword">set</span> &#125;</div><div class="line">  <span class="keyword">var</span> imageUrl: <span class="type">String</span> &#123; <span class="keyword">get</span> <span class="keyword">set</span> &#125;</div><div class="line"> </div><div class="line">  <span class="keyword">static</span> <span class="function"><span class="keyword">func</span> <span class="title">movieWithTitle</span><span class="params">(title: String, price: String, imageUrl: String)</span></span> -&gt; <span class="type">Movie</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>在这里，你指定所有想要暴露的属性并定义一个类方法来在Javascript中构造Movie对象。后者是必须的，因为JavaScriptCore不桥接初始化方法。</p>
+<p>现在来修改Movie以实现JSExport协议。使用以下代码来替换整个类：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Movie</span>: <span class="title">NSObject</span>, <span class="title">MovieJSExports</span> </span>&#123;</div><div class="line"> </div><div class="line">  <span class="keyword">dynamic</span> <span class="keyword">var</span> title: <span class="type">String</span></div><div class="line">  <span class="keyword">dynamic</span> <span class="keyword">var</span> price: <span class="type">String</span></div><div class="line">  <span class="keyword">dynamic</span> <span class="keyword">var</span> imageUrl: <span class="type">String</span></div><div class="line"> </div><div class="line">  <span class="keyword">init</span>(title: <span class="type">String</span>, price: <span class="type">String</span>, imageUrl: <span class="type">String</span>) &#123;</div><div class="line">    <span class="keyword">self</span>.title = title</div><div class="line">    <span class="keyword">self</span>.price = price</div><div class="line">    <span class="keyword">self</span>.imageUrl = imageUrl</div><div class="line">  &#125;</div><div class="line"> </div><div class="line">  <span class="class"><span class="keyword">class</span> <span class="title">func</span> <span class="title">movieWithTitle</span>(<span class="title">title</span>: <span class="title">String</span>, <span class="title">price</span>: <span class="title">String</span>, <span class="title">imageUrl</span>: <span class="title">String</span>) -&gt; <span class="title">Movie</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span> <span class="type">Movie</span>(title: title, price: price, imageUrl: imageUrl)</div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>类方法只是简单地调用适当的初始化方法。</p>
+<p>现在你的类已准备好用于JavaScript了。为了了解你可以怎么转换当前的实现，从Resources group中打开additions.js。它已经包含了以下代码：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">var</span> mapToNative = function(movies) &#123;</div><div class="line">  <span class="keyword">return</span> movies.<span class="built_in">map</span>(function (movie) &#123;</div><div class="line">    <span class="keyword">return</span> <span class="type">Movie</span>.movieWithTitlePriceImageUrl(movie.title, movie.price, movie.imageUrl);</div><div class="line">  &#125;);</div><div class="line">&#125;;</div></pre></td></tr></table></figure>
+<p>上面的方法从输入数组中获取每一个元素，并使用它来构造一个Movie实例。唯一值得指出的是方法签名是如何改变的：因为JavaScript没有命名参数，所以使用驼峰命名法将额外的参数附加到方法名后面。</p>
+<p>打开MovieService.swift，使用以下代码替换懒加载上下文属性的闭包实现。</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">lazy</span> <span class="keyword">var</span> context: <span class="type">JSContext</span>? = &#123;</div><div class="line"> </div><div class="line">  <span class="keyword">let</span> context = <span class="type">JSContext</span>()</div><div class="line"> </div><div class="line">  <span class="keyword">guard</span> <span class="keyword">let</span></div><div class="line">      commonJSPath = <span class="type">NSBundle</span>.mainBundle().pathForResource(<span class="string">"common"</span>, ofType: <span class="string">"js"</span>),</div><div class="line">      additionsJSPath = <span class="type">NSBundle</span>.mainBundle().pathForResource(<span class="string">"additions"</span>, ofType: <span class="string">"js"</span>) <span class="keyword">else</span> &#123;</div><div class="line">    <span class="built_in">print</span>(<span class="string">"Unable to read resource files."</span>)</div><div class="line">    <span class="keyword">return</span> <span class="literal">nil</span></div><div class="line">  &#125;</div><div class="line"> </div><div class="line">  <span class="keyword">do</span> &#123;</div><div class="line">    <span class="keyword">let</span> common = <span class="keyword">try</span> <span class="type">String</span>(contentsOfFile: commonJSPath, encoding: <span class="type">NSUTF8StringEncoding</span>)</div><div class="line">    <span class="keyword">let</span> additions = <span class="keyword">try</span> <span class="type">String</span>(contentsOfFile: additionsJSPath, encoding: <span class="type">NSUTF8StringEncoding</span>)</div><div class="line"> </div><div class="line">    context.setObject(<span class="type">Movie</span>.<span class="keyword">self</span>, forKeyedSubscript: <span class="string">"Movie"</span>)</div><div class="line">    context.evaluateScript(common)</div><div class="line">    context.evaluateScript(additions)</div><div class="line">  &#125; <span class="keyword">catch</span> (<span class="keyword">let</span> error) &#123;</div><div class="line">    <span class="built_in">print</span>(<span class="string">"Error while processing script file: \(error)"</span>)</div><div class="line">  &#125;</div><div class="line"> </div><div class="line">  <span class="keyword">return</span> context</div><div class="line">&#125;()</div></pre></td></tr></table></figure>
+<p>没有太大的改变。加载additions.js的内容到上下文。使用JSContext的<code>setObject(_:forKeyedSubscript:)</code>方法，你同样可以让Movie原型在上下文中可用。</p>
+<p>还剩下最后一件事：在MovieService.swift中，使用以下代码来替换<code>parseResponse(_:withLimit:)</code>的实现。</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">parseResponse</span><span class="params">(response: String, withLimit limit: Double)</span></span> -&gt; [<span class="type">Movie</span>] &#123;</div><div class="line">  <span class="keyword">guard</span> <span class="keyword">let</span> context = context <span class="keyword">else</span> &#123;</div><div class="line">    <span class="built_in">print</span>(<span class="string">"JSContext not found."</span>)</div><div class="line">    <span class="keyword">return</span> []</div><div class="line">  &#125;</div><div class="line"> </div><div class="line">  <span class="keyword">let</span> parseFunction = context.objectForKeyedSubscript(<span class="string">"parseJson"</span>)</div><div class="line">  <span class="keyword">let</span> parsed = parseFunction.callWithArguments([response]).toArray()</div><div class="line"> </div><div class="line">  <span class="keyword">let</span> filterFunction = context.objectForKeyedSubscript(<span class="string">"filterByLimit"</span>)</div><div class="line">  <span class="keyword">let</span> filtered = filterFunction.callWithArguments([parsed, limit]).toArray()</div><div class="line"> </div><div class="line">  <span class="keyword">let</span> mapFunction = context.objectForKeyedSubscript(<span class="string">"mapToNative"</span>)</div><div class="line">  <span class="keyword">guard</span> <span class="keyword">let</span> unwrappedFiltered = filtered,</div><div class="line">    movies = mapFunction.callWithArguments([unwrappedFiltered]).toArray() <span class="keyword">as</span>? [<span class="type">Movie</span>] <span class="keyword">else</span> &#123;</div><div class="line">    <span class="keyword">return</span> []</div><div class="line">  &#125;</div><div class="line"> </div><div class="line">  <span class="keyword">return</span> movies</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>代码现在使用Javascript运行时的<code>mapToNative()</code>来创建Movie数组。如果现在编译并运行，你可以看到app仍然按预期的来运行：</p>
+<p><img src="https://cdn1.raywenderlich.com/wp-content/uploads/2016/01/4.jpg" alt="image"></p>
+<p>恭喜你！不仅创建了一个浏览电影的很棒的App，同时也学会了通过重用完全由不同的语言实现的代码来创建它。</p>
+<h2 id="下一步去哪里？"><a href="#下一步去哪里？" class="headerlink" title="下一步去哪里？"></a>下一步去哪里？</h2><p>你可以在<a href="https://developer.apple.com/videos/play/wwdc2013-615/" target="_blank" rel="external">这里</a>下载这篇教程完整的代码。</p>
+<p>如果你想学习更多关于JavaScriptCore知识，可以看看WWDC 2013的<a href="https://developer.apple.com/videos/play/wwdc2013-615/" target="_blank" rel="external">Session 615</a></p>
+<p>我希望你喜欢这篇JavaScriptCore教程。如果有任何问题或评论，可以参考到下面的讨论中来！</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/12/20/perfect-smooth-scrolling-in-uitableviews/" rel="next" title="Perfect smooth scrolling in UITableViews">
+                <i class="fa fa-chevron-left"></i> Perfect smooth scrolling in UITableViews
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#入门"><span class="nav-number">1.</span> <span class="nav-text">入门</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#JavaScriptCore是什么？"><span class="nav-number">2.</span> <span class="nav-text">JavaScriptCore是什么？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#JSVirtualMachine"><span class="nav-number">2.1.</span> <span class="nav-text">JSVirtualMachine</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#JSContext"><span class="nav-number">2.2.</span> <span class="nav-text">JSContext</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#JSValue"><span class="nav-number">2.3.</span> <span class="nav-text">JSValue</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#调用Javascript方法"><span class="nav-number">3.</span> <span class="nav-text">调用Javascript方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#暴露本地代码"><span class="nav-number">4.</span> <span class="nav-text">暴露本地代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#使用JSExport协议"><span class="nav-number">5.</span> <span class="nav-text">使用JSExport协议</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#下一步去哪里？"><span class="nav-number">6.</span> <span class="nav-text">下一步去哪里？</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,896 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="本文由Colin Eberhardt发表于raywenderlich，原文可查看MVVM Tutorial with ReactiveCocoa: Part 1/2
+你可能已经在Twitter上听过这个这个笑话了：
+
+“iOS Architecture, where MVC stands for Massive View Controller”
+
+当然这在iOS开发圈内，这是个轻松的笑话，但我敢确">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MVVM Tutorial with ReactiveCocoa: Part 1/2">
+<meta property="og:url" content="http://southpeak.github.io/2014/08/08/mvvm-tutorial-with-reactivecocoa-1/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="本文由Colin Eberhardt发表于raywenderlich，原文可查看MVVM Tutorial with ReactiveCocoa: Part 1/2
+你可能已经在Twitter上听过这个这个笑话了：
+
+“iOS Architecture, where MVC stands for Massive View Controller”
+
+当然这在iOS开发圈内，这是个轻松的笑话，但我敢确">
+<meta property="og:image" content="http://cdn5.raywenderlich.com/wp-content/uploads/2014/06/FinishedApp.png">
+<meta property="og:image" content="http://cdn4.raywenderlich.com/wp-content/uploads/2014/06/MVCPattern-2.png">
+<meta property="og:image" content="http://cdn5.raywenderlich.com/wp-content/uploads/2014/06/MVVMPattern.png">
+<meta property="og:image" content="http://cdn5.raywenderlich.com/wp-content/uploads/2014/06/MVVMReactiveCocoa.png">
+<meta property="og:image" content="http://cdn4.raywenderlich.com/wp-content/uploads/2014/06/first-launch.jpg">
+<meta property="og:image" content="http://cdn2.raywenderlich.com/wp-content/uploads/2014/06/EmptyInterface.png">
+<meta property="og:image" content="http://cdn4.raywenderlich.com/wp-content/uploads/2014/06/ViewWithState-333x500.png">
+<meta property="og:image" content="http://cdn3.raywenderlich.com/wp-content/uploads/2014/06/GoButtonEnabled-333x500.png">
+<meta property="og:updated_time" content="2016-08-27T05:34:28.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="MVVM Tutorial with ReactiveCocoa: Part 1/2">
+<meta name="twitter:description" content="本文由Colin Eberhardt发表于raywenderlich，原文可查看MVVM Tutorial with ReactiveCocoa: Part 1/2
+你可能已经在Twitter上听过这个这个笑话了：
+
+“iOS Architecture, where MVC stands for Massive View Controller”
+
+当然这在iOS开发圈内，这是个轻松的笑话，但我敢确">
+<meta name="twitter:image" content="http://cdn5.raywenderlich.com/wp-content/uploads/2014/06/FinishedApp.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2014/08/08/mvvm-tutorial-with-reactivecocoa-1/"/>
+
+  <title> MVVM Tutorial with ReactiveCocoa: Part 1/2 | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                MVVM Tutorial with ReactiveCocoa: Part 1/2
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-08-08T18:54:42+08:00" content="2014-08-08">
+              2014-08-08
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/translate/" itemprop="url" rel="index">
+                    <span itemprop="name">翻译</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>本文由<code>Colin Eberhardt</code>发表于<code>raywenderlich</code>，原文可查看<a href="http://www.raywenderlich.com/74106/mvvm-tutorial-with-reactivecocoa-part-1" target="_blank" rel="external">MVVM Tutorial with ReactiveCocoa: Part 1/2</a></p>
+<p>你可能已经在<code>Twitter</code>上听过这个这个笑话了：</p>
+<blockquote>
+<p>“iOS Architecture, where MVC stands for Massive View Controller”</p>
+</blockquote>
+<p>当然这在<code>iOS</code>开发圈内，这是个轻松的笑话，但我敢确定你大实践中遇到过这个问题：即视图控制器太大且难以管理。</p>
+<p>这篇文章将介绍另一种构建应用程序的模式–<code>MVVM(Model-View-ViewModel)</code>。通过结合<code>ReactiveCocoa</code>便利性，这个模式提供了一个很好的代替<code>MVC</code>的方案，它保证了让视图控制器的轻量性。</p>
+<p>在本文我，我们将通过构建一个简单的<code>Flickr</code>查询程序来一步步了解<code>MVVM</code>，这个程序的效果图如下所示：</p>
+<p><img src="http://cdn5.raywenderlich.com/wp-content/uploads/2014/06/FinishedApp.png" alt="image"></p>
+<p>在开始写代码之前，我们先来了解一些基本的原理。</p>
+<p>原文简要介绍了一下<code>ReactiveCocoa</code>，在此不再翻译，可以查看以下两篇译文：</p>
+<p><a href="http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-%5B%3F%5D-:xin-hao/">ReactiveCocoa Tutorial – The Definitive Introduction: Part 1/2</a></p>
+<p><a href="http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-er-:twittersou-suo-shi-li/">ReactiveCocoa Tutorial – The Definitive Introduction: Part 2/2</a></p>
+<h2 id="MVVM模式介绍"><a href="#MVVM模式介绍" class="headerlink" title="MVVM模式介绍"></a>MVVM模式介绍</h2><p>正如其名称一下，<code>MVVM</code>是一个<code>UI</code>设计模式。它是<code>MV*</code>模式集合中的一员。<code>MV*</code>模式还包含<code>MVC(Model View Controller)</code>、<code>MVP(Model View Presenter)</code>等。这些模式的目的在于将UI逻辑与业务逻辑分离，以让程序更容易开发和测试。为了更好的理解<code>MVVM</code>模式，我们可以看看其来源。</p>
+<p><code>MVC</code>是最初的<code>UI</code>设计模式，最早出现在<code>Smalltalk</code>语言中。下图展示了<code>MVC</code>模式的主要组成：</p>
+<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/06/MVCPattern-2.png" alt="image"></p>
+<p>这个模式将<code>UI</code>分成<code>Model</code>(表示程序状态)、<code>View</code>(由UI控件组成)、<code>Controller</code>(处理用户交互与更新<code>model</code>)。<code>MVC</code>模式的最大问题是其令人相当困惑。它的概念看起来很好，但当我们实现<code>MVC</code>时，就会产生上图这种<code>Model-View-Controller</code>之间的环状关系。这种相互关系将会导致可怕的混乱。</p>
+<p>最近<code>Martin Fowler</code>介绍了<code>MVC</code>模式的一个变种，这种模式命名为<code>MVVM</code>，并被微软广泛采用并推广。</p>
+<p><img src="http://cdn5.raywenderlich.com/wp-content/uploads/2014/06/MVVMPattern.png" alt="image"></p>
+<p>这个模式的核心是<code>ViewModel</code>，它是一种特殊的<code>model</code>类型，用于表示程序的<code>UI</code>状态。它包含描述每个<code>UI</code>控件的状态的属性。例如，文本输入域的当前文本，或者一个特定按钮是否可用。它同样暴露了视图可以执行哪些行为，如按钮点击或手势。</p>
+<p>我们可以将<code>ViewModel</code>看作是视图的模型(<code>model-of-the-view</code>)。<code>MVVM</code>模式中的三部分比<code>MVC</code>更加简洁，下面是一些严格的限制</p>
+<ol>
+<li><code>View</code>引用了<code>ViewModel</code>，但反过来不行。</li>
+<li><code>ViewModel</code>引用了<code>Model</code>，但反过来不行。</li>
+</ol>
+<p>如果我们破坏了这些规则，便无法正确地使用<code>MVVM</code>。</p>
+<p>这个模式有以下一些立竿见影的优势：</p>
+<ol>
+<li>轻量的视图：所有的UI逻辑都在<code>ViewModel</code>中。</li>
+<li>便于测试：我们可以在没有视图的情况下运行整个程序，这样大大地增加了它的可测试性。</li>
+</ol>
+<p>现在你可能注意到一个问题。如果<code>View</code>引用了<code>ViewModel</code>，但<code>ViewModel</code>没有引用<code>View</code>，那<code>ViewModel</code>如何更新视图呢？哈哈，这就得靠<code>MVVM</code>模式的私密武器了。</p>
+<h2 id="MVVM和数据绑定"><a href="#MVVM和数据绑定" class="headerlink" title="MVVM和数据绑定"></a>MVVM和数据绑定</h2><p><code>MVVM</code>模式依赖于数据绑定，它是一个框架级别的特性，用于自动连接对象属性和UI控件。例如，在微软的<code>WPF</code>框架中，下面的标签将一个<code>TextField</code>的<code>Text</code>属性绑定到<code>ViewModel</code>的<code>Username</code>属性中。</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="tag">&lt;<span class="name">TextField</span> <span class="attr">Text</span>=<span class="string">”&#123;DataBinding</span> <span class="attr">Path</span>=<span class="string">Username,</span> <span class="attr">Mode</span>=<span class="string">TwoWay&#125;”/</span>&gt;</span></div></pre></td></tr></table></figure>
+<p>WPF框架将这两个属性绑定到一起。</p>
+<p>不过可惜的是，<code>iOS</code>没有数据绑定框架，幸运的是我们可以通过<code>ReactiveCocoa</code>来实现这一功能。我们从<code>iOS</code>开发的角度来看看<code>MVVM</code>模式，<code>ViewController</code>及其相关的<code>UI</code>(<code>nib</code>, <code>stroyboard</code>或纯代码的<code>View</code>)组成了View:</p>
+<p><img src="http://cdn5.raywenderlich.com/wp-content/uploads/2014/06/MVVMReactiveCocoa.png" alt="image"></p>
+<p>……而<code>ReactiveCocoa</code>绑定了<code>View</code>和<code>ViewModel</code>。</p>
+<p>理论讲得差不多了，我们可以开始新的历程了。</p>
+<h2 id="启动项目结构"><a href="#启动项目结构" class="headerlink" title="启动项目结构"></a>启动项目结构</h2><p>可以从<a href="http://cdn5.raywenderlich.com/wp-content/uploads/2014/06/FlickrSearchStarterProject1.zip" target="_blank" rel="external">FlickrSearchStarterProject.zip</a>中下载启动项目。我们使用<code>Cocoapods</code>来管理第三方库，在对应目录下执行<code>pod install</code>命令生成依赖库后，我们就可以打开生成的<code>RWTFlickrSearch.xcworkspace</code>来运行我们的项目了，初始运行效果如下图：</p>
+<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/06/first-launch.jpg" alt="image"></p>
+<p>我们行熟悉下工程的结构：</p>
+<p><img src="http://cdn2.raywenderlich.com/wp-content/uploads/2014/06/EmptyInterface.png" alt="image"></p>
+<p><code>Model</code>和<code>ViewModel</code>分组目前是空的，我们会慢慢往里面添加东西。<code>View</code>分组包含以下几个类</p>
+<ol>
+<li><code>RWTFlickSearchViewController</code>：程序的主屏幕，包含一个搜索输入域和一个<code>GO</code>按钮。</li>
+<li><code>RWTRecentSearchItemTableViewCell</code>：用于在主页中显示搜索结果的<code>table cell</code></li>
+<li><code>RWTSearchResultsViewController</code>：搜索结果页，显示来自<code>Flickr</code>的<code>tableview</code></li>
+<li><code>RWTSearchResultsTableViewCell</code>：渲染来自<code>Flickr</code>的单个图片的<code>table cell</code>。</li>
+</ol>
+<p>现在来写我们的第一个<code>ViewModel</code>吧。</p>
+<h2 id="第一个ViewModel"><a href="#第一个ViewModel" class="headerlink" title="第一个ViewModel"></a>第一个ViewModel</h2><p>在<code>ViewModel</code>分组中添加一个继承自<code>NSObject</code>的新类<code>RWTFlickrSearchViewModel</code>。然后在该类的头文件中，添加以下两行代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) <span class="built_in">NSString</span> *searchText;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) <span class="built_in">NSString</span> *title;</div></pre></td></tr></table></figure>
+<p><code>searchText</code>属性表示文本域中显示文本，<code>title</code>属性表示导航条上的标题。</p>
+<p>打开<code>RWTFlickrSearchViewModel.m</code>文件添加以下代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">RWTFlickrSearchViewModel</span></span></div><div class="line"></div><div class="line">- (<span class="keyword">instancetype</span>)init</div><div class="line">&#123;</div><div class="line">    <span class="keyword">self</span> = [<span class="keyword">super</span> init];</div><div class="line">    </div><div class="line">    <span class="keyword">if</span> (<span class="keyword">self</span>)</div><div class="line">    &#123;</div><div class="line">        [<span class="keyword">self</span> initialize];</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (<span class="keyword">void</span>)initialize</div><div class="line">&#123;</div><div class="line">    <span class="keyword">self</span>.searchText = <span class="string">@"search text"</span>;</div><div class="line">    <span class="keyword">self</span>.title = <span class="string">@"Flickr Search"</span>;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>这段代码简单地设置了<code>ViewModel</code>的初始状态。</p>
+<p>接下来我们将连接<code>ViewModel</code>到<code>View</code>。记住<code>View</code>保存了一个<code>ViewModel</code>的引用。在这种情况下，添加一个给定<code>ViewModel</code>的初始化方法来构造<code>View</code>是很有必要的。打开<code>RWTFlickrSearchViewController.h</code>，并导入<code>ViewModel</code>头文件：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">"RWTFlickrSearchViewModel.h"</span></span></div></pre></td></tr></table></figure>
+<p>并添加以下初始化方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">RWTFlickrSearchViewController</span> : <span class="title">UIViewController</span></span></div><div class="line"></div><div class="line">- (<span class="keyword">instancetype</span>)initWithViewModel:(RWTFlickrSearchViewModel *)viewModel;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>在<code>RWTFlickrSearchViewController.m</code>中，在类的扩展中添加以下私有属性：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">@property</span> (<span class="keyword">weak</span>, <span class="keyword">nonatomic</span>) RWTFlickrSearchViewModel *viewModel;</div></pre></td></tr></table></figure>
+<p>然后添加以下方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">instancetype</span>)initWithViewModel:(RWTFlickrSearchViewModel *)viewModel</div><div class="line">&#123;</div><div class="line">    <span class="keyword">self</span> = [<span class="keyword">super</span> init];</div><div class="line">    </div><div class="line">    <span class="keyword">if</span> (<span class="keyword">self</span>)</div><div class="line">    &#123;</div><div class="line">        _viewModel = viewModel;</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这就在<code>view</code>中存储了一个到<code>ViewModel</code>的引用。<em>注意这是一个弱引用，这样<code>View</code>引用了<code>ViewModel</code>，但没有拥有它。</em></p>
+<p>接下来在<code>viewDidLoad</code>里面添加下面代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">[<span class="keyword">self</span> bindViewModel];</div></pre></td></tr></table></figure>
+<p>该方法的实现如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)bindViewModel</div><div class="line">&#123;</div><div class="line">    <span class="keyword">self</span>.title = <span class="keyword">self</span>.viewModel.title;</div><div class="line">    <span class="keyword">self</span>.searchTextField.text = <span class="keyword">self</span>.viewModel.searchText;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>最后我们需要创建<code>ViewModel</code>，并将其提供给<code>View</code>。在<code>RWTAppDelegate.m</code>中，添加以下头文件：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">"RWTFlickrSearchViewModel.h"</span></span></div></pre></td></tr></table></figure>
+<p>同时添加一个私有属性：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) RWTFlickrSearchViewModel *viewModel;</div></pre></td></tr></table></figure>
+<p>我们会发现这个类中已以有一个<code>createInitialViewController</code>方法了，我们用以下代码来更新它：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">- (<span class="built_in">UIViewController</span> *)createInitialViewController &#123;</div><div class="line">    <span class="keyword">self</span>.viewModel = [RWTFlickrSearchViewModel new];</div><div class="line">    <span class="keyword">return</span> [[RWTFlickrSearchViewController alloc] initWithViewModel:<span class="keyword">self</span>.viewModel];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这个方法创建了一个<code>ViewModel</code>实例，然后构造并返回了<code>View</code>。这个视图作程序导航控制器的初始视图。</p>
+<p>运行后的状态如下：</p>
+<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/06/ViewWithState-333x500.png" alt="image"></p>
+<p>这样我们就得到了第一个<code>ViewModel</code>。不过仍然有许多东西要学的。你可能已经发现了我们还没有使用<code>ReactiveCocoa</code>。到目前为止，用户在输入框上的输入操作不会影响到<code>ViewModel</code>。</p>
+<h2 id="检测可用的搜索状态"><a href="#检测可用的搜索状态" class="headerlink" title="检测可用的搜索状态"></a>检测可用的搜索状态</h2><p>现在，我们来看看如何用<code>ReactiveCocoa</code>来绑定<code>ViewModel</code>和<code>View</code>，以将搜索输入框和按钮连接到<code>ViewModel</code>。</p>
+<p>在<code>RWTFlickrSearchViewController.m</code>中，我们使用如下代码更新<code>bindViewModel</code>方法。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)bindViewModel</div><div class="line">&#123;</div><div class="line">    <span class="keyword">self</span>.title = <span class="keyword">self</span>.viewModel.title;</div><div class="line">    RAC(<span class="keyword">self</span>.viewModel, searchText) = <span class="keyword">self</span>.searchTextField.rac_textSignal;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>在<code>ReactiveCocoa</code>中，使用了分类将<code>rac_textSignal</code>属性添加到<code>UITextField</code>类中。它是一个信号，在文本域每次更新时会发送一个包含当前文本的<code>next</code>事件。</p>
+<p><code>RAC</code>是一个用于做绑定操作的宏，上面的代码会使用<code>rac_textSignal</code>发出的<code>next</code>信号来更新<code>viewModel</code>的<code>searchText</code>属性。</p>
+<p>搜索按钮应该只有在用户输入有效时才可点击。为了方便起见，我们以输入字符大于<code>3</code>时输入有效为准。在<code>RWTFlickrSearchViewModel.m</code>中导入以下头文件。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">&lt;ReactiveCocoa/ReactiveCocoa.h&gt;</span></span></div></pre></td></tr></table></figure>
+<p>然后更新初始化方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)initialize</div><div class="line">&#123;</div><div class="line">    <span class="keyword">self</span>.title = <span class="string">@"Flickr Search"</span>;</div><div class="line">    </div><div class="line">    RACSignal *validSearchSignal =</div><div class="line">    [[RACObserve(<span class="keyword">self</span>, searchText)</div><div class="line">      map:^<span class="keyword">id</span>(<span class="built_in">NSString</span> *text) &#123;</div><div class="line">        <span class="keyword">return</span> @(text.length &gt; <span class="number">3</span>);</div><div class="line">    &#125;]</div><div class="line">     distinctUntilChanged];</div><div class="line">    </div><div class="line">    [validSearchSignal subscribeNext:^(<span class="keyword">id</span> x) &#123;</div><div class="line">        <span class="built_in">NSLog</span>(<span class="string">@"search text is valid %@"</span>, x);</div><div class="line">    &#125;];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>运行程序并在输入框中输入一些字符，在控制台中我们可以看到以下输出：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="number">2014</span><span class="number">-08</span><span class="number">-07</span> <span class="number">21</span>:<span class="number">50</span>:<span class="number">44.078</span> RWTFlickrSearch[<span class="number">3116</span>:<span class="number">60</span>b] search text is valid <span class="number">0</span></div><div class="line"><span class="number">2014</span><span class="number">-08</span><span class="number">-07</span> <span class="number">21</span>:<span class="number">50</span>:<span class="number">59.493</span> RWTFlickrSearch[<span class="number">3116</span>:<span class="number">60</span>b] search text is valid <span class="number">1</span></div><div class="line"><span class="number">2014</span><span class="number">-08</span><span class="number">-07</span> <span class="number">21</span>:<span class="number">51</span>:<span class="number">02.594</span> RWTFlickrSearch[<span class="number">3116</span>:<span class="number">60</span>b] search text is valid <span class="number">0</span></div></pre></td></tr></table></figure>
+<p>上面的代码使用<code>RACObserve</code>宏来从<code>ViewModel</code>的<code>searchText</code>属性创建一个信号。<code>map</code>操作将文本转化为一个<code>true</code>或<code>false</code>值的流。</p>
+<p>最后，<code>distinctUntilChanges</code>确保信号只有在状态改变时才发出值。</p>
+<p>到目前为止，我们可以看到<code>ReactiveCocoa</code>被用于将绑定<code>View</code>绑定到<code>ViewModel</code>，确保了这两者是同步的。另进一步地，<code>ViewModel</code>内部的<code>ReactiveCocoa</code>代码用于观察自己的状态及执行其它操作。</p>
+<p>这就是<code>MVVM</code>模式的基本处理过程。<code>ReactiveCocoa</code>通常用于绑定<code>View</code>和<code>ViewModel</code>，但在程序的其它层也非常有用。</p>
+<h2 id="添加搜索命令"><a href="#添加搜索命令" class="headerlink" title="添加搜索命令"></a>添加搜索命令</h2><p>本节将上面创建的<code>validSearchSignal</code>来创建绑定到<code>View</code>的操作。打开<code>RWTFlickrSearchViewModel.h</code>并添加以下头文件</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">&lt;ReactiveCocoa/ReactiveCocoa.h&gt;</span></span></div></pre></td></tr></table></figure>
+<p>同时添加以下属性</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">@property</span> (<span class="keyword">strong</span>, <span class="keyword">nonatomic</span>) RACCommand *executeSearch;</div></pre></td></tr></table></figure>
+<p><code>RACCommand</code>是<code>ReactiveCocoa</code>中用于表示<code>UI</code>操作的一个类。它包含一个代表了<code>UI</code>操作的结果的信号以及标识操作当前是否被执行的一个状态。</p>
+<p>在<code>RWTFlickrSearchViewModel.m</code>的<code>initialize</code>方法的最后添加以下代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">self</span>.executeSearch = [[RACCommand alloc] initWithEnabled:validSearchSignal</div><div class="line">                                             signalBlock:^RACSignal *(<span class="keyword">id</span> input) &#123;</div><div class="line">                                                 <span class="keyword">return</span> [<span class="keyword">self</span> executeSearchSignal];</div><div class="line">                                             &#125;];</div></pre></td></tr></table></figure>
+<p>这创建了一个在<code>validSearchSignal</code>发送<code>true</code>时可用的命令。另外，需要在下面实现<code>executeSearchSignal</code>方法，它提供了命令所执行的操作。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">- (RACSignal *)executeSearchSignal</div><div class="line">&#123;</div><div class="line">    <span class="keyword">return</span> [[[[RACSignal empty] logAll] delay:<span class="number">2.0</span>] logAll];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>在这个方法中，我们执行一些业务逻辑操作，以作为命令执行的结果，并通过信号异步返回结果。</p>
+<p>到目前为止，上述代码只提供了一个简单的实现：空信号会立即完成。<code>delay</code>操作会将其所接收到的<code>next</code>或<code>complete</code>事件延迟两秒执行。</p>
+<p>最后一步是将这个命令连接到<code>View</code>中。打开<code>RWTFlickrSearchViewController.m</code>并在<code>bindViewModel</code>方法的结尾中添加以下代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">self</span>.searchButton.rac_command = <span class="keyword">self</span>.viewModel.executeSearch;</div></pre></td></tr></table></figure>
+<p><code>rac_command</code>属性是<code>UIButton</code>的<code>ReactiveCocoa</code>分类中添加的属性。上面的代码确保点击按钮执行给定的命令，且按钮的可点击状态反应了命令的可用状态。</p>
+<p>运行代码，输入一些字符并点击<code>GO</code>，得到如下结果：</p>
+<p><img src="http://cdn3.raywenderlich.com/wp-content/uploads/2014/06/GoButtonEnabled-333x500.png" alt="image"></p>
+<p>可以看到，当输入有效点击按钮时，按钮会置灰<code>2</code>秒钟，当执行的信号完成时又可点击。我们可以看下控制台的输出，可以发现空信号会立即完成，而延迟操作会在<code>2</code>秒后发出事件：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="number">2014</span><span class="number">-08</span><span class="number">-07</span> <span class="number">22</span>:<span class="number">21</span>:<span class="number">25.128</span> RWTFlickrSearch[<span class="number">3161</span>:<span class="number">60</span>b] &lt;RACDynamicSignal: <span class="number">0x17005ba20</span>&gt; name: +empty completed</div><div class="line"><span class="number">2014</span><span class="number">-08</span><span class="number">-07</span> <span class="number">22</span>:<span class="number">21</span>:<span class="number">27.329</span> RWTFlickrSearch[<span class="number">3161</span>:<span class="number">60</span>b] &lt;RACDynamicSignal: <span class="number">0x17005dd30</span>&gt; name: [+empty] -delay: <span class="number">2.000000</span> completed</div></pre></td></tr></table></figure>
+<p>是不是很酷？</p>
+<h2 id="绑定、绑定还是绑定"><a href="#绑定、绑定还是绑定" class="headerlink" title="绑定、绑定还是绑定"></a>绑定、绑定还是绑定</h2><p><code>RACCommand</code>监听了搜索按钮状态的更新，但处理<code>activity indicator</code>的可见性则由我们负责。<code>RACCommand</code>暴露了一个<code>executing</code>属性，它是一个信号，发送<code>true</code>或<code>false</code>来标明命令开始和结束执行的时间。我们可以用这个来影响当前命令的状态。</p>
+<p>在<code>RWTFlickrSearchViewController.m</code>中的<code>bindViewModel</code>方法结尾处添加以下代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">RAC([<span class="built_in">UIApplication</span> sharedApplication], networkActivityIndicatorVisible) = <span class="keyword">self</span>.viewModel.executeSearch.executing;</div></pre></td></tr></table></figure>
+<p>这将<code>UIApplication</code>的<code>networkActivityIndicatorVisible</code>属性绑定到命令的<code>executing</code>信号中。这确保了不管命令什么时候执行，状态栏中的网络<code>activity indicator</code>都会显示。</p>
+<p>接下来添加以下代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">RAC(<span class="keyword">self</span>.loadingIndicator, hidden) = [<span class="keyword">self</span>.viewModel.executeSearch.executing not];</div></pre></td></tr></table></figure>
+<p>当命令执行时，应该隐藏加载<code>indicator</code>。这可以通过<code>not</code>操作来反转信号。</p>
+<p>最后，添加以下代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">[<span class="keyword">self</span>.viewModel.executeSearch.executionSignals subscribeNext:^(<span class="keyword">id</span> x) &#123;</div><div class="line">    [<span class="keyword">self</span>.searchTextField resignFirstResponder];</div><div class="line">&#125;];</div></pre></td></tr></table></figure>
+<p>这段代码确保命令执行时隐藏键盘。<code>executionSignals</code>属性发送由命令每次执行时生成的信号。这个属性是信号的信号(见<a href="http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-%5B%3F%5D-:xin-hao/">ReactiveCocoa Tutorial – The Definitive Introduction: Part 1/2</a>)。当创建和发出一个新的命令执行信号时，隐藏键盘。</p>
+<p>运行程序看看效果如何吧。</p>
+<h2 id="Model在哪？"><a href="#Model在哪？" class="headerlink" title="Model在哪？"></a>Model在哪？</h2><p>到目前为止，我们已经有了一个清晰的<code>View(RWTFlickrSearchViewController)</code>和<code>ViewModel(RWTFlickrSearchViewModel</code>)，但是<code>Model</code>在哪呢？</p>
+<p>答案很简单：没有！</p>
+<p>当前的程序执行一个命令来响应用户点击搜索按钮的操作，但是实现不做任何值的处理。<code>ViewModel</code>真正需要做的是使用当前的<code>searchText</code>来搜索<code>Flickr</code>，并返回一个匹配的列表。</p>
+<p>我们应该可以直接在<code>ViewModel</code>添加业务逻辑，但相信我，你不希望这么做。如果这是一个<code>viewcontroller</code>，我打赌你一定会直接这么做。</p>
+<p><code>ViewModel</code>暴露属性来表示<code>UI</code>状态，它同样暴露命令来表示<code>UI</code>操作(通常是方法)。<code>ViewModel</code>负责管理基于用户交互的<code>UI</code>状态的改变。然而它不负责实际执行这些交互产生的的业务逻辑，那是<code>Model</code>的工作。</p>
+<p>接下来，我们将在程序中添加<code>Model</code>层。</p>
+<p>在<code>Model</code>分组中，添加<code>RWTFlickrSearch</code>协议并提供以下实现</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">&lt;ReactiveCocoa/ReactiveCocoa.h&gt;</span></span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@protocol</span> <span class="title">RWTFlickrSearch</span> &lt;<span class="title">NSObject</span>&gt;</span></div><div class="line"></div><div class="line">- (RACSignal *)flickrSearchSignal:(<span class="built_in">NSString</span> *)searchString;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>这个协议定义了<code>Model</code>层的初始接口，并将搜索<code>Flickr</code>的责任移出<code>ViewModel</code>。</p>
+<p>接下来在<code>Model</code>分组中添加<code>RWTFlickrSearchImpl</code>类，其继承自<code>NSObject</code>，并实现了<code>RWTFlickrSearch</code>协议，如下代码所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">"RWTFlickrSearch.h"</span></span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">RWTFlickrSearchImpl</span> : <span class="title">NSObject</span> &lt;<span class="title">RWTFlickrSearch</span>&gt;</span></div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>打开<code>RWTFlickrSearchImpl.m</code>文件，提供以下实现：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">RWTFlickrSearchImpl</span></span></div><div class="line"></div><div class="line">- (RACSignal *)flickrSearchSignal:(<span class="built_in">NSString</span> *)searchString</div><div class="line">&#123;</div><div class="line">    <span class="keyword">return</span> [[[[RACSignal empty] logAll] delay:<span class="number">2.0</span>] logAll];</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>看着是不是有点眼熟？没错，我们在上面的<code>ViewModel</code>中有相同的实现。</p>
+<p>接下来我们需要在<code>ViewModel</code>层中使用<code>Model</code>层。在<code>ViewModel</code>分组中添加<code>RWTViewModelServices</code>协议并如下实现：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">"RWTFlickrSearch.h"</span></span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@protocol</span> <span class="title">RWTViewModelServices</span> &lt;<span class="title">NSObject</span>&gt;</span></div><div class="line">- (<span class="keyword">id</span>&lt;RWTFlickrSearch&gt;)getFlickrSearchService;</div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>这个协议定义了唯一的一个方法，以允许<code>ViewModel</code>获取一个引用，以指向<code>RWTFlickrSearch</code>协议的实现对象。</p>
+<p>打开<code>RWTFlickrSearchViewModel.h</code>并导入头文件</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">"RWTViewModelServices.h"</span></span></div></pre></td></tr></table></figure>
+<p>更新初始化方法并将<code>RWTViewModelServices</code>作为一个参数：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">instancetype</span>)initWithServices:(<span class="keyword">id</span>&lt;RWTViewModelServices&gt;)services;</div></pre></td></tr></table></figure>
+<p>在<code>RWTFlickrSearchViewModel.m</code>中，添加类的分类并提供一个私有属性来维护一个到<code>RWTViewModelServices</code>的引用：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">RWTFlickrSearchViewModel</span> ()</span></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">weak</span>) <span class="keyword">id</span>&lt;RWTViewModelServices&gt; services;</div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>在该文件下面，添加初始化方法的实现：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">instancetype</span>)initWithServices:(<span class="keyword">id</span>&lt;RWTViewModelServices&gt;)services</div><div class="line">&#123;</div><div class="line">    <span class="keyword">self</span> = [<span class="keyword">super</span> init];</div><div class="line">    </div><div class="line">    <span class="keyword">if</span> (<span class="keyword">self</span>)</div><div class="line">    &#123;</div><div class="line">        _services = services;</div><div class="line">        [<span class="keyword">self</span> initialize];</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这只是简单的存储了<code>services</code>的引用。</p>
+<p>最后，更新<code>executeSearchSignal</code>方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">- (RACSignal *)executeSearchSignal</div><div class="line">&#123;</div><div class="line">    <span class="keyword">return</span> [[<span class="keyword">self</span>.services getFlickrSearchService] flickrSearchSignal:<span class="keyword">self</span>.searchText];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>最后是连接<code>Model</code>和<code>ViewModel</code>。</p>
+<p>在工程的根分组中，添加一个<code>NSObject</code>的子类<code>RWTViewModelServicesImpl</code>。打开<code>RWTViewModelServicesImpl.h</code>并实现<code>RWTViewModelServices</code>协议：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">"RWTViewModelServices.h"</span></span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">RWTViewModelServicesImpl</span> : <span class="title">NSObject</span> &lt;<span class="title">RWTViewModelServices</span>&gt;</span></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>打开<code>RWTViewModelServicesImpl.m</code>，并添加实现：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">"RWTFlickrSearchImpl.h"</span></span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">RWTViewModelServicesImpl</span> ()</span></div><div class="line"></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">strong</span>, <span class="keyword">nonatomic</span>) RWTFlickrSearchImpl *searchService;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div><div class="line">  </div><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">RWTViewModelServicesImpl</span></span></div><div class="line">  </div><div class="line">- (<span class="keyword">instancetype</span>)init</div><div class="line">&#123;</div><div class="line">    <span class="keyword">if</span> (<span class="keyword">self</span> = [<span class="keyword">super</span> init])</div><div class="line">    &#123;</div><div class="line">        _searchService = [RWTFlickrSearchImpl new];</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (<span class="keyword">id</span>&lt;RWTFlickrSearch&gt;)getFlickrSearchService</div><div class="line">&#123;</div><div class="line">    <span class="keyword">return</span> <span class="keyword">self</span>.searchService;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>这个类简单创建了一个<code>RWTFlickrSearchImpl</code>实例，用于<code>Model</code>层搜索<code>Flickr</code>服务，并将其提供给<code>ViewModel</code>的请求。</p>
+<p>最后，在<code>RWTAppDelegate.m</code>中添加以下头文件</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">"RWTViewModelServicesImpl.h"</span></span></div></pre></td></tr></table></figure>
+<p>并添加一个新的私有属性</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) RWTViewModelServicesImpl *viewModelServices;</div></pre></td></tr></table></figure>
+<p>再更新<code>createInitialViewController</code>方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">- (<span class="built_in">UIViewController</span> *)createInitialViewController &#123;</div><div class="line">    <span class="keyword">self</span>.viewModelServices = [RWTViewModelServicesImpl new];</div><div class="line">    <span class="keyword">self</span>.viewModel = [[RWTFlickrSearchViewModel alloc] initWithServices:<span class="keyword">self</span>.viewModelServices];</div><div class="line">    <span class="keyword">return</span> [[RWTFlickrSearchViewController alloc] initWithViewModel:<span class="keyword">self</span>.viewModel];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>运行程序，验证程序有没有按之前的方式来工作。当然，这不是最有趣的变化，不过，可以看看新代码的形状了。</p>
+<p><code>Model</code>层暴露了一个<code>ViewModel</code>层使用的’服务’。一个协议定义了这个服务的接口，提供了松散的组合。</p>
+<p>我们可以使用这种方式来为单元测试提供一个类似的服务实现。程序现在有了正确的<code>MVVM</code>结构，让我们小结一下：</p>
+<ol>
+<li>Model层暴露服务并负责提供程序的业务逻辑实现。</li>
+<li><code>ViewModel</code>层表示程序的视图状态(<code>view-state</code>)。同时响应用户交互及来自<code>Model</code>层的事件，两者都受<code>view-state</code>变化的影响。</li>
+<li><code>View</code>层很薄，只提供<code>ViewModel</code>状态的显示及输出用户交互事件。</li>
+</ol>
+<h2 id="搜索Flickr"><a href="#搜索Flickr" class="headerlink" title="搜索Flickr"></a>搜索Flickr</h2><p>我们继续来完成Flickr的搜索实现，事情变得越来越有趣了。</p>
+<p>首先我们创建表示搜索结果的模型对象。在<code>Model</code>分组中，添加<code>RWTFlickrPhoto</code>类，并为其添加三个属性。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">RWTFlickrPhoto</span> : <span class="title">NSObject</span></span></div><div class="line"></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) <span class="built_in">NSString</span> *title;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) <span class="built_in">NSURL</span> *url;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) <span class="built_in">NSString</span> *identifier;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>这个模型对象表示由<code>Flickr</code>搜索<code>API</code>返回一个图片。</p>
+<p>打开<code>RWTFlickrPhoto.m</code>，并添加以下描述方法的实现：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">- (<span class="built_in">NSString</span> *)description</div><div class="line">&#123;</div><div class="line">    <span class="keyword">return</span> <span class="keyword">self</span>.title;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>接下来，新建一个新的模型对象类<code>RWTFlickrSearchResults</code>，并添加以下属性：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">RWTFlickrSearchResults</span> : <span class="title">NSObject</span></span></div><div class="line"></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">strong</span>, <span class="keyword">nonatomic</span>) <span class="built_in">NSString</span> *searchString;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">strong</span>, <span class="keyword">nonatomic</span>) <span class="built_in">NSArray</span> *photos;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>) <span class="built_in">NSInteger</span> totalResults;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>这个类表示由<code>Flickr</code>搜索返回的照片集合。</p>
+<p>是时候实现搜索<code>Flickr</code>了。打开<code>RWTFlickrSearchImpl.m</code>并导入以下头文件：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">"RWTFlickrSearchResults.h"</span></span></div><div class="line"><span class="meta">#import <span class="meta-string">"RWTFlickrPhoto.h"</span></span></div><div class="line"><span class="meta">#import <span class="meta-string">&lt;objectiveflickr/ObjectiveFlickr.h&gt;</span></span></div><div class="line"><span class="meta">#import <span class="meta-string">&lt;LinqToObjectiveC/NSArray+LinqExtensions.h&gt;</span></span></div></pre></td></tr></table></figure>
+<p>然后添加以下类扩展：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">RWTFlickrSearchImpl</span> () &lt;<span class="title">OFFlickrAPIRequestDelegate</span>&gt;</span></div><div class="line"></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">strong</span>, <span class="keyword">nonatomic</span>) <span class="built_in">NSMutableSet</span> *requests;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">strong</span>, <span class="keyword">nonatomic</span>) OFFlickrAPIContext *flickrContext;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>这个类实现了<code>OFFlickrAPIRequestDelegate</code>协议，并添加了两个私有属性。我们会很快看到如何使用这些值。</p>
+<p>继续添加代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">instancetype</span>)init</div><div class="line">&#123;</div><div class="line">    <span class="keyword">self</span> = [<span class="keyword">super</span> init];</div><div class="line">    </div><div class="line">    <span class="keyword">if</span> (<span class="keyword">self</span>)</div><div class="line">    &#123;</div><div class="line">        <span class="built_in">NSString</span> *OFSampleAppAPIKey = <span class="string">@"YOUR_API_KEY_GOES_HERE"</span>;</div><div class="line">        <span class="built_in">NSString</span> *OFSampleAppAPISharedSecret = <span class="string">@"YOUR_SECRET_GOES_HERE"</span>;</div><div class="line">        </div><div class="line">        _flickrContext = [[OFFlickrAPIContext alloc] initWithAPIKey:OFSampleAppAPIKey sharedSecret:OFSampleAppAPISharedSecret];</div><div class="line">        </div><div class="line">        _requests = [<span class="built_in">NSMutableSet</span> new];</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这段代码创建了一个<code>Flickr</code>的上下文，用于存储<code>ObjectiveFlickr</code>请求的数据。</p>
+<p>当前<code>Model</code>层服务类提供的<code>API</code>有一个单独的方法，用于查找基于文本搜索字符的图片。不过我们一会会添加更多的方法。</p>
+<p>在<code>RWTFlickrSearchImpl.m</code>中添加以下方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div></pre></td><td class="code"><pre><div class="line">- (RACSignal *)signalFromAPIMethod:(<span class="built_in">NSString</span> *)method arguments:(<span class="built_in">NSDictionary</span> *)args transform:(<span class="keyword">id</span> (^)(<span class="built_in">NSDictionary</span> *response))block</div><div class="line">&#123;</div><div class="line">    <span class="comment">// 1. 创建请求信号</span></div><div class="line">    <span class="keyword">return</span> [RACSignal createSignal:^RACDisposable *(<span class="keyword">id</span>&lt;RACSubscriber&gt; subscriber) &#123;</div><div class="line">        </div><div class="line">        <span class="comment">// 2. 创建一个Flick请求对象</span></div><div class="line">        OFFlickrAPIRequest *flickrRequest = [[OFFlickrAPIRequest alloc] initWithAPIContext:<span class="keyword">self</span>.flickrContext];</div><div class="line">        flickrRequest.delegate = <span class="keyword">self</span>;</div><div class="line">        [<span class="keyword">self</span>.requests addObject:flickrRequest];</div><div class="line">        </div><div class="line">        <span class="comment">// 3. 从代理方法中创建一个信号</span></div><div class="line">        RACSignal *successSignal = [<span class="keyword">self</span> rac_signalForSelector:<span class="keyword">@selector</span>(flickrAPIRequest:didCompleteWithResponse:)</div><div class="line">                                                  fromProtocol:<span class="class"><span class="keyword">@protocol</span>(<span class="title">OFFlickrAPIRequestDelegate</span>)];</span></div><div class="line">        </div><div class="line">        <span class="comment">// 4. 处理响应</span></div><div class="line">        [[[successSignal</div><div class="line">         map:^<span class="keyword">id</span>(RACTuple *tuple) &#123;</div><div class="line">             <span class="keyword">return</span> tuple.second;</div><div class="line">         &#125;]</div><div class="line">         map:block]</div><div class="line">         subscribeNext:^(<span class="keyword">id</span> x) &#123;</div><div class="line">             [subscriber sendNext:x];</div><div class="line">             [subscriber sendCompleted];</div><div class="line">         &#125;];</div><div class="line">        </div><div class="line">        <span class="comment">// 5. 开始请求</span></div><div class="line">        [flickrRequest callAPIMethodWithGET:method arguments:args];</div><div class="line">        </div><div class="line">        <span class="comment">// 6. 完成后，移除请求的引用</span></div><div class="line">        <span class="keyword">return</span> [RACDisposable disposableWithBlock:^&#123;</div><div class="line">            [<span class="keyword">self</span>.requests removeObject:flickrRequest];</div><div class="line">        &#125;];</div><div class="line">    &#125;];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这个方法需要传入请求方法及请求参数，然后使用<code>block</code>参数来转换响应对象。我们重点看一下第<code>4</code>步：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">[[[successSignal</div><div class="line">  <span class="comment">// 1. 从flickrAPIRequest:didCompleteWithResponse:代理方法中提取第二个参数</span></div><div class="line">  map:^<span class="keyword">id</span>(RACTuple *tuple) &#123;</div><div class="line">    <span class="keyword">return</span> tuple.second;</div><div class="line">  &#125;]</div><div class="line">  <span class="comment">// 2. 转换结果</span></div><div class="line">  map:block]</div><div class="line">  subscribeNext:^(<span class="keyword">id</span> x) &#123;</div><div class="line">    <span class="comment">// 3. 将结果发送给订阅者</span></div><div class="line">    [subscriber sendNext:x];</div><div class="line">    [subscriber sendCompleted];</div><div class="line">  &#125;];</div></pre></td></tr></table></figure>
+<p><code>rac_signalForSelector:fromProtocol:</code> 方法创建了<code>successSignal</code>，同样也在代理方法的调用中创建了信号。</p>
+<p>代理方法每次调用时，发出的<code>next</code>事件会附带包含方法参数的<code>RACTuple</code>。</p>
+<p>实现<code>Flickr</code>搜索的最后一步如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div></pre></td><td class="code"><pre><div class="line">- (RACSignal *)flickrSearchSignal:(<span class="built_in">NSString</span> *)searchString &#123;</div><div class="line">  <span class="keyword">return</span> [<span class="keyword">self</span> signalFromAPIMethod:<span class="string">@"flickr.photos.search"</span></div><div class="line">                         arguments:@&#123;<span class="string">@"text"</span>: searchString,</div><div class="line">                                     <span class="string">@"sort"</span>: <span class="string">@"interestingness-desc"</span>&#125;</div><div class="line">                         transform:^<span class="keyword">id</span>(<span class="built_in">NSDictionary</span> *response) &#123;</div><div class="line"> </div><div class="line">    RWTFlickrSearchResults *results = [RWTFlickrSearchResults new];</div><div class="line">    results.searchString = searchString;</div><div class="line">    results.totalResults = [[response valueForKeyPath:<span class="string">@"photos.total"</span>] integerValue];</div><div class="line"> </div><div class="line">    <span class="built_in">NSArray</span> *photos = [response valueForKeyPath:<span class="string">@"photos.photo"</span>];</div><div class="line">    results.photos = [photos linq_select:^<span class="keyword">id</span>(<span class="built_in">NSDictionary</span> *jsonPhoto) &#123;</div><div class="line">      RWTFlickrPhoto *photo = [RWTFlickrPhoto new];</div><div class="line">      photo.title = [jsonPhoto objectForKey:<span class="string">@"title"</span>];</div><div class="line">      photo.identifier = [jsonPhoto objectForKey:<span class="string">@"id"</span>];</div><div class="line">      photo.url = [<span class="keyword">self</span>.flickrContext photoSourceURLFromDictionary:jsonPhoto</div><div class="line">                                                              size:OFFlickrSmallSize];</div><div class="line">      <span class="keyword">return</span> photo;</div><div class="line">    &#125;];</div><div class="line"> </div><div class="line">    <span class="keyword">return</span> results;</div><div class="line">  &#125;];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>上面的方法使用<code>signalFromAPIMethod:arguments:transform:</code>方法。<code>flickr.photos.search</code>方法提供的字典来搜索照片。</p>
+<p>传递给<code>transform</code>参数的<code>block</code>简单地将<code>NSDictionary</code>响应转化为一个等价的模型对象，让它在<code>ViewModel</code>中更容易使用。</p>
+<p>最后一步是打开<code>RWTFlickrSearchViewModel.m</code>方法，然后更新搜索信号来记录日志：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">- (RACSignal *)executeSearchSignal &#123;</div><div class="line">  <span class="keyword">return</span> [[[<span class="keyword">self</span>.services getFlickrSearchService]</div><div class="line">           flickrSearchSignal:<span class="keyword">self</span>.searchText]</div><div class="line">           logAll];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>编译，运行并输入一些字符后可在控制台看到以下日志：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="number">2014</span><span class="number">-06</span><span class="number">-03</span> [...] &lt;RACDynamicSignal: <span class="number">0x8c368a0</span>&gt; name: +createSignal: next: searchString=wibble, totalresults=<span class="number">1973</span>, photos=(</div><div class="line">    <span class="string">"Wibble, wobble, wibble, wobble"</span>,</div><div class="line">    <span class="string">"unoa-army"</span>,</div><div class="line">    <span class="string">"Day 277: Cheers to the freakin' weekend!"</span>,</div><div class="line">    [...]</div><div class="line">    <span class="string">"Angry sky"</span>,</div><div class="line">    Nemesis</div><div class="line">)</div></pre></td></tr></table></figure>
+<p>这样我们<code>MVVM</code>指南的第一部分就差不多结束了，但在结束之前，让我们先看看内存问题吧。</p>
+<h2 id="内存管理"><a href="#内存管理" class="headerlink" title="内存管理"></a>内存管理</h2><p>正如在<a href="http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-er-:twittersou-suo-shi-li/">ReactiveCocoa Tutorial – The Definitive Introduction: Part 2/2</a>中所讲的一样，我们在<code>block</code>中使用了<code>self</code>，这可能会导致循环引用的问题。而为了避免此问题，我们需要使用<code>@weakify</code>和<code>@strongify</code>宏来打破这种循环引用。</p>
+<p>不过看看<code>signalFromAPIMethod:arguments:transform:</code>方法，你可能会迷惑为什么没有使用这两个宏来引用<code>self</code>？这是因为<code>block</code>是作为<code>createSignal:</code>方法的一个参数，它不会在<code>self</code>和<code>block</code>之间建立一个强引用关系。迷茫了吧？不相信的话只需要测试一样这段代码有没有内存泄露就行。当然这时候就得用<code>Instruments</code>了，自己去看吧。哈哈。</p>
+<h2 id="何去何从？"><a href="#何去何从？" class="headerlink" title="何去何从？"></a>何去何从？</h2><p>例子工程的完整代码可以在<a href="http://cdn4.raywenderlich.com/wp-content/uploads/2014/06/FlickrSearchPart1Project1.zip" target="_blank" rel="external">这里</a>下载。在下一部分中，我们将看看如何从<code>ViewModel</code>中初始化一个视图控制器并实现更多的<code>Flickr</code>请求操作。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2014/08/02/reactivecocoa-tutorial-the-definitive-introduction-2/" rel="next" title="ReactiveCocoa Tutorial – The Definitive Introduction: Part 2/2">
+                <i class="fa fa-chevron-left"></i> ReactiveCocoa Tutorial – The Definitive Introduction: Part 2/2
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2014/08/12/mvvm-tutorial-with-reactivecocoa-2/" rel="prev" title="MVVM Tutorial with ReactiveCocoa: Part 2/2">
+                MVVM Tutorial with ReactiveCocoa: Part 2/2 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#MVVM模式介绍"><span class="nav-number">1.</span> <span class="nav-text">MVVM模式介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#MVVM和数据绑定"><span class="nav-number">2.</span> <span class="nav-text">MVVM和数据绑定</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#启动项目结构"><span class="nav-number">3.</span> <span class="nav-text">启动项目结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#第一个ViewModel"><span class="nav-number">4.</span> <span class="nav-text">第一个ViewModel</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#检测可用的搜索状态"><span class="nav-number">5.</span> <span class="nav-text">检测可用的搜索状态</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#添加搜索命令"><span class="nav-number">6.</span> <span class="nav-text">添加搜索命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#绑定、绑定还是绑定"><span class="nav-number">7.</span> <span class="nav-text">绑定、绑定还是绑定</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Model在哪？"><span class="nav-number">8.</span> <span class="nav-text">Model在哪？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#搜索Flickr"><span class="nav-number">9.</span> <span class="nav-text">搜索Flickr</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#内存管理"><span class="nav-number">10.</span> <span class="nav-text">内存管理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#何去何从？"><span class="nav-number">11.</span> <span class="nav-text">何去何从？</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>
