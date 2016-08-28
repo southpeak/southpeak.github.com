@@ -1,0 +1,2323 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>南峰子的技术博客</title>
+  <meta name="author" content="南峰子">
+      
+  <meta name="baidu-site-verification" content="HoscFhWICI" />
+
+  
+  <meta name="description" content="前面一章我们整理了NSObject类，这一章我们来看看NSObject协议的内容。 NSObject协议提供了一组方法作为Objective-C对象的基础。其实我们对照一个NSObject类和NSObject协议，可以看到很多方法的方法名都是一样的，只不过NSObject类提供的是类方法， &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://southpeak.github.io/posts/3">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="南峰子的技术博客" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <!-- <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script> -->
+  <!-- googleapis is fucked by gfw -->
+  <script src="http://cdn.staticfile.org/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<!--<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">-->
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">南峰子的技术博客</a></h1>
+  
+    <h2>攀登，一步一个脚印，方能知其乐</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:southpeak.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/categories/ios">iOS开发</a></li>
+  <li><a href="/blog/archives">所有文章</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div class="blog-index">
+  
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/01/31/nsobjectzhi-er/">NSObject之二</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-01-31T22:41:09+08:00" pubdate data-updated="true">Jan 31<sup>st</sup>, 2015</time>
+        
+        
+           | <a href="/blog/2015/01/31/nsobjectzhi-er/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>前面一章我们整理了NSObject类，这一章我们来看看NSObject协议的内容。</p>
+
+<p>NSObject协议提供了一组方法作为Objective-C对象的基础。其实我们对照一个NSObject类和NSObject协议，可以看到很多方法的方法名都是一样的，只不过NSObject类提供的是类方法，是基于类级别的操作；而NSObject协议提供的是实例方法，是基于实例对象级别的操作。</p>
+
+<p>如果一个对象如果采用了这个协议，则可以被看作是一级对象。我们可以从这个对象获取以下信息：</p>
+
+<ol>
+<li>类信息，以及类所在的继承体系。</li>
+<li>协议信息</li>
+<li>响应特定消息的能力</li>
+</ol>
+
+
+<p>实际上，Cocoa的根类NSObject就采用了这个类，所以所有继承自NSObject类的对象都具备NSObject协议中描述的功能。接下来，我们参照NSObject类，整理一下这些功能。</p>
+
+<h2>识别对象</h2>
+
+<p>类似于NSObject类，NSObject协议提供了一些方法来识别类。</p>
+
+<p>如果想获取对象的类对象，则可以使用如下方法：</p>
+
+<pre><code>- (Class)class
+</code></pre>
+
+<p>如果想获取对象父类的类对象，则可以使用以下只读属性：</p>
+
+<pre><code>@property(readonly) Class superclass
+</code></pre>
+
+<p>如果想查看某个对象是否是给定类的实例或者是给定类子类的实例，则可以使用以下方法：</p>
+
+<pre><code>- (BOOL)isKindOfClass:(Class)aClass
+</code></pre>
+
+<p>这个方法应该是大家常用的方法。需要注意的是在类簇中使用这个方法。在类簇中，我们获取到的对象类型可能并不是我们期望的类型。如果我们调用一个返回类簇的方法，则这个方法返回的实际类型会是最能标识这个类能做些什么的类型。例如，如果一个方法返回一个指向NSArray对象的指针，则不能使用isKindOfClass:方法查看经是否是一个可变数组，如以下代码：</p>
+
+<pre><code>if ([myArray isKindOfClass:[NSMutableArray class]])
+{
+    // Modify the object
+}
+</code></pre>
+
+<p>如果我们使用这样的代码，我们可能会认为修改一个实际上不应该被修改的对象是没问题的。这样做可能会对那些期望对象保持不要变的代码产生影响。</p>
+
+<p>另外，查看对象是否是指定类的一个实例还可以使用以下方法：</p>
+
+<pre><code>- (BOOL)isMemberOfClass:(Class)aClass
+</code></pre>
+
+<p>注意，这个方法无法确定对象是否是指定类子类的实例。另外，类对象可能是编译器创建的对象，但它仍然支持这一概念。</p>
+
+<h2>测试对象</h2>
+
+<p>对于对象的测试，NSObject协议也定义了两个方法，其中respondsToSelector:方法用于测试对象是否能响应指定的消息，这个方法可以是类自定义的实例方法，也可以是继承而来的实例方法。其声明如下：</p>
+
+<pre><code>- (BOOL)respondsToSelector:(SEL)aSelector
+</code></pre>
+
+<p>不过我们不能使用super关键字来调用respondsToSelector:，以查看对象是否是从其父类继承了某个方法。因为我们可以从super的定义可知，消息的最终实际接收者还是self本身，因此测试的还是对象的整个体系(包括对象所在类本身)，而不仅仅是父类。不过，我们可以使用父类来调用NSObject类的类方法instancesRespondToSelector:来达到这个目的，如下所示：</p>
+
+<pre><code>if( [MySuperclass instancesRespondToSelector:@selector(aMethod)] ) {
+    // invoke the inherited method
+    [super aMethod];
+}
+</code></pre>
+
+<p>我们不能简单地使用[[self superclass] instancesRespondToSelector:@selector(aMethod)]，因为如果由一个子类来调用，则可能导致方法的失败。</p>
+
+<p>还需要注意的是，如果对象能够转发消息，则也可以响应这个消息，不过这个方法会返回NO。</p>
+
+<p>如果想查看对象是否实现了某个类，则可以使用如下方法：</p>
+
+<pre><code>- (BOOL)conformsToProtocol:(Protocol *)aProtocol
+</code></pre>
+
+<p>这个方法与NSObject类的类方法conformsToProtocol:是一样的。它只是提供了一个便捷方法，我们不需要先去取对象的类，再调用类方法conformsToProtocol:。</p>
+
+<h2>标识和比较对象</h2>
+
+<p>如果我们想获取对象本身，则可以使用以下方法：</p>
+
+<pre><code>- (instancetype)self
+</code></pre>
+
+<p>比较两个对象是否相同，则可以使用以下方法：</p>
+
+<pre><code>- (BOOL)isEqual:(id)anObject
+</code></pre>
+
+<p>这个方法定义了对象相同的意义。例如，一个容器对象可能会按照特定规则来定义两个对象是否相等，如其所有元素的isEqual:请求都返回YES。我们在自定义子类时，可以重写这个方法，以使用我们自己的规则来评判两个对象相等。</p>
+
+<p>如果两个对象相等，则它们必须拥有相同的hash值。在子类中定义isEqual:方法并打算把子类的实例放入集合中时，这一点非常重要。因此在子类中必须同时定义hash。</p>
+
+<p>hash值是一个整数值，它可以用于在hash表结构中作为一个表地址。其声明如下：</p>
+
+<pre><code>@property(readonly) NSUInteger hash
+</code></pre>
+
+<p>如果一个可变对象被添加到一个以hash值来确定对象位置的集合中，则当对象还在集合中时，其由hash方法返回的值不能改变。因此，hash方法不能依赖于对象内部的任何状态信息，或许我们必须确保对象在集合中时，不能改变其内部状态信息。比如，一个可变字典可以放到一个hash表中，但当它还在表中时，不能改变它。</p>
+
+<h2>发送消息</h2>
+
+<p>在NSObject类中，定义了一系列的发送消息的方法，用于在目标线程中执行方法。NSObject协议也定义了如下几个方法，来执行发送消息的任务：</p>
+
+<pre><code>- (id)performSelector:(SEL)aSelector
+
+- (id)performSelector:(SEL)aSelector withObject:(id)anObject
+
+- (id)performSelector:(SEL)aSelector withObject:(id)anObject withObject:(id)anotherObject
+</code></pre>
+
+<p>这三个方法基本相同，只不过后面两个方法能为selector指定的方法携带参数。因此我们以performSelector:为例。</p>
+
+<p>performSelector:方法的使用与直接将消息发送给对象的效果是一样的，如下面几个操作，做的事情是一样的：</p>
+
+<pre><code>id myClone = [anObject copy];
+id myClone = [anObject performSelector:@selector(copy)];
+id myClone = [anObject performSelector:sel_getUid("copy")];
+</code></pre>
+
+<p>区别在于，performSelector:允许在运行时再去确定对象是否能处理消息。而[anObject copy]中，如果anObject不能处理copy，编译器就直接会报错。</p>
+
+<p>如果方法的参数过多，以至于上面几个方法都无法处理，则可以考虑使用NSInvocation对象。</p>
+
+<h2>描述对象</h2>
+
+<p>描述对象的方法与NSObject类中描述类的方法其方法名相同，都是description，其声明如下：</p>
+
+<pre><code>@property(readonly, copy) NSString *description
+</code></pre>
+
+<p>这个方法用于创建一个对象的文本表达方式，例如：</p>
+
+<pre><code>ClassName *anObject = &lt;#An object#&gt;;
+NSString *string = [NSString stringWithFormat:@"anObject is %@", anObject];
+</code></pre>
+
+<p>为了便于调试，NSObject协议还定义debugDescription方法，该方法声明如下：</p>
+
+<pre><code>@property(readonly, copy) NSString *debugDescription
+</code></pre>
+
+<p>该方法返回一个在调试器中显示的用于描述对象内容的字符串。在调试器中打印一个对象时，会调用这个方法。NSObject类实现这个方法时只是调用了description方法，所以默认情况下，这两个方法的输出都是一样的。我们在子类中可以重写这个方法的实现。</p>
+
+<h2>总结</h2>
+
+<p>NSObject协议的定义的很多方法都是我们平常经常使用的。我们在创建NSObject类的子类时，默认都继承了NSObject类对于NSObject协议的实现。如果有特殊的需求，我们可以重写这些方法。</p>
+
+<p>当然，NSObject协议还定义了一些方法，如我们非常熟悉的retain, release, autorelease, retainCount方法，不过这些方法在ARC时代已经过时了，我们在此不过多说明。</p>
+
+<h2>参考</h2>
+
+<ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/Foundation/Protocols/NSObject_Protocol/index.html">NSObject Protocol Reference</a></li>
+</ol>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/01/31/nsobjectzhi-%5B%3F%5D/">NSObject之一</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-01-31T22:37:32+08:00" pubdate data-updated="true">Jan 31<sup>st</sup>, 2015</time>
+        
+        
+           | <a href="/blog/2015/01/31/nsobjectzhi-%5B%3F%5D/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p><em>Objective-C中有两个NSObject，一个是NSObject类，另一个是NSObject协议。而其中NSObject类采用了NSObject协议。在本文中，我们主要整理一下NSObject类的使用。</em></p>
+
+<p>说到NSObject类，写Objective-C的人都应该知道它。它是大部分Objective-C类继承体系的根类。这个类提供了一些通用的方法，对象通过继承NSObject，可以从其中继承访问运行时的接口，并让对象具备Objective-C对象的基本能力。以下我们就来看看NSObejct提供给我们的一些基础功能。</p>
+
+<h2>+load与+initialize</h2>
+
+<p>这两个方法可能平时用得比较少，但很有用。在我们的程序编译后，类相关的数据结构会保留在目标文件中，在程序运行后会被解析和使用，此时类的信息会经历加载和初始化两个过程。在这两个过程中，会分别调用类的load方法和initialize方法，在这两个方法中，我们可以适当地做一些定制处理。不当是类本身，类的分类也会经历这两个过程。对于一个类，我们可以在类的定义中重写这两个方法，也可以在分类中重写它们，或者同时重写。</p>
+
+<h3>load方法</h3>
+
+<p>对于load方法，当Objective-C运行时加载类或分类时，会调用这个方法；通常如果我们有一些类级别的操作需要在加载类时处理，就可以放在这里面，如为一个类执行Swizzling Method操作。</p>
+
+<p>load消息会被发送到动态加载和静态链接的类和分类里面。不过，只有当我们在类或分类里面实现这个方法时，类/分类才会去调用这个方法。</p>
+
+<p>在类继承体系中，load方法的调用顺序如下：</p>
+
+<ol>
+<li>一个类的load方法会在其所有父类的load方法之后调用</li>
+<li>分类的load方法会在对应类的load方法之后调用</li>
+</ol>
+
+
+<p>在load的实现中，如果使用同一库中的另外一个类，则可能是不安全的，因为可能存在的情况是另外一个类的load方法还没有运行，即另一个类可能尚未被加载。另外，在load方法里面，我们不需要显示地去调用[super load]，因为父类的load方法会自动被调用，且在子类之前。</p>
+
+<p>在有依赖关系的两个库中，被依赖的库中的类其load方法会优先调用。但在库内部，各个类的load方法的调用顺序是不确定的。</p>
+
+<h3>initialize方法</h3>
+
+<p>当我们在程序中向类或其任何子类发送第一条消息前，runtime会向该类发送initialize消息。runtime会以线程安全的方式来向类发起initialize消息。父类会在子类之前收到这条消息。父类的initialize实现可能在下面两种情况下被调用：</p>
+
+<ol>
+<li>子类没有实现initialize方法，runtime将会调用继承而来的实现</li>
+<li>子类的实现中显示的调用了[super initialize]</li>
+</ol>
+
+
+<p>如果我们不想让某个类中的initialize被调用多次，则可以像如下处理：</p>
+
+<pre><code>+ (void)initialize {
+  if (self == [ClassName self]) {
+    // ... do the initialization ...
+  }
+}
+</code></pre>
+
+<p>因为initialize是以线程安全的方式调用的，且在不同的类中initialize被调用的顺序是不确定的，所以在initialize方法中，我们应该做少量的必须的工作。特别需要注意是，如果我们initialize方法中的代码使用了锁，则可能会导致死锁。因此，我们不应该在initialize方法中实现复杂的初始化工作，而应该在类的初始化方法(如-init)中来初始化。</p>
+
+<p>另外，每个类的initialize只会被调用一次。所以，如果我们想要为类和类的分类实现单独的初始化操作，则应该实现load方法。</p>
+
+<p>如果想详细地了解这两个方法的使用，可以查看《Effective Objective-C 2.0》的第51条，里面有非常详细的说明。如果想更深入地了解这两个方法的调用，则可以参考objc库的源码，另外，<a href="http://www.cocoachina.com/ios/20150104/10826.html">NSObject的load和initialize方法</a>一文从源码层面为我们简单介绍了这两个方法。</p>
+
+<h2>对象的生命周期</h2>
+
+<p>一说到对象的创建，我们会立即想到[[NSObject alloc] init]这种经典的两段式构造。对于这种两段式构造，唐巧大神在他的&#8221;<a href="http://blog.devtang.com/blog/2013/01/13/two-stage-creation-on-cocoa/">谈ObjC对象的两段构造模式</a>&ldquo;一文中作了详细描述，大家可以参考一下。</p>
+
+<p>本小节我们主要介绍一下与对象生命周期相关的一些方法。</p>
+
+<h3>对象分配</h3>
+
+<p>NSObject提供的对象分配的方法有alloc和allocWithZone:，它们都是类方法。这两个方法负责创建对象并为其分配内存空间，返回一个新的对象实例。新的对象的isa实例变量使用一个数据结构来初始化，这个数据结构描述了对象的信息；创建完成后，对象的其它实例变量被初始化为0。</p>
+
+<p>alloc方法的定义如下：</p>
+
+<pre><code>+ (instancetype)alloc
+</code></pre>
+
+<p>而allocWithZone:方法的存在是由历史原因造成的，它的调用基本上和alloc是一样的。既然是历史原因，我们就不说了，官方文档只给了一句话：</p>
+
+<pre><code>This method exists for historical reasons; memory zones are no longer used by Objective-C.
+</code></pre>
+
+<p>我们只需要知道alloc方法的实现调用了allocWithZone:方法。</p>
+
+<h3>对象初始化</h3>
+
+<p>我们一般不去自己重写alloc或allocWithZone:方法，不用去关心对象是如何创建、如何为其分配内存空间的；我们更关心的是如何去初始化这个对象。上面提到了，对象创建后，isa以外的实例变量都默认初始化为0。通常，我们希望将这些实例变量初始化为我们期望的值，这就是init方法的工作了。</p>
+
+<p>NSObject类默认提供了一个init方法，其定义如下：</p>
+
+<pre><code>- (instancetype)init
+</code></pre>
+
+<p>正常情况下，它会初始化对象，如果由于某些原因无法完成对象的创建，则会返回nil。注意，对象在使用之前必须被初始化，否则无法使用。不过，NSObject中定义的init方法不做任何初始化操作，只是简单地返回self。</p>
+
+<p>当然，我们定义自己的类时，可以提供自定义的初始化方法，以满足我们自己的初始化需求。需要注意的就是子类的初始化方法需要去调用父类的相应的初始化方法，以保证初始化的正确性。</p>
+
+<p>讲完两段式构造的两个部分，有必要来讲讲NSObject类的new方法了。</p>
+
+<p>new方法实际上是集alloc和init于一身，它创建了对象并初始化了对象。它的实现如下：</p>
+
+<pre><code>+ (instancetype)new {
+    return [[self alloc] init];
+}
+</code></pre>
+
+<p>new方法更多的是一个历史遗留产物，它源于NeXT时代。如果我们的初始化操作只是调用[[self alloc] init]时，就可以直接用new来代替。不过如果我们需要使用自定义的初始化方法时，通常就使用两段式构造方式。</p>
+
+<h3>拷贝</h3>
+
+<p>说到拷贝，相信大家都很熟悉。拷贝可以分为“深拷贝”和“浅拷贝”。深拷贝拷贝的是对象的值，两个对象相互不影响，而浅拷贝拷贝的是对象的引用，修改一个对象时会影响到另一个对象。</p>
+
+<p>在Objective-C中，如果一个类想要支持拷贝操作，则需要实现NSCopying协议，并实现copyWithZone:【注意：NSObject类本身并没有实现这个协议】。如果一个类不是直接继承自NSObject，则在实现copyWithZone:方法时需要调用父类的实现。</p>
+
+<p>虽然NSObject自身没有实现拷贝协议，不过它提供了两个拷贝方法，如下：</p>
+
+<pre><code>- (id)copy
+</code></pre>
+
+<p>这个是拷贝操作的便捷方法。它的返回值是NSCopying协议的copyWithZone:方法的返回值。如果我们的类没有实现这个方法，则会抛出一个异常。</p>
+
+<p>与copy对应的还有一个方法，即：</p>
+
+<pre><code>- (id)mutableCopy
+</code></pre>
+
+<p>从字面意义来讲，copy可以理解为不可变拷贝操作，而mutableCopy可以理解为可变操作。这便引出了拷贝的另一个特性，即可变性。</p>
+
+<p>顾名思义，不可变拷贝即拷贝后的对象具有不可变属性，可变拷贝后的对象具有可变属性。这对于数组、字典、字符串、URL这种分可变和不可变的对象来说是很有意义的。我们来看如下示例：</p>
+
+<pre><code>NSMutableArray *mutableArray = [NSMutableArray array];
+NSMutableArray *array = [mutableArray copy];
+[array addObject:@"test1"];
+</code></pre>
+
+<p>实际上，这段代码是会崩溃的，我们来看看崩溃日志：</p>
+
+<pre><code>-[__NSArrayI addObject:]: unrecognized selector sent to instance 0x100107070
+*** Terminating app due to uncaught exception 'NSInvalidArgumentException', reason: '-[__NSArrayI addObject:]: unrecognized selector sent to instance 0x100107070'
+</code></pre>
+
+<p>从中可以看出，经过copy操作，我们的array实际上已经变成不可变的了，其底层元类是__NSArrayI。这个类是不支持addObject:方法的。</p>
+
+<p>偶尔在代码中，也会看到类似于下面的情况：</p>
+
+<pre><code>@property (copy) NSMutableArray *array;
+</code></pre>
+
+<p>这种属性的声明方式是有问题的，即上面提到的可变性问题。使用self.array = **赋值后，数组其实是不可变的，所以需要特别注意。</p>
+
+<p>mutableCopy的使用也挺有意思的，具体的还请大家自己去试验一下。</p>
+
+<h3>释放</h3>
+
+<p>当一个对象的引用计数为0时，系统就会将这个对象释放。此时run time会自动调用对象的dealloc方法。在ARC环境下，我们不再需要在此方法中去调用[super dealloc]了。我们重写这个方法主要是为了释放对象中用到的一些资源，如我们通过C方法分配的内存空间。dealloc方法的定义如下：</p>
+
+<pre><code>- (void)dealloc
+</code></pre>
+
+<p>需要注意的是，我们不应该直接去调用这个方法。这些事都让run time去做吧。</p>
+
+<h2>消息发送</h2>
+
+<p>Objective-C中对方法的调用并不是像C++里面那样直接调用，而是通过消息分发机制来实现的。这个机制核心的方法是objc_msgSend函数。消息机制的具体实现我们在此不做讨论，可以参考<a href="http://southpeak.github.io/blog/2014/11/03/objective-c-runtime-yun-xing-shi-zhi-san-:fang-fa-yu-xiao-xi-zhuan-fa/">Objective-C Runtime 运行时之三：方法与消息</a>。</p>
+
+<p>对于消息的发送，除了使用[obj method]这种机制之外，NSObject类还提供了一系列的performSelector**方法。这些方法可以让我们更加灵活地控制方法的调用。接下来我们就来看看这些方法的使用。</p>
+
+<h3>在线程中调用方法</h3>
+
+<p>如果我们想在当前线程中调用一个方法，则可以使用以下两个方法：</p>
+
+<pre><code>- (void)performSelector:(SEL)aSelector withObject:(id)anArgument afterDelay:(NSTimeInterval)delay
+
+- (void)performSelector:(SEL)aSelector withObject:(id)anArgument afterDelay:(NSTimeInterval)delay inModes:(NSArray *)modes
+</code></pre>
+
+<p>这两个方法会在当前线程的Run loop中设置一个定时器，以在delay指定的时间之后执行aSelector。如果我们希望定时器运行在默认模式(NSDefaultRunLoopMode)下，可以使用前一个方法；如果想自己指定Run loop模式，则可以使用后一个方法。</p>
+
+<p>当定时器启动时，线程会从Run loop的队列中获取到消息，并执行相应的selector。如果Run loop运行在指定的模式下，则方法会成功调用；否则，定时器会处于等待状态，直到Run loop运行在指定模式下。</p>
+
+<p>需要注意的是，调用这些方法时，Run loop会保留方法接收者及相关的参数的引用(即对这些对象做retain操作)，这样在执行时才不至于丢失这些对象。当方法调用完成后，Run loop会调用这些对象的release方法，减少对象的引用计数。</p>
+
+<p>如果我们想在主线程上执行某个对象的方法，则可以使用以下两个方法：</p>
+
+<pre><code>- (void)performSelectorOnMainThread:(SEL)aSelector withObject:(id)arg waitUntilDone:(BOOL)wait
+
+- (void)performSelectorOnMainThread:(SEL)aSelector withObject:(id)arg waitUntilDone:(BOOL)wait modes:(NSArray *)array
+</code></pre>
+
+<p>我们都知道，iOS中所有的UI操作都需要在主线程中处理。如果想在某个二级线程的操作完成之后做UI操作，就可以使用这两个方法。</p>
+
+<p>这两个方法会将消息放到主线程Run loop的队列中，前一个方法使用的是NSRunLoopCommonModes运行时模式；如果想自己指定运行模式，则使用后一个方法。方法的执行与之前的两个performSelector方法是类似的。当在一个线程中多次调用这个方法将不同的消息放入队列时，消息的分发顺序与入队顺序是一致的。</p>
+
+<p>方法中的wait参数指定当前线程在指定的selector在主线程执行完成之后，是否被阻塞住。如果设置为YES，则当前线程被阻塞。如果当前线程是主线程，而该参数也被设置为YES，则消息会被立即发送并处理。</p>
+
+<p>另外，这两个方法分发的消息不能被取消。</p>
+
+<p>如果我们想在指定的线程中分发某个消息，则可以使用以下两个方法：</p>
+
+<pre><code>- (void)performSelector:(SEL)aSelector onThread:(NSThread *)thread withObject:(id)arg waitUntilDone:(BOOL)wait
+
+- (void)performSelector:(SEL)aSelector onThread:(NSThread *)thread withObject:(id)arg waitUntilDone:(BOOL)wait modes:(NSArray *)array
+</code></pre>
+
+<p>这两个方法基本上与在主线程的方法差不多。在此就不再讨论。</p>
+
+<p>如果想在后台线程中调用接收者的方法，可以使用以下方法：</p>
+
+<pre><code>- (void)performSelectorInBackground:(SEL)aSelector withObject:(id)arg
+</code></pre>
+
+<p>这个方法会在程序中创建一个新的线程。由aSelector表示的方法必须像程序中的其它新线程一样去设置它的线程环境。</p>
+
+<p>当然，我们经常看到的performSelector系列方法中还有几个方法，即：</p>
+
+<pre><code>- (id)performSelector:(SEL)aSelector
+- (id)performSelector:(SEL)aSelector withObject:(id)anObject
+- (id)performSelector:(SEL)aSelector withObject:(id)anObject withObject:(id)anotherObject
+</code></pre>
+
+<p>不过这几个方法是在NSObject协议中定义的，NSObject类实现了这个协议，也就定义了相应的实现。这个我们将在NSObject协议中来介绍。</p>
+
+<h3>取消方法调用请求</h3>
+
+<p>对于使用performSelector:withObject:afterDelay:方法(仅限于此方法)注册的执行请求，在调用发生前，我们可以使用以下两个方法来取消：</p>
+
+<pre><code>+ (void)cancelPreviousPerformRequestsWithTarget:(id)aTarget
+
++ (void)cancelPreviousPerformRequestsWithTarget:(id)aTarget selector:(SEL)aSelector object:(id)anArgument
+</code></pre>
+
+<p>前一个方法会取消所以接收者为aTarget的执行请求，不过仅限于当前run loop，而不是所有的。</p>
+
+<p>后一个方法则会取消由aTarget、aSelector和anArgument三个参数指定的执行请求。同样仅限于当前run loop。</p>
+
+<h2>消息转发及动态解析方法</h2>
+
+<p>当一个对象能接收一个消息时，会走正常的方法调用流程。但如果一个对象无法接收一个消息时，就会走消息转发机制。</p>
+
+<p>消息转发机制基本上分为三个步骤：</p>
+
+<ol>
+<li>动态方法解析</li>
+<li>备用接收者</li>
+<li>完整转发</li>
+</ol>
+
+
+<p>具体流程可参考<a href="http://southpeak.github.io/blog/2014/11/03/objective-c-runtime-yun-xing-shi-zhi-san-:fang-fa-yu-xiao-xi-zhuan-fa/">Objective-C Runtime 运行时之三：方法与消息</a>，《Effective Objective-C 2.0》一书的第12小节也有详细描述。在此我们只介绍一下NSObject类为实现消息转发提供的方法。</p>
+
+<p>首先，对于动态方法解析，NSObject提供了以下两个方法来处理：</p>
+
+<pre><code>+ (BOOL)resolveClassMethod:(SEL)name
++ (BOOL)resolveInstanceMethod:(SEL)name
+</code></pre>
+
+<p>从方法名我们可以看出，resolveClassMethod:是用于动态解析一个类方法；而resolveInstanceMethod:是用于动态解析一个实例方法。</p>
+
+<p>我们知道，一个Objective-C方法是其实是一个C函数，它至少带有两个参数，即self和_cmd。我们使用class_addMethod函数，可以给类添加一个方法。我们以resolveInstanceMethod:为例，如果要给对象动态添加一个实例方法，则可以如下处理：</p>
+
+<pre><code>void dynamicMethodIMP(id self, SEL _cmd)
+{
+    // implementation ....
+}
+
++ (BOOL) resolveInstanceMethod:(SEL)aSEL
+{
+    if (aSEL == @selector(resolveThisMethodDynamically))
+    {
+          class_addMethod([self class], aSEL, (IMP) dynamicMethodIMP, "v@:");
+          return YES;
+    }
+    return [super resolveInstanceMethod:aSel];
+}
+</code></pre>
+
+<p>其次，对于备用接收者，NSObject提供了以下方法来处理：</p>
+
+<pre><code>- (id)forwardingTargetForSelector:(SEL)aSelector
+</code></pre>
+
+<p>该方法返回未被接收消息最先被转发到的对象。如果一个对象实现了这个方法，并返回一个非空的对象(且非对象本身)，则这个被返回的对象成为消息的新接收者。另外如果在非根类里面实现这个方法，如果对于给定的selector，我们没有可用的对象可以返回，则应该调用父类的方法实现，并返回其结果。</p>
+
+<p>最后，对于完整转发，NSObject提供了以下方法来处理</p>
+
+<pre><code>- (void)forwardInvocation:(NSInvocation *)anInvocation
+</code></pre>
+
+<p>当前面两步都无法处理消息时，运行时系统便会给接收者最后一个机会，将其转发给其它代理对象来处理。这主要是通过创建一个表示消息的NSInvocation对象并将这个对象当作参数传递给forwardInvocation:方法。我们在forwardInvocation:方法中可以选择将消息转发给其它对象。</p>
+
+<p>在这个方法中，主要是需要做两件事：</p>
+
+<ol>
+<li>找到一个能处理anInvocation调用的对象。</li>
+<li>将消息以anInvocation的形式发送给对象。anInvocation将维护调用的结果，而运行时则会将这个结果返回给消息的原始发送者。</li>
+</ol>
+
+
+<p>这一过程如下所示：</p>
+
+<pre><code>- (void)forwardInvocation:(NSInvocation *)invocation
+{
+    SEL aSelector = [invocation selector];
+
+    if ([friend respondsToSelector:aSelector])
+        [invocation invokeWithTarget:friend];
+    else
+        [super forwardInvocation:invocation];
+}
+</code></pre>
+
+<p>当然，对于一个非根类，如果还是无法处理消息，则应该调用父类的实现。而NSObject类对于这个方法的实现，只是简单地调用了doesNotRecognizeSelector:。它不再转发任何消息，而是抛出一个异常。doesNotRecognizeSelector:的声明如下：</p>
+
+<pre><code>- (void)doesNotRecognizeSelector:(SEL)aSelector
+</code></pre>
+
+<p>运行时系统在对象无法处理或转发一个消息时会调用这个方法。这个方法引发一个NSInvalidArgumentException异常并生成一个错误消息。</p>
+
+<p>任何doesNotRecognizeSelector:消息通常都是由运行时系统来发送的。不过，它们可以用于阻止一个方法被继承。例如，一个NSObject的子类可以按以下方式来重写copy或init方法以阻止继承：</p>
+
+<pre><code>- (id)copy
+{
+    [self doesNotRecognizeSelector:_cmd];
+}
+</code></pre>
+
+<p>这段代码阻止子类的实例响应copy消息或阻止父类转发copy消息&mdash;虽然respondsToSelector:仍然报告接收者可以访问copy方法。</p>
+
+<p>当然，如果我们要重写doesNotRecognizeSelector:方法，必须调用super的实现，或者在实现的最后引发一个NSInvalidArgumentException异常。它代表对象不能响应消息，所以总是应该引发一个异常。</p>
+
+<h2>获取方法信息</h2>
+
+<p>在消息转发的最后一步中，forwardInvocation:参数是一个NSInvocation对象，这个对象需要获取方法签名的信息，而这个签名信息就是从methodSignatureForSelector:方法中获取的。</p>
+
+<p>该方法的声明如下:</p>
+
+<pre><code>- (NSMethodSignature *)methodSignatureForSelector:(SEL)aSelector
+</code></pre>
+
+<p>这个方法返回包含方法描述信息的NSMethodSignature对象，如果找不到方法，则返回nil。如果我们的对象包含一个代理或者对象能够处理它没有直接实现的消息，则我们需要重写这个方法来返回一个合适的方法签名。</p>
+
+<p>对应于实例方法，当然还有一个处理类方法的相应方法，其声明如下：</p>
+
+<pre><code>+ (NSMethodSignature *)instanceMethodSignatureForSelector:(SEL)aSelector
+</code></pre>
+
+<p>另外，NSObject类提供了两个方法来获取一个selector对应的方法实现的地址，如下所示：</p>
+
+<pre><code>- (IMP)methodForSelector:(SEL)aSelector
++ (IMP)instanceMethodForSelector:(SEL)aSelector
+</code></pre>
+
+<p>获取到了方法实现的地址，我们就可以直接将IMP以函数形式来调用。</p>
+
+<p>对于methodForSelector:方法，如果接收者是一个对象，则aSelector应该是一个实例方法；如果接收者是一个类，则aSelector应该是一个类方法。</p>
+
+<p>对于instanceMethodForSelector:方法，其只是向类对象索取实例方法的实现。如果接收者的实例无法响应aSelector消息，则产生一个错误。</p>
+
+<h2>测试类</h2>
+
+<p>对于类的测试，在NSObject类中定义了两个方法，其中类方法instancesRespondToSelector:用于测试接收者的实例是否响应指定的消息，其声明如下：</p>
+
+<pre><code>+ (BOOL)instancesRespondToSelector:(SEL)aSelector
+</code></pre>
+
+<p>如果aSelector消息被转发到其它对象，则类的实例可以接收这个消息而不会引发错误，即使该方法返回NO。</p>
+
+<p>为了询问类是否能响应特定消息(注意：不是类的实例)，则使用这个方法，而不使用NSObject协议的实例方法respondsToSelector:。</p>
+
+<p>NSObject还提供了一个方法来查看类是否采用了某个协议，其声明如下：</p>
+
+<pre><code>+ (BOOL)conformsToProtocol:(Protocol *)aProtocol
+</code></pre>
+
+<p>如果一个类直接或间接地采用了一个协议，则我们可以说这个类实现了该协议。我们可以看看以下这个例子：</p>
+
+<pre><code>@protocol AffiliationRequests &lt;Joining&gt;
+
+@interface MyClass : NSObject &lt;AffiliationRequests, Normalization&gt;
+
+BOOL canJoin = [MyClass conformsToProtocol:@protocol(Joining)];
+</code></pre>
+
+<p>通过继承体系，MyClass类实现了Joining协议。</p>
+
+<p>不过，这个方法并不检查类是否实现了协议的方法，这应该是程序员自己的职责了。</p>
+
+<h2>识别类</h2>
+
+<p>NSObject类提供了几个类方法来识别一个类，首先是我们常用的class类方法，该方法声明如下：</p>
+
+<pre><code>+ (Class)class
+</code></pre>
+
+<p>该方法返回类对象。当类是消息的接收者时，我们只通过类的名称来引用一个类。在其它情况下，类的对象必须通过这个方法类似的方法(-class实例方法)来获取。如下所示：</p>
+
+<pre><code>BOOL test = [self isKindOfClass:[SomeClass class]];
+</code></pre>
+
+<p>NSObject还提供了superclass类方法来获取接收者的父类，其声明如下：</p>
+
+<pre><code>+ (Class)superclass
+</code></pre>
+
+<p>另外，我们还可以使用isSubclassOfClass:类方法查看一个类是否是另一个类的子类，其声明如下：</p>
+
+<pre><code>+ (BOOL)isSubclassOfClass:(Class)aClass
+</code></pre>
+
+<h2>描述类</h2>
+
+<p>描述类是使用description方法，它返回一个表示类的内容的字符串。其声明如下：</p>
+
+<pre><code>+ (NSString *)description
+</code></pre>
+
+<p>我们在LLDB调试器中打印类的信息时，使用的就是这个方法。</p>
+
+<p>当然，如果想打印类的实例的描述时，使用的是NSObject协议中的实例方法description，我们在此不多描述。</p>
+
+<h2>归档操作</h2>
+
+<p>一说到归档操作，你会首先想到什么呢？我想到的是NSCoding协议以及它的两个方法：
+initWithCoder:和encodeWithCoder:。如果我们的对象需要支持归档操作，则应该采用这个协议并提供两个方法的具体实现。</p>
+
+<p>在编码与解码的过程中，一个编码器会调用一些方法，这些方法允许将对象编码以替代一个更换类或实例本身。这样，就可以使得归档在不同类层次结构或类的不同版本的实现中被共享。例如，类簇能有效地利用这一特性。这一特性也允许每个类在解码时应该只维护单一的实例来执行这一策略。</p>
+
+<p>NSObject类虽然没有采用NSCoding协议，但却提供了一些替代方法，以支持上述策略。这些方法分为两类，即通用和专用的。</p>
+
+<p>通用方法由NSCoder对象调用，主要有如下几个方法和属性：</p>
+
+<pre><code>@property(readonly) Class classForCoder
+
+- (id)replacementObjectForCoder:(NSCoder *)aCoder
+
+- (id)awakeAfterUsingCoder:(NSCoder *)aDecoder
+</code></pre>
+
+<p>专用的方法主要是针对NSKeyedArchiver对象的，主要有如下几个方法和属性：</p>
+
+<pre><code>@property(readonly) Class classForKeyedArchiver
+
++ (NSArray *)classFallbacksForKeyedArchiver
+
++ (Class)classForKeyedUnarchiver
+
+- (id)replacementObjectForKeyedArchiver:(NSKeyedArchiver *)archiver
+</code></pre>
+
+<p>子类在归档的过程中如果有特殊的需求，可以重写这些方法。这些方法的具体描述，可以参考<a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/Foundation/Classes/NSObject_Class">官方文档</a>。</p>
+
+<p>在解码或解档过程中，有一点需要考虑的就是对象所属类的版本号，这样能确保老版本的对象能被正确地解析。NSObject类对此提供了两个方法，如下所示：</p>
+
+<pre><code>+ (void)setVersion:(NSInteger)aVersion
+
++ (NSInteger)version
+</code></pre>
+
+<p>它们都是类方法。默认情况下，如果没有设置版本号，则默认是0.</p>
+
+<h2>总结</h2>
+
+<p>NSObject类是Objective-C中大部分类层次结构中的根类，并为我们提供了很多功能。了解这些功能更让我们更好地发挥Objective-C的特性。</p>
+
+<h2>参考</h2>
+
+<ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/Foundation/Classes/NSObject_Class">NSObject Class Reference</a></li>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/Archiving/Articles/codingobjects.html">Archives and Serializations Programming Guide</a></li>
+<li><a href="http://www.cocoachina.com/ios/20150104/10826.html">NSObject的load和initialize方法</a></li>
+<li><a href="http://southpeak.github.io/blog/2014/11/03/objective-c-runtime-yun-xing-shi-zhi-san-:fang-fa-yu-xiao-xi-zhuan-fa/">Objective-C Runtime 运行时之三：方法与消息</a></li>
+<li>《Effective Objective-C 2.0》</li>
+</ol>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/01/25/gong-ju-pian-:lldbdiao-shi-qi/">工具篇：LLDB调试器</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-01-25T21:33:25+08:00" pubdate data-updated="true">Jan 25<sup>th</sup>, 2015</time>
+        
+        
+           | <a href="/blog/2015/01/25/gong-ju-pian-:lldbdiao-shi-qi/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>随着Xcode 5的发布，LLDB调试器已经取代了GDB，成为了Xcode工程中默认的调试器。它与LLVM编译器一起，带给我们更丰富的流程控制和数据检测的调试功能。LLDB为Xcode提供了底层调试环境，其中包括内嵌在Xcode IDE中的位于调试区域的控制面板，在这里我们可以直接调用LLDB命令。如图1所示：</p>
+
+<p>图1：位于Xcode调试区域的控制台</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/IDEs/Conceptual/gdb_to_lldb_transition_guide/art/lldb_in_xc5_command_window_2x.png" alt="image" /></p>
+
+<p>在本文中，我们主要整理一下LLDB调试器提供给我们的调试命令，更详细的内容可以查看<a href="http://lldb.llvm.org/tutorial.html">The LLDB Debugger</a>。</p>
+
+<h2>LLDB命令结构</h2>
+
+<p>在使用LLDB前，我们需要了解一下LLDB的命令结构及语法，这样可以尽可能地挖掘LLDB的潜能，以帮助我们更充分地利用它。</p>
+
+<p>LLDB命令的语法有其通用结构，通常是以下形式的：</p>
+
+<pre><code>&lt;command&gt; [&lt;subcommand&gt; [&lt;subcommand&gt;...]] &lt;action&gt; [-options [option-value]] [argument [argument...]]
+</code></pre>
+
+<p>其中：</p>
+
+<ol>
+<li>&lt;command>(命令)和&lt;subcommand>(子命令)：LLDB调试命令的名称。命令和子命令按层级结构来排列：一个命令对象为跟随其的子命令对象创建一个上下文，子命令又为其子命令创建一个上下文，依此类推。</li>
+<li>&lt;action>：我们想在前面的命令序列的上下文中执行的一些操作。</li>
+<li>&lt;options>：行为修改器(action modifiers)。通常带有一些值。</li>
+<li>&lt;argument>：根据使用的命令的上下文来表示各种不同的东西。</li>
+</ol>
+
+
+<p>LLBD命令行的解析操作在执行命令之前完成。上面的这些元素之间通过空格来分割，如果某一元素自身含有空格，则可以使用双引用。而如果元素中又包含双引号，则可以使用反斜杠；或者元素使用单引号。如下所示：</p>
+
+<pre><code>(lldb) command [subcommand] -option "some \"quoted\" string"
+(lldb) command [subcommand] -option 'some "quoted" string'
+</code></pre>
+
+<p>这种命令解析设计规范了LLDB命令语法，并对所有命令做了个统一。</p>
+
+<h3>命令选项</h3>
+
+<p>LLDB中的命令选项有规范形式和缩写形式两种格式。以设置断点的命令breakpoint set为例，以下列表了其部分选项的格式，其中括号中的是规范形式：</p>
+
+<pre><code>breakpoint set
+   -M &lt;method&gt; ( --method &lt;method&gt; )
+   -S &lt;selector&gt; ( --selector &lt;selector&gt; )
+   -b &lt;function-name&gt; ( --basename &lt;function-name&gt; )
+   -f &lt;filename&gt; ( --file &lt;filename&gt; )
+   -l &lt;linenum&gt; ( --line &lt;linenum&gt; )
+   -n &lt;function-name&gt; ( --name &lt;function-name&gt; )
+…
+</code></pre>
+
+<p>各选项的顺序是任意的。如果后面的参数是以&#8221;&ndash;&ldquo;开头的，则在选项后面添加&rdquo;&mdash;&ldquo;作为选项的终止信号，以告诉LLDB我们处理的选项的正确位置。如下命令所示：</p>
+
+<pre><code>(lldb) process launch --stop-at-entry -- -program_arg_1 value -program_arg_2 value
+</code></pre>
+
+<p>如上所示，命令的选项是&mdash;stop-at-entry，参数是-program_arg_1和-program_arg_2，我们使用&#8221;&mdash;&ldquo;将选项与参数作一下区分。</p>
+
+<h3>原始命令</h3>
+
+<p>LLDB命令解析器支持&#8221;原始(raw)&ldquo;命令，即没有命令选项，命令字符串的剩余部分未经解析就传递给命令。例如，expression就是一个原始命令。</p>
+
+<p>不过原始命令也可以有选项，如果命令字符串中有虚线，则在命令名与命令字符串之间放置一个选项结束符(&mdash;)来表明没有命令标记。</p>
+
+<p>我们可以通过help命令的输出来查看一个命令是否是原始命令。</p>
+
+<h3>命令补全(Command Completion)</h3>
+
+<p>LLDB支持源文件名，符号名，文件名，等等的命令补全(Commmand Completion)。终端窗口中的补全是通过在命令行中输入一个制表符来初始化的。Xcode控制台中的补全与在源码编辑器中的补全方式是一样的：补全会在第三个字符被键入时自动弹出，或者通过Esc键手动弹出。</p>
+
+<p>一个命令中的私有选项可以有不同的完成者(completers)。如breakpoint中的&mdash;file <path>选项作为源文件的完成者，&mdash;shlib <path>选项作为当前加载的库的完成者，等等。这些行为是特定的，例如，如果指定&mdash;shlib <path>，且以&mdash;file <path>结尾，则LLDB只会列出由&mdash;shlib <path>指定的共享类库。</p>
+
+<h3>Python脚本</h3>
+
+<p>对于高级用户来说，LLDB有一个内置的Python解析器，可以通过脚本命令来访问。调试器中的所有特性在Python解析器中都可以作为类来访问。这样，我们就可以使用LLDB-Python库来写Python函数，并通过脚本将其加载到运行会话中，以执行一些更复杂的调试操作。</p>
+
+<h2>在命令行中调试程序</h2>
+
+<p>通常我们都是在Xcode中直接使用LLDB调试器，Xcode会帮我们完成很多操作。当然，如果我们想让自己看着更Bigger，或者想了解下调试器具体的一些流程，就可以试试直接在终端使用LLDB命令来调试程序。在终端中使用LLDB调试器，我们需要了解以下内容：</p>
+
+<ol>
+<li>加载程序以备调试</li>
+<li>将一个运行的程序绑定到LLDB</li>
+<li>设置断点和观察点</li>
+<li>控制程序的执行</li>
+<li>在调试的程序中导航</li>
+<li>检查状态和值的变量</li>
+<li>执行替代代码</li>
+</ol>
+
+
+<p>了解在终端中这些操作是如何进行的，可以帮助我们更深入的了解调试器在Xcode中是如何运作的。下面我们分步来介绍一下。</p>
+
+<h3>指定需要调试的程序</h3>
+
+<p>首先我们需要设置需要调试的程序。我们可以使用如下命令做到这一点：</p>
+
+<pre><code>$ lldb /Projects/Sketch/build/Debug/Sketch.app 
+Current executable set to '/Projects/Sketch/build/Debug/Sketch.app' (x86_64).
+</code></pre>
+
+<p>或者在运行lldb后，使用file命令来处理，如下所示：</p>
+
+<pre><code>$ lldb 
+(lldb) file /Projects/Sketch/build/Debug/Sketch.app 
+Current executable set to '/Projects/Sketch/build/Debug/Sketch.app' (x86_64).
+</code></pre>
+
+<h3>设置断点</h3>
+
+<p>在设置完程序后，我们可能想设置一点断点来调试程序。此时我们可以使用breakpoint set命令来设置断点，这个命令简单、直观，且有智能补全，接下来我们看看它的具体操作。</p>
+
+<p>如果想在某个文件中的某行设置一个断点，可使用以下命令：</p>
+
+<pre><code>(lldb) breakpoint set --file foo.c --line 12
+</code></pre>
+
+<p>如果想给某个函数设置断点，可使用以下命令：</p>
+
+<pre><code>(lldb) breakpoint set --name foo
+</code></pre>
+
+<p>如果想给C++中所有命名为foo的方法设置断点，可以使用以下命令：</p>
+
+<pre><code>(lldb) breakpoint set --method foo
+</code></pre>
+
+<p>如果想给Objective-C中所有命名为alignLeftEdges:的选择器设置断点，则可以使用以下命令：</p>
+
+<pre><code>(lldb) breakpoint set --selector alignLeftEdges:
+</code></pre>
+
+<p>我们可以使用&mdash;shlib &lt;path>来将断点限定在一个特定的可执行库中：</p>
+
+<pre><code>(lldb) breakpoint set --shlib foo.dylib --name foo
+</code></pre>
+
+<p>看吧，断点设置命令还是很强大的。</p>
+
+<p>如果我们想查看程序中所有的断点，则可以使用breakpoint list命令，如下所示：</p>
+
+<pre><code>(lldb) breakpoint list
+Current breakpoints:
+1: name = 'alignLeftEdges:', locations = 1, resolved = 1
+  1.1: where = Sketch`-[SKTGraphicView alignLeftEdges:] + 33 at /Projects/Sketch/SKTGraphicView.m:1405, address = 0x0000000100010d5b, resolved, hit count = 0
+</code></pre>
+
+<p>从上面的输出结果可以看出，一个断点一般有两部分：</p>
+
+<ol>
+<li>断点的逻辑规范，这一部分是用户提供给breakpoint set命令的。</li>
+<li>与规范匹配的断点的位置。</li>
+</ol>
+
+
+<p>如上所示，通过&#8221;breakpoint set &mdash;selector alignLeftEdges:&ldquo;设置的断点，其信息中会显示出所有alignLeftEdges:方法的位置。</p>
+
+<p>breakpoint list命令输出列表显示每个逻辑断点都有一个整数标识，如上所示断点标识为1。而每个位置也会有一个标识，如上所示的1.1。</p>
+
+<p>输出列表中另一个信息是断点位置是否是已解析的(resolved)。这个标识表示当与之相关的文件地址被加载到程序进行调试时，其位置是已解析的。例如，如果在共享库中设置的断点之后被卸载了，则断点的位置还会保留，但其不能再被解析。</p>
+
+<p>不管是逻辑断点产生的所有位置，还是逻辑断点解析的任何特定位置，我们都可以使用断点触发命令来对其进行删除、禁用、设置条件或忽略计数操作。例如，如果我们想添加一个命令，以在LLDB命中断点1.1时打印跟踪栈，则可以执行以下命令</p>
+
+<pre><code>(lldb) breakpoint command add 1.1
+Enter your debugger command(s). Type 'DONE' to end.
+&gt; bt
+&gt; DONE
+</code></pre>
+
+<p>如果想更详细地了解&#8221;breakpoint command add&#8221;命令的使用，可以使用help帮助系统来查看。</p>
+
+<h3>设置观察点</h3>
+
+<p>作为断点的补充，LLDB支持观察点以在不中断程序运行的情况下监测一些变量。例如，我们可以使用以下命令来监测名为global的变量的写操作，并在(global==5)为真时停止监测：</p>
+
+<pre><code>(lldb) watch set var global
+Watchpoint created: Watchpoint 1: addr = 0x100001018 size = 4 state = enabled type = w
+   declare @ '/Volumes/data/lldb/svn/ToT/test/functionalities/watchpoint/watchpoint_commands/condition/main.cpp:12'
+(lldb) watch modify -c '(global==5)'
+(lldb) watch list
+Current watchpoints:
+Watchpoint 1: addr = 0x100001018 size = 4 state = enabled type = w
+    declare @ '/Volumes/data/lldb/svn/ToT/test/functionalities/watchpoint/watchpoint_commands/condition/main.cpp:12'
+    condition = '(global==5)'
+(lldb) c
+Process 15562 resuming
+(lldb) about to write to 'global'...
+Process 15562 stopped and was programmatically restarted.
+Process 15562 stopped and was programmatically restarted.
+Process 15562 stopped and was programmatically restarted.
+Process 15562 stopped and was programmatically restarted.
+Process 15562 stopped
+* thread #1: tid = 0x1c03, 0x0000000100000ef5 a.out`modify + 21 at main.cpp:16, stop reason = watchpoint 1
+    frame #0: 0x0000000100000ef5 a.out`modify + 21 at main.cpp:16
+   13
+   14      static void modify(int32_t &amp;var) {
+   15          ++var;
+-&gt; 16      }
+   17
+   18      int main(int argc, char** argv) {
+   19          int local = 0;
+(lldb) bt
+* thread #1: tid = 0x1c03, 0x0000000100000ef5 a.out`modify + 21 at main.cpp:16, stop reason = watchpoint 1
+    frame #0: 0x0000000100000ef5 a.out`modify + 21 at main.cpp:16
+    frame #1: 0x0000000100000eac a.out`main + 108 at main.cpp:25
+    frame #2: 0x00007fff8ac9c7e1 libdyld.dylib`start + 1
+(lldb) frame var global
+(int32_t) global = 5
+(lldb) watch list -v
+Current watchpoints:
+Watchpoint 1: addr = 0x100001018 size = 4 state = enabled type = w
+    declare @ '/Volumes/data/lldb/svn/ToT/test/functionalities/watchpoint/watchpoint_commands/condition/main.cpp:12'
+    condition = '(global==5)'
+    hw_index = 0  hit_count = 5     ignore_count = 0
+(lldb)
+</code></pre>
+
+<p>可以使用help watchpoint来查看该命令的使用。</p>
+
+<h3>使用LLDB来启动程序</h3>
+
+<p>一旦指定了调试哪个程序，并为其设置了一些断点后，就可以开始运行程序了。我们可以使用以下命令来启动程序：</p>
+
+<pre><code>(lldb) process launch
+(lldb) run
+(lldb) r
+</code></pre>
+
+<p>我们同样可以使用进程ID或进程名来连接一个已经运行的程序。当使用名称来连接一个程序时，LLDB支持&mdash;waitfor选项。这个选项告诉LLDB等待下一个名称为指定名称的程序出现，然后连接它。例如，下面3个命令都是用于连接Sketch程序(假定其进程ID为123)：</p>
+
+<pre><code>(lldb) process attach --pid 123
+(lldb) process attach --name Sketch
+(lldb) process attach --name Sketch --waitfor
+</code></pre>
+
+<p>启动或连接程序后，进程可能由于某些原因而停止，如：</p>
+
+<pre><code>(lldb) process attach -p 12345
+Process 46915 Attaching
+Process 46915 Stopped
+1 of 3 threads stopped with reasons:
+* thread #1: tid = 0x2c03, 0x00007fff85cac76a, where = libSystem.B.dylib`__getdirentries64 + 10,
+stop reason = signal = SIGSTOP, queue = com.apple.main-thread
+</code></pre>
+
+<p>注意“1 of 3 threads stopped with reasons:”及其下面一行。在多线程环境下，在内核实际返回控制权给调试器前，可能会有多个线程命中同一个断点。在这种情况下，我们可以在停止信息中看到所有因此而停止的线程。</p>
+
+<h3>控制程序</h3>
+
+<p>启动程序后，LLDB允许程序在到达断点前继续运行。LLDB中流程控制的命令都在thread命令层级中。如下所示：</p>
+
+<pre><code>(lldb) thread continue
+Resuming thread 0x2c03 in process 46915
+Resuming process 46915
+</code></pre>
+
+<p>另外，还有以下命令：</p>
+
+<pre><code>(lldb) thread step-in // The same as "step" or "s" in GDB.
+(lldb) thread step-over // The same as "next" or "n" in GDB.
+(lldb) thread step-out // The same as "finish" or "f" in GDB.
+(lldb) thread step-inst // The same as "stepi" / "si" in GDB.
+(lldb) thread step-over-inst // The same as "nexti" / "ni" in GDB.
+</code></pre>
+
+<p>LLDB还提供了run until line按步调度模式，如：</p>
+
+<pre><code>lldb) thread until 100
+</code></pre>
+
+<p>这条命令会运行线程，直到当前frame到达100行。如果代码在运行的过程中跳过了100行，则当frame被弹出栈后终止执行。</p>
+
+<h3>查看线程状态</h3>
+
+<p>在进程停止后，LLDB会选择一个当前线程和线程中当前帧(frame)。很多检测状态的命令可以用于这个线程或帧。</p>
+
+<p>为了检测进程的当前状态，可以从以下命令开始：</p>
+
+<pre><code>(lldb) thread list
+Process 46915 state is Stopped
+* thread #1: tid = 0x2c03, 0x00007fff85cac76a, where = libSystem.B.dylib`__getdirentries64 + 10, stop reason = signal = SIGSTOP, queue = com.apple.main-thread
+  thread #2: tid = 0x2e03, 0x00007fff85cbb08a, where = libSystem.B.dylib`kevent + 10, queue = com.apple.libdispatch-manager
+  thread #3: tid = 0x2f03, 0x00007fff85cbbeaa, where = libSystem.B.dylib`__workq_kernreturn + 10
+</code></pre>
+
+<p>星号(*)表示thread #1为当前线程。为了获取线程的跟踪栈，可以使用以下命令：</p>
+
+<pre><code>(lldb) thread backtrace
+
+thread #1: tid = 0x2c03, stop reason = breakpoint 1.1, queue = com.apple.main-thread
+ frame #0: 0x0000000100010d5b, where = Sketch`-[SKTGraphicView alignLeftEdges:] + 33 at /Projects/Sketch/SKTGraphicView.m:1405
+ frame #1: 0x00007fff8602d152, where = AppKit`-[NSApplication sendAction:to:from:] + 95
+ frame #2: 0x00007fff860516be, where = AppKit`-[NSMenuItem _corePerformAction] + 365
+ frame #3: 0x00007fff86051428, where = AppKit`-[NSCarbonMenuImpl performActionWithHighlightingForItemAtIndex:] + 121
+ frame #4: 0x00007fff860370c1, where = AppKit`-[NSMenu performKeyEquivalent:] + 272
+ frame #5: 0x00007fff86035e69, where = AppKit`-[NSApplication _handleKeyEquivalent:] + 559
+ frame #6: 0x00007fff85f06aa1, where = AppKit`-[NSApplication sendEvent:] + 3630
+ frame #7: 0x00007fff85e9d922, where = AppKit`-[NSApplication run] + 474
+ frame #8: 0x00007fff85e965f8, where = AppKit`NSApplicationMain + 364
+ frame #9: 0x0000000100015ae3, where = Sketch`main + 33 at /Projects/Sketch/SKTMain.m:11
+ frame #10: 0x0000000100000f20, where = Sketch`start + 52
+</code></pre>
+
+<p>如果想查看所有线程的调用栈，则可以使用以下命令：</p>
+
+<pre><code>(lldb) thread backtrace all
+</code></pre>
+
+<h3>查看调用栈状态</h3>
+
+<p>检查帧参数和本地变量的最简便的方式是使用frame variable命令：</p>
+
+<pre><code>(lldb) frame variable
+self = (SKTGraphicView *) 0x0000000100208b40
+_cmd = (struct objc_selector *) 0x000000010001bae1
+sender = (id) 0x00000001001264e0
+selection = (NSArray *) 0x00000001001264e0
+i = (NSUInteger) 0x00000001001264e0
+c = (NSUInteger) 0x00000001001253b0
+</code></pre>
+
+<p>如果没有指定任何变量名，则会显示所有参数和本地变量。如果指定参数名或变量名，则只打印指定的值。如：</p>
+
+<pre><code>(lldb) frame variable self
+(SKTGraphicView *) self = 0x0000000100208b40
+</code></pre>
+
+<p>frame variable命令不是一个完全的表达式解析器，但它支持一些简单的操作符，如&amp;,*,&ndash;>,[]。这个数组括号可用于指针，以将指针作为数组处理。如下所示：</p>
+
+<pre><code>(lldb) frame variable *self
+(SKTGraphicView *) self = 0x0000000100208b40
+(NSView) NSView = {
+(NSResponder) NSResponder = {
+...
+
+(lldb) frame variable &amp;self
+(SKTGraphicView **) &amp;self = 0x0000000100304ab
+
+(lldb) frame variable argv[0]
+(char const *) argv[0] = 0x00007fff5fbffaf8 "/Projects/Sketch/build/Debug/Sketch.app/Contents/MacOS/Sketch"
+</code></pre>
+
+<p>frame variable命令会在变量上执行&#8221;对象打印&#8221;操作。目前，LLDB只支持Objective-C打印，使用的是对象的description方法。</p>
+
+<p>如果想查看另外一帧，可以使用frame select命令，如下所示：</p>
+
+<pre><code>(lldb) frame select 9
+frame #9: 0x0000000100015ae3, where = Sketch`function1 + 33 at /Projects/Sketch/SKTFunctions.m:11
+</code></pre>
+
+<h3>小结</h3>
+
+<p>以上所介绍的命令可以让我们在终端中直接调试程序。当然，很多命令也可以在Xcode中直接使用。这些命令可以让我们了解程序运行的状态，当然有些状态可以在Xcode中了解到。建议在调试过程中，可以多使用这些命令。</p>
+
+<p>如果想了解这一过程中使用的各种命令，可以查看<a href="https://developer.apple.com/library/mac/documentation/IDEs/Conceptual/gdb_to_lldb_transition_guide/document/lldb-command-examples.html#//apple_ref/doc/uid/TP40012917-CH3-SW5">苹果的官方文档</a>。</p>
+
+<h2>在Xcode中调试程序</h2>
+
+<p>对于我们日常的开发工作来说，更多的时候是在Xcode中进行调试工作。因此上面所描述的流程，其实Xcode已经帮我们完成了大部分的工作，而且很多东西也可以在Xcode里面看到。因此，我们可以把精力都集中在代码层面上。</p>
+
+<p>在<a href="https://developer.apple.com/library/mac/documentation/IDEs/Conceptual/gdb_to_lldb_transition_guide/document/lldb-command-examples.html#//apple_ref/doc/uid/TP40012917-CH3-SW5">苹果的官方文档</a>中列出了我们在调试中能用到的一些命令，我们在这重点讲一些常用的命令。</p>
+
+<h3>打印</h3>
+
+<p>打印变量的值可以使用print命令，该命令如果打印的是简单类型，则会列出简单类型的类型和值。如果是对象，还会打印出对象指针地址，如下所示：</p>
+
+<pre><code>(lldb) print a
+(NSInteger) $0 = 0
+(lldb) print b
+(NSInteger) $1 = 0
+(lldb) print str
+(NSString *) $2 = 0x0000000100001048 @"abc"
+(lldb) print url
+(NSURL *) $3 = 0x0000000100206cc0 @"abc"
+</code></pre>
+
+<p>在输出结果中我们还能看到类似于$0,$1这样的符号，我们可以将其看作是指向对象的一个引用，我们在控制面板中可以直接使用这个符号来操作对应的对象，这些东西存在于LLDB的全名空间中，目的是为了辅助调试。如下所示：</p>
+
+<pre><code>(lldb) exp $0 = 100
+(NSInteger) $9 = 100
+(lldb) p a
+(NSInteger) $10 = 100
+</code></pre>
+
+<p>另外$后面的数值是递增的，每打印一个与对象相关的命令，这个值都会加1。</p>
+
+<p>上面的print命令会打印出对象的很多信息，如果我们只想查看对象的值的信息，则可以使用po(print object的缩写)命令，如下所示：</p>
+
+<pre><code>(lldb) po str
+abc
+</code></pre>
+
+<p>当然，po命令是&#8221;exp -O &mdash;&ldquo;命令的别名，使用&#8221;exp -O &mdash;&#8221;能达到同样的效果。</p>
+
+<p>对于简单类型，我们还可以为其指定不同的打印格式，其命令格式是print/，如下所示：</p>
+
+<pre><code>(lldb) p/x a
+(NSInteger) $13 = 0x0000000000000064
+</code></pre>
+
+<p>格式的完整清单可以参考<a href="https://sourceware.org/gdb/onlinedocs/gdb/Output-Formats.html">Output Formats</a>。</p>
+
+<h3>expression</h3>
+
+<p>在开发中，我们经常会遇到这样一种情况：我们设置一个视图的背景颜色，运行后发现颜色不好看。嗯，好吧，在代码里面修改一下，再编译运行一下，嗯，还是不好看，然后再修改吧～～这样无形中浪费了我们大把的时间。在这种情况下，expression命令强大的功能就能体现出来了，它不仅会改变调试器中的值，还改变了程序中的实际值。我们先来看看实际效果，如下所示：</p>
+
+<pre><code>(lldb) exp a = 10
+(NSInteger) $0 = 10
+(lldb) exp b = 100
+(NSInteger) $1 = 100
+2015-01-25 14:00:41.313 test[18064:71466] a + b = 110, abc
+</code></pre>
+
+<p>expression命令的功能不仅于此，正如上面的po命令，其实际也是&#8221;expression -O &mdash;&ldquo;命令的别名。更详细使用可以参考<a href="https://developer.apple.com/library/mac/documentation/IDEs/Conceptual/gdb_to_lldb_transition_guide/document/lldb-command-examples.html#//apple_ref/doc/uid/TP40012917-CH3-SW5">Evaluating Expressions</a>。</p>
+
+<h3>image</h3>
+
+<p>image命令的用法也挺多，首先可以用它来查看工程中使用的库，如下所示：</p>
+
+<pre><code>(lldb) image list
+[  0] 432A6EBF-B9D2-3850-BCB2-821B9E62B1E0 0x0000000100000000 /Users/**/Library/Developer/Xcode/DerivedData/test-byjqwkhxixddxudlnvqhrfughkra/Build/Products/Debug/test 
+[  1] 65DCCB06-339C-3E25-9702-600A28291D0E 0x00007fff5fc00000 /usr/lib/dyld 
+[  2] E3746EDD-DFB1-3ECB-88ED-A91AC0EF3AAA 0x00007fff8d324000 /System/Library/Frameworks/Foundation.framework/Versions/C/Foundation 
+[  3] 759E155D-BC42-3D4E-869B-6F57D477177C 0x00007fff8869f000 /usr/lib/libobjc.A.dylib 
+[  4] 5C161F1A-93BA-3221-A31D-F86222005B1B 0x00007fff8c75c000 /usr/lib/libSystem.B.dylib 
+[  5] CBD1591C-405E-376E-87E9-B264610EBF49 0x00007fff8df0d000 /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation 
+[  6] A260789B-D4D8-316A-9490-254767B8A5F1 0x00007fff8de36000 /usr/lib/libauto.dylib 
+......
+</code></pre>
+
+<p>我们还可以用它来查找可执行文件或共享库的原始地址，这一点还是很有用的，当我们的程序崩溃时，我们可以使用这条命令来查找崩溃所在的具体位置，如下所示：</p>
+
+<pre><code>NSArray *array = @[@1, @2];
+NSLog(@"item 3: %@", array[2]);
+</code></pre>
+
+<p>这段代码在运行后会抛出如下异常：</p>
+
+<pre><code>2015-01-25 14:12:01.007 test[18122:76474] *** Terminating app due to uncaught exception 'NSRangeException', reason: '*** -[__NSArrayI objectAtIndex:]: index 2 beyond bounds [0 .. 1]'
+*** First throw call stack:
+(
+    0   CoreFoundation                      0x00007fff8e06f66c __exceptionPreprocess + 172
+    1   libobjc.A.dylib                     0x00007fff886ad76e objc_exception_throw + 43
+    2   CoreFoundation                      0x00007fff8df487de -[__NSArrayI objectAtIndex:] + 190
+    3   test                                0x0000000100000de0 main + 384
+    4   libdyld.dylib                       0x00007fff8f1b65c9 start + 1
+)
+libc++abi.dylib: terminating with uncaught exception of type NSException
+</code></pre>
+
+<p>根据以上信息，我们可以判断崩溃位置是在main.m文件中，要想知道具体在哪一行，可以使用以下命令：</p>
+
+<pre><code>(lldb) image lookup --address 0x0000000100000de0
+      Address: test[0x0000000100000de0] (test.__TEXT.__text + 384)
+      Summary: test`main + 384 at main.m:23
+</code></pre>
+
+<p>可以看到，最后定位到了main.m文件的第23行，正是我们代码所在的位置。</p>
+
+<p>我们还可以使用image lookup命令来查看具体的类型，如下所示：</p>
+
+<pre><code>(lldb) image lookup --type NSURL
+Best match found in /Users/**/Library/Developer/Xcode/DerivedData/test-byjqwkhxixddxudlnvqhrfughkra/Build/Products/Debug/test:
+id = {0x100000157}, name = "NSURL", byte-size = 40, decl = NSURL.h:17, clang_type = "@interface NSURL : NSObject{
+    NSString * _urlString;
+    NSURL * _baseURL;
+    void * _clients;
+    void * _reserved;
+}
+@property ( readonly,getter = absoluteString,setter = &lt;null selector&gt;,nonatomic ) NSString * absoluteString;
+@property ( readonly,getter = relativeString,setter = &lt;null selector&gt;,nonatomic ) NSString * relativeString;
+@property ( readonly,getter = baseURL,setter = &lt;null selector&gt;,nonatomic ) NSURL * baseURL;
+@property ( readonly,getter = absoluteURL,setter = &lt;null selector&gt;,nonatomic ) NSURL * absoluteURL;
+@property ( readonly,getter = scheme,setter = &lt;null selector&gt;,nonatomic ) NSString * scheme;
+@property ( readonly,getter = resourceSpecifier,setter = &lt;null selector&gt;,nonatomic ) NSString * resourceSpecifier;
+@property ( readonly,getter = host,setter = &lt;null selector&gt;,nonatomic ) NSString * host;
+@property ( readonly,getter = port,setter = &lt;null selector&gt;,nonatomic ) NSNumber * port;
+@property ( readonly,getter = user,setter = &lt;null selector&gt;,nonatomic ) NSString * user;
+@property ( readonly,getter = password,setter = &lt;null selector&gt;,nonatomic ) NSString * password;
+@property ( readonly,getter = path,setter = &lt;null selector&gt;,nonatomic ) NSString * path;
+@property ( readonly,getter = fragment,setter = &lt;null selector&gt;,nonatomic ) NSString * fragment;
+@property ( readonly,getter = parameterString,setter = &lt;null selector&gt;,nonatomic ) NSString * parameterString;
+@property ( readonly,getter = query,setter = &lt;null selector&gt;,nonatomic ) NSString * query;
+@property ( readonly,getter = relativePath,setter = &lt;null selector&gt;,nonatomic ) NSString * relativePath;
+@property ( readonly,getter = fileSystemRepresentation,setter = &lt;null selector&gt; ) const char * fileSystemRepresentation;
+@property ( readonly,getter = isFileURL,setter = &lt;null selector&gt;,readwrite ) BOOL fileURL;
+@property ( readonly,getter = standardizedURL,setter = &lt;null selector&gt;,nonatomic ) NSURL * standardizedURL;
+@property ( readonly,getter = filePathURL,setter = &lt;null selector&gt;,nonatomic ) NSURL * filePathURL;
+@end"
+</code></pre>
+
+<p>可以看到，输出结果中列出了NSURL的一些成员变量及属性信息。</p>
+
+<p>image命令还有许多其它功能，具体可以参考<a href="https://developer.apple.com/library/mac/documentation/IDEs/Conceptual/gdb_to_lldb_transition_guide/document/lldb-command-examples.html#//apple_ref/doc/uid/TP40012917-CH3-SW5">Executable and Shared Library Query Commands</a>。</p>
+
+<h3>流程控制</h3>
+
+<p>流程控制的命令实际上我们在上一小节已经讲过了，在Xcode的控制面板中同样可以使用这些命令，在此不在重复。</p>
+
+<h2>命令别名及帮助系统</h2>
+
+<p>LLDB有两个非常有用的特性，即命令别名及帮助。</p>
+
+<h3>命令别名</h3>
+
+<p>我们可以使用LLDB的别名机制来为常用的命令创建一个别名，以方便我们的使用，如下命令：</p>
+
+<pre><code>(lldb) breakpoint set --file foo.c --line 12
+</code></pre>
+
+<p>如果在我们的调试中需要经常用到这条命令，则每次输入这么一长串的字符一定会很让人抓狂。此时，我们就可以为这条命令创建一个别名，如下所示：</p>
+
+<pre><code>(lldb) command alias bfl breakpoint set -f %1 -l %2
+</code></pre>
+
+<p>这样，我们只需要按如下方式来使用它即可：</p>
+
+<pre><code>(lldb) bfl foo.c 12
+</code></pre>
+
+<p>是不是简单多了？</p>
+
+<p>我们可以自由地创建LLDB命令的别名集合。LLDB在启动时会读取~/.lldbinit文件。这个文件中存储了command alias命令创建的别名。LLDB帮助系统会读取这个初始化文件并会列出这些别名，以让我们了解自己所设置的别名。我们可以使用&#8221;help -a&#8221;命令并在输出的后面来查看这边别名，其以下面这行开始：</p>
+
+<pre><code>...
+The following is a list of your current command abbreviations (see 'help command alias' for more info): ...
+</code></pre>
+
+<p>如果我们不喜欢已有命令的别名，则可以使用以下命令来取消这个别名：</p>
+
+<pre><code>(lldb) command unalias b
+</code></pre>
+
+<h3>帮助系统</h3>
+
+<p>LLDB帮助系统让我们可以了解LLDB提供了哪些功能，并可以查看LLDB命令结构的详细信息。熟悉帮助系统可以让我们访问帮助系统中中命令文档。</p>
+
+<p>我们可以简单地调用help命令来列出LLDB所有的顶层命令。如下所示：</p>
+
+<pre><code>(lldb) help
+The following is a list of built-in, permanent debugger commands:
+
+_regexp-attach    -- Attach to a process id if in decimal, otherwise treat the
+                     argument as a process name to attach to.
+_regexp-break     -- Set a breakpoint using a regular expression to specify the
+                     location, where &lt;linenum&gt; is in decimal and &lt;address&gt; is
+                     in hex.
+_regexp-bt        -- Show a backtrace.  An optional argument is accepted; if
+                     that argument is a number, it specifies the number of
+                     frames to display.  If that argument is 'all', full
+                     backtraces of all threads are displayed.
+ … and so forth …
+</code></pre>
+
+<p>如果help后面跟着某个特定的命令，则会列出该命令相关的所有信息，我们以breakpoint set为例，输出信息如下：</p>
+
+<pre><code>(lldb) help breakpoint set
+     Sets a breakpoint or set of breakpoints in the executable.
+
+Syntax: breakpoint set &lt;cmd-options&gt;
+
+Command Options Usage:
+  breakpoint set [-Ho] -l &lt;linenum&gt; [-s &lt;shlib-name&gt;] [-i &lt;count&gt;] [-c &lt;expr&gt;] [-x &lt;thread-index&gt;] [-t &lt;thread-id&gt;] [-T &lt;thread-name&gt;] [-q &lt;queue-name&gt;] [-f &lt;filename&gt;] [-K &lt;boolean&gt;]
+  breakpoint set [-Ho] -a &lt;address-expression&gt; [-s &lt;shlib-name&gt;] [-i &lt;count&gt;] [-c &lt;expr&gt;] [-x &lt;thread-index&gt;] [-t &lt;thread-id&gt;] [-T &lt;thread-name&gt;] [-q &lt;queue-name&gt;]
+  breakpoint set [-Ho] -n &lt;function-name&gt; [-s &lt;shlib-name&gt;] [-i &lt;count&gt;] [-c &lt;expr&gt;] [-x &lt;thread-index&gt;] [-t &lt;thread-id&gt;] [-T &lt;thread-name&gt;] [-q &lt;queue-name&gt;] [-f &lt;filename&gt;] [-K &lt;boolean&gt;] [-L &lt;language&gt;]
+  breakpoint set [-Ho] -F &lt;fullname&gt; [-s &lt;shlib-name&gt;] [-i &lt;count&gt;] [-c &lt;expr&gt;] [-x &lt;thread-index&gt;] [-t &lt;thread-id&gt;] [-T &lt;thread-name&gt;] [-q &lt;queue-name&gt;] [-f &lt;filename&gt;] [-K &lt;boolean&gt;]
+
+ … and so forth …
+</code></pre>
+
+<p>还有一种更直接的方式来查看LLDB有哪些功能，即使用apropos命令：它会根据关键字来搜索LLDB帮助文档，并为每个命令选取一个帮助字符串，我们以apropos file为例，其输出如下：</p>
+
+<pre><code>(lldb) apropos file
+The following commands may relate to 'file':
+…
+log enable                     -- Enable logging for a single log channel.
+memory read                    -- Read from the memory of the process being
+                                  debugged.
+memory write                   -- Write to the memory of the process being
+                                  debugged.
+platform process launch        -- Launch a new process on a remote platform.
+platform select                -- Create a platform if needed and select it as
+                                  the current platform.
+plugin load                    -- Import a dylib that implements an LLDB
+                                  plugin.
+process launch                 -- Launch the executable in the debugger.
+process load                   -- Load a shared library into the current
+                                  process.
+source                         -- A set of commands for accessing source file
+                                  information
+… and so forth …
+</code></pre>
+
+<p>我们还可以使用help来了解一个命令别名的构成。如：</p>
+
+<pre><code>(lldb) help b
+…
+'b' is an abbreviation for '_regexp-break'
+</code></pre>
+
+<p>help命令的另一个特性是可以查看某个具体参数的使用，我们以&#8221;break command add&#8221;命令为例：</p>
+
+<pre><code>(lldb) help break command add
+Add a set of commands to a breakpoint, to be executed whenever the breakpoint is hit.
+
+Syntax: breakpoint command add &lt;cmd-options&gt; &lt;breakpt-id&gt;
+etc...
+</code></pre>
+
+<p>如果想了解以上输出的参数&lt;breakpt-id>的作用，我们可以在help后面直接指定这个参数(将其放在尖括号内)来查询它的详细信息，如下所示：</p>
+
+<pre><code>(lldb) help &lt;breakpt-id&gt;
+
+&lt;breakpt-id&gt; -- Breakpoint IDs consist major and minor numbers; the major
+etc...
+</code></pre>
+
+<p>帮助系统能让我们快速地了解一个LLDB命令的使用方法。经常使用它，可以让我们更快地熟悉LLDB的各项功能，所以建议多使用它。</p>
+
+<h2>总结</h2>
+
+<p>LLDB带给我们强大的调试功能，在调试过程中充分地利用它可以帮助我们极大地提高调试效率。我们可以不用写那么多的NSLog来打印一大堆的日志。所以建议在日常工作中多去使用它。当然，上面的命令只是LLDB的冰山一角，更多的使用还需要大家自己去发掘，在此只是抛砖引玉，做了一些整理。</p>
+
+<h2>参考</h2>
+
+<ol>
+<li><a href="http://lldb.llvm.org/tutorial.html">The LLDB Debugger</a></li>
+<li><a href="https://developer.apple.com/library/mac/documentation/IDEs/Conceptual/gdb_to_lldb_transition_guide/document/Introduction.html">LLDB Quick Start Guide</a></li>
+<li><a href="http://www.cocoachina.com/ios/20141219/10709.html">与调试器共舞 &ndash; LLDB 的华尔兹</a></li>
+<li><a href="http://www.starfelix.com/blog/2014/03/17/lldbdiao-shi-ming-ling-chu-tan/">LLDB调试命令初探</a></li>
+<li><a href="http://www.cocoachina.com/ios/20140530/8619.html">NSLog效率低下的原因及尝试lldb断点打印Log</a></li>
+</ol>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/01/11/yuan-ma-pian-:mantle/">源码篇：Mantle</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-01-11T22:01:00+08:00" pubdate data-updated="true">Jan 11<sup>th</sup>, 2015</time>
+        
+        
+           | <a href="/blog/2015/01/11/yuan-ma-pian-:mantle/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Mantle是一个用于简化Cocoa或Cocoa Touch程序中model层的第三方库。通常我们的应该中都会定义大量的model来表示各种数据结构，而这些model的初始化和编码解码都需要写大量的代码。而Mantle的优点在于能够大大地简化这些代码。</p>
+
+<p>Mantle源码中最主要的内容包括：</p>
+
+<ol>
+<li>MTLModel类：通常是作为我们的Model的基类，该类提供了一些默认的行为来处理对象的初始化和归档操作，同时可以获取到对象所有属性的键值集合。</li>
+<li>MTLJSONAdapter类：用于在MTLModel对象和JSON字典之间进行相互转换，相当于是一个适配器。</li>
+<li>MTLJSONSerializing协议：需要与JSON字典进行相互转换的MTLModel的子类都需要实现该协议，以方便MTLJSONApadter对象进行转换。</li>
+</ol>
+
+
+<p>在此就以这三者作为我们的分析点。</p>
+
+<h2>基类MTLModel</h2>
+
+<p>MTLModel是一个抽象类，它主要提供了一些默认的行为来处理对象的初始化和归档操作。</p>
+
+<h3>初始化</h3>
+
+<p>MTLModel默认的初始化方法-init并没有做什么事情，只是调用了下[super init]。而同时，它提供了一个另一个初始化方法：</p>
+
+<pre><code>- (instancetype)initWithDictionary:(NSDictionary *)dictionaryValue error:(NSError **)error;
+</code></pre>
+
+<p>其中参数dictionaryValue是一个字典，它包含了用于初始化对象的key-value对。我们来看下它的具体实现：</p>
+
+<pre><code>- (instancetype)initWithDictionary:(NSDictionary *)dictionary error:(NSError **)error {
+    ...
+
+    for (NSString *key in dictionary) {
+
+        // 1. 将value标记为__autoreleasing，这是因为在MTLValidateAndSetValue函数中，
+        //    可以会返回一个新的对象存在在该变量中
+        __autoreleasing id value = [dictionary objectForKey:key];
+
+        // 2. value如果为NSNull.null，会在使用前将其转换为nil
+        if ([value isEqual:NSNull.null]) value = nil;
+
+        // 3. MTLValidateAndSetValue函数利用KVC机制来验证value的值对于key是否有效，
+        //    如果无效，则使用使用默认值来设置key的值。
+        //    这里同样使用了对象的KVC特性来将value值赋值给model对应于key的属性。
+        //    有关MTLValidateAndSetValue的实现可参考源码，在此不做详细说明。
+        BOOL success = MTLValidateAndSetValue(self, key, value, YES, error);
+        if (!success) return nil;
+    }
+
+    ...
+}
+</code></pre>
+
+<p>子类可以重写该方法，以在设置完对象的属性后做进一步的处理或初始化工作，不过需要记住的是：应该通过super来调用父类的实现。</p>
+
+<h3>获取属性的键(key)、值(value)</h3>
+
+<p>MTLModel类提供了一个类方法+propertyKeys，该方法返回所有@property声明的属性所对应的名称字符串的一个集合，但不包括只读属性和MTLModel自身的属性。在这个类方法会去遍历model的所有属性，如果属性是非只读且其ivar值不为NULL，则获取到表示属性名的字符串，并将其放入到集合中，其实现如下：</p>
+
+<pre><code>+ (NSSet *)propertyKeys {
+    // 1. 如果对象中已有缓存的属性名的集合，则直接返回缓存。该缓存是放在一个关联对象中。
+    NSSet *cachedKeys = objc_getAssociatedObject(self, MTLModelCachedPropertyKeysKey);
+    if (cachedKeys != nil) return cachedKeys;
+
+    NSMutableSet *keys = [NSMutableSet set];
+
+    // 2. 遍历对象所有的属性
+    //    enumeratePropertiesUsingBlock方法会沿着superclass链一直向上遍历到MTLModel，
+    //    查找当前model所对应类的继承体系中所有的属性(不包括MTLModel)，并对该属性执行block中的操作。
+    //    有关enumeratePropertiesUsingBlock的实现可参考源码，在此不做详细说明。
+    [self enumeratePropertiesUsingBlock:^(objc_property_t property, BOOL *stop) {
+        mtl_propertyAttributes *attributes = mtl_copyPropertyAttributes(property);
+        @onExit {
+            free(attributes);
+        };
+
+        // 3. 过滤只读属性和ivar为NULL的属性
+        if (attributes-&gt;readonly &amp;&amp; attributes-&gt;ivar == NULL) return;
+
+        // 4. 获取属性名字符串，并存储到集合中
+        NSString *key = @(property_getName(property));
+        [keys addObject:key];
+    }];
+
+    // 5. 将集合缓存到关联对象中。
+    objc_setAssociatedObject(self, MTLModelCachedPropertyKeysKey, keys, OBJC_ASSOCIATION_COPY);
+
+    return keys;
+}
+</code></pre>
+
+<p>有了上面这个类方法，要想获取到对象中所有属性及其对应的值就方法了。为此MTLModel提供了一个只读属性dictionaryValue来取一个包含当前model所有属性及其值的字典。如果属性值为nil，则会用NSNull来代替。另外该属性不会为nil。</p>
+
+<pre><code>@property (nonatomic, copy, readonly) NSDictionary *dictionaryValue;
+
+// 实现
+- (NSDictionary *)dictionaryValue {
+    return [self dictionaryWithValuesForKeys:self.class.propertyKeys.allObjects];
+}
+</code></pre>
+
+<h3>合并对象</h3>
+
+<p>合并对象是指将两个MTLModel对象按照自定义的方法将其对应的属性值进行合并。为此，在MTLModel定义了以下方法：</p>
+
+<pre><code>- (void)mergeValueForKey:(NSString *)key fromModel:(MTLModel *)model;
+</code></pre>
+
+<p>该方法将当前对象指定的key属性的值与model参数对应的属性值按照指定的规则来进行合并，这种规则由我们自定义的-merge<Key>FromModel:方法来确定。如果我们的子类中实现了-merge<Key>FromModel:方法，则会调用它；如果没有找到，且model不为nil，则会用model的属性的值来替代当前对象的属性的值。具体实现如下：</p>
+
+<pre><code>- (void)mergeValueForKey:(NSString *)key fromModel:(MTLModel *)model {
+    NSParameterAssert(key != nil);
+
+    // 1. 根据传入的key拼接"merge&lt;Key&gt;FromModel:"字符串，并从该字符串中获取到对应的selector
+    //    如果当前对象没有实现-merge&lt;Key&gt;FromModel:方法，且model不为nil，则用model的属性值
+    //    替代当前对象的属性值
+    //
+    //    MTLSelectorWithCapitalizedKeyPattern函数以C语言的方式来拼接方法字符串，具体实现请
+    //    参数源码，在此不详细说明
+    SEL selector = MTLSelectorWithCapitalizedKeyPattern("merge", key, "FromModel:");
+    if (![self respondsToSelector:selector]) {
+        if (model != nil) {
+            [self setValue:[model valueForKey:key] forKey:key];
+        }
+
+        return;
+    }
+
+    // 2. 通过NSInvocation方式来调用对应的-merge&lt;Key&gt;FromModel:方法。
+    NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[self methodSignatureForSelector:selector]];
+    invocation.target = self;
+    invocation.selector = selector;
+
+    [invocation setArgument:&amp;model atIndex:2];
+    [invocation invoke];
+}
+</code></pre>
+
+<p>此外，MTLModel还提供了另一个方法来合并两个对象所有的属性值，即：</p>
+
+<pre><code>- (void)mergeValuesForKeysFromModel:(MTLModel *)model;
+</code></pre>
+
+<p>需要注意的是model必须是当前对象所属类或其子类。</p>
+
+<h3>归档对象(Archive)</h3>
+
+<p>Mantle将对MTLModel的编码解码处理都放在了MTLModel的NSCoding分类中进行处理了，该分类及相关的定义都放在MTLModel+NSCoding文件中。</p>
+
+<p>对于不同的属性，在编码解码过程中可能需要区别对待，为此Mentle定义了枚举MTLModelEncodingBehavior来确定一个MTLModel属性被编码到一个归档中的行为。其定义如下：</p>
+
+<pre><code>typedef enum : NSUInteger {
+    MTLModelEncodingBehaviorExcluded = 0,           // 属性绝不应该被编码
+    MTLModelEncodingBehaviorUnconditional,          // 属性总是应该被编码
+    MTLModelEncodingBehaviorConditional,            // 对象只有在其它地方被无条件编码时才应该被编码。这只适用于对象属性
+} MTLModelEncodingBehavior;
+</code></pre>
+
+<p>具体每个属性的归档行为我们可以在+encodingBehaviorsByPropertyKey类方法中设置。MTLModel类为我们提供了一个默认实现，如下：</p>
+
+<pre><code>+ (NSDictionary *)encodingBehaviorsByPropertyKey {
+    // 1. 获取所有属性键值
+    NSSet *propertyKeys = self.propertyKeys;
+    NSMutableDictionary *behaviors = [[NSMutableDictionary alloc] initWithCapacity:propertyKeys.count];
+
+    // 2. 对每一个属性进行处理
+    for (NSString *key in propertyKeys) {
+        objc_property_t property = class_getProperty(self, key.UTF8String);
+        NSAssert(property != NULL, @"Could not find property \"%@\" on %@", key, self);
+
+        mtl_propertyAttributes *attributes = mtl_copyPropertyAttributes(property);
+        @onExit {
+            free(attributes);
+        };
+
+        // 3. 当属性为weak时，默认设置为MTLModelEncodingBehaviorConditional，否则默认为MTLModelEncodingBehaviorUnconditional，设置完后，将其封装在NSNumber中并放入字典中。
+        MTLModelEncodingBehavior behavior = (attributes-&gt;weak ? MTLModelEncodingBehaviorConditional : MTLModelEncodingBehaviorUnconditional);
+        behaviors[key] = @(behavior);
+    }
+
+    return behaviors;
+}
+</code></pre>
+
+<p>任何不在该返回字典中的属性都不会被归档。子类可以根据自己的需要来指定各属性的归档行为。但在实际时应该通过super来调用父类的实现。</p>
+
+<p>而为了从归档中解码指定的属性，Mantle提供了以下方法：</p>
+
+<pre><code>- (id)decodeValueForKey:(NSString *)key withCoder:(NSCoder *)coder modelVersion:(NSUInteger)modelVersion;
+</code></pre>
+
+<p>默认情况下，该方法会查找当前对象中类似于<strong>-decode<Key>WithCoder:modelVersion:</strong>的方法，如果找到便会调用相应方法，并按照自定义的方式来处理属性的解码。如果我们没有实现自定义的方法或者coder不需要安全编码，则会对指定的key调用-[NSCoder decodeObjectForKey:]方法。其具体实现如下：</p>
+
+<pre><code>- (id)decodeValueForKey:(NSString *)key withCoder:(NSCoder *)coder modelVersion:(NSUInteger)modelVersion {
+    ...
+
+    SEL selector = MTLSelectorWithCapitalizedKeyPattern("decode", key, "WithCoder:modelVersion:");
+    // 1. 如果自定义了-decode&lt;Key&gt;WithCoder:modelVersion:方法，则通过NSInvocation来调用方法
+    if ([self respondsToSelector:selector]) {
+        NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[self methodSignatureForSelector:selector]];
+        invocation.target = self;
+        invocation.selector = selector;
+        [invocation setArgument:&amp;coder atIndex:2];
+        [invocation setArgument:&amp;modelVersion atIndex:3];
+        [invocation invoke];
+
+        __unsafe_unretained id result = nil;
+        [invocation getReturnValue:&amp;result];
+        return result;
+    }
+
+    @try {
+        // 2. 如果没有找到自定义的-decode&lt;Key&gt;WithCoder:modelVersion:方法，
+        //    则走以下流程。
+        //
+        // coderRequiresSecureCoding方法的具体实现请参数源码
+        if (coderRequiresSecureCoding(coder)) {
+            // 3. 如果coder要求安全编码，则会从需要安全编码的字典中取出属性所对象的类型，然后根据指定
+            //    类型来对属性进行解码操作。
+            //    为此，MTLModel提供了类方法allowedSecureCodingClassesByPropertyKey，来获取
+            //    类的对象包含的所有需要安全编码的属性及其对应的类的字典。该方法首先会查看是否已有
+            //    缓存的字典，如果没有则遍历类的所有属性。首先过滤掉那些不需要编码的属性，
+            //    然后遍历剩下的属性，如果是非对象类型或类类型，则其对应的类型设定为NSValue，
+            //    如果是这两者，则对应的类型即为相应类型。
+            //    该方法的具体实现请参考源代码。
+            NSArray *allowedClasses = self.class.allowedSecureCodingClassesByPropertyKey[key];
+            NSAssert(allowedClasses != nil, @"No allowed classes specified for securely decoding key \"%@\" on %@", key, self.class);
+
+            return [coder decodeObjectOfClasses:[NSSet setWithArray:allowedClasses] forKey:key];
+        } else {
+            // 4. 不需要安全编码
+            return [coder decodeObjectForKey:key];
+        }
+    } @catch (NSException *exception) {
+        ...
+    }
+}
+</code></pre>
+
+<p>当然，所有的编码解码工作还得需要我们实现-initWithCoder:和-encodeWithCoder:两个方法来完成。我们在定义MTLModel的子类时，可以根据自己的需要来对特定的属性进行处理，不过最好调用super的实现来执行父类的操作。MTLModel对这两个方法的实现请参考源码，在此不多作说明。</p>
+
+<h2>适配器MTLJSONApadter</h2>
+
+<p>为了便于在MTLModel对象和JSON字典之间进行相互转换，Mantle提供了类MTLJSONApadter，作为这两者之间的一个适配器。</p>
+
+<h3>MTLJSONSerializing协议</h3>
+
+<p>Mantle定义了一个协议MTLJSONSerializing，那些需要与JSON字典进行相互转换的MTLModel的子类都需要实现该协议，以方便MTLJSONApadter对象进行转换。这个协议中定义了三个方法，具体如下：</p>
+
+<pre><code>@protocol MTLJSONSerializing
+@required
+
++ (NSDictionary *)JSONKeyPathsByPropertyKey;
+
+@optional
+
++ (NSValueTransformer *)JSONTransformerForKey:(NSString *)key;
++ (Class)classForParsingJSONDictionary:(NSDictionary *)JSONDictionary;
+
+@end
+</code></pre>
+
+<p>这三个方法都是类方法。其中+JSONKeyPathsByPropertyKey是必须实现的，它返回的字典指定了如何将对象的属性映射到JSON中不同的key path(字符串值或NSNull)中。任何不在此字典中的属性被认为是与JSON中使用的key值相匹配。而映射到NSNull的属性在JSON序列化过程中将不进行处理。</p>
+
+<p>+JSONTransformerForKey:方法指定了如何将一个JSON值转换为指定的属性值。反过来，转换器也用于将属性值转换成JSON值。如果转换器实现了+<key>JSONTransformer方法，则MTLJSONAdapter会使用这个具体的方法，而不使用+JSONTransformerForKey:方法。另外，如果不需要执行自定义的转换，则返回nil。</p>
+
+<p>重写+classForParsingJSONDictionary:方法可以将当前Model解析为一个不同的类对象。这对象类簇是非常有用的，其中抽象基类将被传递给-[MTLJSONAdapter initWithJSONDictionary:modelClass:]方法，而实例化的则是子类。</p>
+
+<p>如果我们希望MTLModel的一个子类能使用MTLJSONApadter来进行转换，则需要实现这个协议，并实现相应的方法。</p>
+
+<h3>初始化</h3>
+
+<p>MTLJSONApadter对象有一个只读属性，该属性即为适配器需要处理的MTLModel对象，其声明如下：</p>
+
+<pre><code>@property (nonatomic, strong, readonly) MTLModel&lt;MTLJSONSerializing&gt; *model;
+</code></pre>
+
+<p>可见该对象必须是实现了MTLJSONSerializing协议的MTLModel对象。该属性是只读的，因此它只能通过初始化方法来初始化。</p>
+
+<p>MTLJSONApadter对象不能通过-init来初始化，这个方法会直接断言。而是需要通过类提供的两个初始化方法来初始化，如下：</p>
+
+<pre><code>- (id)initWithJSONDictionary:(NSDictionary *)JSONDictionary modelClass:(Class)modelClass error:(NSError **)error;
+
+- (id)initWithModel:(MTLModel&lt;MTLJSONSerializing&gt; *)model;
+</code></pre>
+
+<p>其中-(id)initWithJSONDictionary:modelClass:error:是使用一个字典和需要转换的类来进行初始化。字典JSONDictionary表示一个JSON数据，这个字典需要符合NSJSONSerialization返回的格式。如果该参数为空，则方法返回nil，且返回带有MTLJSONAdapterErrorInvalidJSONDictionary码的error对象。该方法的具体实现如下：</p>
+
+<pre><code>- (id)initWithJSONDictionary:(NSDictionary *)JSONDictionary modelClass:(Class)modelClass error:(NSError **)error {
+    ...
+
+    if (JSONDictionary == nil || ![JSONDictionary isKindOfClass:NSDictionary.class]) {
+        ...
+        return nil;
+    }
+
+    if ([modelClass respondsToSelector:@selector(classForParsingJSONDictionary:)]) {
+        modelClass = [modelClass classForParsingJSONDictionary:JSONDictionary];
+        if (modelClass == nil) {
+            ...
+
+            return nil;
+        }
+
+        ...
+    }
+
+    ...
+
+    _modelClass = modelClass;
+    _JSONKeyPathsByPropertyKey = [[modelClass JSONKeyPathsByPropertyKey] copy];
+
+    NSMutableDictionary *dictionaryValue = [[NSMutableDictionary alloc] initWithCapacity:JSONDictionary.count];
+
+    NSSet *propertyKeys = [self.modelClass propertyKeys];
+
+    // 1. 检验model的+JSONKeyPathsByPropertyKey中字典key-value对的有效性
+    for (NSString *mappedPropertyKey in self.JSONKeyPathsByPropertyKey) {
+        // 2. 如果model对象的属性不包含+JSONKeyPathsByPropertyKey返回的字典中的某个属性键值
+        //    则返回nil。即+JSONKeyPathsByPropertyKey中指定的属性键值必须是model对象所包含
+        //    的属性。
+        if (![propertyKeys containsObject:mappedPropertyKey]) {
+            ...
+            return nil;
+        }
+
+        id value = self.JSONKeyPathsByPropertyKey[mappedPropertyKey];
+
+        // 3. 如果属性不是映射到一个JSON关键路径或者是NSNull，也返回nil。
+        if (![value isKindOfClass:NSString.class] &amp;&amp; value != NSNull.null) {
+            ...
+            return nil;
+        }
+    }
+
+    for (NSString *propertyKey in propertyKeys) {
+        NSString *JSONKeyPath = [self JSONKeyPathForPropertyKey:propertyKey];
+        if (JSONKeyPath == nil) continue;
+
+        id value;
+        @try {
+            value = [JSONDictionary valueForKeyPath:JSONKeyPath];
+        } @catch (NSException *ex) {
+            ...
+
+            return nil;
+        }
+
+        if (value == nil) continue;
+
+        @try {
+            // 4. 获取一个转换器，
+            //    如上所述，+JSONTransformerForKey:会先去查看是否有+&lt;key&gt;JSONTransformer方法，
+            //    如果有则会使用这个具体的方法，如果没有，则调用相应的+JSONTransformerForKey:方法
+            //    该方法具体实现请参考源码
+            NSValueTransformer *transformer = [self JSONTransformerForKey:propertyKey];
+            if (transformer != nil) {
+
+                // 5. 获取转换器转换生的值
+                if ([value isEqual:NSNull.null]) value = nil;
+                value = [transformer transformedValue:value] ?: NSNull.null;
+            }
+
+            dictionaryValue[propertyKey] = value;
+        } @catch (NSException *ex) {
+            ...
+
+            return nil;
+        }
+    }
+
+    // 6. 初始化_model
+    _model = [self.modelClass modelWithDictionary:dictionaryValue error:error];
+    if (_model == nil) return nil;
+
+    return self;
+}
+</code></pre>
+
+<p>另外，MTLJSONApadter还提供了几个类方法来创建一个MTLJSONApadter对象，如下：</p>
+
+<pre><code>+ (id)modelOfClass:(Class)modelClass fromJSONDictionary:(NSDictionary *)JSONDictionary error:(NSError **)error;
+
++ (NSArray *)modelsOfClass:(Class)modelClass fromJSONArray:(NSArray *)JSONArray error:(NSError **)error;
+
++ (NSDictionary *)JSONDictionaryFromModel:(MTLModel&lt;MTLJSONSerializing&gt; *)model;
+</code></pre>
+
+<p>具体实现可参考源码。</p>
+
+<h3>从对象中获取JSON数据</h3>
+
+<p>从MTLModel对象中获取JSON数据是上述初始化过程中的一个逆过程。该过程由-JSONDictionary方法来实现，具体如下：</p>
+
+<pre><code>- (NSDictionary *)JSONDictionary {
+    NSDictionary *dictionaryValue = self.model.dictionaryValue;
+    NSMutableDictionary *JSONDictionary = [[NSMutableDictionary alloc] initWithCapacity:dictionaryValue.count];
+
+    [dictionaryValue enumerateKeysAndObjectsUsingBlock:^(NSString *propertyKey, id value, BOOL *stop) {
+        NSString *JSONKeyPath = [self JSONKeyPathForPropertyKey:propertyKey];
+        if (JSONKeyPath == nil) return;
+
+        // 1. 获取属性的值
+        NSValueTransformer *transformer = [self JSONTransformerForKey:propertyKey];
+        if ([transformer.class allowsReverseTransformation]) {
+            if ([value isEqual:NSNull.null]) value = nil;
+            value = [transformer reverseTransformedValue:value] ?: NSNull.null;
+        }
+
+        NSArray *keyPathComponents = [JSONKeyPath componentsSeparatedByString:@"."];
+
+        // 2. 对于嵌套属性值的设置，会先从keypath中获取每一层属性，
+        //    如果当前层级的obj中没有该属性，则为其设置一个空字典；然后再进入下一层级，依此类推
+        //    最后设置如下形式的字典: @{@"nested": @{@"name": @"foo"}}
+        id obj = JSONDictionary;
+        for (NSString *component in keyPathComponents) {
+            if ([obj valueForKey:component] == nil) {
+                [obj setValue:[NSMutableDictionary dictionary] forKey:component];
+            }
+
+            obj = [obj valueForKey:component];
+        }
+
+        [JSONDictionary setValue:value forKeyPath:JSONKeyPath];
+    }];
+
+    return JSONDictionary;
+}
+</code></pre>
+
+<p>从上可以看出，该方法实际上最终获得的是一个字典。而获得字典后，再将其序列化为JSON串就容易了。</p>
+
+<p>MTLJSONApadter也提供了一个简便的方法，来从一个model中获取一个JSON字典，其定义如下：</p>
+
+<pre><code>+ (NSDictionary *)JSONDictionaryFromModel:(MTLModel&lt;MTLJSONSerializing&gt; *)model;
+</code></pre>
+
+<h3>MTLManagedObjectAdapter</h3>
+
+<p>为了适应Core Data，Mantle专门定义了MTLManagedObjectAdapter类。该类用作MTLModel对象与NSManagedObject对象之前的转换。具体的我们在此不详细描述。</p>
+
+<h2>技术点总结</h2>
+
+<p>Mantle的功能主要是进行对象间数据的转换：即如何在一个MTLModel和一个JSON字典中进行数据的转换。因此，所使用的技术大都是Cocoa Foundation提供的功能。除了对于Core Data的处理之外，主要用到的技术的有如下几条：</p>
+
+<ol>
+<li>KVC的应用：这主要体现在对MTLModel子类的属性赋值中，通过KVC机制来验证值的有效性并为属性赋值。</li>
+<li>NSValueTransform：这主要用于对JSON值转换为属性值的处理，我们可以自定义转换器来满足我们自己的转换需求。</li>
+<li>NSInvocation：这主要用于统一处理针对特定key值的一些方法的调用。比如-merge<Key>FromModel:这一类方法。</li>
+<li>Run time函数的使用：这主要用于对从一个字符串中获取到方法对应的字符串，然后通过sel_registerName函数来注册一个selector。</li>
+</ol>
+
+
+<p>当然在Mantle中还会涉及到其它的一些技术点，在此不多做叙述。</p>
+
+<h2>参考</h2>
+
+<ol>
+<li><a href="https://github.com/Mantle/Mantle">Mantle工程</a></li>
+</ol>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/01/11/gong-ju-pian-:mantle/">工具篇：Mantle</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-01-11T21:55:03+08:00" pubdate data-updated="true">Jan 11<sup>th</sup>, 2015</time>
+        
+        
+           | <a href="/blog/2015/01/11/gong-ju-pian-:mantle/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>来源：<a href="https://github.com/Mantle/Mantle">https://github.com/Mantle/Mantle</a></p>
+
+<p>版本：1.5.3</p>
+
+<p><em>Mantle makes it easy to write a simple model layer for your Cocoa or Cocoa Touch application.</em></p>
+
+<p>由上面这句话可知，Mantle的目的是让我们能简化Cocoa和Cocoa Touch应用的model层。那先来看看通常我们是怎么处理model层的吧。</p>
+
+<h2>解决的问题</h2>
+
+<p>在我们写代码时，总要面对不同的数据来源。这些数据可能是来自网络服务器、本地数据库或者是内存中。通常我们需要将这些数据存储到一个Model中。一般情况下，我们会怎么去定义一个Model呢？以Mantle官方的例子为例，可能是这样的：</p>
+
+<pre><code>typedef enum : NSUInteger {
+    GHIssueStateOpen,
+    GHIssueStateClosed
+} GHIssueState;
+
+@interface GHIssue : NSObject &lt;NSCoding, NSCopying&gt;
+
+@property (nonatomic, copy, readonly) NSURL *URL;
+@property (nonatomic, copy, readonly) NSURL *HTMLURL;
+@property (nonatomic, copy, readonly) NSNumber *number;
+@property (nonatomic, assign, readonly) GHIssueState state;
+@property (nonatomic, copy, readonly) NSString *reporterLogin;
+@property (nonatomic, copy, readonly) NSDate *updatedAt;
+@property (nonatomic, strong, readonly) GHUser *assignee;
+@property (nonatomic, copy, readonly) NSDate *retrievedAt;
+
+@property (nonatomic, copy) NSString *title;
+@property (nonatomic, copy) NSString *body;
+
+- (id)initWithDictionary:(NSDictionary *)dictionary;
+
+@end
+</code></pre>
+
+<p>假定我们从网络服务器上获取了一组GHIssue对应的JSON数据，并已经将其转换为字典后，我们便可以用这个字典对GHIssue对象进行初始化了，-initWithDictionary:的实现如下：</p>
+
+<pre><code>- (id)initWithDictionary:(NSDictionary *)dictionary {
+    self = [self init];
+    if (self == nil) return nil;
+
+    _URL = [NSURL URLWithString:dictionary[@"url"]];
+    _HTMLURL = [NSURL URLWithString:dictionary[@"html_url"]];
+    _number = dictionary[@"number"];
+
+    if ([dictionary[@"state"] isEqualToString:@"open"]) {
+        _state = GHIssueStateOpen;
+    } else if ([dictionary[@"state"] isEqualToString:@"closed"]) {
+        _state = GHIssueStateClosed;
+    }
+
+    _title = [dictionary[@"title"] copy];
+    _retrievedAt = [NSDate date];
+    _body = [dictionary[@"body"] copy];
+    _reporterLogin = [dictionary[@"user"][@"login"] copy];
+    _assignee = [[GHUser alloc] initWithDictionary:dictionary[@"assignee"]];
+
+    _updatedAt = [self.class.dateFormatter dateFromString:dictionary[@"updated_at"]];
+
+    return self;
+}
+</code></pre>
+
+<p>如果GHIssue对象有归档需求，则还需要实现以下两个方法：</p>
+
+<pre><code>- (id)initWithCoder:(NSCoder *)coder {
+    self = [self init];
+    if (self == nil) return nil;
+
+    _URL = [coder decodeObjectForKey:@"URL"];
+    _HTMLURL = [coder decodeObjectForKey:@"HTMLURL"];
+    _number = [coder decodeObjectForKey:@"number"];
+    _state = [coder decodeUnsignedIntegerForKey:@"state"];
+    _title = [coder decodeObjectForKey:@"title"];
+    _retrievedAt = [NSDate date];
+    _body = [coder decodeObjectForKey:@"body"];
+    _reporterLogin = [coder decodeObjectForKey:@"reporterLogin"];
+    _assignee = [coder decodeObjectForKey:@"assignee"];
+    _updatedAt = [coder decodeObjectForKey:@"updatedAt"];
+
+    return self;
+}
+
+- (void)encodeWithCoder:(NSCoder *)coder {
+    if (self.URL != nil) [coder encodeObject:self.URL forKey:@"URL"];
+    if (self.HTMLURL != nil) [coder encodeObject:self.HTMLURL forKey:@"HTMLURL"];
+    if (self.number != nil) [coder encodeObject:self.number forKey:@"number"];
+    if (self.title != nil) [coder encodeObject:self.title forKey:@"title"];
+    if (self.body != nil) [coder encodeObject:self.body forKey:@"body"];
+    if (self.reporterLogin != nil) [coder encodeObject:self.reporterLogin forKey:@"reporterLogin"];
+    if (self.assignee != nil) [coder encodeObject:self.assignee forKey:@"assignee"];
+    if (self.updatedAt != nil) [coder encodeObject:self.updatedAt forKey:@"updatedAt"];
+
+    [coder encodeUnsignedInteger:self.state forKey:@"state"];
+}
+</code></pre>
+
+<p>额，好多代码。嗯，说实话，以前也经常写这种代码，真可谓又臭又长啊。也许我的工程中还有很多这样的Model，然后，然后&hellip;&hellip;靠，好烦啊。再然后，某天，服务端的同事告诉我有N个接口需要加字段，额～～崩溃中。而且，从上面的Model中，我无法将其还原为对应的JSON串，且如果某些信息变了，那么归档的数据可能就无法使用了。</p>
+
+<p>Mantle就是针对这几个问题而开发的一个开源库。</p>
+
+<h2>使用方法</h2>
+
+<p>其实Mantle的使用还是很简单的，它最主要的就是二个类和一个协议，即：</p>
+
+<ol>
+<li>MTLModel类：通常是作为我们的Model的基类，该类提供了一些默认的行为来处理对象的初始化和归档操作，同时可以获取到对象所有属性的键值集合。</li>
+<li>MTLJSONAdapter类：用于在MTLModel对象和JSON字典之间进行相互转换，相当于是一个适配器。</li>
+<li>MTLJSONSerializing协议：需要与JSON字典进行相互转换的MTLModel的子类都需要实现该协议，以方便MTLJSONApadter对象进行转换。</li>
+</ol>
+
+
+<p>还以GHIssue为例，我们通常会以以下方式来定义我们的Model：</p>
+
+<pre><code>@interface GHIssue : MTLModel &lt;MTLJSONSerializing&gt;
+
+@property (nonatomic, copy, readonly) NSURL *URL;
+@property (nonatomic, copy, readonly) NSURL *HTMLURL;
+@property (nonatomic, copy, readonly) NSNumber *number;
+@property (nonatomic, assign, readonly) GHIssueState state;
+
+...
+
+@end
+</code></pre>
+
+<p>可以看到，我们的Model继承了通常是MTLModel类，同时实现了MTLJSONSerializing协议。这样，我们不再需要像上面那样写一大堆的赋值代码和编码解码方法，而只需要实现MTLJSONSerializing协议的+JSONKeyPathsByPropertyKey类方法，将我们的属性名的键值与JSON字典的键值做一个映射，我们便可以在MTLJSONAdapter对象的帮助下自动进行赋值操作和编码解码操作。我们来看看GHIssue类的具体实现：</p>
+
+<pre><code>@implementation GHIssue
+
+...
+
++ (NSDictionary *)JSONKeyPathsByPropertyKey {
+    return @{
+        @"URL": @"url",
+        @"HTMLURL": @"html_url",
+        @"reporterLogin": @"user.login",
+        @"assignee": @"assignee",
+        @"updatedAt": @"updated_at"
+    };
+}
+
+...
+
+@end
+</code></pre>
+
+<p>可以看到，Model对象的属性与JSON数据之间的映射是通过字典来实现的。通过这种对应关系，Model对象便可以和JSON数据相互转换。需要注意的是返回中字典中的key值在Model对象中必须有对应的属性，否则Model对象将无法初始化成功。</p>
+
+<p>当然这两者的值之间的转换关系可能需要我们自己来定义，这时我们就可以在Model中自定义+(NSValueTransformer *)<key>JSONTransformer方法来完成这一操作，如下代码所示：</p>
+
+<pre><code>@implementation GHIssue
+
+...
+
++ (NSValueTransformer *)URLJSONTransformer {
+    return [NSValueTransformer valueTransformerForName:MTLURLValueTransformerName];
+}
+
++ (NSValueTransformer *)HTMLURLJSONTransformer {
+    return [NSValueTransformer valueTransformerForName:MTLURLValueTransformerName];
+}
+
++ (NSValueTransformer *)stateJSONTransformer {
+    return [NSValueTransformer mtl_valueMappingTransformerWithDictionary:@{
+        @"open": @(GHIssueStateOpen),
+        @"closed": @(GHIssueStateClosed)
+    }];
+}
+
+...
+
+@end
+</code></pre>
+
+<p>这样，在转换过程中，会自动调用这些方法来做数据的转换。而如果没有实现相应的方法，则会调用默认的+JSONTransformerForKey:来做处理，具体的实现可以参考<a href="http://southpeak.github.io/blog/2015/01/11/yuan-ma-pian-:mantle/">《源码篇：Mantle》</a>。</p>
+
+<p>有了上面这些准备工作，我们就需要通过MTLJSONAdapter类来适配MTLModel对象和JSON数据了，这个更容易了，代码如下所示：</p>
+
+<pre><code>NSError *error = nil;
+
+NSDictionary *JSONDictionary = ...;
+
+GHIssue *issue = [MTLJSONAdapter modelOfClass:GHIssue.class fromJSONDictionary:JSONDictionary error:&amp;error];
+</code></pre>
+
+<p>这样就根据一个JSON字典创建了一个GHIssue对象，而如果要从这个对象中获取到相应的JSON字典，则可以如下操作：</p>
+
+<pre><code>NSDictionary *JSONDictionary = [MTLJSONAdapter JSONDictionaryFromModel:issue];
+</code></pre>
+
+<p>以上便是Mantle的简单使用，当然更多的使用方式还需要在实践中多挖掘了。</p>
+
+<p>这里还需要注意的是：</p>
+
+<ol>
+<li>MTLModel的转换只针对我们定义的属性，而无法支持成员变量。</li>
+<li>支持嵌套属性的转换，这对于对象属性来说非常有用。</li>
+</ol>
+
+
+<h2>导入工程</h2>
+
+<p>想在我们的工程中使用Mantle，可以通过以下步骤导入：</p>
+
+<ol>
+<li>将Mantle库作为应用的子模块添加进来。</li>
+<li>运行Mantle文件夹下的script/bootstrap脚本。</li>
+<li>将Mantle.xcodeproj拖进我们的XCode工程或工作空间。</li>
+<li>在程序target的Build Phases选项卡中，在Link Binary With Libraries下添加Mantle的相关信息。在iOS工程中，添加libMantle.a库。</li>
+<li>在&#8221;Header Search Paths&#8221;设置中添加&#8221;$(BUILD_ROOT)/../IntermediateBuildFilesPath/UninstalledProducts/include&#8221; $(inherited)。</li>
+<li>对于iOS目标，在&#8221;Other Linker Flags&#8221;设置中添加-ObjC。</li>
+<li>如果我们将Mantle添加到工程(而不是工作空间)，则我们需要将Mantle依赖的库添加到程序的&#8221;Target Dependencies&#8221;中。</li>
+</ol>
+
+
+<p>不过，我还是喜欢用CocoaPods来处理，只需要在Podfile中添加以下代码：</p>
+
+<pre><code>pod 'Mantle', '~&gt; 1.5.3'
+</code></pre>
+
+<p>然后在对应目录下运行pod install，稍等片刻便可以使用Mantle了。关于CocoaPods的使用，可参考<a href="https://github.com/CocoaPods/CocoaPods">github上的cocoapods工程</a>。</p>
+
+<h2>不足之处</h2>
+
+<p>Mantle使用简单方便，极大的简化了我们的代码，可以满足我们大部分的需求。不过有时候我们可能会遇到这样的情况，由服务端提供的两个接口A和B，其实际上返回的数据可以转换为程序的同一个Model，只不过由于提供接口的是两个人，而且没有相互约定；抑或是服务端接口返回的数据与本地数据库的数据可以转换化同一个Model，但由于历史原因，这两者的字段也没对应上，如下所示：</p>
+
+<pre><code>// A接口返回的JSON数据为
+{"user": "abc", "password": "abc"}
+
+// B接口返回的JSON数据为
+{"user": "123", "pwd": "123"}
+</code></pre>
+
+<p>这种情况下如何使用Mantle呢？看着实际上都一样，只是字段名不一样。这时似乎就不好处理了。因为+JSONKeyPathsByPropertyKey中，字典的key表示的是MTLModel的属性键值，是通过属性的键值去找相应的JSON数据的key。因此，这种情况下可能就得定义两个Model了。</p>
+
+<p>在我们之前的工程中，也有做过类似Mantle的处理，只不过没有做得这么细致。针对上面的问题，我们的方案是刚好反过来，这个映射字典的key是JSON字典的key值，而映射字典的value是对象属性的key值。这样，我们就可以将不回数据来源的JSON字典的不同key映射到同一个Model对象的同一个属性上了。</p>
+
+<p>另外一方面，由于转换过程涉及到一些映射查找操作，所以性能上也不如直接写赋值语句来得快。不过Mantle已以通过缓存对此做了优化，所以这一点还是可以接受的。</p>
+
+<h2>参考与推荐</h2>
+
+<ol>
+<li><a href="https://github.com/Mantle/Mantle">Mantle工程</a></li>
+<li><a href="http://southpeak.github.io/blog/2015/01/11/yuan-ma-pian-:mantle/">源码篇：Mantle</a></li>
+<li><a href="http://ourui.github.io/blog/2014/01/22/mantle-use/">Mantle 初步使用</a></li>
+<li><a href="http://blog.codingcoder.com/use-mantle-to-model/">使用Mantle处理Model层对象</a></li>
+</ol>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  <div class="pagination">
+    
+      <a class="prev" href="/posts/4">&larr; Older</a>
+    
+    <a href="/blog/archives">Blog Archives</a>
+    
+    <a class="next" href="/posts/2">Newer &rarr;</a>
+    
+  </div>
+</div>
+<aside class="sidebar">
+  
+    
+<section>
+<h1>分类</h1>
+<ul>
+  <li><a href='/blog/categories/ios'>ios (65)</a></li>
+  <li><a href='/blog/categories/network'>network (3)</a></li>
+  <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
+  <li><a href='/blog/categories/swift'>swift (7)</a></li>
+  <li><a href='/blog/categories/system'>system (1)</a></li>
+  <li><a href='/blog/categories/网络'>网络 (8)</a></li>
+</ul>
+</section>
+
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/05/31/ioszhi-shi-xiao-ji-di-er-qi-2015-dot-05-dot-31/">iOS知识小集 第二期(2015.05.31)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/05/10/ioszhi-shi-xiao-ji-di-%5B%3F%5D-qi-2015-dot-05-dot-10/">iOS知识小集 第一期(2015.05.10)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/04/23/nskeyvalueobserving-kvo/">NSKeyValueObserving(KVO)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/24/yuan-ma-pian-:mbprogresshud/">源码篇：MBProgressHUD</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/20/nsnotificationcenter/">NSNotificationCenter</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/14/nsnotificationyu-duo-xian-cheng/">Notification与多线程</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/07/uiresponder/">UIResponder</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/01/fan-yi-pian-:ios-8-handoff-tutorial/">翻译篇：iOS 8 Handoff Tutorial</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/11/nscache/">NSCache</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/07/yuan-ma-pian-:sdwebimage/">源码篇：SDWebImage</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2015 - 南峰子 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

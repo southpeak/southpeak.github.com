@@ -1,0 +1,899 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>工具篇：LLDB调试器 - 南峰子的技术博客</title>
+  <meta name="author" content="南峰子">
+      
+  <meta name="baidu-site-verification" content="HoscFhWICI" />
+
+  
+  <meta name="description" content="随着Xcode 5的发布，LLDB调试器已经取代了GDB，成为了Xcode工程中默认的调试器。它与LLVM编译器一起，带给我们更丰富的流程控制和数据检测的调试功能。LLDB为Xcode提供了底层调试环境，其中包括内嵌在Xcode IDE中的位于调试区域的控制面板，在这里我们可以直接调用LLDB命令 &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://southpeak.github.io/blog/2015/01/25/gong-ju-pian-:lldbdiao-shi-qi">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="南峰子的技术博客" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <!-- <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script> -->
+  <!-- googleapis is fucked by gfw -->
+  <script src="http://cdn.staticfile.org/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<!--<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">-->
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">南峰子的技术博客</a></h1>
+  
+    <h2>攀登，一步一个脚印，方能知其乐</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:southpeak.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/categories/ios">iOS开发</a></li>
+  <li><a href="/blog/archives">所有文章</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">工具篇：LLDB调试器</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-01-25T21:33:25+08:00" pubdate data-updated="true">Jan 25<sup>th</sup>, 2015</time>
+        
+        
+           | <a href="#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>随着Xcode 5的发布，LLDB调试器已经取代了GDB，成为了Xcode工程中默认的调试器。它与LLVM编译器一起，带给我们更丰富的流程控制和数据检测的调试功能。LLDB为Xcode提供了底层调试环境，其中包括内嵌在Xcode IDE中的位于调试区域的控制面板，在这里我们可以直接调用LLDB命令。如图1所示：</p>
+
+<p>图1：位于Xcode调试区域的控制台</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/IDEs/Conceptual/gdb_to_lldb_transition_guide/art/lldb_in_xc5_command_window_2x.png" alt="image" /></p>
+
+<p>在本文中，我们主要整理一下LLDB调试器提供给我们的调试命令，更详细的内容可以查看<a href="http://lldb.llvm.org/tutorial.html">The LLDB Debugger</a>。</p>
+
+<h2>LLDB命令结构</h2>
+
+<p>在使用LLDB前，我们需要了解一下LLDB的命令结构及语法，这样可以尽可能地挖掘LLDB的潜能，以帮助我们更充分地利用它。</p>
+
+<p>LLDB命令的语法有其通用结构，通常是以下形式的：</p>
+
+<pre><code>&lt;command&gt; [&lt;subcommand&gt; [&lt;subcommand&gt;...]] &lt;action&gt; [-options [option-value]] [argument [argument...]]
+</code></pre>
+
+<p>其中：</p>
+
+<ol>
+<li>&lt;command>(命令)和&lt;subcommand>(子命令)：LLDB调试命令的名称。命令和子命令按层级结构来排列：一个命令对象为跟随其的子命令对象创建一个上下文，子命令又为其子命令创建一个上下文，依此类推。</li>
+<li>&lt;action>：我们想在前面的命令序列的上下文中执行的一些操作。</li>
+<li>&lt;options>：行为修改器(action modifiers)。通常带有一些值。</li>
+<li>&lt;argument>：根据使用的命令的上下文来表示各种不同的东西。</li>
+</ol>
+
+
+<p>LLBD命令行的解析操作在执行命令之前完成。上面的这些元素之间通过空格来分割，如果某一元素自身含有空格，则可以使用双引用。而如果元素中又包含双引号，则可以使用反斜杠；或者元素使用单引号。如下所示：</p>
+
+<pre><code>(lldb) command [subcommand] -option "some \"quoted\" string"
+(lldb) command [subcommand] -option 'some "quoted" string'
+</code></pre>
+
+<p>这种命令解析设计规范了LLDB命令语法，并对所有命令做了个统一。</p>
+
+<h3>命令选项</h3>
+
+<p>LLDB中的命令选项有规范形式和缩写形式两种格式。以设置断点的命令breakpoint set为例，以下列表了其部分选项的格式，其中括号中的是规范形式：</p>
+
+<pre><code>breakpoint set
+   -M &lt;method&gt; ( --method &lt;method&gt; )
+   -S &lt;selector&gt; ( --selector &lt;selector&gt; )
+   -b &lt;function-name&gt; ( --basename &lt;function-name&gt; )
+   -f &lt;filename&gt; ( --file &lt;filename&gt; )
+   -l &lt;linenum&gt; ( --line &lt;linenum&gt; )
+   -n &lt;function-name&gt; ( --name &lt;function-name&gt; )
+…
+</code></pre>
+
+<p>各选项的顺序是任意的。如果后面的参数是以&#8221;&ndash;&ldquo;开头的，则在选项后面添加&rdquo;&mdash;&ldquo;作为选项的终止信号，以告诉LLDB我们处理的选项的正确位置。如下命令所示：</p>
+
+<pre><code>(lldb) process launch --stop-at-entry -- -program_arg_1 value -program_arg_2 value
+</code></pre>
+
+<p>如上所示，命令的选项是&mdash;stop-at-entry，参数是-program_arg_1和-program_arg_2，我们使用&#8221;&mdash;&ldquo;将选项与参数作一下区分。</p>
+
+<h3>原始命令</h3>
+
+<p>LLDB命令解析器支持&#8221;原始(raw)&ldquo;命令，即没有命令选项，命令字符串的剩余部分未经解析就传递给命令。例如，expression就是一个原始命令。</p>
+
+<p>不过原始命令也可以有选项，如果命令字符串中有虚线，则在命令名与命令字符串之间放置一个选项结束符(&mdash;)来表明没有命令标记。</p>
+
+<p>我们可以通过help命令的输出来查看一个命令是否是原始命令。</p>
+
+<h3>命令补全(Command Completion)</h3>
+
+<p>LLDB支持源文件名，符号名，文件名，等等的命令补全(Commmand Completion)。终端窗口中的补全是通过在命令行中输入一个制表符来初始化的。Xcode控制台中的补全与在源码编辑器中的补全方式是一样的：补全会在第三个字符被键入时自动弹出，或者通过Esc键手动弹出。</p>
+
+<p>一个命令中的私有选项可以有不同的完成者(completers)。如breakpoint中的&mdash;file <path>选项作为源文件的完成者，&mdash;shlib <path>选项作为当前加载的库的完成者，等等。这些行为是特定的，例如，如果指定&mdash;shlib <path>，且以&mdash;file <path>结尾，则LLDB只会列出由&mdash;shlib <path>指定的共享类库。</p>
+
+<h3>Python脚本</h3>
+
+<p>对于高级用户来说，LLDB有一个内置的Python解析器，可以通过脚本命令来访问。调试器中的所有特性在Python解析器中都可以作为类来访问。这样，我们就可以使用LLDB-Python库来写Python函数，并通过脚本将其加载到运行会话中，以执行一些更复杂的调试操作。</p>
+
+<h2>在命令行中调试程序</h2>
+
+<p>通常我们都是在Xcode中直接使用LLDB调试器，Xcode会帮我们完成很多操作。当然，如果我们想让自己看着更Bigger，或者想了解下调试器具体的一些流程，就可以试试直接在终端使用LLDB命令来调试程序。在终端中使用LLDB调试器，我们需要了解以下内容：</p>
+
+<ol>
+<li>加载程序以备调试</li>
+<li>将一个运行的程序绑定到LLDB</li>
+<li>设置断点和观察点</li>
+<li>控制程序的执行</li>
+<li>在调试的程序中导航</li>
+<li>检查状态和值的变量</li>
+<li>执行替代代码</li>
+</ol>
+
+
+<p>了解在终端中这些操作是如何进行的，可以帮助我们更深入的了解调试器在Xcode中是如何运作的。下面我们分步来介绍一下。</p>
+
+<h3>指定需要调试的程序</h3>
+
+<p>首先我们需要设置需要调试的程序。我们可以使用如下命令做到这一点：</p>
+
+<pre><code>$ lldb /Projects/Sketch/build/Debug/Sketch.app 
+Current executable set to '/Projects/Sketch/build/Debug/Sketch.app' (x86_64).
+</code></pre>
+
+<p>或者在运行lldb后，使用file命令来处理，如下所示：</p>
+
+<pre><code>$ lldb 
+(lldb) file /Projects/Sketch/build/Debug/Sketch.app 
+Current executable set to '/Projects/Sketch/build/Debug/Sketch.app' (x86_64).
+</code></pre>
+
+<h3>设置断点</h3>
+
+<p>在设置完程序后，我们可能想设置一点断点来调试程序。此时我们可以使用breakpoint set命令来设置断点，这个命令简单、直观，且有智能补全，接下来我们看看它的具体操作。</p>
+
+<p>如果想在某个文件中的某行设置一个断点，可使用以下命令：</p>
+
+<pre><code>(lldb) breakpoint set --file foo.c --line 12
+</code></pre>
+
+<p>如果想给某个函数设置断点，可使用以下命令：</p>
+
+<pre><code>(lldb) breakpoint set --name foo
+</code></pre>
+
+<p>如果想给C++中所有命名为foo的方法设置断点，可以使用以下命令：</p>
+
+<pre><code>(lldb) breakpoint set --method foo
+</code></pre>
+
+<p>如果想给Objective-C中所有命名为alignLeftEdges:的选择器设置断点，则可以使用以下命令：</p>
+
+<pre><code>(lldb) breakpoint set --selector alignLeftEdges:
+</code></pre>
+
+<p>我们可以使用&mdash;shlib &lt;path>来将断点限定在一个特定的可执行库中：</p>
+
+<pre><code>(lldb) breakpoint set --shlib foo.dylib --name foo
+</code></pre>
+
+<p>看吧，断点设置命令还是很强大的。</p>
+
+<p>如果我们想查看程序中所有的断点，则可以使用breakpoint list命令，如下所示：</p>
+
+<pre><code>(lldb) breakpoint list
+Current breakpoints:
+1: name = 'alignLeftEdges:', locations = 1, resolved = 1
+  1.1: where = Sketch`-[SKTGraphicView alignLeftEdges:] + 33 at /Projects/Sketch/SKTGraphicView.m:1405, address = 0x0000000100010d5b, resolved, hit count = 0
+</code></pre>
+
+<p>从上面的输出结果可以看出，一个断点一般有两部分：</p>
+
+<ol>
+<li>断点的逻辑规范，这一部分是用户提供给breakpoint set命令的。</li>
+<li>与规范匹配的断点的位置。</li>
+</ol>
+
+
+<p>如上所示，通过&#8221;breakpoint set &mdash;selector alignLeftEdges:&ldquo;设置的断点，其信息中会显示出所有alignLeftEdges:方法的位置。</p>
+
+<p>breakpoint list命令输出列表显示每个逻辑断点都有一个整数标识，如上所示断点标识为1。而每个位置也会有一个标识，如上所示的1.1。</p>
+
+<p>输出列表中另一个信息是断点位置是否是已解析的(resolved)。这个标识表示当与之相关的文件地址被加载到程序进行调试时，其位置是已解析的。例如，如果在共享库中设置的断点之后被卸载了，则断点的位置还会保留，但其不能再被解析。</p>
+
+<p>不管是逻辑断点产生的所有位置，还是逻辑断点解析的任何特定位置，我们都可以使用断点触发命令来对其进行删除、禁用、设置条件或忽略计数操作。例如，如果我们想添加一个命令，以在LLDB命中断点1.1时打印跟踪栈，则可以执行以下命令</p>
+
+<pre><code>(lldb) breakpoint command add 1.1
+Enter your debugger command(s). Type 'DONE' to end.
+&gt; bt
+&gt; DONE
+</code></pre>
+
+<p>如果想更详细地了解&#8221;breakpoint command add&#8221;命令的使用，可以使用help帮助系统来查看。</p>
+
+<h3>设置观察点</h3>
+
+<p>作为断点的补充，LLDB支持观察点以在不中断程序运行的情况下监测一些变量。例如，我们可以使用以下命令来监测名为global的变量的写操作，并在(global==5)为真时停止监测：</p>
+
+<pre><code>(lldb) watch set var global
+Watchpoint created: Watchpoint 1: addr = 0x100001018 size = 4 state = enabled type = w
+   declare @ '/Volumes/data/lldb/svn/ToT/test/functionalities/watchpoint/watchpoint_commands/condition/main.cpp:12'
+(lldb) watch modify -c '(global==5)'
+(lldb) watch list
+Current watchpoints:
+Watchpoint 1: addr = 0x100001018 size = 4 state = enabled type = w
+    declare @ '/Volumes/data/lldb/svn/ToT/test/functionalities/watchpoint/watchpoint_commands/condition/main.cpp:12'
+    condition = '(global==5)'
+(lldb) c
+Process 15562 resuming
+(lldb) about to write to 'global'...
+Process 15562 stopped and was programmatically restarted.
+Process 15562 stopped and was programmatically restarted.
+Process 15562 stopped and was programmatically restarted.
+Process 15562 stopped and was programmatically restarted.
+Process 15562 stopped
+* thread #1: tid = 0x1c03, 0x0000000100000ef5 a.out`modify + 21 at main.cpp:16, stop reason = watchpoint 1
+    frame #0: 0x0000000100000ef5 a.out`modify + 21 at main.cpp:16
+   13
+   14      static void modify(int32_t &amp;var) {
+   15          ++var;
+-&gt; 16      }
+   17
+   18      int main(int argc, char** argv) {
+   19          int local = 0;
+(lldb) bt
+* thread #1: tid = 0x1c03, 0x0000000100000ef5 a.out`modify + 21 at main.cpp:16, stop reason = watchpoint 1
+    frame #0: 0x0000000100000ef5 a.out`modify + 21 at main.cpp:16
+    frame #1: 0x0000000100000eac a.out`main + 108 at main.cpp:25
+    frame #2: 0x00007fff8ac9c7e1 libdyld.dylib`start + 1
+(lldb) frame var global
+(int32_t) global = 5
+(lldb) watch list -v
+Current watchpoints:
+Watchpoint 1: addr = 0x100001018 size = 4 state = enabled type = w
+    declare @ '/Volumes/data/lldb/svn/ToT/test/functionalities/watchpoint/watchpoint_commands/condition/main.cpp:12'
+    condition = '(global==5)'
+    hw_index = 0  hit_count = 5     ignore_count = 0
+(lldb)
+</code></pre>
+
+<p>可以使用help watchpoint来查看该命令的使用。</p>
+
+<h3>使用LLDB来启动程序</h3>
+
+<p>一旦指定了调试哪个程序，并为其设置了一些断点后，就可以开始运行程序了。我们可以使用以下命令来启动程序：</p>
+
+<pre><code>(lldb) process launch
+(lldb) run
+(lldb) r
+</code></pre>
+
+<p>我们同样可以使用进程ID或进程名来连接一个已经运行的程序。当使用名称来连接一个程序时，LLDB支持&mdash;waitfor选项。这个选项告诉LLDB等待下一个名称为指定名称的程序出现，然后连接它。例如，下面3个命令都是用于连接Sketch程序(假定其进程ID为123)：</p>
+
+<pre><code>(lldb) process attach --pid 123
+(lldb) process attach --name Sketch
+(lldb) process attach --name Sketch --waitfor
+</code></pre>
+
+<p>启动或连接程序后，进程可能由于某些原因而停止，如：</p>
+
+<pre><code>(lldb) process attach -p 12345
+Process 46915 Attaching
+Process 46915 Stopped
+1 of 3 threads stopped with reasons:
+* thread #1: tid = 0x2c03, 0x00007fff85cac76a, where = libSystem.B.dylib`__getdirentries64 + 10,
+stop reason = signal = SIGSTOP, queue = com.apple.main-thread
+</code></pre>
+
+<p>注意“1 of 3 threads stopped with reasons:”及其下面一行。在多线程环境下，在内核实际返回控制权给调试器前，可能会有多个线程命中同一个断点。在这种情况下，我们可以在停止信息中看到所有因此而停止的线程。</p>
+
+<h3>控制程序</h3>
+
+<p>启动程序后，LLDB允许程序在到达断点前继续运行。LLDB中流程控制的命令都在thread命令层级中。如下所示：</p>
+
+<pre><code>(lldb) thread continue
+Resuming thread 0x2c03 in process 46915
+Resuming process 46915
+</code></pre>
+
+<p>另外，还有以下命令：</p>
+
+<pre><code>(lldb) thread step-in // The same as "step" or "s" in GDB.
+(lldb) thread step-over // The same as "next" or "n" in GDB.
+(lldb) thread step-out // The same as "finish" or "f" in GDB.
+(lldb) thread step-inst // The same as "stepi" / "si" in GDB.
+(lldb) thread step-over-inst // The same as "nexti" / "ni" in GDB.
+</code></pre>
+
+<p>LLDB还提供了run until line按步调度模式，如：</p>
+
+<pre><code>lldb) thread until 100
+</code></pre>
+
+<p>这条命令会运行线程，直到当前frame到达100行。如果代码在运行的过程中跳过了100行，则当frame被弹出栈后终止执行。</p>
+
+<h3>查看线程状态</h3>
+
+<p>在进程停止后，LLDB会选择一个当前线程和线程中当前帧(frame)。很多检测状态的命令可以用于这个线程或帧。</p>
+
+<p>为了检测进程的当前状态，可以从以下命令开始：</p>
+
+<pre><code>(lldb) thread list
+Process 46915 state is Stopped
+* thread #1: tid = 0x2c03, 0x00007fff85cac76a, where = libSystem.B.dylib`__getdirentries64 + 10, stop reason = signal = SIGSTOP, queue = com.apple.main-thread
+  thread #2: tid = 0x2e03, 0x00007fff85cbb08a, where = libSystem.B.dylib`kevent + 10, queue = com.apple.libdispatch-manager
+  thread #3: tid = 0x2f03, 0x00007fff85cbbeaa, where = libSystem.B.dylib`__workq_kernreturn + 10
+</code></pre>
+
+<p>星号(*)表示thread #1为当前线程。为了获取线程的跟踪栈，可以使用以下命令：</p>
+
+<pre><code>(lldb) thread backtrace
+
+thread #1: tid = 0x2c03, stop reason = breakpoint 1.1, queue = com.apple.main-thread
+ frame #0: 0x0000000100010d5b, where = Sketch`-[SKTGraphicView alignLeftEdges:] + 33 at /Projects/Sketch/SKTGraphicView.m:1405
+ frame #1: 0x00007fff8602d152, where = AppKit`-[NSApplication sendAction:to:from:] + 95
+ frame #2: 0x00007fff860516be, where = AppKit`-[NSMenuItem _corePerformAction] + 365
+ frame #3: 0x00007fff86051428, where = AppKit`-[NSCarbonMenuImpl performActionWithHighlightingForItemAtIndex:] + 121
+ frame #4: 0x00007fff860370c1, where = AppKit`-[NSMenu performKeyEquivalent:] + 272
+ frame #5: 0x00007fff86035e69, where = AppKit`-[NSApplication _handleKeyEquivalent:] + 559
+ frame #6: 0x00007fff85f06aa1, where = AppKit`-[NSApplication sendEvent:] + 3630
+ frame #7: 0x00007fff85e9d922, where = AppKit`-[NSApplication run] + 474
+ frame #8: 0x00007fff85e965f8, where = AppKit`NSApplicationMain + 364
+ frame #9: 0x0000000100015ae3, where = Sketch`main + 33 at /Projects/Sketch/SKTMain.m:11
+ frame #10: 0x0000000100000f20, where = Sketch`start + 52
+</code></pre>
+
+<p>如果想查看所有线程的调用栈，则可以使用以下命令：</p>
+
+<pre><code>(lldb) thread backtrace all
+</code></pre>
+
+<h3>查看调用栈状态</h3>
+
+<p>检查帧参数和本地变量的最简便的方式是使用frame variable命令：</p>
+
+<pre><code>(lldb) frame variable
+self = (SKTGraphicView *) 0x0000000100208b40
+_cmd = (struct objc_selector *) 0x000000010001bae1
+sender = (id) 0x00000001001264e0
+selection = (NSArray *) 0x00000001001264e0
+i = (NSUInteger) 0x00000001001264e0
+c = (NSUInteger) 0x00000001001253b0
+</code></pre>
+
+<p>如果没有指定任何变量名，则会显示所有参数和本地变量。如果指定参数名或变量名，则只打印指定的值。如：</p>
+
+<pre><code>(lldb) frame variable self
+(SKTGraphicView *) self = 0x0000000100208b40
+</code></pre>
+
+<p>frame variable命令不是一个完全的表达式解析器，但它支持一些简单的操作符，如&amp;,*,&ndash;>,[]。这个数组括号可用于指针，以将指针作为数组处理。如下所示：</p>
+
+<pre><code>(lldb) frame variable *self
+(SKTGraphicView *) self = 0x0000000100208b40
+(NSView) NSView = {
+(NSResponder) NSResponder = {
+...
+
+(lldb) frame variable &amp;self
+(SKTGraphicView **) &amp;self = 0x0000000100304ab
+
+(lldb) frame variable argv[0]
+(char const *) argv[0] = 0x00007fff5fbffaf8 "/Projects/Sketch/build/Debug/Sketch.app/Contents/MacOS/Sketch"
+</code></pre>
+
+<p>frame variable命令会在变量上执行&#8221;对象打印&#8221;操作。目前，LLDB只支持Objective-C打印，使用的是对象的description方法。</p>
+
+<p>如果想查看另外一帧，可以使用frame select命令，如下所示：</p>
+
+<pre><code>(lldb) frame select 9
+frame #9: 0x0000000100015ae3, where = Sketch`function1 + 33 at /Projects/Sketch/SKTFunctions.m:11
+</code></pre>
+
+<h3>小结</h3>
+
+<p>以上所介绍的命令可以让我们在终端中直接调试程序。当然，很多命令也可以在Xcode中直接使用。这些命令可以让我们了解程序运行的状态，当然有些状态可以在Xcode中了解到。建议在调试过程中，可以多使用这些命令。</p>
+
+<p>如果想了解这一过程中使用的各种命令，可以查看<a href="https://developer.apple.com/library/mac/documentation/IDEs/Conceptual/gdb_to_lldb_transition_guide/document/lldb-command-examples.html#//apple_ref/doc/uid/TP40012917-CH3-SW5">苹果的官方文档</a>。</p>
+
+<h2>在Xcode中调试程序</h2>
+
+<p>对于我们日常的开发工作来说，更多的时候是在Xcode中进行调试工作。因此上面所描述的流程，其实Xcode已经帮我们完成了大部分的工作，而且很多东西也可以在Xcode里面看到。因此，我们可以把精力都集中在代码层面上。</p>
+
+<p>在<a href="https://developer.apple.com/library/mac/documentation/IDEs/Conceptual/gdb_to_lldb_transition_guide/document/lldb-command-examples.html#//apple_ref/doc/uid/TP40012917-CH3-SW5">苹果的官方文档</a>中列出了我们在调试中能用到的一些命令，我们在这重点讲一些常用的命令。</p>
+
+<h3>打印</h3>
+
+<p>打印变量的值可以使用print命令，该命令如果打印的是简单类型，则会列出简单类型的类型和值。如果是对象，还会打印出对象指针地址，如下所示：</p>
+
+<pre><code>(lldb) print a
+(NSInteger) $0 = 0
+(lldb) print b
+(NSInteger) $1 = 0
+(lldb) print str
+(NSString *) $2 = 0x0000000100001048 @"abc"
+(lldb) print url
+(NSURL *) $3 = 0x0000000100206cc0 @"abc"
+</code></pre>
+
+<p>在输出结果中我们还能看到类似于$0,$1这样的符号，我们可以将其看作是指向对象的一个引用，我们在控制面板中可以直接使用这个符号来操作对应的对象，这些东西存在于LLDB的全名空间中，目的是为了辅助调试。如下所示：</p>
+
+<pre><code>(lldb) exp $0 = 100
+(NSInteger) $9 = 100
+(lldb) p a
+(NSInteger) $10 = 100
+</code></pre>
+
+<p>另外$后面的数值是递增的，每打印一个与对象相关的命令，这个值都会加1。</p>
+
+<p>上面的print命令会打印出对象的很多信息，如果我们只想查看对象的值的信息，则可以使用po(print object的缩写)命令，如下所示：</p>
+
+<pre><code>(lldb) po str
+abc
+</code></pre>
+
+<p>当然，po命令是&#8221;exp -O &mdash;&ldquo;命令的别名，使用&#8221;exp -O &mdash;&#8221;能达到同样的效果。</p>
+
+<p>对于简单类型，我们还可以为其指定不同的打印格式，其命令格式是print/，如下所示：</p>
+
+<pre><code>(lldb) p/x a
+(NSInteger) $13 = 0x0000000000000064
+</code></pre>
+
+<p>格式的完整清单可以参考<a href="https://sourceware.org/gdb/onlinedocs/gdb/Output-Formats.html">Output Formats</a>。</p>
+
+<h3>expression</h3>
+
+<p>在开发中，我们经常会遇到这样一种情况：我们设置一个视图的背景颜色，运行后发现颜色不好看。嗯，好吧，在代码里面修改一下，再编译运行一下，嗯，还是不好看，然后再修改吧～～这样无形中浪费了我们大把的时间。在这种情况下，expression命令强大的功能就能体现出来了，它不仅会改变调试器中的值，还改变了程序中的实际值。我们先来看看实际效果，如下所示：</p>
+
+<pre><code>(lldb) exp a = 10
+(NSInteger) $0 = 10
+(lldb) exp b = 100
+(NSInteger) $1 = 100
+2015-01-25 14:00:41.313 test[18064:71466] a + b = 110, abc
+</code></pre>
+
+<p>expression命令的功能不仅于此，正如上面的po命令，其实际也是&#8221;expression -O &mdash;&ldquo;命令的别名。更详细使用可以参考<a href="https://developer.apple.com/library/mac/documentation/IDEs/Conceptual/gdb_to_lldb_transition_guide/document/lldb-command-examples.html#//apple_ref/doc/uid/TP40012917-CH3-SW5">Evaluating Expressions</a>。</p>
+
+<h3>image</h3>
+
+<p>image命令的用法也挺多，首先可以用它来查看工程中使用的库，如下所示：</p>
+
+<pre><code>(lldb) image list
+[  0] 432A6EBF-B9D2-3850-BCB2-821B9E62B1E0 0x0000000100000000 /Users/**/Library/Developer/Xcode/DerivedData/test-byjqwkhxixddxudlnvqhrfughkra/Build/Products/Debug/test 
+[  1] 65DCCB06-339C-3E25-9702-600A28291D0E 0x00007fff5fc00000 /usr/lib/dyld 
+[  2] E3746EDD-DFB1-3ECB-88ED-A91AC0EF3AAA 0x00007fff8d324000 /System/Library/Frameworks/Foundation.framework/Versions/C/Foundation 
+[  3] 759E155D-BC42-3D4E-869B-6F57D477177C 0x00007fff8869f000 /usr/lib/libobjc.A.dylib 
+[  4] 5C161F1A-93BA-3221-A31D-F86222005B1B 0x00007fff8c75c000 /usr/lib/libSystem.B.dylib 
+[  5] CBD1591C-405E-376E-87E9-B264610EBF49 0x00007fff8df0d000 /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation 
+[  6] A260789B-D4D8-316A-9490-254767B8A5F1 0x00007fff8de36000 /usr/lib/libauto.dylib 
+......
+</code></pre>
+
+<p>我们还可以用它来查找可执行文件或共享库的原始地址，这一点还是很有用的，当我们的程序崩溃时，我们可以使用这条命令来查找崩溃所在的具体位置，如下所示：</p>
+
+<pre><code>NSArray *array = @[@1, @2];
+NSLog(@"item 3: %@", array[2]);
+</code></pre>
+
+<p>这段代码在运行后会抛出如下异常：</p>
+
+<pre><code>2015-01-25 14:12:01.007 test[18122:76474] *** Terminating app due to uncaught exception 'NSRangeException', reason: '*** -[__NSArrayI objectAtIndex:]: index 2 beyond bounds [0 .. 1]'
+*** First throw call stack:
+(
+    0   CoreFoundation                      0x00007fff8e06f66c __exceptionPreprocess + 172
+    1   libobjc.A.dylib                     0x00007fff886ad76e objc_exception_throw + 43
+    2   CoreFoundation                      0x00007fff8df487de -[__NSArrayI objectAtIndex:] + 190
+    3   test                                0x0000000100000de0 main + 384
+    4   libdyld.dylib                       0x00007fff8f1b65c9 start + 1
+)
+libc++abi.dylib: terminating with uncaught exception of type NSException
+</code></pre>
+
+<p>根据以上信息，我们可以判断崩溃位置是在main.m文件中，要想知道具体在哪一行，可以使用以下命令：</p>
+
+<pre><code>(lldb) image lookup --address 0x0000000100000de0
+      Address: test[0x0000000100000de0] (test.__TEXT.__text + 384)
+      Summary: test`main + 384 at main.m:23
+</code></pre>
+
+<p>可以看到，最后定位到了main.m文件的第23行，正是我们代码所在的位置。</p>
+
+<p>我们还可以使用image lookup命令来查看具体的类型，如下所示：</p>
+
+<pre><code>(lldb) image lookup --type NSURL
+Best match found in /Users/**/Library/Developer/Xcode/DerivedData/test-byjqwkhxixddxudlnvqhrfughkra/Build/Products/Debug/test:
+id = {0x100000157}, name = "NSURL", byte-size = 40, decl = NSURL.h:17, clang_type = "@interface NSURL : NSObject{
+    NSString * _urlString;
+    NSURL * _baseURL;
+    void * _clients;
+    void * _reserved;
+}
+@property ( readonly,getter = absoluteString,setter = &lt;null selector&gt;,nonatomic ) NSString * absoluteString;
+@property ( readonly,getter = relativeString,setter = &lt;null selector&gt;,nonatomic ) NSString * relativeString;
+@property ( readonly,getter = baseURL,setter = &lt;null selector&gt;,nonatomic ) NSURL * baseURL;
+@property ( readonly,getter = absoluteURL,setter = &lt;null selector&gt;,nonatomic ) NSURL * absoluteURL;
+@property ( readonly,getter = scheme,setter = &lt;null selector&gt;,nonatomic ) NSString * scheme;
+@property ( readonly,getter = resourceSpecifier,setter = &lt;null selector&gt;,nonatomic ) NSString * resourceSpecifier;
+@property ( readonly,getter = host,setter = &lt;null selector&gt;,nonatomic ) NSString * host;
+@property ( readonly,getter = port,setter = &lt;null selector&gt;,nonatomic ) NSNumber * port;
+@property ( readonly,getter = user,setter = &lt;null selector&gt;,nonatomic ) NSString * user;
+@property ( readonly,getter = password,setter = &lt;null selector&gt;,nonatomic ) NSString * password;
+@property ( readonly,getter = path,setter = &lt;null selector&gt;,nonatomic ) NSString * path;
+@property ( readonly,getter = fragment,setter = &lt;null selector&gt;,nonatomic ) NSString * fragment;
+@property ( readonly,getter = parameterString,setter = &lt;null selector&gt;,nonatomic ) NSString * parameterString;
+@property ( readonly,getter = query,setter = &lt;null selector&gt;,nonatomic ) NSString * query;
+@property ( readonly,getter = relativePath,setter = &lt;null selector&gt;,nonatomic ) NSString * relativePath;
+@property ( readonly,getter = fileSystemRepresentation,setter = &lt;null selector&gt; ) const char * fileSystemRepresentation;
+@property ( readonly,getter = isFileURL,setter = &lt;null selector&gt;,readwrite ) BOOL fileURL;
+@property ( readonly,getter = standardizedURL,setter = &lt;null selector&gt;,nonatomic ) NSURL * standardizedURL;
+@property ( readonly,getter = filePathURL,setter = &lt;null selector&gt;,nonatomic ) NSURL * filePathURL;
+@end"
+</code></pre>
+
+<p>可以看到，输出结果中列出了NSURL的一些成员变量及属性信息。</p>
+
+<p>image命令还有许多其它功能，具体可以参考<a href="https://developer.apple.com/library/mac/documentation/IDEs/Conceptual/gdb_to_lldb_transition_guide/document/lldb-command-examples.html#//apple_ref/doc/uid/TP40012917-CH3-SW5">Executable and Shared Library Query Commands</a>。</p>
+
+<h3>流程控制</h3>
+
+<p>流程控制的命令实际上我们在上一小节已经讲过了，在Xcode的控制面板中同样可以使用这些命令，在此不在重复。</p>
+
+<h2>命令别名及帮助系统</h2>
+
+<p>LLDB有两个非常有用的特性，即命令别名及帮助。</p>
+
+<h3>命令别名</h3>
+
+<p>我们可以使用LLDB的别名机制来为常用的命令创建一个别名，以方便我们的使用，如下命令：</p>
+
+<pre><code>(lldb) breakpoint set --file foo.c --line 12
+</code></pre>
+
+<p>如果在我们的调试中需要经常用到这条命令，则每次输入这么一长串的字符一定会很让人抓狂。此时，我们就可以为这条命令创建一个别名，如下所示：</p>
+
+<pre><code>(lldb) command alias bfl breakpoint set -f %1 -l %2
+</code></pre>
+
+<p>这样，我们只需要按如下方式来使用它即可：</p>
+
+<pre><code>(lldb) bfl foo.c 12
+</code></pre>
+
+<p>是不是简单多了？</p>
+
+<p>我们可以自由地创建LLDB命令的别名集合。LLDB在启动时会读取~/.lldbinit文件。这个文件中存储了command alias命令创建的别名。LLDB帮助系统会读取这个初始化文件并会列出这些别名，以让我们了解自己所设置的别名。我们可以使用&#8221;help -a&#8221;命令并在输出的后面来查看这边别名，其以下面这行开始：</p>
+
+<pre><code>...
+The following is a list of your current command abbreviations (see 'help command alias' for more info): ...
+</code></pre>
+
+<p>如果我们不喜欢已有命令的别名，则可以使用以下命令来取消这个别名：</p>
+
+<pre><code>(lldb) command unalias b
+</code></pre>
+
+<h3>帮助系统</h3>
+
+<p>LLDB帮助系统让我们可以了解LLDB提供了哪些功能，并可以查看LLDB命令结构的详细信息。熟悉帮助系统可以让我们访问帮助系统中中命令文档。</p>
+
+<p>我们可以简单地调用help命令来列出LLDB所有的顶层命令。如下所示：</p>
+
+<pre><code>(lldb) help
+The following is a list of built-in, permanent debugger commands:
+
+_regexp-attach    -- Attach to a process id if in decimal, otherwise treat the
+                     argument as a process name to attach to.
+_regexp-break     -- Set a breakpoint using a regular expression to specify the
+                     location, where &lt;linenum&gt; is in decimal and &lt;address&gt; is
+                     in hex.
+_regexp-bt        -- Show a backtrace.  An optional argument is accepted; if
+                     that argument is a number, it specifies the number of
+                     frames to display.  If that argument is 'all', full
+                     backtraces of all threads are displayed.
+ … and so forth …
+</code></pre>
+
+<p>如果help后面跟着某个特定的命令，则会列出该命令相关的所有信息，我们以breakpoint set为例，输出信息如下：</p>
+
+<pre><code>(lldb) help breakpoint set
+     Sets a breakpoint or set of breakpoints in the executable.
+
+Syntax: breakpoint set &lt;cmd-options&gt;
+
+Command Options Usage:
+  breakpoint set [-Ho] -l &lt;linenum&gt; [-s &lt;shlib-name&gt;] [-i &lt;count&gt;] [-c &lt;expr&gt;] [-x &lt;thread-index&gt;] [-t &lt;thread-id&gt;] [-T &lt;thread-name&gt;] [-q &lt;queue-name&gt;] [-f &lt;filename&gt;] [-K &lt;boolean&gt;]
+  breakpoint set [-Ho] -a &lt;address-expression&gt; [-s &lt;shlib-name&gt;] [-i &lt;count&gt;] [-c &lt;expr&gt;] [-x &lt;thread-index&gt;] [-t &lt;thread-id&gt;] [-T &lt;thread-name&gt;] [-q &lt;queue-name&gt;]
+  breakpoint set [-Ho] -n &lt;function-name&gt; [-s &lt;shlib-name&gt;] [-i &lt;count&gt;] [-c &lt;expr&gt;] [-x &lt;thread-index&gt;] [-t &lt;thread-id&gt;] [-T &lt;thread-name&gt;] [-q &lt;queue-name&gt;] [-f &lt;filename&gt;] [-K &lt;boolean&gt;] [-L &lt;language&gt;]
+  breakpoint set [-Ho] -F &lt;fullname&gt; [-s &lt;shlib-name&gt;] [-i &lt;count&gt;] [-c &lt;expr&gt;] [-x &lt;thread-index&gt;] [-t &lt;thread-id&gt;] [-T &lt;thread-name&gt;] [-q &lt;queue-name&gt;] [-f &lt;filename&gt;] [-K &lt;boolean&gt;]
+
+ … and so forth …
+</code></pre>
+
+<p>还有一种更直接的方式来查看LLDB有哪些功能，即使用apropos命令：它会根据关键字来搜索LLDB帮助文档，并为每个命令选取一个帮助字符串，我们以apropos file为例，其输出如下：</p>
+
+<pre><code>(lldb) apropos file
+The following commands may relate to 'file':
+…
+log enable                     -- Enable logging for a single log channel.
+memory read                    -- Read from the memory of the process being
+                                  debugged.
+memory write                   -- Write to the memory of the process being
+                                  debugged.
+platform process launch        -- Launch a new process on a remote platform.
+platform select                -- Create a platform if needed and select it as
+                                  the current platform.
+plugin load                    -- Import a dylib that implements an LLDB
+                                  plugin.
+process launch                 -- Launch the executable in the debugger.
+process load                   -- Load a shared library into the current
+                                  process.
+source                         -- A set of commands for accessing source file
+                                  information
+… and so forth …
+</code></pre>
+
+<p>我们还可以使用help来了解一个命令别名的构成。如：</p>
+
+<pre><code>(lldb) help b
+…
+'b' is an abbreviation for '_regexp-break'
+</code></pre>
+
+<p>help命令的另一个特性是可以查看某个具体参数的使用，我们以&#8221;break command add&#8221;命令为例：</p>
+
+<pre><code>(lldb) help break command add
+Add a set of commands to a breakpoint, to be executed whenever the breakpoint is hit.
+
+Syntax: breakpoint command add &lt;cmd-options&gt; &lt;breakpt-id&gt;
+etc...
+</code></pre>
+
+<p>如果想了解以上输出的参数&lt;breakpt-id>的作用，我们可以在help后面直接指定这个参数(将其放在尖括号内)来查询它的详细信息，如下所示：</p>
+
+<pre><code>(lldb) help &lt;breakpt-id&gt;
+
+&lt;breakpt-id&gt; -- Breakpoint IDs consist major and minor numbers; the major
+etc...
+</code></pre>
+
+<p>帮助系统能让我们快速地了解一个LLDB命令的使用方法。经常使用它，可以让我们更快地熟悉LLDB的各项功能，所以建议多使用它。</p>
+
+<h2>总结</h2>
+
+<p>LLDB带给我们强大的调试功能，在调试过程中充分地利用它可以帮助我们极大地提高调试效率。我们可以不用写那么多的NSLog来打印一大堆的日志。所以建议在日常工作中多去使用它。当然，上面的命令只是LLDB的冰山一角，更多的使用还需要大家自己去发掘，在此只是抛砖引玉，做了一些整理。</p>
+
+<h2>参考</h2>
+
+<ol>
+<li><a href="http://lldb.llvm.org/tutorial.html">The LLDB Debugger</a></li>
+<li><a href="https://developer.apple.com/library/mac/documentation/IDEs/Conceptual/gdb_to_lldb_transition_guide/document/Introduction.html">LLDB Quick Start Guide</a></li>
+<li><a href="http://www.cocoachina.com/ios/20141219/10709.html">与调试器共舞 &ndash; LLDB 的华尔兹</a></li>
+<li><a href="http://www.starfelix.com/blog/2014/03/17/lldbdiao-shi-ming-ling-chu-tan/">LLDB调试命令初探</a></li>
+<li><a href="http://www.cocoachina.com/ios/20140530/8619.html">NSLog效率低下的原因及尝试lldb断点打印Log</a></li>
+</ol>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">南峰子</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-01-25T21:33:25+08:00" pubdate data-updated="true">Jan 25<sup>th</sup>, 2015</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/ios/'>ios</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/01/11/yuan-ma-pian-:mantle/" title="Previous Post: 源码篇：Mantle">&laquo; 源码篇：Mantle</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2015/01/31/nsobjectzhi-%5B%3F%5D/" title="Next Post: NSObject之一">NSObject之一 &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+
+
+<section>
+    <h1>Comments</h1>
+    <div id="comments" aria-live="polite"><!-- Duoshuo Comment BEGIN -->
+<div class="ds-thread" data-title="工具篇：LLDB调试器"></div>
+<script type="text/javascript">
+    var duoshuoQuery = {short_name:"southpeak"};
+    (function() {
+     var ds = document.createElement('script');
+     ds.type = 'text/javascript';ds.async = true;
+     ds.src = 'http://static.duoshuo.com/embed.js';
+     ds.charset = 'UTF-8';
+     (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+     })();
+</script>
+<!-- Duoshuo Comment END --></div>
+</section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+<section>
+<h1>分类</h1>
+<ul>
+  <li><a href='/blog/categories/ios'>ios (65)</a></li>
+  <li><a href='/blog/categories/network'>network (3)</a></li>
+  <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
+  <li><a href='/blog/categories/swift'>swift (7)</a></li>
+  <li><a href='/blog/categories/system'>system (1)</a></li>
+  <li><a href='/blog/categories/网络'>网络 (8)</a></li>
+</ul>
+</section>
+
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/05/31/ioszhi-shi-xiao-ji-di-er-qi-2015-dot-05-dot-31/">iOS知识小集 第二期(2015.05.31)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/05/10/ioszhi-shi-xiao-ji-di-%5B%3F%5D-qi-2015-dot-05-dot-10/">iOS知识小集 第一期(2015.05.10)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/04/23/nskeyvalueobserving-kvo/">NSKeyValueObserving(KVO)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/24/yuan-ma-pian-:mbprogresshud/">源码篇：MBProgressHUD</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/20/nsnotificationcenter/">NSNotificationCenter</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/14/nsnotificationyu-duo-xian-cheng/">Notification与多线程</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/07/uiresponder/">UIResponder</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/01/fan-yi-pian-:ios-8-handoff-tutorial/">翻译篇：iOS 8 Handoff Tutorial</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/11/nscache/">NSCache</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/07/yuan-ma-pian-:sdwebimage/">源码篇：SDWebImage</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2015 - 南峰子 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

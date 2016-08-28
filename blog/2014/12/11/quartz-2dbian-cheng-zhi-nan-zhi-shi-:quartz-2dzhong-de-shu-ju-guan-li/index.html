@@ -1,0 +1,348 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Quartz 2D编程指南之十：Quartz 2D中的数据管理 - 南峰子的技术博客</title>
+  <meta name="author" content="南峰子">
+      
+  <meta name="baidu-site-verification" content="HoscFhWICI" />
+
+  
+  <meta name="description" content="管理数据是每一个图形应用程序所需要处理的工作。对于Quartz来说，数据管理涉及为Quartz 2D程序提供数据，及从中获取数据。一些Quartz 2D程序将数据传输到Quartz中，如从文件或程序其它部分获取图片或PDF数据。另一些程序则获取Quartz数据，如将图像或PDF数据写入到文件， &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://southpeak.github.io/blog/2014/12/11/quartz-2dbian-cheng-zhi-nan-zhi-shi-:quartz-2dzhong-de-shu-ju-guan-li">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="南峰子的技术博客" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <!-- <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script> -->
+  <!-- googleapis is fucked by gfw -->
+  <script src="http://cdn.staticfile.org/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<!--<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">-->
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">南峰子的技术博客</a></h1>
+  
+    <h2>攀登，一步一个脚印，方能知其乐</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:southpeak.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/categories/ios">iOS开发</a></li>
+  <li><a href="/blog/archives">所有文章</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Quartz 2D编程指南之十：Quartz 2D中的数据管理</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-12-11T09:19:08+08:00" pubdate data-updated="true">Dec 11<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>管理数据是每一个图形应用程序所需要处理的工作。对于Quartz来说，数据管理涉及为Quartz 2D程序提供数据，及从中获取数据。一些Quartz 2D程序将数据传输到Quartz中，如从文件或程序其它部分获取图片或PDF数据。另一些程序则获取Quartz数据，如将图像或PDF数据写入到文件，或提供给程序其它部分这些数据。</p>
+
+<p>Quartz提供了一系列的函数来管理数据。通过学习本章，我们可以了解到哪些函数是最适合我们的程序的。</p>
+
+<pre><code>注：我们推荐使用图像I/O框架来读取和写入数据，该框架在iOS 4、Mac OS X 10.4或者更高版本中可用。查看《Image I/OProgramming Guide 》可以获取更多关于CGImageSourceRef和CGImageDestinationRef的信息。图像源和目标不仅提供了访问图像数据的方法，不提供了更多访问图像原数据的方法。
+</code></pre>
+
+<p>Quartz可识别三种类型的数据源和目标：</p>
+
+<ol>
+<li>URL：通过URL指定的数据可以作为数据的提供者和接收者。我们使用Core Foundation数据类型CFURLRef作为参数传递给Quartz函数。</li>
+<li>CFData：Core Foundation数据类型CFDataRef和CFMutableDataRef可简化Core Foundation对象的内存分配行为。CFData是一个”toll-freebridged”类，CocoaFoundation中对应的类是NSData；如果在Quartz 2D中使用Cocoa框架，你可以传递一个NSData对象给Quartz方法，以取代CFData对象。</li>
+<li>原始数据：我们可以提供一个指向任何类型数据的指针，连同处理这些数据基本内存管理的回调函数集合。</li>
+</ol>
+
+
+<p>这些数据，无论是URL、CFData对象，还是数据缓存，都可以是图像数据或PDF数据。图像数据可以是任何格式的数据。Quartz能够解析大部分常用的图像文件格式。一些Quartz数据管理函数专门用于处理图像数据，一些只处理PDF数据，还有一些可同时处理PDF和图像数据。</p>
+
+<p>URL，CFData和原始数据源和目标中的数据都是在Mac OS X 或者iOS图像领域范围之外的，如图10-1所示。Mac OS X或iOS的其它图像技术通常会提供它们自己的方式来和Quartz通信。例如，一个Mac OS X 应用程序可以传输一个Quartz图像给Core Image，并使用Core Image来实现更复杂的效果。</p>
+
+<p>Figure 10-1  Moving data to and from Quartz 2D in Mac OS X</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/movingdata.gif" alt="image" /></p>
+
+<h2>传输数据给Quartz 2D</h2>
+
+<p>表10-1列出了从数据源获取数据的方法。所有的这些函数，除了CGPDFDocumentCreateWithURL，都返回一个图像源(CGImageSourceRef)或者数据提供者(CGDataProviderRef)。图像源和数据提供者抽象了数据访问工作，并避免了程序去管理原始内存缓存。</p>
+
+<p>图像源是将图像数据传输给Quartz的首先方式。图像源可表示很多种图像数据。一个图像源可表示多于一个图像，也可表示缩略图、图像的属性和图像文件。当我们拥有CGImageSourceRef对象后，我们可以完成如下工作：</p>
+
+<ol>
+<li>使用函数CGImageSourceCreateImageAtIndex,CGImageSourceCreateThumbnailAtIndex, CGImageSourceCreateIncremental创建图像(CGImageRef). 一个CGImageRef数据类型表示一个单独的Quartz图像。</li>
+<li>通过函数CGImageSourceUpdateData或CGImageSourceUpdateDataProvider来添加内容到图像源中。</li>
+<li>使用函数CGImageSourceGetCount, CGImageSourceCopyProperties和CGImageSourceCopyTypeIdentifiers获取图像源的信息。</li>
+</ol>
+
+
+<p>CFPDFDocumentCreateWithURL函数可以方便地从URL指定的文件创建PDF文档。</p>
+
+<p>数据提供者是比较老的机制，它有很多限制。它们可用于获取图像或PDF数据。</p>
+
+<p>我们可以将数据提供者用于：</p>
+
+<ol>
+<li>一个图像创建函数，如CGImageCreate,CGImageCreateWithPNGDataProvider或者CGImageCreateWithJPEGDataProvider。</li>
+<li>PDF文档的创建函数CGPDFDocumentCreateWithProvider.</li>
+<li>函数CGImageSourceUpdateDataProvider用于更新已存在的图像源。</li>
+</ol>
+
+
+<p>关于图像的更多信息，可查看“Bitmap Images andImage Masks”。</p>
+
+<p><img src="http://cc.cocimg.com/bbs/attachment/thumb/Fid_6/6_38018_23d72ec7c568bf5.png" alt="image" /></p>
+
+<h2>获取Quartz 2D的数据</h2>
+
+<p>表10-2列出地从Quartz 2D中获取数据的方法。所有这些方法，除了CGPDFContextCreateWithURL，都返回一个图像目标(CGImageDestinationRef)或者是数据消费者(CGDataComsumerRef)。图像目标和数据消费者抽象的数据写入工作，让Quartz来处理细节。</p>
+
+<p>一个图像目标是获取Quartz数据的首先方法。与图像源一样，图像目标也可以表示很多图像数据，如一个单独图片、多个图片、缩略图、图像属性或者图片文件。在获取到CGImageDestinationRef后，我们可以完成以下工作：</p>
+
+<ol>
+<li>使用函数CGImageDestinationAddImage或者CGImageDestinationAddImageFromSource添加一个图像(CGImageRef)到目标中。一个CGImageRef表示一个图片。</li>
+<li>使用函数CGImageDestinationSetProperties设置属性</li>
+<li>使用函数CGImageDestinationCopyTypeIdentifiers和CGImageDestinationGetTypeID从图像目标中获取信息。</li>
+</ol>
+
+
+<p>函数CGPDFContextCreateWithURL可以方便地将PDF数据写入URL指定的位置。</p>
+
+<p>数据消费者是一种老的机制，有很多限制。它们用于写图像或PDF数据。我们可以将数据消费者用于：</p>
+
+<ol>
+<li>PDF上下文创建函数CGPDFContextCreate。该函数返回一个图形上下文，用于记录一系列的PDF绘制命令。</li>
+<li>函数CGImageDestinationCreateWithDataConsumer，用于从数据消费者中创建图像目标。</li>
+</ol>
+
+
+<p>关于图像的更多信息，可查看“Bitmap Images andImage Masks”。</p>
+
+<p><img src="http://cc.cocimg.com/bbs/attachment/thumb/Fid_6/6_38018_ad38140dfa05446.png" alt="image" /></p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">南峰子</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-12-11T09:19:08+08:00" pubdate data-updated="true">Dec 11<sup>th</sup>, 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/ios/'>ios</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/12/10/quartz-2dbian-cheng-zhi-nan-zhi-jiu-:tou-ming-ceng/" title="Previous Post: Quartz 2D编程指南之九：透明层">&laquo; Quartz 2D编程指南之九：透明层</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2015/01/05/quartz-2dbian-cheng-zhi-nan-zhi-shi-%5B%3F%5D-:wei-tu-yu-tu-xiang-zhe-zhao/" title="Next Post: Quartz 2D编程指南之十一：位图与图像遮罩">Quartz 2D编程指南之十一：位图与图像遮罩 &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+
+
+<section>
+    <h1>Comments</h1>
+    <div id="comments" aria-live="polite"><!-- Duoshuo Comment BEGIN -->
+<div class="ds-thread" data-title="Quartz 2D编程指南之十：Quartz 2D中的数据管理"></div>
+<script type="text/javascript">
+    var duoshuoQuery = {short_name:"southpeak"};
+    (function() {
+     var ds = document.createElement('script');
+     ds.type = 'text/javascript';ds.async = true;
+     ds.src = 'http://static.duoshuo.com/embed.js';
+     ds.charset = 'UTF-8';
+     (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+     })();
+</script>
+<!-- Duoshuo Comment END --></div>
+</section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+<section>
+<h1>分类</h1>
+<ul>
+  <li><a href='/blog/categories/ios'>ios (65)</a></li>
+  <li><a href='/blog/categories/network'>network (3)</a></li>
+  <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
+  <li><a href='/blog/categories/swift'>swift (7)</a></li>
+  <li><a href='/blog/categories/system'>system (1)</a></li>
+  <li><a href='/blog/categories/网络'>网络 (8)</a></li>
+</ul>
+</section>
+
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/05/31/ioszhi-shi-xiao-ji-di-er-qi-2015-dot-05-dot-31/">iOS知识小集 第二期(2015.05.31)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/05/10/ioszhi-shi-xiao-ji-di-%5B%3F%5D-qi-2015-dot-05-dot-10/">iOS知识小集 第一期(2015.05.10)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/04/23/nskeyvalueobserving-kvo/">NSKeyValueObserving(KVO)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/24/yuan-ma-pian-:mbprogresshud/">源码篇：MBProgressHUD</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/20/nsnotificationcenter/">NSNotificationCenter</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/14/nsnotificationyu-duo-xian-cheng/">Notification与多线程</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/07/uiresponder/">UIResponder</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/01/fan-yi-pian-:ios-8-handoff-tutorial/">翻译篇：iOS 8 Handoff Tutorial</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/11/nscache/">NSCache</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/07/yuan-ma-pian-:sdwebimage/">源码篇：SDWebImage</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2015 - 南峰子 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,526 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Objective-C Runtime 运行时之六：拾遗 - 南峰子的技术博客</title>
+  <meta name="author" content="南峰子">
+      
+  <meta name="baidu-site-verification" content="HoscFhWICI" />
+
+  
+  <meta name="description" content="前面几篇基本介绍了runtime中的大部分功能，包括对类与对象、成员变量与属性、方法与消息、分类与协议的处理。runtime大部分的功能都是围绕这几点来实现的。 本章的内容并不算重点，主要针对前文中对Objective-C Runtime Reference内容遗漏的地方做些补充。 &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://southpeak.github.io/blog/2014/11/09/objective-c-runtime-yun-xing-shi-zhi-liu-:shi-yi">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="南峰子的技术博客" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <!-- <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script> -->
+  <!-- googleapis is fucked by gfw -->
+  <script src="http://cdn.staticfile.org/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<!--<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">-->
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">南峰子的技术博客</a></h1>
+  
+    <h2>攀登，一步一个脚印，方能知其乐</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:southpeak.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/categories/ios">iOS开发</a></li>
+  <li><a href="/blog/archives">所有文章</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Objective-C Runtime 运行时之六：拾遗</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-11-09T14:44:53+08:00" pubdate data-updated="true">Nov 9<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>前面几篇基本介绍了runtime中的大部分功能，包括对类与对象、成员变量与属性、方法与消息、分类与协议的处理。runtime大部分的功能都是围绕这几点来实现的。</p>
+
+<p>本章的内容并不算重点，主要针对前文中对Objective-C Runtime Reference内容遗漏的地方做些补充。当然这并不能包含所有的内容。runtime还有许多内容，需要读者去研究发现。</p>
+
+<h2>super</h2>
+
+<p>在Objective-C中，如果我们需要在类的方法中调用父类的方法时，通常都会用到super，如下所示：</p>
+
+<pre><code>@interface MyViewController: UIViewController
+
+@end
+
+@implementation MyViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    // do something
+    ...
+}
+
+@end
+</code></pre>
+
+<p>如何使用super我们都知道。现在的问题是，它是如何工作的呢？</p>
+
+<p>首先我们需要知道的是super与self不同。self是类的一个隐藏参数，每个方法的实现的第一个参数即为self。而super并不是隐藏参数，它实际上只是一个&#8221;编译器标示符&#8221;，它负责告诉编译器，当调用viewDidLoad方法时，去调用父类的方法，而不是本类中的方法。而它实际上与self指向的是相同的消息接收者。为了理解这一点，我们先来看看super的定义：</p>
+
+<pre><code>struct objc_super { id receiver; Class superClass; };
+</code></pre>
+
+<p>这个结构体有两个成员：</p>
+
+<ol>
+<li>receiver：即消息的实际接收者</li>
+<li>superClass：指针当前类的父类</li>
+</ol>
+
+
+<p>当我们使用super来接收消息时，编译器会生成一个objc_super结构体。就上面的例子而言，这个结构体的receiver就是MyViewController对象，与self相同；superClass指向MyViewController的父类UIViewController。</p>
+
+<p>接下来，发送消息时，不是调用objc_msgSend函数，而是调用objc_msgSendSuper函数，其声明如下：</p>
+
+<pre><code>id objc_msgSendSuper ( struct objc_super *super, SEL op, ... );
+</code></pre>
+
+<p>该函数第一个参数即为前面生成的objc_super结构体，第二个参数是方法的selector。该函数实际的操作是：从objc_super结构体指向的superClass的方法列表开始查找viewDidLoad的selector，找到后以objc->receiver去调用这个selector，而此时的操作流程就是如下方式了</p>
+
+<pre><code>objc_msgSend(objc_super-&gt;receiver, @selector(viewDidLoad))
+</code></pre>
+
+<p>由于objc_super->receiver就是self本身，所以该方法实际与下面这个调用是相同的：</p>
+
+<pre><code>objc_msgSend(self, @selector(viewDidLoad))
+</code></pre>
+
+<p>为了便于理解，我们看以下实例：</p>
+
+<pre><code>@interface MyClass : NSObject
+
+@end
+
+@implementation MyClass
+
+- (void)test {
+    NSLog(@"self class: %@", self.class);
+    NSLog(@"super class: %@", super.class);
+}
+
+@end
+</code></pre>
+
+<p>调用MyClass的test方法后，其输出是：</p>
+
+<pre><code>2014-11-08 15:55:03.256 [824:209297] self class: MyClass
+2014-11-08 15:55:03.256 [824:209297] super class: MyClass
+</code></pre>
+
+<p>从上例中可以看到，两者的输出都是MyClass。大家可以自行用上面介绍的内容来梳理一下。</p>
+
+<h2>库相关操作</h2>
+
+<p>库相关的操作主要是用于获取由系统提供的库相关的信息，主要包含以下函数：</p>
+
+<pre><code>// 获取所有加载的Objective-C框架和动态库的名称
+const char ** objc_copyImageNames ( unsigned int *outCount );
+
+// 获取指定类所在动态库
+const char * class_getImageName ( Class cls );
+
+// 获取指定库或框架中所有类的类名
+const char ** objc_copyClassNamesForImage ( const char *image, unsigned int *outCount );
+</code></pre>
+
+<p>通过这几个函数，我们可以了解到某个类所有的库，以及某个库中包含哪些类。如下代码所示：</p>
+
+<pre><code>NSLog(@"获取指定类所在动态库");
+
+NSLog(@"UIView's Framework: %s", class_getImageName(NSClassFromString(@"UIView")));
+
+NSLog(@"获取指定库或框架中所有类的类名");
+const char ** classes = objc_copyClassNamesForImage(class_getImageName(NSClassFromString(@"UIView")), &amp;outCount);
+for (int i = 0; i &lt; outCount; i++) {
+    NSLog(@"class name: %s", classes[i]);
+}
+</code></pre>
+
+<p>其输出结果如下：</p>
+
+<pre><code>2014-11-08 12:57:32.689 [747:184013] 获取指定类所在动态库
+2014-11-08 12:57:32.690 [747:184013] UIView's Framework: /System/Library/Frameworks/UIKit.framework/UIKit
+2014-11-08 12:57:32.690 [747:184013] 获取指定库或框架中所有类的类名
+2014-11-08 12:57:32.691 [747:184013] class name: UIKeyboardPredictiveSettings
+2014-11-08 12:57:32.691 [747:184013] class name: _UIPickerViewTopFrame
+2014-11-08 12:57:32.691 [747:184013] class name: _UIOnePartImageView
+2014-11-08 12:57:32.692 [747:184013] class name: _UIPickerViewSelectionBar
+2014-11-08 12:57:32.692 [747:184013] class name: _UIPickerWheelView
+2014-11-08 12:57:32.692 [747:184013] class name: _UIPickerViewTestParameters
+......
+</code></pre>
+
+<h2>块操作</h2>
+
+<p>我们都知道block给我们带到极大的方便，苹果也不断提供一些使用block的新的API。同时，苹果在runtime中也提供了一些函数来支持针对block的操作，这些函数包括：</p>
+
+<pre><code>// 创建一个指针函数的指针，该函数调用时会调用特定的block
+IMP imp_implementationWithBlock ( id block );
+
+// 返回与IMP(使用imp_implementationWithBlock创建的)相关的block
+id imp_getBlock ( IMP anImp );
+
+// 解除block与IMP(使用imp_implementationWithBlock创建的)的关联关系，并释放block的拷贝
+BOOL imp_removeBlock ( IMP anImp );
+</code></pre>
+
+<p>● imp_implementationWithBlock函数：参数block的签名必须是method_return_type ^(id self, method_args …)形式的。该方法能让我们使用block作为IMP。如下代码所示：</p>
+
+<pre><code>@interface MyRuntimeBlock : NSObject
+
+@end
+
+@implementation MyRuntimeBlock
+
+@end
+
+// 测试代码
+IMP imp = imp_implementationWithBlock(^(id obj, NSString *str) {
+    NSLog(@"%@", str);
+});
+
+class_addMethod(MyRuntimeBlock.class, @selector(testBlock:), imp, "v@:@");
+
+MyRuntimeBlock *runtime = [[MyRuntimeBlock alloc] init];
+[runtime performSelector:@selector(testBlock:) withObject:@"hello world!"];
+</code></pre>
+
+<p>输出结果是</p>
+
+<pre><code>2014-11-09 14:03:19.779 [1172:395446] hello world!
+</code></pre>
+
+<h2>弱引用操作</h2>
+
+<pre><code>// 加载弱引用指针引用的对象并返回
+id objc_loadWeak ( id *location );
+
+// 存储__weak变量的新值
+id objc_storeWeak ( id *location, id obj );
+</code></pre>
+
+<p>● objc_loadWeak函数：该函数加载一个弱指针引用的对象，并在对其做retain和autoreleasing操作后返回它。这样，对象就可以在调用者使用它时保持足够长的生命周期。该函数典型的用法是在任何有使用__weak变量的表达式中使用。</p>
+
+<p>● objc_storeWeak函数：该函数的典型用法是用于__weak变量做为赋值对象时。</p>
+
+<p>这两个函数的具体实施在此不举例，有兴趣的小伙伴可以参考《Objective-C高级编程：iOS与OS X多线程和内存管理》中对__weak实现的介绍。</p>
+
+<h2>宏定义</h2>
+
+<p>在runtime中，还定义了一些宏定义供我们使用，有些值我们会经常用到，如表示BOOL值的YES/NO；而有些值不常用，如OBJC_ROOT_CLASS。在此我们做一个简单的介绍。</p>
+
+<h3>布尔值</h3>
+
+<pre><code>#define YES  (BOOL)1
+#define NO   (BOOL)0
+</code></pre>
+
+<p>这两个宏定义定义了表示布尔值的常量，需要注意的是YES的值是1，而不是非0值。</p>
+
+<h3>空值</h3>
+
+<pre><code>#define nil  __DARWIN_NULL
+#define Nil  __DARWIN_NULL
+</code></pre>
+
+<p>其中nil用于空的实例对象，而Nil用于空类对象。</p>
+
+<h3>分发函数原型</h3>
+
+<pre><code>#define OBJC_OLD_DISPATCH_PROTOTYPES  1
+</code></pre>
+
+<p>该宏指明分发函数是否必须转换为合适的函数指针类型。当值为0时，必须进行转换</p>
+
+<h3>Objective-C根类</h3>
+
+<pre><code>#define OBJC_ROOT_CLASS 
+</code></pre>
+
+<p>如果我们定义了一个Objective-C根类，则编译器会报错，指明我们定义的类没有指定一个基类。这种情况下，我们就可以使用这个宏定义来避过这个编译错误。该宏在iOS 7.0后可用。</p>
+
+<p>其实在NSObject的声明中，我们就可以看到这个宏的身影，如下所示：</p>
+
+<pre><code>__OSX_AVAILABLE_STARTING(__MAC_10_0, __IPHONE_2_0)
+OBJC_ROOT_CLASS
+OBJC_EXPORT
+@interface NSObject &lt;NSObject&gt; {
+    Class isa  OBJC_ISA_AVAILABILITY;
+}
+</code></pre>
+
+<p>我们可以参考这种方式来定义我们自己的根类。</p>
+
+<h3>局部变量存储时长</h3>
+
+<pre><code>#define NS_VALID_UNTIL_END_OF_SCOPE 
+</code></pre>
+
+<p>该宏表明存储在某些局部变量中的值在优化时不应该被编译器强制释放。</p>
+
+<p>我们将局部变量标记为id类型或者是指向ObjC对象类型的指针，以便存储在这些局部变量中的值在优化时不会被编译器强制释放。相反，这些值会在变量再次被赋值之前或者局部变量的作用域结束之前都会被保存。</p>
+
+<h3>关联对象行为</h3>
+
+<pre><code>enum {
+   OBJC_ASSOCIATION_ASSIGN  = 0,
+   OBJC_ASSOCIATION_RETAIN_NONATOMIC  = 1,
+   OBJC_ASSOCIATION_COPY_NONATOMIC  = 3,
+   OBJC_ASSOCIATION_RETAIN  = 01401,
+   OBJC_ASSOCIATION_COPY  = 01403
+};
+</code></pre>
+
+<p>这几个值在前面已介绍过，在此不再重复。</p>
+
+<h2>总结</h2>
+
+<p>至此，本系列对runtime的整理已完结。当然这只是对runtime的一些基础知识的归纳，力图起个抛砖引玉的作用。还有许多关于runtime有意思东西还需要读者自己去探索发现。</p>
+
+<p><strong><em>注：如有不对之处，还请指正，欢迎加QQ好友：1318202110(南峰子)</em></strong></p>
+
+<h2>参考</h2>
+
+<ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/ObjCRuntimeRef/">Objective-C Runtime Reference</a></li>
+<li><a href="http://blog.csdn.net/itianyi/article/details/8678452">iOS:Objective-C中Self和Super详解</a></li>
+<li><a href="http://www.cocoachina.com/industry/20130819/6824.html">Objective-C的动态特性</a></li>
+</ol>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">南峰子</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-11-09T14:44:53+08:00" pubdate data-updated="true">Nov 9<sup>th</sup>, 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/ios/'>ios</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/11/08/objective-c-runtime-yun-xing-shi-zhi-wu-:xie-yi-yu-fen-lei/" title="Previous Post: Objective-C Runtime 运行时之五：协议与分类">&laquo; Objective-C Runtime 运行时之五：协议与分类</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2014/11/10/quartz-2dbian-cheng-zhi-nan-zhi-%5B%3F%5D-:gai-lan/" title="Next Post: Quartz 2D编程指南之一：概览">Quartz 2D编程指南之一：概览 &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+
+
+<section>
+    <h1>Comments</h1>
+    <div id="comments" aria-live="polite"><!-- Duoshuo Comment BEGIN -->
+<div class="ds-thread" data-title="Objective-C Runtime 运行时之六：拾遗"></div>
+<script type="text/javascript">
+    var duoshuoQuery = {short_name:"southpeak"};
+    (function() {
+     var ds = document.createElement('script');
+     ds.type = 'text/javascript';ds.async = true;
+     ds.src = 'http://static.duoshuo.com/embed.js';
+     ds.charset = 'UTF-8';
+     (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+     })();
+</script>
+<!-- Duoshuo Comment END --></div>
+</section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+<section>
+<h1>分类</h1>
+<ul>
+  <li><a href='/blog/categories/ios'>ios (65)</a></li>
+  <li><a href='/blog/categories/network'>network (3)</a></li>
+  <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
+  <li><a href='/blog/categories/swift'>swift (7)</a></li>
+  <li><a href='/blog/categories/system'>system (1)</a></li>
+  <li><a href='/blog/categories/网络'>网络 (8)</a></li>
+</ul>
+</section>
+
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/05/31/ioszhi-shi-xiao-ji-di-er-qi-2015-dot-05-dot-31/">iOS知识小集 第二期(2015.05.31)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/05/10/ioszhi-shi-xiao-ji-di-%5B%3F%5D-qi-2015-dot-05-dot-10/">iOS知识小集 第一期(2015.05.10)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/04/23/nskeyvalueobserving-kvo/">NSKeyValueObserving(KVO)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/24/yuan-ma-pian-:mbprogresshud/">源码篇：MBProgressHUD</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/20/nsnotificationcenter/">NSNotificationCenter</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/14/nsnotificationyu-duo-xian-cheng/">Notification与多线程</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/07/uiresponder/">UIResponder</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/01/fan-yi-pian-:ios-8-handoff-tutorial/">翻译篇：iOS 8 Handoff Tutorial</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/11/nscache/">NSCache</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/07/yuan-ma-pian-:sdwebimage/">源码篇：SDWebImage</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2015 - 南峰子 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

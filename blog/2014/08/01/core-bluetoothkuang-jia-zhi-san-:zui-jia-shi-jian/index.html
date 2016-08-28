@@ -1,0 +1,420 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Core Bluetooth框架之三：最佳实践 - 南峰子的技术博客</title>
+  <meta name="author" content="南峰子">
+      
+  <meta name="baidu-site-verification" content="HoscFhWICI" />
+
+  
+  <meta name="description" content="在iOS设备中使用BLE时，无论是将其作为central端还是peripheral端，其在通信时都会使用设备自身的无线电来发送信号。考虑到其它形式的无线通信也需要使用无线电，因此开发程序时应该尽量少使用无线电。另外，这对于设备电池的寿命及程序的性能也有所帮助。以此为出发点， &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://southpeak.github.io/blog/2014/08/01/core-bluetoothkuang-jia-zhi-san-:zui-jia-shi-jian">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="南峰子的技术博客" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <!-- <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script> -->
+  <!-- googleapis is fucked by gfw -->
+  <script src="http://cdn.staticfile.org/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<!--<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">-->
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">南峰子的技术博客</a></h1>
+  
+    <h2>攀登，一步一个脚印，方能知其乐</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:southpeak.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/categories/ios">iOS开发</a></li>
+  <li><a href="/blog/archives">所有文章</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Core Bluetooth框架之三：最佳实践</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-08-01T23:03:22+08:00" pubdate data-updated="true">Aug 1<sup>st</sup>, 2014</time>
+        
+        
+           | <a href="#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>在iOS设备中使用BLE时，无论是将其作为central端还是peripheral端，其在通信时都会使用设备自身的无线电来发送信号。考虑到其它形式的无线通信也需要使用无线电，因此开发程序时应该尽量少使用无线电。另外，这对于设备电池的寿命及程序的性能也有所帮助。以此为出发点，我们将介绍一些使用BLE时的最佳实践，希望有所帮助。</p>
+
+<h2>与Peripheral设备交互的最佳实践</h2>
+
+<p>Core Bluetooth框架让程序的大部分Central端交互变得透明。即程序能够控制且有责任实现大部分Central端的操作，如设备搜索及连接，解析并与远程peripheral数据交互。下面我们将介绍一些Central端的最佳实践。</p>
+
+<h4>留意无线电的使用及电量消耗</h4>
+
+<h5>只有当需要时才扫描设备</h5>
+
+<p>当调用CBCentralManager类的scanForPeripheralsWithServices:options:方法来搜索正在广告服务的peripheral设备时，central设备使用无线电来监听广告的设备，直到我们显示停止它。除非需要搜索更多的设备，否则当发现想要连接的设备时就停止扫描操作。此时可以调用CBCentralManager实例的stopScan方法来处理。</p>
+
+<h5>只有当需要时才指定CBCentralManagerScanOptionAllowDuplicatesKey选项</h5>
+
+<p>远程peripheral设备可能每秒发送多个广告包来声明它们的存在。当我们使用scanForPeripheralsWithServices:options:方法扫描设备时，该方法的默认行为是将多个搜索到的广告peripheral事件归集为一个事件&mdash;即central管理器在只有在每次发现新的peripheral时都调用其代理对象的centralManager:didDiscoverPeripheral:advertisementData:RSSI:，而不管它收到多少个广告包。central管理器在已发现的peripheral改变广告的数据时也会调用这个代理方法。</p>
+
+<p>如果想要改变默认行为，可以指定CBCentralManagerScanOptionAllowDuplicatesKey作为扫描选项。此时，central管理器会在每次收到peripheral端的广告包时都触发一个事件。在某些情况下关闭默认行为很有用处，但记住指定CBCentralManagerScanOptionAllowDuplicatesKey扫描选项不利于电池的寿命及程序性能。因此，只在需要的时候使用这个选项以完成特定的任务。</p>
+
+<h5>解析peripheral数据</h5>
+
+<p>一个peripheral设备可能有多个服务和特性，但在我们的应用中，可能只对其中一些感兴趣。搜索peripheral设备的所有服务和特性可能不利于电池的寿命及程序性能。因此，我们只去搜索那些与我们的的应用相关的服务和特性。</p>
+
+<p>例如，假设我们正在连接一个有很多可用服务的peripheral设备，但是我们的程序只需要访问其中两个。我们可以只查找这两个服务，即在调用CBPeripheral对象的discoverServices:方法时传入感兴趣服务的UUID的数组即可。如下代码所示：</p>
+
+<pre><code>[peripheral discoverServices:@[firstServiceUUID, secondServiceUUID]];
+</code></pre>
+
+<p>在搜索到这两个感兴趣的服务后，我们可以用类似的方法去搜索我们感兴趣的服务中的特性。此时调用CBPeripheral实例的discoverCharacteristics:forService:方法并传入特性UUID的数组。</p>
+
+<h5>订阅经常改变的特性值</h5>
+
+<p>我们可以通过两种方式获取特性的值：</p>
+
+<ol>
+<li>在我们每次需要值时调用readValueForCharacteristic:方法来显示的轮循特性的值</li>
+<li>调用setNotifyValue:forCharacteristic:方法来订阅特性的值，这样当值改变时我们可以收到来自于peripheral的通知。</li>
+</ol>
+
+
+<p>通常最好是去订阅特性的值，特别是特性值经常改变时。</p>
+
+<h5>当获取到所有需要的数据时断开到设备的连接</h5>
+
+<p>当连接不再需要时，我们可以断开连接，以减少无线电的使用。在下面两种情况下，我们应该断开连接：</p>
+
+<ol>
+<li>所有订阅的特性值已经停止发送通知(我们可以访问特性的isNotifying属性来查看属性值是否正在被通知)</li>
+<li>我们已以获取来来自peripheral设备的全部值。</li>
+</ol>
+
+
+<p>两种情况下，取自我们有的所有订阅并断开连接。我们通过调用setNotifyValue:forCharacteristic:方法并设置第一个参数为NO来取消订阅。同时调用CBCentralManager实例的cancelPeripheralConnection:方法来断开连接。注意这个cancelPeripheralConnection:方法是非阻塞的，如果我们尝试断开连接的peripheral设备仍然挂起，则CBPeripheral实例的命令可能完成执行，也可能没有。因为其它程序可能也连接着那个peripheral设备。取消一个本地连接不能保证底层物理链接会立即断开。</p>
+
+<h4>重新链接Peripheral</h4>
+
+<p>使用Core Bluetooth框架，有三种方式来重新连接peripheral设备：</p>
+
+<ol>
+<li>使用retrievePeripheralsWithIdentifiers:方法获取已知peripheral设备的列表，这些设备是我们已经搜索并连接过的设备。如果我们查找的peripheral在列表中，则尝试重新连接。</li>
+<li>使用retrieveConnectedPeripheralsWithServices:方法获取当前连接到系统的peripheral设备的列表。如果我们查找的peripheral设备在列表中，则连接它。</li>
+<li>使用scanForPeripheralsWithServices:options:方法扫描并搜索peripheral设备。如果找到，则连接它。</li>
+</ol>
+
+
+<p>根据使用的场景，我们可能不希望每次重新连接设备时，都去扫描并搜索设备。相反，我们可能想首先使用其它方式来重新连接。如下图所示，一个可能的重新连接操作流是按照上面列出来的方式去重新连接：</p>
+
+<h5>获取已知peripheral设备的列表</h5>
+
+<p>我们第一次发现一个peripheral设备时，系统生成一个标识符(NSUUID对象)来标识peripheral设备。我们可以存储这些设备，后续我们可以使用CBCentralManager实例的retrievePeripheralsWithIdentifiers:方法来重新连接这个peripheral设备。</p>
+
+<p>当我们启动程序时，调用retrievePeripheralsWithIdentifiers:方法，传递一个我们先前搜索并连接过的peripheral设备的标识符的数组，如下代码所示：</p>
+
+<pre><code>knownPeripherals = [myCentralManager retrievePeripheralsWithIdentifiers:savedIdentifiers];
+</code></pre>
+
+<p>central管理器尝试在这个列表中匹配我们提供的标识符，并返回一个CBPeripheral对象的数组。如果没找到，则返回的数组为空，那么我们需要尝试另外两种方法。如果返回的数组不为空，则让用户选择连接哪一个peripheral设备。当用户选择后，调用CBCentralManager实例的connectPeripheral:options:方法来尝试连接。如果peripheral设备仍然可以连接，则central管理器调用代理对象的centralManager:didConnectPeripheral:方法，且成功连接上peripheral设备。</p>
+
+<h5>获取已连接peripheral设备的列表</h5>
+
+<p>另一种重新连接peripheral设备的方法是查看我们正在查找的设备是否正由系统连接着(如被其它程序连接着)。我们可以调用CBCentralManager实例的retrieveConnectedPeripheralsWithServices:方法，它返回一个表示当前系统正在连接着的peripheral设备的CBPeripheral对象的数组。</p>
+
+<p>因为可以有多于一个peripheral设备正在连接着系统，我们可以传递一个CBUUID对象的数组来获取只包含指定UUID所标识服务的设备。如果当前系统没有连接任何peripheral设备，则返回数组为空，我们应该尝试其它两种方法。如果返回数组不为空，则让用户选择连接哪个设备。</p>
+
+<p>假设用户找到并选择了需要的peripheral设备，则调用CBCentralManager实例的connectPeripheral:options:方法来连接它(即使系统已经连接了它，我们的程序仍然需要连接它以开始解析并交互数据)。当连接建立后，central管理器调用代理对象的centralManager:didConnectPeripheral:方法，然后成功连接peripheral设备。</p>
+
+<h2>将本地设备设置为peripheral设备的最佳实践</h2>
+
+<h4>广告注意事项</h4>
+
+<p>在设置本地设备作为peripheral端时，广告peripheral数据是非常重要的一部分。我们下面将介绍一下如何以适当的方式来实现这一功能。</p>
+
+<p>我们广告peripheral数据时，是将其放在一个字典中传递给CBPeripheralManager对象的startAdvertising:方法中。当创建一个广告字典时，需要知道我们可以广告什么及能广告多少数据。</p>
+
+<p>虽然广告数据包通常可以放置关于peripheral设备的多种信息，但建议只放置设备的本地名及我们需要广告的服务的UUID。即，当创建广告字典时，可能只指定下面两个键：CBAdvertisementDataLocalNameKey和CBAdvertisementDataServiceUUIDsKey。如果指定其它键，则会收到一个错误。</p>
+
+<p>同样，广告数据时也限定了可以使用多少空间。当程序在前台时，可广告的数据对于上述两个key值的任意组合来说，初始值不能超过28个字节。如果这个空间用完了，在扫描响应时可以有额外的10个字节的空间，但这只能用于本地名。任何超出的数据都会被放到一个指定的“溢出”区域；它们只能被显示扫描它们的iOS设备发现。当程序在后台时，本地名不能被广告，且所有的服务UUID都被放在溢出区域。</p>
+
+<p>为了符合这此限制条件，我们需要将广告的服务UUID限制在主要服务的标识上。</p>
+
+<p>另外，因为广告peripheral数据使用本地设备的无线电，所以只在需要其它设备连接的时候广告数据。一旦连接后，这些设备可以直接解析并交互数据，而不需要任何广告包。因此，为了减少无线电的使用、提高程序的性能及节省电量，当不再需要任何试图进行BLE交易时可以停止广告。为了停止本地peripheral，可以调用CBPeripheralManager对象的stopAdvertising方法，如下所示：</p>
+
+<pre><code>[myPeripheralManager stopAdvertising];
+</code></pre>
+
+<p>通常，只有用户才知道什么时候广告数据。例如，当我们知道没有任何BLE设备在附近时，在我们的设备上广告服务没有任何意义。因为我们的程序通常不知道是否有其它设备在附近，所以提供一个界面让用户来决定什么时候广告数据。</p>
+
+<h4>配置特性</h4>
+
+<p>当创建一个可变的特性时，我们设置它的属性、值和权限。这些设置决定了如何连接central访问及交互特性值。虽然我们可能基于程序的需求来配置特性的属性和权限，但当执行下面两种任务时，我们还是有章可循的</p>
+
+<ol>
+<li>允许连接的central订阅属性</li>
+<li>保护敏感特性值，不让其被未配对的central访问</li>
+</ol>
+
+
+<p>对于这两种情况，首先我们配置特性以支持通知。通常建议central去订阅那些经常改变的特性值。当我们创建一个可变特性时，可以通过使用CBCharacteristicPropertyNotify常量来设置特性属性以支持订阅，如下所示：</p>
+
+<pre><code>myCharacteristic = [[CBMutableCharacteristic alloc] initWithType:myCharacteristicUUID properties:CBCharacteristicPropertyRead | CBCharacteristicPropertyNotify value:nil permissions:CBAttributePermissionsReadable];
+</code></pre>
+
+<p>在这个例子中，特性值是可读的，且可以被连接的central端订阅。</p>
+
+<p>其它，要求配对的连接才能访问敏感数据。根据场景的不同，我们可能想要提供一个服务，这个服务有一个或多个需要加密值的特性。例如，假设我们想要提供一个社交媒体配置文件服务。这个服务有一些特性，它们的值表示成员的配置信息，如姓名、电子邮件地址。更可能的是，我们只允许受信任的设备来获取成员的电子邮件地址。</p>
+
+<p>我们可以设置合适的特性属性及权限来确保只有受信任的设备可以访问敏感的特性值。继续上面的例子，为了只允许受信任的设备来获取成员的邮箱地址，可以如下设置合适的特性属性与权限：</p>
+
+<pre><code>emailCharacteristic = [[CBMutableCharacteristic alloc] initWithType:emailCharacteristicUUID properties:CBCharacteristicPropertyRead | CBCharacteristicPropertyNotifyEncryptionRequired value:nil permissions:CBAttributePermissionsReadEncryptionRequired];
+</code></pre>
+
+<p>在这个例子中，特性配置为只有受信任的设备才可以读取或订阅它的值。当一个连接的central尝试读取或订阅特性值时，Core Bluetooth尝试配对本地peripheral和central端来创建安全连接。</p>
+
+<p>例如，如果central和peripheral都是iOS设备，两端都接收一个提示显示对方想要配对。central设备上的提示包含包含一个确认码，这个确认码必须在peripheral设备提示框的输入域中输入，来完成配对操作。</p>
+
+<p>在配对成功后，peripheral认为配对的central是一个受信任的设备且允许central访问它的加密特性值。</p>
+
+<h2>小结</h2>
+
+<p>在使用BLE时，基于以下几点，程序开发过程中我们合理地使用蓝牙</p>
+
+<ol>
+<li>程序性能</li>
+<li>电池电量消耗</li>
+<li>与其它通信方法争抢无线电资源</li>
+</ol>
+
+
+<p>通常我们只在需要时才使用BLE，尽量减少设备扫描搜索操作。</p>
+
+<h2>参考</h2>
+
+<p><a href="https://developer.apple.com/library/ios/documentation/NetworkingInternetWeb/Conceptual/CoreBluetooth_concepts/AboutCoreBluetooth/Introduction.html">Core Bluetooth Programming Guide</a></p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">南峰子</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-08-01T23:03:22+08:00" pubdate data-updated="true">Aug 1<sup>st</sup>, 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/ios/'>ios</a>, <a class='category' href='/blog/categories/network/'>network</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/07/31/core-bluetoothkuang-jia-zhi-er-:hou-tai-chu-li/" title="Previous Post: Core Bluetooth框架之二：后台处理">&laquo; Core Bluetooth框架之二：后台处理</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2014/08/02/reactivecocoazhi-nan-%5B%3F%5D-:xin-hao/" title="Next Post: ReactiveCocoa指南一：信号">ReactiveCocoa指南一：信号 &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+
+
+<section>
+    <h1>Comments</h1>
+    <div id="comments" aria-live="polite"><!-- Duoshuo Comment BEGIN -->
+<div class="ds-thread" data-title="Core Bluetooth框架之三：最佳实践"></div>
+<script type="text/javascript">
+    var duoshuoQuery = {short_name:"southpeak"};
+    (function() {
+     var ds = document.createElement('script');
+     ds.type = 'text/javascript';ds.async = true;
+     ds.src = 'http://static.duoshuo.com/embed.js';
+     ds.charset = 'UTF-8';
+     (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+     })();
+</script>
+<!-- Duoshuo Comment END --></div>
+</section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+<section>
+<h1>分类</h1>
+<ul>
+  <li><a href='/blog/categories/ios'>ios (65)</a></li>
+  <li><a href='/blog/categories/network'>network (3)</a></li>
+  <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
+  <li><a href='/blog/categories/swift'>swift (7)</a></li>
+  <li><a href='/blog/categories/system'>system (1)</a></li>
+  <li><a href='/blog/categories/网络'>网络 (8)</a></li>
+</ul>
+</section>
+
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/05/31/ioszhi-shi-xiao-ji-di-er-qi-2015-dot-05-dot-31/">iOS知识小集 第二期(2015.05.31)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/05/10/ioszhi-shi-xiao-ji-di-%5B%3F%5D-qi-2015-dot-05-dot-10/">iOS知识小集 第一期(2015.05.10)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/04/23/nskeyvalueobserving-kvo/">NSKeyValueObserving(KVO)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/24/yuan-ma-pian-:mbprogresshud/">源码篇：MBProgressHUD</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/20/nsnotificationcenter/">NSNotificationCenter</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/14/nsnotificationyu-duo-xian-cheng/">Notification与多线程</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/07/uiresponder/">UIResponder</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/01/fan-yi-pian-:ios-8-handoff-tutorial/">翻译篇：iOS 8 Handoff Tutorial</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/11/nscache/">NSCache</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/07/yuan-ma-pian-:sdwebimage/">源码篇：SDWebImage</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2015 - 南峰子 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

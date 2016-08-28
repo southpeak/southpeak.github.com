@@ -1,0 +1,2779 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: ios | 南峰子的技术博客]]></title>
+  <link href="http://southpeak.github.io/blog/categories/ios/atom.xml" rel="self"/>
+  <link href="http://southpeak.github.io/"/>
+  <updated>2015-05-31T23:52:04+08:00</updated>
+  <id>http://southpeak.github.io/</id>
+  <author>
+    <name><![CDATA[南峰子]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[iOS知识小集 第二期(2015.05.31)]]></title>
+    <link href="http://southpeak.github.io/blog/2015/05/31/ioszhi-shi-xiao-ji-di-er-qi-2015-dot-05-dot-31/"/>
+    <updated>2015-05-31T23:50:54+08:00</updated>
+    <id>http://southpeak.github.io/blog/2015/05/31/ioszhi-shi-xiao-ji-di-er-qi-2015-dot-05-dot-31</id>
+    <content type="html"><![CDATA[<p>换了个厂子，还不到1个月。哎，着实是累啊，基本上是996.5的节奏，只会更多。加班把我快加吐了，但人在江湖，身不由已啊。为了讨口饭吃，命也不要了。谁让咱只是个臭写代码的呢。不过加班是多，只是长得太丑，所有没办法，没时间也得抽时间来学习。不然，饭都没得吃了，还得养家糊口呢。</p>
+
+<p>本期总结的内容不是很多，主要有以下几个问题：</p>
+
+<ol>
+<li>使用UIVisualEffectView为视图添加特殊效果</li>
+<li>Nullability Annotations</li>
+<li>weak的生命周期</li>
+</ol>
+
+
+<h2>使用UIVisualEffectView为视图添加特殊效果</h2>
+
+<p>在iOS 8后，苹果开放了不少创建特效的接口，其中就包括创建毛玻璃(blur)的接口。</p>
+
+<p>通常要想创建一个特殊效果(如blur效果)，可以创建一个UIVisualEffectView视图对象，这个对象提供了一种简单的方式来实现复杂的视觉效果。这个可以把这个对象看作是效果的一个容器，实际的效果会影响到该视图对象底下的内容，或者是添加到该视图对象的contentView中的内容。</p>
+
+<p>我们举个例子来看看如果使用UIVisualEffectView：</p>
+
+<pre><code>let bgView: UIImageView = UIImageView(image: UIImage(named: "visual"))
+bgView.frame = self.view.bounds
+self.view.addSubview(bgView)
+
+let blurEffect: UIBlurEffect = UIBlurEffect(style: .Light)
+let blurView: UIVisualEffectView = UIVisualEffectView(effect: blurEffect)
+blurView.frame = CGRectMake(50.0, 50.0, self.view.frame.width - 100.0, 200.0)
+self.view.addSubview(blurView)
+</code></pre>
+
+<p>这段代码是在当前视图控制器上添加了一个UIImageView作为背景图。然后在视图的一小部分中使用了blur效果。其效果如下所示：</p>
+
+<p><img src="http://d.pcs.baidu.com/thumbnail/09b0f2cc826eda249faa3c323a0ace53?fid=742964286-250528-1028873691191491&amp;time=1433084400&amp;sign=FDTAER-DCb740ccc5511e5e8fedcff06b081203-c2ezBV5xH9W7KlZF3li%2B12fJtgc%3D&amp;rt=sh&amp;expires=2h&amp;r=567337996&amp;sharesign=unknown&amp;size=c710_u500&amp;quality=100" alt="image" /></p>
+
+<p>我们可以看到UIVisualEffectView还是非常简单的。需要注意是的，不应该直接添加子视图到UIVisualEffectView视图中，而是应该添加到UIVisualEffectView对象的contentView中。</p>
+
+<p>另外，尽量避免将UIVisualEffectView对象的alpha值设置为小于1.0的值，因为创建半透明的视图会导致系统在离屏渲染时去对UIVisualEffectView对象及所有的相关的子视图做混合操作。这不但消耗CPU/GPU，也可能会导致许多效果显示不正确或者根本不显示。</p>
+
+<p>我们在上面看到，初始化一个UIVisualEffectView对象的方法是UIVisualEffectView(effect: blurEffect)，其定义如下：</p>
+
+<pre><code>init(effect effect: UIVisualEffect)
+</code></pre>
+
+<p>这个方法的参数是一个UIVisualEffect对象。我们查看官方文档，可以看到在UIKit中，定义了几个专门用来创建视觉特效的，它们分别是UIVisualEffect、UIBlurEffect和UIVibrancyEffect。它们的继承层次如下所示：</p>
+
+<pre><code>NSObject
+| -- UIVisualEffect
+    | -- UIBlurEffect
+    | -- UIVibrancyEffect
+</code></pre>
+
+<p>UIVisualEffect是一个继承自NSObject的创建视觉效果的基类，然而这个类除了继承自NSObject的属性和方法外，没有提供任何新的属性和方法。其主要目的是用于初始化UIVisualEffectView，在这个初始化方法中可以传入UIBlurEffect或者UIVibrancyEffect对象。</p>
+
+<p>一个UIBlurEffect对象用于将blur(毛玻璃)效果应用于UIVisualEffectView视图下面的内容。如上面的示例所示。不过，这个对象的效果并不影响UIVisualEffectView对象的contentView中的内容。</p>
+
+<p>UIBlurEffect主要定义了三种效果，这些效果由枚举UIBlurEffectStyle来确定，该枚举的定义如下：</p>
+
+<pre><code>enum UIBlurEffectStyle : Int {
+    case ExtraLight
+    case Light
+    case Dark
+}
+</code></pre>
+
+<p>其主要是根据色调(hue)来确定特效视图与底部视图的混合。</p>
+
+<p>与UIBlurEffect不同的是，UIVibrancyEffect主要用于放大和调整UIVisualEffectView视图下面的内容的颜色，同时让UIVisualEffectView的contentView中的内容看起来更加生动。通常UIVibrancyEffect对象是与UIBlurEffect一起使用，主要用于处理在UIBlurEffect特效上的一些显示效果。接上面的代码，我们看看在blur的视图上添加一些新的特效，如下代码所示：</p>
+
+<pre><code>let vibrancyView: UIVisualEffectView = UIVisualEffectView(effect: UIVibrancyEffect(forBlurEffect: blurEffect))
+vibrancyView.setTranslatesAutoresizingMaskIntoConstraints(false)
+blurView.contentView.addSubview(vibrancyView)
+
+var label: UILabel = UILabel()
+label.setTranslatesAutoresizingMaskIntoConstraints(false)
+label.text = "Vibrancy Effect"
+label.font = UIFont(name: "HelveticaNeue-Bold", size: 30)
+label.textAlignment = .Center
+label.textColor = UIColor.whiteColor()
+vibrancyView.contentView.addSubview(label)
+</code></pre>
+
+<p>其效果如下图所示：</p>
+
+<p><img src="http://d.pcs.baidu.com/thumbnail/a4b788b4c24154d2b5919f714c945d18?fid=742964286-250528-985603568872796&amp;time=1433084400&amp;sign=FDTAER-DCb740ccc5511e5e8fedcff06b081203-bm2CevqtZpV0v9tRi%2F%2BuovzF78w%3D&amp;rt=sh&amp;expires=2h&amp;r=516566080&amp;sharesign=unknown&amp;size=c710_u500&amp;quality=100" alt="image" /></p>
+
+<p>vibrancy特效是取决于颜色值的。所有添加到contentView的子视图都必须实现tintColorDidChange方法并更新自己。需要注意的是，我们使用UIVibrancyEffect(forBlurEffect:)方法创建UIVibrancyEffect时，参数blurEffect必须是我们想加效果的那个blurEffect，否则可能不是我们想要的效果。</p>
+
+<p>另外，UIVibrancyEffect还提供了一个类方法notificationCenterVibrancyEffect，其声明如下：</p>
+
+<pre><code>class func notificationCenterVibrancyEffect() -&gt; UIVibrancyEffect!
+</code></pre>
+
+<p>这个方法创建一个用于通知中心的Today扩展的vibrancy特效。</p>
+
+<h3>参考</h3>
+
+<ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/UIKit/Reference/UIVisualEffectView/">UIVisualEffectView Class Reference</a></li>
+<li><a href="https://developer.apple.com/library/ios/documentation/UIKit/Reference/UIVisualEffect_class/index.html#//apple_ref/occ/cl/UIVisualEffect">UIVisualEffect Class Reference</a></li>
+<li><a href="https://developer.apple.com/library/ios/documentation/UIKit/Reference/UIVisualEffect_class/index.html#//apple_ref/occ/cl/UIVisualEffect">UIBlurEffect Class Reference</a></li>
+<li><a href="https://developer.apple.com/library/ios/documentation/UIKit/Reference/UIVibrancyEffect/">UIVibrancyEffect Class Reference</a></li>
+<li><a href="http://swiftoverload.com/tag/uivisualeffectview/">UIVisualEffect – Swift Tutorial</a></li>
+<li><a href="http://idrawcode.tumblr.com/post/101925733632/ios-8-uivisualeffect">iOS 8: UIVisualEffect</a></li>
+</ol>
+
+
+<h2>Pointer is missing a nullability type specifier (<strong>nonnull or </strong>nullable)问题的处理 &mdash; Nullability Annotations</h2>
+
+<p>最近在用Xcode 6.3写代码，一些涉及到对象的代码会报如下编译器警告：</p>
+
+<pre><code>Pointer is missing a nullability type specifier (__nonnull or __nullable)
+</code></pre>
+
+<p>于是google了一下，发现这是Xcode 6.3的一个新特性，即<strong>nullability annotations</strong>。</p>
+
+<h3>Nullability Annotations</h3>
+
+<p>我们都知道在swift中，可以使用!和?来表示一个对象是optional的还是non-optional，如view?和view!。而在Objective-C中则没有这一区分，view即可表示这个对象是optional，也可表示是non-optioanl。这样就会造成一个问题：在Swift与Objective-C混编时，Swift编译器并不知道一个Objective-C对象到底是optional还是non-optional，因此这种情况下编译器会隐式地将Objective-C的对象当成是non-optional。</p>
+
+<p>为了解决这个问题，苹果在Xcode 6.3引入了一个Objective-C的新特性：nullability annotations。这一新特性的核心是两个新的类型注释：<strong>__nullable</strong>和<strong>__nonnull</strong>。从字面上我们可以猜到，<strong>__nullable</strong>表示对象可以是NULL或nil，而<strong>__nonnull</strong>表示对象不应该为空。当我们不遵循这一规则时，编译器就会给出警告。</p>
+
+<p>我们来看看以下的实例，</p>
+
+<pre><code>@interface TestNullabilityClass ()
+
+@property (nonatomic, copy) NSArray * items;
+
+- (id)itemWithName:(NSString * __nonnull)name;
+
+@end
+
+@implementation TestNullabilityClass
+
+...
+
+- (void)testNullability {
+
+    [self itemWithName:nil];    // 编译器警告：Null passed to a callee that requires a non-null argument
+}
+
+- (id)itemWithName:(NSString * __nonnull)name {
+    return nil;
+}
+
+@end
+</code></pre>
+
+<p>不过这只是一个警告，程序还是能编译通过并运行。</p>
+
+<p>事实上，在任何可以使用const关键字的地方都可以使用__nullable和__nonnull，不过这两个关键字仅限于使用在指针类型上。而在方法的声明中，我们还可以使用不带下划线的nullable和nonnull，如下所示：</p>
+
+<pre><code>- (nullable id)itemWithName:(NSString * nonnull)name
+</code></pre>
+
+<p>在属性声明中，也增加了两个相应的特性，因此上例中的items属性可以如下声明：</p>
+
+<pre><code>@property (nonatomic, copy, nonnull) NSArray * items;
+</code></pre>
+
+<p>当然也可以用以下这种方式：</p>
+
+<pre><code>@property (nonatomic, copy) NSArray * __nonnull items;
+</code></pre>
+
+<p>推荐使用nonnull这种方式，这样可以让属性声明看起来更清晰。</p>
+
+<h3>Nonnull区域设置(Audited Regions)</h3>
+
+<p>如果需要每个属性或每个方法都去指定nonnull和nullable，是一件非常繁琐的事。苹果为了减轻我们的工作量，专门提供了两个宏：NS_ASSUME_NONNULL_BEGIN和NS_ASSUME_NONNULL_END。在这两个宏之间的代码，所有简单指针对象都被假定为nonnull，因此我们只需要去指定那些nullable的指针。如下代码所示：</p>
+
+<pre><code>NS_ASSUME_NONNULL_BEGIN
+
+@interface TestNullabilityClass ()
+
+@property (nonatomic, copy) NSArray * items;
+
+
+- (id)itemWithName:(nullable NSString *)name;
+
+@end
+
+NS_ASSUME_NONNULL_END
+</code></pre>
+
+<p>在上面的代码中，items属性默认是nonnull的，itemWithName:方法的返回值也是nonnull，而参数是指定为nullable的。</p>
+
+<p>不过，为了安全起见，苹果还制定了几条规则：</p>
+
+<ol>
+<li>typedef定义的类型的nullability特性通常依赖于上下文，即使是在Audited Regions中，也不能假定它为nonnull。</li>
+<li>复杂的指针类型(如id *)必须显示去指定是nonnull还是nullable。例如，指定一个指向nullable对象的nonnull指针，可以使用"__nullable id * __nonnull"。</li>
+<li>我们经常使用的NSError **通常是被假定为一个指向nullable NSError对象的nullable指针。</li>
+</ol>
+
+
+<h3>兼容性</h3>
+
+<p>因为Nullability Annotations是Xcode 6.3新加入的，所以我们需要考虑之前的老代码。实际上，苹果已以帮我们处理好了这种兼容问题，我们可以安全地使用它们：</p>
+
+<ol>
+<li>老代码仍然能正常工作，即使对nonnull对象使用了nil也没有问题。</li>
+<li>老代码在需要和swift混编时，在新的swift编译器下会给出一个警告。</li>
+<li>nonnull不会影响性能。事实上，我们仍然可以在运行时去判断我们的对象是否为nil。</li>
+</ol>
+
+
+<p>事实上，我们可以将nonnull/nullable与我们的断言和异常一起看待，其需要处理的问题都是同一个：违反约定是一个程序员的错误。特别是，返回值是我们可控的东西，如果返回值是nonnull的，则我们不应该返回nil，除非是为了向后兼容。</p>
+
+<h3>参考</h3>
+
+<ol>
+<li><a href="https://developer.apple.com/swift/blog/?id=25">Nullability and Objective-C</a></li>
+</ol>
+
+
+<h2>weak的生命周期</h2>
+
+<p>我们都知道weak表示的是一个弱引用，这个引用不会增加对象的引用计数，并且在所指向的对象被释放之后，weak指针会被设置的为nil。weak引用通常是用于处理循环引用的问题，如代理及block的使用中，相对会较多的使用到weak。</p>
+
+<p>之前对weak的实现略有了解，知道它的一个基本的生命周期，但具体是怎么实现的，了解得不是太清晰。今天又翻了翻《Objective-C高级编程》关于__weak的讲解，在此做个笔记。</p>
+
+<p>我们以下面这行代码为例：</p>
+
+<p><strong>代码清单1：示例代码</strong></p>
+
+<pre><code>{
+    id __weak obj1 = obj;
+}
+</code></pre>
+
+<p>当我们初始化一个weak变量时，runtime会调用objc_initWeak函数。这个函数在Clang中的声明如下：</p>
+
+<pre><code>id objc_initWeak(id *object, id value);
+</code></pre>
+
+<p>其具体实现如下：</p>
+
+<pre><code>id objc_initWeak(id *object, id value)
+{
+    *object = 0;
+    return objc_storeWeak(object, value);
+}
+</code></pre>
+
+<p>示例代码轮换成编译器的模拟代码如下：</p>
+
+<pre><code>id obj1;
+objc_initWeak(&amp;obj1, obj);
+</code></pre>
+
+<p>因此，这里所做的事是先将obj1初始化为0(nil)，然后将obj1的地址及obj作为参数传递给objc_storeWeak函数。</p>
+
+<p>objc_initWeak函数有一个前提条件：就是object必须是一个没有被注册为__weak对象的有效指针。而value则可以是null，或者指向一个有效的对象。</p>
+
+<p>如果value是一个空指针或者其指向的对象已经被释放了，则object是zero-initialized的。否则，object将被注册为一个指向value的__weak对象。而这事应该是objc_storeWeak函数干的。objc_storeWeak的函数声明如下：</p>
+
+<pre><code>id objc_storeWeak(id *location, id value);
+</code></pre>
+
+<p>其具体实现如下：</p>
+
+<pre><code>id objc_storeWeak(id *location, id newObj)
+{
+    id oldObj;
+    SideTable *oldTable;
+    SideTable *newTable;
+
+    ......
+
+    // Acquire locks for old and new values.
+    // Order by lock address to prevent lock ordering problems. 
+    // Retry if the old value changes underneath us.
+ retry:
+    oldObj = *location;
+
+    oldTable = SideTable::tableForPointer(oldObj);
+    newTable = SideTable::tableForPointer(newObj);
+
+    ......
+
+    if (*location != oldObj) {
+        OSSpinLockUnlock(lock1);
+#if SIDE_TABLE_STRIPE &gt; 1
+        if (lock1 != lock2) OSSpinLockUnlock(lock2);
+#endif
+        goto retry;
+    }
+
+    if (oldObj) {
+        weak_unregister_no_lock(&amp;oldTable-&gt;weak_table, oldObj, location);
+    }
+    if (newObj) {
+        newObj = weak_register_no_lock(&amp;newTable-&gt;weak_table, newObj,location);
+        // weak_register_no_lock returns NULL if weak store should be rejected
+    }
+    // Do not set *location anywhere else. That would introduce a race.
+    *location = newObj;
+
+    ......
+
+    return newObj;
+}
+</code></pre>
+
+<p>我们撇开源码中各种锁操作，来看看这段代码都做了些什么。在此之前，我们先来了解下weak表和SideTable。</p>
+
+<p>weak表是一个弱引用表，实现为一个weak_table_t结构体，存储了某个对象相关的的所有的弱引用信息。其定义如下(具体定义在<a href="http://www.opensource.apple.com/source/objc4/objc4-646/runtime/objc-weak.h">objc-weak.h</a>中)：</p>
+
+<pre><code>struct weak_table_t {
+    weak_entry_t *weak_entries;
+    size_t    num_entries;
+    ......
+};
+</code></pre>
+
+<p>其中weak_entry_t是存储在弱引用表中的一个内部结构体，它负责维护和存储指向一个对象的所有弱引用hash表。其定义如下：</p>
+
+<pre><code>struct weak_entry_t {
+    DisguisedPtr&lt;objc_object&gt; referent;
+    union {
+        struct {
+            weak_referrer_t *referrers;
+            uintptr_t        out_of_line : 1;
+            ......
+        };
+        struct {
+            // out_of_line=0 is LSB of one of these (don't care which)
+            weak_referrer_t  inline_referrers[WEAK_INLINE_COUNT];
+        };
+    };
+};
+</code></pre>
+
+<p>其中referent是被引用的对象，即示例代码中的obj对象。下面的union即存储了所有指向该对象的弱引用。由注释可以看到，当out_of_line等于0时，hash表被一个数组所代替。另外，所有的弱引用对象的地址都是存储在weak_referrer_t指针的地址中。其定义如下：</p>
+
+<pre><code>typedef objc_object ** weak_referrer_t;
+</code></pre>
+
+<p>SideTable是一个用C++实现的类，它的具体定义在<a href="http://opensource.apple.com/source/objc4/objc4-532.2/runtime/NSObject.mm">NSObject.mm</a>中，我们来看看它的一些成员变量的定义：</p>
+
+<pre><code>class SideTable {
+private:
+    static uint8_t table_buf[SIDE_TABLE_STRIPE * SIDE_TABLE_SIZE];
+
+public:
+
+    RefcountMap refcnts;
+    weak_table_t weak_table;
+
+    ......
+
+}
+</code></pre>
+
+<p>RefcountMap refcnts，大家应该能猜到这个做什么用的吧？看着像是引用计数什么的。哈哈，貌似就是啊，这东东存储了一个对象的引用计数的信息。当然，我们在这里不去探究它，我们关注的是weak_table。这个成员变量指向的就是一个对象的weak表。</p>
+
+<p>了解了weak表和SideTable，让我们再回过头来看看objc_storeWeak。首先是根据weak指针找到其指向的老的对象：</p>
+
+<pre><code>oldObj = *location;
+</code></pre>
+
+<p>然后获取到与新旧对象相关的SideTable对象：</p>
+
+<pre><code>oldTable = SideTable::tableForPointer(oldObj);
+newTable = SideTable::tableForPointer(newObj);
+</code></pre>
+
+<p>下面要做的就是在老对象的weak表中移除指向信息，而在新对象的weak表中建立关联信息：</p>
+
+<pre><code>if (oldObj) {
+    weak_unregister_no_lock(&amp;oldTable-&gt;weak_table, oldObj, location);
+}
+if (newObj) {
+    newObj = weak_register_no_lock(&amp;newTable-&gt;weak_table, newObj,location);
+    // weak_register_no_lock returns NULL if weak store should be rejected
+}
+</code></pre>
+
+<p>接下来让弱引用指针指向新的对象：</p>
+
+<pre><code>*location = newObj;
+</code></pre>
+
+<p>最后会返回这个新对象：</p>
+
+<pre><code>return newObj;
+</code></pre>
+
+<p>objc_storeWeak的基本实现就是这样。当然，在objc_initWeak中调用objc_storeWeak时，老对象是空的，所有不会执行weak_unregister_no_lock操作。</p>
+
+<p>而当weak引用指向的对象被释放时，又是如何去处理weak指针的呢？当释放对象时，其基本流程如下：</p>
+
+<ol>
+<li>调用objc_release</li>
+<li>因为对象的引用计数为0，所以执行dealloc</li>
+<li>在dealloc中，调用了_objc_rootDealloc函数</li>
+<li>在_objc_rootDealloc中，调用了object_dispose函数</li>
+<li>调用objc_destructInstance</li>
+<li>最后调用objc_clear_deallocating</li>
+</ol>
+
+
+<p>我们重点关注一下最后一步，objc_clear_deallocating的具体实现如下：</p>
+
+<pre><code>void objc_clear_deallocating(id obj) 
+{
+    ......
+
+    SideTable *table = SideTable::tableForPointer(obj);
+
+    // clear any weak table items
+    // clear extra retain count and deallocating bit
+    // (fixme warn or abort if extra retain count == 0 ?)
+    OSSpinLockLock(&amp;table-&gt;slock);
+    if (seen_weak_refs) {
+        arr_clear_deallocating(&amp;table-&gt;weak_table, obj);
+    }
+    ......
+}
+</code></pre>
+
+<p>我们可以看到，在这个函数中，首先取出对象对应的SideTable实例，如果这个对象有关联的弱引用，则调用arr_clear_deallocating来清除对象的弱引用信息。我们来看看arr_clear_deallocating具体实现：</p>
+
+<pre><code>PRIVATE_EXTERN void arr_clear_deallocating(weak_table_t *weak_table, id referent) {
+    {
+        weak_entry_t *entry = weak_entry_for_referent(weak_table, referent);
+        if (entry == NULL) {
+            ......
+            return;
+        }
+        // zero out references
+        for (int i = 0; i &lt; entry-&gt;referrers.num_allocated; ++i) {
+            id *referrer = entry-&gt;referrers.refs[i].referrer;
+            if (referrer) {
+                if (*referrer == referent) {
+                    *referrer = nil;
+                }
+                else if (*referrer) {
+                    _objc_inform("__weak variable @ %p holds %p instead of %p\n", referrer, *referrer, referent);
+                }
+            }
+        }
+
+        weak_entry_remove_no_lock(weak_table, entry);
+        weak_table-&gt;num_weak_refs--;
+    }
+}
+</code></pre>
+
+<p>这个函数首先是找出对象对应的weak_entry_t链表，然后挨个将弱引用置为nil。最后清理对象的记录。</p>
+
+<p>通过上面的描述，我们基本能了解一个weak引用从生到死的过程。从这个流程可以看出，一个weak引用的处理涉及各种查表、添加与删除操作，还是有一定消耗的。所以如果大量使用__weak变量的话，会对性能造成一定的影响。那么，我们应该在什么时候去使用weak呢？《Objective-C高级编程》给我们的建议是只在避免循环引用的时候使用__weak修饰符。</p>
+
+<p>另外，在clang中，还提供了不少关于weak引用的处理函数。如objc_loadWeak, objc_destroyWeak, objc_moveWeak等，我们可以在苹果的开源代码中找到相关的实现。等有时间，我再好好研究研究。</p>
+
+<h3>参考</h3>
+
+<ol>
+<li>《Objective-C高级编程》1.4: __weak修饰符</li>
+<li><a href="http://clang.llvm.org/docs/AutomaticReferenceCounting.html">Clang 3.7 documentation &ndash; Objective-C Automatic Reference Counting (ARC)</a></li>
+<li><a href="http://opensource.apple.com/source/objc4/objc4-532.2/runtime/NSObject.mm">apple opensource &ndash; NSObject.mm</a></li>
+</ol>
+
+
+<h2>零碎</h2>
+
+<h3>CAGradientLayer</h3>
+
+<p>CAGradientLayer类是用于在其背景色上绘制一个颜色渐变，以填充层的整个形状，包括圆角。这个类继承自CALayer类，使用起来还是很方便的。</p>
+
+<p>与Quartz 2D中的渐变处理类似，一个渐变有一个起始位置(startPoint)和一个结束位置(endPoint)，在这两个位置之间，我们可以指定一组颜色值(colors，元素是CGColorRef对象)，可以是两个，也可以是多个，每个颜色值会对应一个位置(locations)。另外，渐变还分为轴向渐变和径向渐变。</p>
+
+<p>我们写个实例来看看CAGradientLayer的具体使用：</p>
+
+<pre><code>CAGradientLayer *layer = [CAGradientLayer layer];
+layer.startPoint = (CGPoint){0.5f, 0.0f};
+layer.endPoint = (CGPoint){0.5f, 1.0f};
+layer.colors = [NSArray arrayWithObjects:(id)[UIColor blueColor].CGColor, (id)[UIColor redColor].CGColor, (id)[UIColor greenColor].CGColor, nil];
+layer.locations = @[@0.0f, @0.6f, @1.0f];
+layer.frame = self.view.layer.bounds;
+
+[self.view.layer insertSublayer:layer atIndex:0];
+</code></pre>
+
+<h4>参考</h4>
+
+<ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Reference/CAGradientLayer_class/">CAGradientLayer Class Reference</a></li>
+</ol>
+
+
+<h3>Xcode中Ineligible Devices的处理</h3>
+
+<p>换了台新电脑，装了个Xcode 6.3，整了个新证书和profile，然后打开Xcode，连上手机。额，然后发现设备居然被标识为Ineligible Devices，没认出来。情况类似于下图：</p>
+
+<p><img src="http://i.stack.imgur.com/CFOSG.png" alt="image" /></p>
+
+<p>电脑是受信任的，证书和profile也都是OK的。试了几次重启Xcode和重新连接手机，无效。设备就是选不了。最后是在Product->Destination里面才选中这个设备的。不过在工具栏还是不能选择，郁闷，求解。</p>
+
+<h3>iOS 7后隐藏UITextField的光标</h3>
+
+<p>新项目只支持iOS 7后，很多事情变得简单多了，就像隐藏UITextField的光标一样，就简单的一句话：</p>
+
+<pre><code>textFiled.tintColor = [UIColor clearColor];
+</code></pre>
+
+<p>通常我们用UIPickerView作为我们的UITextField的inputView时，我们是需要隐藏光标的。当然，如果想换个光标颜色，也是这么处理。</p>
+
+<p>这么处理的有个遗留问题是：通常我们使用UIPickerView作为UITextField的inputView时， 并不希望去执行各种菜单操作(全选、复制、粘帖)，但只是去设置UITextField的tintColor时，我们仍然可以执行这边操作，所以需要加额外的处理。这个问题，我们可以这样处理：在textFieldShouldBeginEditing:中，我们把UITextField的userInteractionEnabled设置为NO，然后在textFieldShouldEndEditing:，将将这个值设置回来。如下：</p>
+
+<pre><code>- (BOOL)textFieldShouldBeginEditing:(UITextField *)textField {
+
+    textField.userInteractionEnabled = NO;
+
+    return YES;
+}
+
+- (BOOL)textFieldShouldEndEditing:(UITextField *)textField {
+
+    textField.userInteractionEnabled = YES;
+
+    return YES;
+}
+</code></pre>
+
+<p>这样就OK了。当然这只是我们当前使用的一种处理方式，还有其它的方法，直接google或者stackoverflow吧。</p>
+
+<h3>iOS 7后UIAlertView中文字左对齐问题</h3>
+
+<p>在iOS 7之前，如果我们想要让UIAlertView中的文字居左显示的话，可以使用以下这段代码来处理：</p>
+
+<pre><code>for (UIView *view in alert.subviews) {
+    if([[view class] isSubclassOfClass:[UILabel class]]) {
+       ((UILabel*)view).textAlignment = NSTextAlignmentLeft;
+    }
+}
+</code></pre>
+
+<p>但很遗憾的是，在iOS 7之后，苹果不让我们这么干了。我们去取UIAlertView的subviews时，获得的只是一个空数组，我们没有办法获取到我们想要的label。怎么办？三条路：告诉产品经理和UED说这个实现不了(当然，这个是会被鄙视的，人家会说你能力差)；自己写；找第三方开源代码。嘿嘿，不过由于最近时间紧，所以我决定跟他们说实现不了，哈哈。不过在github上找了一个开源的，<a href="https://github.com/wimagguc/ios-custom-alertview">Custom iOS AlertView</a>，star的数量也不少，看来不错，回头好好研究研究。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[iOS知识小集 第一期(2015.05.10)]]></title>
+    <link href="http://southpeak.github.io/blog/2015/05/10/ioszhi-shi-xiao-ji-di-%5B%3F%5D-qi-2015-dot-05-dot-10/"/>
+    <updated>2015-05-10T22:06:42+08:00</updated>
+    <id>http://southpeak.github.io/blog/2015/05/10/ioszhi-shi-xiao-ji-di-[?]-qi-2015-dot-05-dot-10</id>
+    <content type="html"><![CDATA[<p>一直想做这样一个小册子，来记录自己平时开发、阅读博客、看书、代码分析和与人交流中遇到的各种问题。之前有过这样的尝试，但都是无疾而终。不过，每天接触的东西多，有些东西不记下来，忘得也是很快，第二次遇到同样的问题时，还得再查一遍。好记性不如烂笔头，所以又决定重拾此事，时不时回头看看，温故而知新。</p>
+
+<p>这里面的每个问题，不会太长。或是读书笔记，或是摘抄，亦或是验证，每个问题的篇幅争取在六七百字的样子。笔记和摘抄的出处会详细标明。问题的个数不限，凑齐3500字左右就发一篇。争取每月至少发两篇吧，权当是对自己学习的一个整理。</p>
+
+<p>本期主要记录了以下几个问题：</p>
+
+<ol>
+<li>NSString属性什么时候用copy，什么时候用strong?</li>
+<li>Foundation中的断言处理</li>
+<li>IBOutletCollection</li>
+<li>NSRecursiveLock递归锁的使用</li>
+<li>NSHashTable</li>
+</ol>
+
+
+<h2>NSString属性什么时候用copy，什么时候用strong?</h2>
+
+<p>我们在声明一个NSString属性时，对于其内存相关特性，通常有两种选择(基于ARC环境)：strong与copy。那这两者有什么区别呢？什么时候该用strong，什么时候该用copy呢？让我们先来看个例子。</p>
+
+<h3>示例</h3>
+
+<p>我们定义一个类，并为其声明两个字符串属性，如下所示：</p>
+
+<pre><code>@interface TestStringClass ()
+
+@property (nonatomic, strong) NSString *strongString;
+@property (nonatomic, copy) NSString *copyedString;
+
+@end
+</code></pre>
+
+<p>上面的代码声明了两个字符串属性，其中一个内存特性是strong，一个是copy。下面我们来看看它们的区别。</p>
+
+<p>首先，我们用一个不可变字符串来为这两个属性赋值，</p>
+
+<pre><code>- (void)test {
+
+    NSString *string = [NSString stringWithFormat:@"abc"];
+    self.strongString = string;
+    self.copyedString = string;
+
+    NSLog(@"origin string: %p, %p", string, &amp;string);
+    NSLog(@"strong string: %p, %p", _strongString, &amp;_strongString);
+    NSLog(@"copy string: %p, %p", _copyedString, &amp;_copyedString);
+}
+</code></pre>
+
+<p>其输出结果是：</p>
+
+<pre><code>origin string: 0x7fe441592e20, 0x7fff57519a48
+strong string: 0x7fe441592e20, 0x7fe44159e1f8
+copy string: 0x7fe441592e20, 0x7fe44159e200
+</code></pre>
+
+<p>我们要以看到，这种情况下，不管是strong还是copy属性的对象，其指向的地址都是同一个，即为string指向的地址。如果我们换作MRC环境，打印string的引用计数的话，会看到其引用计数值是3，即strong操作和copy操作都使原字符串对象的引用计数值加了1。</p>
+
+<p>接下来，我们把string由不可变改为可变对象，看看会是什么结果。即将下面这一句</p>
+
+<pre><code>NSString *string = [NSString stringWithFormat:@"abc"];
+</code></pre>
+
+<p>改成：</p>
+
+<pre><code>NSMutableString *string = [NSMutableString stringWithFormat:@"abc"];
+</code></pre>
+
+<p>其输出结果是：</p>
+
+<pre><code>origin string: 0x7ff5f2e33c90, 0x7fff59937a48
+strong string: 0x7ff5f2e33c90, 0x7ff5f2e2aec8
+copy string: 0x7ff5f2e2aee0, 0x7ff5f2e2aed0
+</code></pre>
+
+<p>可以发现，此时copy属性字符串已不再指向string字符串对象，而是深拷贝了string字符串，并让_copyedString对象指向这个字符串。在MRC环境下，打印两者的引用计数，可以看到string对象的引用计数是2，而_copyedString对象的引用计数是1。</p>
+
+<p>此时，我们如果去修改string字符串的话，可以看到：因为_strongString与string是指向同一对象，所以_strongString的值也会跟随着改变(需要注意的是，此时_strongString的类型实际上是NSMutableString，而不是NSString)；而_copyedString是指向另一个对象的，所以并不会改变。</p>
+
+<h3>结论</h3>
+
+<p>由于NSMutableString是NSString的子类，所以一个NSString指针可以指向NSMutableString对象，让我们的strongString指针指向一个可变字符串是OK的。</p>
+
+<p>而上面的例子可以看出，当源字符串是NSString时，由于字符串是不可变的，所以，不管是strong还是copy属性的对象，都是指向源对象，copy操作只是做了次<strong>浅拷贝</strong>。</p>
+
+<p>当源字符串是NSMutableString时，strong属性只是增加了源字符串的引用计数，而copy属性则是对源字符串做了次<strong>深拷贝</strong>，产生一个新的对象，且copy属性对象指向这个新的对象。另外需要注意的是，这个copy属性对象的类型始终是NSString，而不是NSMutableString，因此其是不可变的。</p>
+
+<p>这里还有一个性能问题，即在源字符串是NSMutableString，strong是单纯的增加对象的引用计数，而copy操作是执行了一次深拷贝，所以性能上会有所差异。而如果源字符串是NSString时，则没有这个问题。</p>
+
+<p>所以，在声明NSString属性时，到底是选择strong还是copy，可以根据实际情况来定。不过，一般我们将对象声明为NSString时，都不希望它改变，所以大多数情况下，我们建议用copy，以免因可变字符串的修改导致的一些非预期问题。</p>
+
+<p>关于字符串的内存管理，还有些有意思的东西，可以参考<a href="http://blog.cnbluebox.com/blog/2014/04/16/nsstringte-xing-fen-xi-xue-xi/">NSString特性分析学习</a>。</p>
+
+<h3>参考</h3>
+
+<ol>
+<li><a href="http://stackoverflow.com/questions/2521468/nsstring-copy-not-copying">NSString copy not copying?</a></li>
+<li><a href="http://blog.cnbluebox.com/blog/2014/04/16/nsstringte-xing-fen-xi-xue-xi/">NSString特性分析学习</a></li>
+<li><a href="http://blog.csdn.net/itianyi/article/details/9018567">NSString什么时候用copy，什么时候用strong</a></li>
+</ol>
+
+
+<h2>Foundation中的断言处理</h2>
+
+<p>经常在看一些第三方库的代码时，或者自己在写一些基础类时，都会用到断言。所以在此总结一下Objective-C中关于断言的一些问题。</p>
+
+<p>Foundation中定义了两组断言相关的宏，分别是：</p>
+
+<pre><code>NSAssert / NSCAssert
+NSParameterAssert / NSCParameterAssert
+</code></pre>
+
+<p>这两组宏主要在功能和语义上有所差别，这些区别主要有以下两点：</p>
+
+<ol>
+<li>如果我们需要确保方法或函数的输入参数的正确性，则应该在方法(函数)的顶部使用NSParameterAssert / NSCParameterAssert；而在其它情况下，使用NSAssert / NSCAssert。</li>
+<li>另一个不同是介于C和Objective-C之间。NSAssert / NSParameterAssert应该用于Objective-C的上下文(方法)中，而NSCAssert / NSCParameterAssert应该用于C的上下文(函数)中。</li>
+</ol>
+
+
+<p>当断言失败时，通常是会抛出一个如下所示的异常：</p>
+
+<pre><code>*** Terminating app due to uncaught exception 'NSInternalInconsistencyException', reason: 'true is not equal to false'
+</code></pre>
+
+<p>Foundation为了处理断言，专门定义了一个NSAssertionHandler来处理断言的失败情况。NSAssertionHandler对象是自动创建的，用于处理失败的断言。当断言失败时，会传递一个字符串给NSAssertionHandler对象来描述失败的原因。<strong>每个线程都有自己的NSAssertionHandler对象</strong>。当调用时，一个断言处理器会打印包含方法和类(或函数)的错误消息，并引发一个NSInternalInconsistencyException异常。就像上面所看到的一样。</p>
+
+<p>我们很少直接去调用NSAssertionHandler的断言处理方法，通常都是自动调用的。</p>
+
+<p>NSAssertionHandler提供的方法并不多，就三个，如下所示：</p>
+
+<pre><code>// 返回与当前线程的NSAssertionHandler对象。
+// 如果当前线程没有相关的断言处理器，则该方法会创建一个并指定给当前线程
++ (NSAssertionHandler *)currentHandler
+
+// 当NSCAssert或NSCParameterAssert断言失败时，会调用这个方法
+- (void)handleFailureInFunction:(NSString *)functionName file:(NSString *)object lineNumber:(NSInteger)fileName description:(NSString *)line, format,...
+
+// 当NSAssert或NSParameterAssert断言失败时，会调用这个方法
+- (void)handleFailureInMethod:(SEL)selector object:(id)object file:(NSString *)fileName lineNumber:(NSInteger)line description:(NSString *)format, ...
+</code></pre>
+
+<p>另外，还定义了一个常量字符串，</p>
+
+<pre><code>NSString * const NSAssertionHandlerKey;
+</code></pre>
+
+<p>主要是用于在线程的threadDictionary字典中获取或设置断言处理器。</p>
+
+<p>关于断言，还需要注意的一点是在Xcode 4.2以后，在release版本中断言是默认关闭的，这是由宏NS_BLOCK_ASSERTIONS来处理的。也就是说，当编译release版本时，所有的断言调用都是无效的。</p>
+
+<p>我们可以自定义一个继承自NSAssertionHandler的断言处理类，来实现一些我们自己的需求。如Mattt Thompson的<a href="http://nshipster.com/nsassertionhandler/">NSAssertion​Handler</a>实例一样：</p>
+
+<pre><code>@interface LoggingAssertionHandler : NSAssertionHandler
+@end
+
+@implementation LoggingAssertionHandler
+
+- (void)handleFailureInMethod:(SEL)selector
+                       object:(id)object
+                         file:(NSString *)fileName
+                   lineNumber:(NSInteger)line
+                  description:(NSString *)format, ...
+{
+    NSLog(@"NSAssert Failure: Method %@ for object %@ in %@#%i", NSStringFromSelector(selector), object, fileName, line);
+}
+
+- (void)handleFailureInFunction:(NSString *)functionName
+                           file:(NSString *)fileName
+                     lineNumber:(NSInteger)line
+                    description:(NSString *)format, ...
+{
+    NSLog(@"NSCAssert Failure: Function (%@) in %@#%i", functionName, fileName, line);
+}
+
+@end
+</code></pre>
+
+<p>上面说过，每个线程都有自己的断言处理器。我们可以通过为线程的threadDictionary字典中的NSAssertionHandlerKey指定一个新值，来改变线程的断言处理器。</p>
+
+<p>如下代码所示：</p>
+
+<pre><code>- (BOOL)application:(UIApplication *)application
+didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
+{
+  NSAssertionHandler *assertionHandler = [[LoggingAssertionHandler alloc] init];
+  [[[NSThread currentThread] threadDictionary] setValue:assertionHandler
+                                                 forKey:NSAssertionHandlerKey];
+  // ...
+
+  return YES;
+}
+</code></pre>
+
+<p>而什么时候应该使用断言呢？通常我们期望程序按照我们的预期去运行时，如调用的参数为空时流程就无法继续下去时，可以使用断言。但另一方面，我们也需要考虑，在这加断言确实是需要的么？我们是否可以通过更多的容错处理来使程序正常运行呢？</p>
+
+<p>Mattt Thompson在<a href="http://nshipster.com/nsassertionhandler/">NSAssertion​Handler</a>中的倒数第二段说得挺有意思，在此摘抄一下：</p>
+
+<pre><code>But if we look deeper into NSAssertionHandler—and indeed, into our own hearts, there are lessons to be learned about our capacity for kindness and compassion; about our ability to forgive others, and to recover from our own missteps. We can't be right all of the time. We all make mistakes. By accepting limitations in ourselves and others, only then are we able to grow as individuals.
+</code></pre>
+
+<h3>参考</h3>
+
+<ol>
+<li><a href="http://nshipster.com/nsassertionhandler/">NSAssertion​Handler</a></li>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/Foundation/Classes/NSAssertionHandler_Class/">NSAssertionHandler Class Reference</a></li>
+</ol>
+
+
+<h2>IBOutletCollection</h2>
+
+<p>在IB与相关文件做连接时，我们经常会用到两个关键字：IBOutlet和IBAction。经常用xib或storyboard的童鞋应该用这两上关键字非常熟悉了。不过UIKit还提供了另一个伪关键字<strong>IBOutletCollection</strong>，我们使用这个关键字，可以将界面上一组相同的控件连接到同一个数组中。</p>
+
+<p>我们先来看看这个伪关键字的定义，可以从UIKit.framework的头文件UINibDeclarations.h找到如下定义：</p>
+
+<pre><code>#ifndef IBOutletCollection
+#define IBOutletCollection(ClassName)
+#endif
+</code></pre>
+
+<p>另外，在Clang源码中，有更安全的定义方式，如下所示：</p>
+
+<pre><code>#define IBOutletCollection(ClassName) __attribute__((iboutletcollection(ClassName)))
+</code></pre>
+
+<p>从上面的定义可以看到，与IBOutlet不同的是，IBOutletCollection带有一个参数，该参数是一个类名。</p>
+
+<p>通常情况下，我们使用一个IBOutletCollection属性时，属性必须是strong的，且类型是NSArray，如下所示：</p>
+
+<pre><code>@property (strong, nonatomic) IBOutletCollection(UIScrollView) NSArray *scrollViews;
+</code></pre>
+
+<p>假定我们的xib文件中有三个横向的scrollView，我们便可以将这三个scrollView都连接至scrollViews属性，然后在我们的代码中便可以做一些统一处理，如下所示：</p>
+
+<pre><code>- (void)setupScrollViewImages
+{
+    for (UIScrollView *scrollView in self.scrollViews) {
+        [self.imagesData enumerateObjectsUsingBlock:^(NSString *imageName, NSUInteger idx, BOOL *stop) {
+            UIImageView *imageView = [[UIImageView alloc] initWithFrame:CGRectMake(CGRectGetWidth(scrollView.frame) * idx, 0, CGRectGetWidth(scrollView.frame), CGRectGetHeight(scrollView.frame))];
+            imageView.contentMode = UIViewContentModeScaleAspectFill;
+            imageView.image = [UIImage imageNamed:imageName];
+            [scrollView addSubview:imageView];
+        }];
+    }
+}
+</code></pre>
+
+<p>这段代码会影响到三个scrollView。这样做的好处是我们不需要手动通过addObject:方法将scrollView添加到scrollViews中。</p>
+
+<p>不过在使用IBOutletCollection时，需要注意两点：</p>
+
+<ol>
+<li>IBOutletCollection集合中对象的顺序是不确定的。我们通过调试方法可以看到集合中对象的顺序跟我们连接的顺序是一样的。但是这个顺序可能会因为不同版本的Xcode而有所不同。所以我们不应该试图在代码中去假定这种顺序。</li>
+<li>不管IBOutletCollection(ClassName)中的控件是什么，属性的类型始终是NSArray。实际上，我们可以声明是任何类型，如NSSet，NSMutableArray，甚至可以是UIColor，但不管我们在此设置的是什么类，IBOutletCollection属性总是指向一个NSArray数组。</li>
+</ol>
+
+
+<p>关于第二点，我们以上面的scrollViews为例，作如下修改：</p>
+
+<pre><code>@property (strong, nonatomic) IBOutletCollection(UIScrollView) NSSet *scrollViews;
+</code></pre>
+
+<p>实际上我们在控制台打印这个scrollViews时，结果如下所示：</p>
+
+<pre><code>(lldb) po self.scrollViews
+&lt;__NSArrayI 0x1740573d0&gt;(
+&lt;UIScrollView: 0x12d60d770; frame = (0 0; 320 162); clipsToBounds = YES; autoresize = W+H; gestureRecognizers = &lt;NSArray: 0x1740574f0&gt;; layer = &lt;CALayer: 0x174229480&gt;; contentOffset: {0, 0}; contentSize: {0, 0}&gt;,
+&lt;UIScrollView: 0x12d60dee0; frame = (0 0; 320 161); clipsToBounds = YES; autoresize = W+H; gestureRecognizers = &lt;NSArray: 0x174057790&gt;; layer = &lt;CALayer: 0x1742297c0&gt;; contentOffset: {0, 0}; contentSize: {0, 0}&gt;,
+&lt;UIScrollView: 0x12d60e650; frame = (0 0; 320 163); clipsToBounds = YES; autoresize = W+H; gestureRecognizers = &lt;NSArray: 0x1740579a0&gt;; layer = &lt;CALayer: 0x1742298e0&gt;; contentOffset: {0, 0}; contentSize: {0, 0}&gt;
+)
+</code></pre>
+
+<p>可以看到，它指向的是一个NSArray数组。</p>
+
+<p>另外，IBOutletCollection实际上在iOS 4版本中就有了。不过，现在的Objective-C已经支持object literals了，所以定义数组可以直接用@[]，方便了许多。而且object literals方式可以添加不在xib中的用代码定义的视图，所以显得更加灵活。当然，两种方式选择哪一种，就看我们自己的实际需要和喜好了。</p>
+
+<h3>参考</h3>
+
+<ol>
+<li><a href="http://nshipster.com/ibaction-iboutlet-iboutletcollection/">IBAction / IBOutlet / IBOutlet​Collection</a></li>
+<li><a href="http://www.opensource.apple.com/source/clang/clang-318.0.45/src/tools/clang/test/Index/IBOutletCollection.m">IBOutletCollection.m</a></li>
+</ol>
+
+
+<h2>NSRecursiveLock递归锁的使用</h2>
+
+<p>NSRecursiveLock实际上定义的是一个递归锁，这个锁可以被同一线程多次请求，而不会引起死锁。这主要是用在循环或递归操作中。我们先来看一个示例：</p>
+
+<pre><code>NSLock *lock = [[NSLock alloc] init];
+
+dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+
+    static void (^RecursiveMethod)(int);
+
+    RecursiveMethod = ^(int value) {
+
+        [lock lock];
+        if (value &gt; 0) {
+
+            NSLog(@"value = %d", value);
+            sleep(2);
+            RecursiveMethod(value - 1);
+        }
+        [lock unlock];
+    };
+
+    RecursiveMethod(5);
+});
+</code></pre>
+
+<p>这段代码是一个典型的死锁情况。在我们的线程中，RecursiveMethod是递归调用的。所以每次进入这个block时，都会去加一次锁，而从第二次开始，由于锁已经被使用了且没有解锁，所以它需要等待锁被解除，这样就导致了死锁，线程被阻塞住了。调试器中会输出如下信息：</p>
+
+<pre><code>value = 5
+*** -[NSLock lock]: deadlock (&lt;NSLock: 0x1700ceee0&gt; '(null)')   *** Break on _NSLockError() to debug.   
+</code></pre>
+
+<p>在这种情况下，我们就可以使用NSRecursiveLock。它可以允许同一线程多次加锁，而不会造成死锁。递归锁会跟踪它被lock的次数。每次成功的lock都必须平衡调用unlock操作。只有所有达到这种平衡，锁最后才能被释放，以供其它线程使用。</p>
+
+<p>所以，对上面的代码进行一下改造，</p>
+
+<pre><code>NSRecursiveLock *lock = [[NSRecursiveLock alloc] init];
+</code></pre>
+
+<p>这样，程序就能正常运行了，其输出如下所示：</p>
+
+<pre><code>value = 5
+value = 4
+value = 3
+value = 2
+value = 1
+</code></pre>
+
+<p>NSRecursiveLock除了实现NSLocking协议的方法外，还提供了两个方法，分别如下：</p>
+
+<pre><code>// 在给定的时间之前去尝试请求一个锁
+- (BOOL)lockBeforeDate:(NSDate *)limit
+
+// 尝试去请求一个锁，并会立即返回一个布尔值，表示尝试是否成功
+- (BOOL)tryLock
+</code></pre>
+
+<p>这两个方法都可以用于在多线程的情况下，去尝试请求一个递归锁，然后根据返回的布尔值，来做相应的处理。如下代码所示：</p>
+
+<pre><code>NSRecursiveLock *lock = [[NSRecursiveLock alloc] init];
+
+dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+
+    static void (^RecursiveMethod)(int);
+
+    RecursiveMethod = ^(int value) {
+
+        [lock lock];
+        if (value &gt; 0) {
+
+            NSLog(@"value = %d", value);
+            sleep(2);
+            RecursiveMethod(value - 1);
+        }
+        [lock unlock];
+    };
+
+    RecursiveMethod(5);
+});
+
+dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+
+    sleep(2);
+    BOOL flag = [lock lockBeforeDate:[NSDate dateWithTimeIntervalSinceNow:1]];
+    if (flag) {
+        NSLog(@"lock before date");
+
+        [lock unlock];
+    } else {
+        NSLog(@"fail to lock before date");
+    }
+});
+</code></pre>
+
+<p>在前面的代码中，我们又添加了一段代码，增加一个线程来获取递归锁。我们在第二个线程中尝试去获取递归锁，当然这种情况下是会失败的，输出结果如下：</p>
+
+<pre><code>value = 5
+value = 4
+fail to lock before date
+value = 3
+value = 2
+value = 1
+</code></pre>
+
+<p>另外，NSRecursiveLock还声明了一个name属性，如下：</p>
+
+<pre><code>@property(copy) NSString *name
+</code></pre>
+
+<p>我们可以使用这个字符串来标识一个锁。Cocoa也会使用这个name作为错误描述信息的一部分。</p>
+
+<h3>参考</h3>
+
+<ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/Foundation/Classes/NSRecursiveLock_Class/">NSRecursiveLock Class Reference</a></li>
+<li><a href="http://www.tanhao.me/pieces/643.html/">Objective-C中不同方式实现锁(二)</a></li>
+</ol>
+
+
+<h2>NSHashTable</h2>
+
+<p>在看KVOController的代码时，又看到了NSHashTable这个类，所以就此整理一下。</p>
+
+<p>NSHashTable效仿了NSSet(NSMutableSet)，但提供了比NSSet更多的操作选项，尤其是在对弱引用关系的支持上，NSHashTable在对象/内存处理时更加的灵活。相较于NSSet，NSHashTable具有以下特性：</p>
+
+<ol>
+<li>NSSet(NSMutableSet)持有其元素的强引用，同时这些元素是使用hash值及isEqual:方法来做hash检测及判断是否相等的。</li>
+<li>NSHashTable是可变的，它没有不可变版本。</li>
+<li>它可以持有元素的弱引用，而且在对象被销毁后能正确地将其移除。而这一点在NSSet是做不到的。</li>
+<li>它的成员可以在添加时被拷贝。</li>
+<li>它的成员可以使用指针来标识是否相等及做hash检测。</li>
+<li>它可以包含任意指针，其成员没有限制为对象。我们可以配置一个NSHashTable实例来操作任意的指针，而不仅仅是对象。</li>
+</ol>
+
+
+<p>初始化NSHashTable时，我们可以设置一个初始选项，这个选项确定了这个NSHashTable对象后面所有的行为。这个选项是由NSHashTableOptions枚举来定义的，如下所示：</p>
+
+<pre><code>enum {
+
+    // 默认行为，强引用集合中的对象，等同于NSSet
+    NSHashTableStrongMemory             = 0,
+
+    // 在将对象添加到集合之前，会拷贝对象
+    NSHashTableCopyIn                   = NSPointerFunctionsCopyIn,
+
+    // 使用移位指针(shifted pointer)来做hash检测及确定两个对象是否相等；
+    // 同时使用description方法来做描述字符串
+    NSHashTableObjectPointerPersonality = NSPointerFunctionsObjectPointerPersonality,
+
+    // 弱引用集合中的对象，且在对象被释放后，会被正确的移除。
+    NSHashTableWeakMemory               = NSPointerFunctionsWeakMemory 
+};
+typedef NSUInteger NSHashTableOptions;
+</code></pre>
+
+<p>当然，我们还可以使用NSPointerFunctions来初始化，但只有使用NSHashTableOptions定义的这些值，才能确保NSHashTable的各个API可以正确的工作&mdash;包括拷贝、归档及快速枚举。</p>
+
+<p>个人认为NSHashTable吸引人的地方在于可以持有元素的弱引用，而且在对象被销毁后能正确地将其移除。我们来写个示例：</p>
+
+<pre><code>// 具体调用如下
+@implementation TestHashAndMapTableClass {
+
+    NSMutableDictionary *_dic;
+    NSSet               *_set;
+
+    NSHashTable         *_hashTable;
+}
+
+- (instancetype)init {
+
+    self = [super init];
+
+    if (self) {
+
+        [self testWeakMemory];
+
+        NSLog(@"hash table [init]: %@", _hashTable);
+    }
+
+    return self;
+}
+
+- (void)testWeakMemory {
+
+    if (!_hashTable) {
+        _hashTable = [NSHashTable weakObjectsHashTable];
+    }
+
+    NSObject *obj = [[NSObject alloc] init];
+
+    [_hashTable addObject:obj];
+
+    NSLog(@"hash table [testWeakMemory] : %@", _hashTable);
+}
+</code></pre>
+
+<p>这段代码的输出结果如下：</p>
+
+<pre><code>hash table [testWeakMemory] : NSHashTable {
+[6] &lt;NSObject: 0x7fa2b1562670&gt;
+}
+hash table [init]: NSHashTable {
+}
+</code></pre>
+
+<p>可以看到，在离开testWeakMemory方法，obj对象被释放，同时对象在集合中的引用也被安全的删除。</p>
+
+<p>这样看来，NSHashTable似乎比NSSet(NSMutableSet)要好啊。那是不是我们就应用都使用NSHashTable呢？Peter Steinberger在<a href="http://www.objc.io/issue-7/collections.html">The Foundation Collection Classes</a>给了我们一组数据，显示在添加对象的操作中，NSHashTable所有的时间差不多是NSMutableSet的2倍，而在其它操作中，性能大体相近。所以，如果我们只需要NSSet的特性，就尽量用NSSet。</p>
+
+<p>另外，Mattt Thompson在<a href="http://nshipster.com/nshashtable-and-nsmaptable/">NSHash​Table &amp; NSMap​Table</a>的结尾也写了段挺有意思的话，在此直接摘抄过来：</p>
+
+<pre><code>As always, it's important to remember that programming is not about being clever: always approach a problem from the highest viable level of abstraction. NSSet and NSDictionary are great classes. For 99% of problems, they are undoubtedly the correct tool for the job. If, however, your problem has any of the particular memory management constraints described above, then NSHashTable &amp; NSMapTable may be worth a look.
+</code></pre>
+
+<h3>参考</h3>
+
+<ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/NSHashTable_class/">NSHashTable Class Reference</a></li>
+<li><a href="http://nshipster.com/nshashtable-and-nsmaptable/">NSHash​Table &amp; NSMap​Table</a></li>
+<li><a href="http://billwang1990.github.io/blog/2014/03/31/nshashtable-and-nsmaptable/">NSHashTable &amp; NSMapTable</a></li>
+<li><a href="http://www.objc.io/issue-7/collections.html">The Foundation Collection Classes</a></li>
+</ol>
+
+
+<h2>零碎</h2>
+
+<h3>(一) &ldquo;Unknown class XXViewController in Interface Builder file.&rdquo;&ldquo; 问题处理</h3>
+
+<p>最近在静态库中写了一个XXViewController类，然后在主工程的xib中，将xib的类指定为XXViewController，程序运行时，报了如下错误：</p>
+
+<pre><code>Unknown class XXViewController in Interface Builder file.
+</code></pre>
+
+<p>之前也遇到这个问题，但已记得不太清楚，所以又开始在stackoverflow上找答案。</p>
+
+<p>其实这个问题与Interface Builder无关，最直接的原因还是相关的symbol没有从静态库中加载进来。这种问题的处理就是在Target的"Build Setting"&ndash;>&ldquo;Other Link Flags"中加上&rdquo;-all_load -ObjC"这两个标识位，这样就OK了。</p>
+
+<h3>(二)关于Unbalanced calls to begin/end appearance transitions for &hellip;问题的处理</h3>
+
+<p>我们的某个业务有这么一个需求，进入一个列表后需要立马又push一个web页面，做一些活动的推广。在iOS 8上，我们的实现是一切OK的；但到了iOS 7上，就发现这个web页面push不出来了，同时控制台给了一条警告消息，即如下：</p>
+
+<pre><code>Unbalanced calls to begin/end appearance transitions for ...
+</code></pre>
+
+<p>在这种情况下，点击导航栏中的返回按钮时，直接显示一个黑屏。</p>
+
+<p>我们到stackoverflow上查了一下，有这么一段提示：</p>
+
+<pre><code>occurs when you try and display a new viewcontroller before the current view controller is finished displaying.
+</code></pre>
+
+<p>意思是说在当前视图控制器完成显示之前，又试图去显示一个新的视图控制器。</p>
+
+<p>于是我们去排查代码，果然发现，在viewDidLoad里面去做了次网络请求操作，且请求返回后就去push这个web活动推广页。此时，当前的视图控制器可能并未显示完成(即未完成push操作)。</p>
+
+<pre><code>Basically you are trying to push two view controllers onto the stack at almost the same time. 
+</code></pre>
+
+<p>当几乎同时将两个视图控制器push到当前的导航控制器栈中时，或者同时pop两个不同的视图控制器，就会出现不确定的结果。所以我们应该确保同一时间，对同一个导航控制器栈只有一个操作，即便当前的视图控制器正在动画过程中，也不应该再去push或pop一个新的视图控制器。</p>
+
+<p>所以最后我们把web活动的数据请求放到了viewDidAppear里面，并做了些处理，这样问题就解决了。</p>
+
+<h4>参考</h4>
+
+<ol>
+<li><p><a href="http://stackoverflow.com/questions/9088465/unbalanced-calls-to-begin-end-appearance-transitions-for-detailviewcontroller">“Unbalanced calls to begin/end appearance transitions for DetailViewController” when pushing more than one detail view controller</a></p></li>
+<li><p><a href="http://stackoverflow.com/questions/8563473/unbalanced-calls-to-begin-end-appearance-transitions-for-uitabbarcontroller">Unbalanced calls to begin/end appearance transitions for UITabBarController</a></p></li>
+</ol>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[NSKeyValueObserving(KVO)]]></title>
+    <link href="http://southpeak.github.io/blog/2015/04/23/nskeyvalueobserving-kvo/"/>
+    <updated>2015-04-23T17:31:16+08:00</updated>
+    <id>http://southpeak.github.io/blog/2015/04/23/nskeyvalueobserving-kvo</id>
+    <content type="html"><![CDATA[<p>NSKeyValueObserving非正式协议定义了一种机制，它允许对象去监听其它对象的某个属性的修改。</p>
+
+<p>我们可以监听一个对象的属性，包括简单属性，一对一的关系，和一对多的关系。一对多关系的监听者会被告知集合变更的类型，以及哪些对象参与了变化。</p>
+
+<p>NSObject提供了一个NSKeyValueObserving协议的默认实现，它为所有对象提供了一种自动发送修改通知的能力。我们可以通过禁用自动发送通知并使用这个协议提供的方法来手动实现通知的发送，以便更精确地去处理通知。</p>
+
+<p>在这里，我们将通过具体的实例来看看NSKeyValueObserving提供了哪些方法。我们的基础代码如代码清单1所示：</p>
+
+<p><strong>代码清单1：示例基础代码</strong></p>
+
+<pre><code>#pragma mark - PersonObject
+
+@interface PersonObject : NSObject
+
+@end
+
+@implementation PersonObject
+
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
+
+    NSLog(@"keyPath = %@, change = %@, context = %s", keyPath, change, (char *)context);
+}
+
+@end
+
+#pragma mark - BankObject
+
+@interface BankObject : NSObject
+
+@property (nonatomic, assign) int accountBalance;
+@property (nonatomic, copy) NSString *bankCodeEn;
+@property (nonatomic, strong) NSMutableArray *departments;
+
+@end
+</code></pre>
+
+<p>在这段代码中，我们定义一两个类，一个是PersonObject类，这个类的对象在下面将充当观察者的角色。另一个是BankObject类，我们在这个类中定义了三个属性，作为被监听的属性。由于NSObject类已经实现了NSKeyValueObserving协议，所以我们不需要再显式地去让我们的类实现这个协议。</p>
+
+<p>接下来，我们便来看看NSKeyValueObserving协议有哪些功能。</p>
+
+<h2>注册/移除观察者</h2>
+
+<p>要让一个对象监听另一个对象的属性的变化，首先需要将这个对象注册为相关属性的观察者，我们可以使用以下方法来实现：</p>
+
+<pre><code>- (void)addObserver:(NSObject *)anObserver
+         forKeyPath:(NSString *)keyPath
+            options:(NSKeyValueObservingOptions)options
+            context:(void *)context
+</code></pre>
+
+<p>这个方法带有四个参数，描述如下：</p>
+
+<ol>
+<li>anObserver：观察者对象，这个对象必须实现observeValueForKeyPath:ofObject:change:context:方法，以响应属性的修改通知。</li>
+<li>keyPath：被监听的属性。这个值不能为nil。</li>
+<li>options：监听选项，这个值可以是NSKeyValueObservingOptions选项的组合。关于监听选项，我们会在下面介绍。</li>
+<li>context：任意的额外数据，我们可以将这些数据作为上下文数据，它会传递给观察者对象的observeValueForKeyPath:ofObject:change:context:方法。这个参数的意义在于用于区分同一对象监听同一属性(从属于同一对象)的多个不同的监听。我们将在下面看到。</li>
+</ol>
+
+
+<p>监听选项是由枚举NSKeyValueObservingOptions定义的，是传入-addObserver:forKeyPath:options:context:方法中以确定哪些值将被传到-observeValueForKeyPath:ofObject:change:context:方法中。这个枚举的定义如下：</p>
+
+<pre><code>enum {
+    // 提供属性的新值
+    NSKeyValueObservingOptionNew = 0x01,
+
+    // 提供属性的旧值
+    NSKeyValueObservingOptionOld = 0x02,
+
+    // 如果指定，则在添加观察者的时候立即发送一个通知给观察者，
+    // 并且是在注册观察者方法返回之前
+    NSKeyValueObservingOptionInitial = 0x04,
+
+    // 如果指定，则在每次修改属性时，会在修改通知被发送之前预先发送一条通知给观察者，
+    // 这与-willChangeValueForKey:被触发的时间是相对应的。
+    // 这样，在每次修改属性时，实际上是会发送两条通知。
+    NSKeyValueObservingOptionPrior = 0x08 
+};
+typedef NSUInteger NSKeyValueObservingOptions;
+</code></pre>
+
+<p>需要注意的是，当设定了NSKeyValueObservingOptionPrior选项时，第一条通知不会包含NSKeyValueChangeNewKey。当观察者自身的KVO需要为自己的某个属性调用-willChange&hellip;方法，而这个属性的值又依赖于被观察对象的属性时，我们可以使用这个选项。</p>
+
+<p>另外，在添加观察者时还有两点需要注意的是：</p>
+
+<ol>
+<li>调用这个方法时，两个对象(即观察者对象及属性所属的对象)都不会被retain。</li>
+<li>可以多次调用这个方法，将同一个对象注册为同一属性的观察者(所有参数可以完全相同)。这时，即便在所有参数一致的情况下，新注册的观察者并不会替换原来观察者，而是会并存。这样，当属性被修改时，两次监听都会响应。</li>
+</ol>
+
+
+<p>对于第2点，我们在代码清单2中来验证一下：</p>
+
+<p><strong>代码清单2：验证多次使用相同参数来添加观察者的实际效果</strong></p>
+
+<pre><code>PersonObject *personInstance = [[PersonObject alloc] init];
+BankObject *bankInstance = [[BankObject alloc] init];
+
+[bankInstance addObserver:personInstance forKeyPath:@"accountBalance" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:NULL];
+[bankInstance addObserver:personInstance forKeyPath:@"accountBalance" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:NULL];
+
+[bankInstance addObserver:personInstance forKeyPath:@"accountBalance" options:NSKeyValueObservingOptionNew context:"person instance"];
+[bankInstance addObserver:personInstance forKeyPath:@"accountBalance" options:NSKeyValueObservingOptionNew context:"person instance 2"];
+
+bankInstance.accountBalance = 10;
+</code></pre>
+
+<p>(注，以上代码为在MRC环境下调用，确保personInstance和bankInstance不会被释放。)</p>
+
+<p>这段代码的输出如下所示：</p>
+
+<pre><code>keyPath = accountBalance, change = {
+    kind = 1;
+    new = 10;
+}, context = person instance 2
+keyPath = accountBalance, change = {
+    kind = 1;
+    new = 10;
+}, context = person instance
+keyPath = accountBalance, change = {
+    kind = 1;
+    new = 10;
+    old = 0;
+}, context = (null)
+keyPath = accountBalance, change = {
+    kind = 1;
+    new = 10;
+    old = 0;
+}, context = (null)
+</code></pre>
+
+<p>可以看到KVO为每次注册都调用了一次监听处理操作。所以多次调用同样的注册操作会产生多个观察者。另外，多个观察者之间的observeValueForKeyPath:ofObject:change:context:方法调用顺序是按照先进后出的顺序来的(所有的监听信息都是放在一个数组中的，我们将在下面了解到)。</p>
+
+<p>一个良好的实践是在观察者不再需要监听属性变化时，必须调用removeObserver:forKeyPath:或removeObserver:forKeyPath:context:方法来移除观察者，这两个方法的声明如下：</p>
+
+<pre><code>- (void)removeObserver:(NSObject *)anObserver
+            forKeyPath:(NSString *)keyPath
+
+- (void)removeObserver:(NSObject *)observer
+            forKeyPath:(NSString *)keyPath
+               context:(void *)context
+</code></pre>
+
+<p>这两个方法会根据传入的参数(主要是keyPath和context)来移除观察者。如果observer没有监听keyPath属性，则调用这两个方法会抛出异常。大家可以试一下，程序会果断的崩溃。并报类似于以下的错误：</p>
+
+<pre><code>*** Terminating app due to uncaught exception 'NSRangeException', reason: 'Cannot remove an observer &lt;PersonObject 0x7ff541534e20&gt; for the key path "accountBalance" from &lt;BankObject 0x7ff541528430&gt; because it is not registered as an observer.'
+</code></pre>
+
+<p>所以，我们必须确保先注册了观察者，才能调用移除方法。</p>
+
+<p>那如果我们忘记调用移除观察者方法，会怎么样呢？我们来制造一个场景，看看会是什么结果。还是使用上面的代码，只不过这次我们在ARC下来测试：</p>
+
+<p><strong>代码清单3：未移除观察者的影响</strong></p>
+
+<pre><code>- (void)testKVO {
+
+    PersonObject *personInstance = [[PersonObject alloc] init];
+    BankObject *bankInstance = [[BankObject alloc] init];
+
+    [bankInstance addObserver:personInstance forKeyPath:@"accountBalance" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:NULL];
+
+    bankInstance.accountBalance = 20;
+}
+</code></pre>
+
+<p>其输出结果如下所示：</p>
+
+<pre><code>keyPath = accountBalance, change = {
+    kind = 1;
+    new = 20;
+    old = 0;
+}, context = (null)
+*** Terminating app due to uncaught exception 'NSInternalInconsistencyException', reason: 'An instance 0x7fc88047e7e0 of class BankObject was deallocated while key value observers were still registered with it. Current observation info: &lt;NSKeyValueObservationInfo 0x7fc880770fa0&gt; (
+&lt;NSKeyValueObservance 0x7fc880771850: Observer: 0x7fc8804737a0, Key path: accountBalance, Options: &lt;New: YES, Old: YES, Prior: NO&gt; Context: 0x0, Property: 0x7fc88076edd0&gt;
+)'
+......
+</code></pre>
+
+<p>程序在调用一次KVO后，很爽快地崩溃了。给我们的解释是bankInstance被释放了，但KVO中仍然还有关于它的注册信息。实际上，我们上面说过，在添加观察者的时候，观察者对象与被观察属性所属的对象都不会被retain，然而在这些对象被释放后，相关的监听信息却还存在，KVO做的处理是直接让程序崩溃。</p>
+
+<h2>处理属性修改通知</h2>
+
+<p>当被监听的属性修改时，KVO会发出一个通知以告知所有监听这个属性的观察者对象。而观察者对象必须实现
+-observeValueForKeyPath:ofObject:change:context:方法，来对属性修改通知做相应的处理。这个方法的声明如下：</p>
+
+<pre><code>- (void)observeValueForKeyPath:(NSString *)keyPath
+                      ofObject:(id)object
+                        change:(NSDictionary *)change
+                       context:(void *)context
+</code></pre>
+
+<p>这个方法有四个参数，描述如下：</p>
+
+<ol>
+<li>keyPath：即被观察的属性，与参数object相关。</li>
+<li>object：keyPath所属的对象。</li>
+<li>change：这是一个字典，它包含了属性被修改的一些信息。这个字典中包含的值会根据我们在添加观察者时设置的options参数的不同而有所不同。</li>
+<li>context：这个值即是添加观察者时提供的上下文信息。</li>
+</ol>
+
+
+<p>在我们的示例中，这个方法的实现是打印一些基本的信息。如代码清单1所示。</p>
+
+<p>对于第三个参数，我们通常称之为<strong>变化字典(Change Dictionary)</strong>，它记录了被监听属性的变化情况。我们可以通过以下key来获取我们想要的信息：</p>
+
+<pre><code>// 属性变化的类型，是一个NSNumber对象，包含NSKeyValueChange枚举相关的值
+NSString *const NSKeyValueChangeKindKey;
+
+// 属性的新值。当NSKeyValueChangeKindKey是 NSKeyValueChangeSetting，
+// 且添加观察的方法设置了NSKeyValueObservingOptionNew时，我们能获取到属性的新值。
+// 如果NSKeyValueChangeKindKey是NSKeyValueChangeInsertion或者NSKeyValueChangeReplacement，
+// 且指定了NSKeyValueObservingOptionNew时，则我们能获取到一个NSArray对象，包含被插入的对象或
+// 用于替换其它对象的对象。
+NSString *const NSKeyValueChangeNewKey;
+
+// 属性的旧值。当NSKeyValueChangeKindKey是 NSKeyValueChangeSetting，
+// 且添加观察的方法设置了NSKeyValueObservingOptionOld时，我们能获取到属性的旧值。
+// 如果NSKeyValueChangeKindKey是NSKeyValueChangeRemoval或者NSKeyValueChangeReplacement，
+// 且指定了NSKeyValueObservingOptionOld时，则我们能获取到一个NSArray对象，包含被移除的对象或
+// 被替换的对象。
+NSString *const NSKeyValueChangeOldKey;
+
+// 如果NSKeyValueChangeKindKey的值是NSKeyValueChangeInsertion、NSKeyValueChangeRemoval
+// 或者NSKeyValueChangeReplacement，则这个key对应的值是一个NSIndexSet对象，
+// 包含了被插入、移除或替换的对象的索引
+NSString *const NSKeyValueChangeIndexesKey;
+
+// 当指定了NSKeyValueObservingOptionPrior选项时，在属性被修改的通知发送前，
+// 会先发送一条通知给观察者。我们可以使用NSKeyValueChangeNotificationIsPriorKey
+// 来获取到通知是否是预先发送的，如果是，获取到的值总是@(YES)
+NSString *const NSKeyValueChangeNotificationIsPriorKey;
+</code></pre>
+
+<p>其中，NSKeyValueChangeKindKey的值取自于NSKeyValueChange，它的值是由以下枚举定义的：</p>
+
+<pre><code>enum {
+
+    // 设置一个新值。被监听的属性可以是一个对象，也可以是一对一关系的属性或一对多关系的属性。
+    NSKeyValueChangeSetting = 1,
+
+    // 表示一个对象被插入到一对多关系的属性。
+    NSKeyValueChangeInsertion = 2,
+
+    // 表示一个对象被从一对多关系的属性中移除。
+    NSKeyValueChangeRemoval = 3,
+
+    // 表示一个对象在一对多的关系的属性中被替换
+    NSKeyValueChangeReplacement = 4
+};
+typedef NSUInteger NSKeyValueChange;
+</code></pre>
+
+<h2>通知观察者属性的变化</h2>
+
+<p>通知观察者的方式有自动与手动两种方式。</p>
+
+<p>默认情况下是自动发送通知，在这种模式下，当我们修改属性的值时，KVO会自动调用以下两个方法：</p>
+
+<pre><code>- (void)willChangeValueForKey:(NSString *)key
+- (void)didChangeValueForKey:(NSString *)key
+</code></pre>
+
+<p>这两个方法的任务是告诉接收者给定的属性将要或已经被修改。需要注意的是不应该在子类中去重写这两个方法。</p>
+
+<p>但如果我们希望自己控制通知发送的一些细节，则可以启用手动控制模式。手动控制通知提供了对KVO更精确控制，它可以控制通知如何以及何时被发送给观察者。采用这种方式可以减少不必要的通知，或者可以将多个修改组合到一个修改中。</p>
+
+<p>实现手动通知的类必须重写NSObject中对automaticallyNotifiesObserversForKey:方法的实现。这个方法是在NSKeyValueObserving协议中声明的，其声明如下：</p>
+
+<pre><code>+ (BOOL)automaticallyNotifiesObserversForKey:(NSString *)key
+</code></pre>
+
+<p>这个方法返回一个布尔值(默认是返回YES)，以标识参数key指定的属性是否支持自动KVO。如果我们希望手动去发送通知，则针对指定的属性返回NO。</p>
+
+<p>假设我们希望PersonObject对象去监听BankObject对象的bankCodeEn属性，并希望执行手动通知，则可以如下处理：</p>
+
+<p><strong>代码清单4：关闭属性的自动通知发送</strong></p>
+
+<pre><code>@implementation BankObject
+
++ (BOOL)automaticallyNotifiesObserversForKey:(NSString *)key {
+
+    BOOL automatic = YES;
+    if ([key isEqualToString:@"bankCodeEn"]) {
+        automatic = NO;
+    } else {
+        automatic = [super automaticallyNotifiesObserversForKey:key];
+    }
+
+    return automatic;
+}
+
+@end
+</code></pre>
+
+<p>这样我们便可以手动去发送属性修改通知了。需要注意的是，对于对象中其它没有处理的属性，我们需要调用[super automaticallyNotifiesObserversForKey:key]，以避免无意中修改了父类的属性的处理方式。</p>
+
+<p>现在我们已经通过+automaticallyNotifiesObserversForKey:方法设置了对象中哪些属性需要手动处理。接下来就是实际操作了。为了实现手动发送通知，我们需要在修改属性值前调用willChangeValueForKey:，然后在修改属性值之后调用didChangeValueForKey:方法。继续上面的示例，我们需要对bankCodeEn属性做如下处理：</p>
+
+<p><strong>代码清单5：手动控制通知发送</strong></p>
+
+<pre><code>@implementation BankObject
+
+- (void)setBankCodeEn:(NSString *)bankCodeEn {
+
+    [self willChangeValueForKey:@"bankCodeEn"];
+    _bankCodeEn = bankCodeEn;
+    [self didChangeValueForKey:@"bankCodeEn"];
+}
+
+@end
+</code></pre>
+
+<p>如果我们希望只有当bankCodeEn实际被修改时发送通知，以尽量减少不必要的通知，则可以如下实现：</p>
+
+<p><strong>代码清单6：在发送通知前测试值是否修改</strong></p>
+
+<pre><code>- (void)setBankCodeEn:(NSString *)bankCodeEn {
+
+    if (bankCodeEn != _bankCodeEn) {
+        [self willChangeValueForKey:@"bankCodeEn"];
+        _bankCodeEn = bankCodeEn;
+        [self didChangeValueForKey:@"bankCodeEn"];
+    }
+}
+</code></pre>
+
+<p>我们来测试一下上面这段代码的实际效果：</p>
+
+<p><strong>代码清单7：测试避免属性未实际修改下不发送通知</strong></p>
+
+<pre><code>PersonObject    *personInstance = [[PersonObject alloc] init];
+BankObject      *bankInstance = [[BankObject alloc] init];
+
+[bankInstance addObserver:personInstance forKeyPath:@"bankCodeEn" options:NSKeyValueObservingOptionNew context:NULL];
+
+NSString *bankCodeEn = @"CCB";
+bankInstance.bankCodeEn = bankCodeEn;
+bankInstance.bankCodeEn = bankCodeEn;
+</code></pre>
+
+<p>这段代码的输出结果如下所示：</p>
+
+<pre><code>keyPath = bankCodeEn, change = {
+    kind = 1;
+    new = CCB;
+}, context = (null)
+</code></pre>
+
+<p>我们可以看到只输出了一次，而不是两次。</p>
+
+<p>如果我们在setter方法之外改变了实例变量(如_bankCodeEn)，且希望这种修改被观察者监听到，则需要像在setter方法里面做一样的处理。这也涉及到我们通常会遇到的一个问题，在类的内部，对于一个属性值，何时用属性(self.bankCodeEn)访问而何时用实例变量(_bankCodeEn)访问。一般的建议是，在获取属性值时，可以用实例变量，在设置属性值时，尽量用setter方法，以保证属性的KVO特性。当然，性能也是一个考量，在设置值时，使用实例变量比使用属性设置值的性能高不少。</p>
+
+<p>另外，对于一对多关系的属性，如果想手动处理通知，则可以使用以下几个方法：</p>
+
+<pre><code>// 有序的一对多关系
+- (void)willChange:(NSKeyValueChange)change valuesAtIndexes:(NSIndexSet *)indexes forKey:(NSString *)key
+- (void)didChange:(NSKeyValueChange)change valuesAtIndexes:(NSIndexSet *)indexes forKey:(NSString *)key
+
+// 无序的一对多关系
+- (void)willChangeValueForKey:(NSString *)key withSetMutation:(NSKeyValueSetMutationKind)mutationKind usingObjects:(NSSet *)objects
+- (void)didChangeValueForKey:(NSString *)key withSetMutation:(NSKeyValueSetMutationKind)mutationKind usingObjects:(NSSet *)objects
+</code></pre>
+
+<p>同样，在子类中也不应该去重写这几个方法。</p>
+
+<h2>计算属性(注册依赖键)</h2>
+
+<p>有时候，我们的监听的某个属性可能会依赖于其它多个属性的变化(类似于swift，可以称之为计算属性)，不管所依赖的哪个属性发生了变化，都会导致计算属性的变化。对于这种一对一(To-one)的关系，我们需要做两步操作，首先是确定计算属性与所依赖属性的关系。如我们在BankObject类中定义一个accountForBank属性，其get方法定义如下：</p>
+
+<p><strong>代码清单8：计算属性</strong></p>
+
+<pre><code>@implementation BankObject
+
+- (NSString *)accountForBank {
+
+    return [NSString stringWithFormat:@"account for %@ is %d", self.bankCodeEn, self.accountBalance];
+}
+
+@end
+</code></pre>
+
+<p>定义了这种依赖关系后，我们就需要以某种方式告诉KVO，当我们的被依赖属性修改时，会发送accountForBank属性被修改的通知。此时，我们需要重写NSKeyValueObserving协议的keyPathsForValuesAffectingValueForKey:方法，该方法声明如下：</p>
+
+<pre><code>+ (NSSet *)keyPathsForValuesAffectingValueForKey:(NSString *)key
+</code></pre>
+
+<p>这个方法返回的是一个集合对象，包含了那些影响key指定的属性依赖的属性所对应的字符串。所以对于accountForBank属性，该方法的实现如下：</p>
+
+<p><strong>代码清单9：accountForBank属性的keyPathsForValuesAffectingValueForKey方法的实现</strong></p>
+
+<pre><code>@implementation BankObject
+
++ (NSSet *)keyPathsForValuesAffectingValueForKey:(NSString *)key {
+
+    NSSet *keyPaths = [super keyPathsForValuesAffectingValueForKey:key];
+
+    if ([key isEqualToString:@"accountForBank"]) {
+
+        keyPaths = [keyPaths setByAddingObjectsFromArray:@[@"accountBalance", @"bankCodeEn"]];
+    }
+
+    return keyPaths;
+}
+
+@end
+</code></pre>
+
+<p>我们来再来看看监听accountForBank属性是什么效果：</p>
+
+<p><strong>代码清单10：监听accountForBank属性</strong></p>
+
+<pre><code>PersonObject    *personInstance = [[PersonObject alloc] init];
+BankObject      *bankInstance = [[BankObject alloc] init];
+
+[bankInstance addObserver:personInstance forKeyPath:@"accountForBank" options:NSKeyValueObservingOptionNew context:NULL];
+
+bankInstance.accountBalance = 10;
+bankInstance.bankCodeEn = @"CCB";
+</code></pre>
+
+<p>其输出结果为：</p>
+
+<pre><code>keyPath = accountForBank, change = {
+    kind = 1;
+    new = "account for (null) is 10";
+}, context = (null)
+keyPath = accountForBank, change = {
+    kind = 1;
+    new = "account for CCB is 10";
+}, context = (null)
+</code></pre>
+
+<p>可以看到，不管是accountBalance还是bankCodeEn被修改了，都会发送accountForBank属性被修改的通知。</p>
+
+<p>需要注意的就是当我们重写+keyPathsForValuesAffectingValueForKey:时，需要去调用super的对应方法，并返回一个包含父类中可能会对key指定属性产生影响的属性集合。</p>
+
+<p>另外，我们还可以实现一个命名为keyPathsForValuesAffecting&lt;Key>的类方法来达到同样的目的，其中<Key>是我们计算属性的名称。所以对于accountForBank属性，还可以如下实现：</p>
+
+<pre><code>+ (NSSet *)keyPathsForValuesAffectingAccountForBank {
+
+    return [NSSet setWithObjects:@"accountBalance", @"bankCodeEn", nil];
+}
+</code></pre>
+
+<p>两种方法的实现效果是一样的。不过更建议使用后面一种方法，这种方法让依赖关系更加清晰明了。</p>
+
+<h2>集合属性的监听</h2>
+
+<p>keyPathsForValuesAffectingValueForKey:只支持一对一的关系，而不支持一对多的关系，即不支持对集合的处理。</p>
+
+<p>对于集合的KVO，我们需要了解的一点是，KVO旨在观察关系(relationship)而不是集合。对于不可变集合属性，我们更多的是把它当成一个整体来监听，而无法去监听集合中的某个元素的变化；对于可变集合属性，实际上也是当成一个整体，去监听它整体的变化，如添加、删除和替换元素。</p>
+
+<p>在KVC中，我们可以使用<strong>集合代理对象(collection proxy object)</strong>来处理集合相关的操作。我们以数组为例，在我们的BankObject类中有一个departments数组属性，如果我们希望通过集合代理对象来负责响应departments所有的方法，则需要实现以下方法：</p>
+
+<pre><code>-countOf&lt;Key&gt;
+
+// 以下两者二选一
+-objectIn&lt;Key&gt;AtIndex:
+-&lt;key&gt;AtIndexes:
+
+// 可选（增强性能）
+-get&lt;Key&gt;:range:
+</code></pre>
+
+<p>因此，我们的实现以下几个方法：</p>
+
+<p><strong>代码清单11：集合代码对象的实现</strong></p>
+
+<pre><code>@implementation BankObject
+
+#pragma mark - 集合代理对象
+
+- (NSUInteger)countOfDepartments {
+
+    return [_departments count];
+}
+
+- (id)objectInDepartmentsAtIndex:(NSUInteger)index {
+
+    return [_departments objectAtIndex:index];
+}
+
+@end
+</code></pre>
+
+<p>实现以上方法之后，对于不可变数组，当我们调用[bankInstance valueForKey:@&ldquo;departments”]的时候，便会返回一个由以上方法来代理所有调用方法的NSArray对象。这个代理数组对象支持所有正常的NSArray调用。换句话说，调用者并不知道返回的是一个真正的NSArray，还是一个代理的数组。</p>
+
+<p>另外，对于可变数组的代理对象，我们需要实现以下几个方法：</p>
+
+<pre><code>// 至少实现一个插入方法和一个删除方法
+-insertObject:in&lt;Key&gt;AtIndex:
+-removeObjectFrom&lt;Key&gt;AtIndex:
+-insert&lt;Key&gt;:atIndexes:
+-remove&lt;Key&gt;AtIndexes:
+
+// 可选（增强性能）以下方法二选一
+-replaceObjectIn&lt;Key&gt;AtIndex:withObject:
+-replace&lt;Key&gt;AtIndexes:with&lt;Key&gt;:
+</code></pre>
+
+<p>这些方法分别对应插入、删除和替换，有批量操作的，也有只改变一个对象的方法。可以根据实际需要来实现。</p>
+
+<p>另外，对于可变集合，我们通常不使用valueForKey:来获取代理对象，而是使用以下方法：</p>
+
+<pre><code>- (NSMutableArray *)mutableArrayValueForKey:(NSString *)key;
+</code></pre>
+
+<p>通过这个方法，我们便可以将可变数组与强大的KVO结合在一起。KVO机制能在集合改变的时候把详细的变化放进change字典中。</p>
+
+<p>我们先来看看下面的代码：</p>
+
+<p><strong>代码清单12：使用真正的数组对象监听可变数组属性</strong></p>
+
+<pre><code>BankObject *bankInstance = [[BankObject alloc] init];
+
+PersonObject    *personInstance = [[PersonObject alloc] init];
+[bankInstance addObserver:personInstance forKeyPath:@"departments" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:NULL];
+
+bankInstance.departments = [[NSMutableArray alloc] init];
+
+[bankInstance.departments addObject:@"departments"];
+</code></pre>
+
+<p>其输出为：</p>
+
+<pre><code>keyPath = departments, change = {
+    kind = 1;
+    new =     (
+    );
+    old =     (
+    );
+}, context = (null)
+</code></pre>
+
+<p>可以看到通过这种方法，我们获取的是真正的数组，只在departments属性整体被修改时，才会触发KVO，而在添加元素时，并没有触发KVO。</p>
+
+<p>现在我们通过代理集合对象来看看：</p>
+
+<p><strong>代码清单13：使用代理集合对象监听可变数组属性</strong></p>
+
+<pre><code>BankObject *bankInstance = [[BankObject alloc] init];
+
+PersonObject    *personInstance = [[PersonObject alloc] init];
+[bankInstance addObserver:personInstance forKeyPath:@"departments" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:NULL];
+
+bankInstance.departments = [[NSMutableArray alloc] init];
+
+NSMutableArray *departments = [bankInstance mutableArrayValueForKey:@"departments"];
+[departments insertObject:@"departments 0" atIndex:0];
+</code></pre>
+
+<p>其输出是：</p>
+
+<pre><code>keyPath = departments, change = {
+    kind = 1;
+    new =     (
+    );
+    old =     (
+    );
+}, context = (null)
+keyPath = departments, change = {
+    indexes = "&lt;NSIndexSet: 0x7fcd18673150&gt;[number of indexes: 1 (in 1 ranges), indexes: (0)]";
+    kind = 2;
+    new =     (
+        "departments 0"
+    );
+}, context = (null)
+</code></pre>
+
+<p>可以看到，在往数组中添加对象时，也触发了KVO，并将改变的详细信息也写进了change字典。在第二个消息中，kind的值为2，即表示这是一次插入操作。同样，可变数组的删除，替换操作也是一样的。</p>
+
+<p>集合(Set)也有一套对应的方法来实现集合代理对象，包括无序集合与有序集合；而字典则没有，对于字典属性的监听，还是只能作为一个整理来处理。</p>
+
+<p>如果我们想到手动控制集合属性消息的发送，则可以使用上面提到的几个方法，即：</p>
+
+<pre><code>-willChange:valuesAtIndexes:forKey:
+-didChange:valuesAtIndexes:forKey:
+
+或
+
+-willChangeValueForKey:withSetMutation:usingObjects:
+-didChangeValueForKey:withSetMutation:usingObjects:
+</code></pre>
+
+<p>不过得先保证把自动通知关闭，否则每次改变KVO都会被发送两次。</p>
+
+<h2>监听信息</h2>
+
+<p>如果我们想获取一个对象上有哪些观察者正在监听其属性的修改，则可以查看对象的observationInfo属性，其声明如下：</p>
+
+<pre><code>@property void *observationInfo
+</code></pre>
+
+<p>可以看到它是一个void指针，指向一个包含所有观察者的一个标识信息对象，这些信息包含了每个监听的观察者，注册时设定的选项等等。我们还是用示例来看看。</p>
+
+<p><strong>代码清单14：observationInfo的使用</strong></p>
+
+<pre><code>PersonObject    *personInstance = [[PersonObject alloc] init];
+BankObject      *bankInstance = [[BankObject alloc] init];
+
+[bankInstance addObserver:personInstance forKeyPath:@"bankCodeEn" options:NSKeyValueObservingOptionNew context:NULL];
+[bankInstance addObserver:personInstance forKeyPath:@"accountBalance" options:NSKeyValueObservingOptionOld context:NULL];
+
+NSLog(@"%p", personInstance);
+NSLog(@"%p", bankInstance);
+
+id info = bankInstance.observationInfo;
+NSLog(@"%@", [info description]);
+</code></pre>
+
+<p>其输出结果如下：</p>
+
+<pre><code>personInstance = 0x7fdc2369e5e0
+bankInstance = 0x7fdc2369d8f0
+&lt;NSKeyValueObservationInfo 0x7fdc236a19d0&gt; (
+&lt;NSKeyValueObservance 0x7fdc236a17a0: Observer: 0x7fdc2369e5e0, Key path: bankCodeEn, Options: &lt;New: YES, Old: NO, Prior: NO&gt; Context: 0x0, Property: 0x7fdc236a15c0&gt;
+&lt;NSKeyValueObservance 0x7fdc236a1960: Observer: 0x7fdc2369e5e0, Key path: accountBalance, Options: &lt;New: NO, Old: YES, Prior: NO&gt; Context: 0x0, Property: 0x7fdc236a1880&gt;
+)
+</code></pre>
+
+<p>我们可以看到observationInfo指针实际上是指向一个NSKeyValueObservationInfo对象，它包含了指定对象上的所有的监听信息。而每条监听信息而是封装在一个NSKeyValueObservance对象中，从上面可以看到，这个对象中包含消息的观察者、被监听的属性、添加观察者时所设置的一些选项、上下文信息等。</p>
+
+<p>NSKeyValueObservationInfo类及NSKeyValueObservance类都是私有类，我们无法在官方文档中找到这两个类的实现。不过从一些对系统库dump出来的头文件，我们可以对这两个类有一些初步的了解。<a href="https://github.com/a1anyip/iOS-SDK-4.3-Framework-Header-Dump/tree/master/Frameworks/Foundation.framework">这里</a>有一个对iOS SKD 4.3的Foundation.framework的dump头文件，可以找到这两个类的头文件，其中NSKeyValueObservationInfo的头文件信息如下所示：</p>
+
+<pre><code>#import &lt;XXUnknownSuperclass.h&gt; // Unknown library
+
+@class NSArray, NSHashTable;
+
+__attribute__((visibility("hidden")))
+@interface NSKeyValueObservationInfo : XXUnknownSuperclass {
+@private
+    int _retainCountMinusOne;
+    NSArray* _observances;
+    unsigned _cachedHash;
+    BOOL _cachedIsShareable;
+    NSHashTable* _observables;
+}
+-(id)_initWithObservances:(id*)observances count:(unsigned)count;
+-(id)retain;
+-(oneway void)release;
+-(unsigned)retainCount;
+-(void)dealloc;
+-(unsigned)hash;
+-(BOOL)isEqual:(id)equal;
+-(id)description;
+@end
+</code></pre>
+
+<p>可以看到其中有一个数组来存储NSKeyValueObservance对象。</p>
+
+<p>NSKeyValueObservance类的头文件信息如下：</p>
+
+<pre><code>#import "Foundation-Structs.h"
+#import &lt;XXUnknownSuperclass.h&gt; // Unknown library
+
+@class NSPointerArray, NSKeyValueProperty, NSObject;
+
+__attribute__((visibility("hidden")))
+@interface NSKeyValueObservance : XXUnknownSuperclass {
+@private
+    int _retainCountMinusOne;
+    NSObject* _observer;
+    NSKeyValueProperty* _property;
+    unsigned _options;
+    void* _context;
+    NSObject* _originalObservable;
+    unsigned _cachedUnrotatedHashComponent;
+    BOOL _cachedIsShareable;
+    NSPointerArray* _observationInfos;
+    auto_weak_callback_block _observerWentAwayCallback;
+}
+-(id)_initWithObserver:(id)observer property:(id)property options:(unsigned)options context:(void*)context originalObservable:(id)observable;
+-(id)retain;
+-(oneway void)release;
+-(unsigned)retainCount;
+-(void)dealloc;
+-(unsigned)hash;
+-(BOOL)isEqual:(id)equal;
+-(id)description;
+-(void)observeValueForKeyPath:(id)keyPath ofObject:(id)object change:(id)change context:(void*)context;
+@end
+</code></pre>
+
+<p>可以看到其中包含了一个监听的基本要素。在此不再做深入分析(没有源代码，深入不下去了啊)。</p>
+
+<p>我们再回到observationInfo属性本身来。在文档中，对这个属性的描述有这样一段话：</p>
+
+<pre><code>The default implementation of this method retrieves the information from a global
+dictionary keyed by the receiver’s pointers.
+</code></pre>
+
+<p>即这个方法的默认实现是以对象的指针作为key，从一个全局的字典中获取信息。由此，我们可以理解为，KVO的信息是存储在一个全局字典中，而不是存储在对象本身。这类似于Notification，所有关于通知的信息都是放在NSNotificationCenter中。</p>
+
+<p>不过，为了提高效率，我们可以重写observationInfo属性的set和get方法，以将这个不透明的数据指针存储到一个实例变量中。但是，在重写时，我们不应该尝试去向这些数据发送一个Objective-C消息，包括retain和release。</p>
+
+<h2>KVO的实现机制</h2>
+
+<p>【本来这一小节是想放在另一篇总结中来写的，但后来觉得还是放在这里比较合适，所以就此添加上】</p>
+
+<p>了解了NSKeyValueObserving所提供的功能后，我们再来看看KVO的实现机制，以便更深入地的理解KVO。</p>
+
+<p>KVO据我所查还没有开源(若哪位大大有查到源代码，还烦请告知)，所以我们无法从源代码的层面来分析它的实现。不过<a href="https://www.mikeash.com/pyblog/friday-qa-2009-01-23.html">Mike Ash</a>的博文(译文见参考文献4)为我们解开了一些谜团。</p>
+
+<p>基本的思路是：Objective-C依托于强大的run time机制来实现KVO。当我们第一次观察某个对象的属性时，run time会创建一个新的继承自这个对象的class的subclass。在这个新的subclass中，它会重写所有被观察的key的setter，然后将object的isa指针指向新创建的class(这个指针告诉Objective-C运行时某个object到底是什么类型的)。所以object神奇地变成了新的子类的实例。</p>
+
+<p>嗯，让我们通过代码来看看实际的实现：</p>
+
+<p><strong>代码清单15：探究KVO的实现机制</strong></p>
+
+<pre><code>// 辅助方法
+static NSArray *ClassMethodNames(Class c) {
+
+    NSMutableArray *array = [NSMutableArray array];
+
+    unsigned int methodCount = 0;
+    Method *methodList = class_copyMethodList(c, &amp;methodCount);
+    unsigned int i;
+    for (i = 0; i &lt; methodCount; i++) {
+        [array addObject:NSStringFromSelector(method_getName(methodList[i]))];
+    }
+
+    free(methodList);
+
+    return array;
+}
+
+static void PrintDescription(NSString *name, id obj) {
+
+    struct objc_object *objcet = (__bridge struct objc_object *)obj;
+
+    Class cls = objcet-&gt;isa;
+
+    NSString *str = [NSString stringWithFormat:@"%@: %@\n\tNSObject class %s\n\tlibobjc class %s : super class %s\n\timplements methods &lt;%@&gt;",
+                     name,
+                     obj,
+                     class_getName([obj class]),
+                     class_getName(cls),
+                     class_getName(class_getSuperclass(cls)),
+                     [ClassMethodNames(cls) componentsJoinedByString:@", "]];
+    printf("%s\n", [str UTF8String]);
+}
+
+// 测试代码
+BankObject *bankInstance1 = [[BankObject alloc] init];
+BankObject *bankInstance2 = [[BankObject alloc] init];
+
+PersonObject *personInstance = [[PersonObject alloc] init];
+
+[bankInstance2 addObserver:personInstance forKeyPath:@"accountBalance" options:NSKeyValueObservingOptionNew context:NULL];
+
+PrintDescription(@"bankInstance1", bankInstance1);
+PrintDescription(@"bankInstance2", bankInstance2);
+
+printf("Using libobjc functions, normal setAccountBalance: is %p, overridden setAccountBalance: is %p", method_getImplementation(class_getInstanceMethod(object_getClass(bankInstance2), @selector(setAccountBalance:))),
+       method_getImplementation(class_getInstanceMethod(object_getClass(bankInstance1), @selector(setAccountBalance:))));
+</code></pre>
+
+<p>这段代码的输出如下：</p>
+
+<pre><code>bankInstance1: &lt;BankObject: 0x7f9e8ae3cf60&gt;
+    NSObject class BankObject
+    libobjc class BankObject : super class NSObject
+    implements methods &lt;accountBalance, setAccountBalance:, bankCodeEn, setBankCodeEn:, departments, setDepartments:&gt;
+
+bankInstance2: &lt;BankObject: 0x7f9e8ae3cfc0&gt;
+    NSObject class BankObject
+    libobjc class NSKVONotifying_BankObject : super class BankObject
+    implements methods &lt;setAccountBalance:, class, dealloc, _isKVOA&gt;
+
+Using libobjc functions, normal setAccountBalance: is 0x1013cec17, overridden setAccountBalance: is 0x10129fe50
+</code></pre>
+
+<p>从输出中可以看到，bankInstance2监听accountBalance属性后，其实际上所属的类已经不是BankObject了，而是继承自BankObject的NSKVONotifying_BankObject类。同时，NSKVONotifying_BankObject类重写了setAccountBalance方法，这个方法将实现如何通知观察者们的操作。当改变accountBalance属性时，就会调用被重写的setAccountBalance方法，并通过这个方法来发送通知。</p>
+
+<p>另外我们也可以看到bankInstance2对象的打印[bankInstance2 class]时，返回的仍然是BankObject。这是苹果故意而为之，他们不希望这个机制暴露在外面。所以除了重写相应的setter，所以动态生成的NSKVONotifying_BankObject类还重写了class方法，让它返回原先的类。</p>
+
+<h2>小结</h2>
+
+<p>KVO作为Objective-C中两个对象间通信机制中的一种，提供了一种非常强大的机制。在经典的MVC架构中，控制器需要确保视图与模型的同步，当model对象改变时，视图应该随之改变以反映模型的变化；当用户和控制器交互的时候，模型也应该做出相应的改变。而KVO便为我们提供了这样一种同步机制：我们让控制器去监听一个model对象属性的改变，并根据这种改变来更新我们的视图。所有，有效地使用KVO，对我们应用的开发意义重大。</p>
+
+<p>别话：对KVO的总结感觉还是意犹未尽，总感觉缺少点什么，特别是在对集合这一块的处理。还请大家多多提供指点。</p>
+
+<h2>参考</h2>
+
+<ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/Foundation/Protocols/NSKeyValueObserving_Protocol/#//apple_ref/occ/instm/NSObject/observationInfo">NSKeyValueObserving Protocol Reference</a></li>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/KeyValueObserving/KeyValueObserving.html">Key-Value Observing Programming Guide</a></li>
+<li><a href="https://github.com/a1anyip/iOS-SDK-4.3-Framework-Header-Dump">iOS-SDK-4.3-Framework-Header-Dump</a></li>
+<li><a href="http://objccn.io/issue-7-3/">KVC 和 KVO</a></li>
+<li><a href="http://www.appcoda.com/understanding-key-value-observing-coding/">Understanding Key-Value Observing and Coding</a></li>
+<li><a href="http://www.cocoachina.com/ios/20140107/7667.html">KVO的内部实现</a></li>
+</ol>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[源码篇：MBProgressHUD]]></title>
+    <link href="http://southpeak.github.io/blog/2015/03/24/yuan-ma-pian-:mbprogresshud/"/>
+    <updated>2015-03-24T20:41:51+08:00</updated>
+    <id>http://southpeak.github.io/blog/2015/03/24/yuan-ma-pian-:mbprogresshud</id>
+    <content type="html"><![CDATA[<p>源码来源：<a href="https://github.com/jdg/MBProgressHUD">https://github.com/jdg/MBProgressHUD</a></p>
+
+<p>版本：0.9.1</p>
+
+<p>MBProgressHUD是一个显示HUD窗口的第三方类库，用于在执行一些后台任务时，在程序中显示一个表示进度的loading视图和两个可选的文本提示的HUD窗口。我想最多是应用在加载网络数据的时候。其实苹果官方自己有一个带有此功能的类UIProgressHUD，只不过它是私有的，现在不让用。至于实际的效果，可以看看github上工程给出的几张图例(貌似我这经常无法单独打开图片，所以就不在这贴图片了)，也可以运行一下Demo。</p>
+
+<p>具体用法我们就不多说了，参考github上的说明就能用得很顺的。本文主要还是从源码的角度来分析一下它的具体实现。</p>
+
+<h2>模式</h2>
+
+<p>在分析实现代码之前，我们先来看看MBProgressHUD中定义的MBProgressHUDMode枚举。它用来表示HUD窗口的模式，即我们从效果图中看到的几种显示样式。其具体定义如下：</p>
+
+<pre><code>typedef enum {
+    // 使用UIActivityIndicatorView来显示进度，这是默认值
+    MBProgressHUDModeIndeterminate,
+
+    // 使用一个圆形饼图来作为进度视图
+    MBProgressHUDModeDeterminate,
+
+    // 使用一个水平进度条
+    MBProgressHUDModeDeterminateHorizontalBar,
+
+    // 使用圆环作为进度条
+    MBProgressHUDModeAnnularDeterminate,
+
+    // 显示一个自定义视图，通过这种方式，可以显示一个正确或错误的提示图
+    MBProgressHUDModeCustomView,
+
+    // 只显示文本
+    MBProgressHUDModeText
+
+} MBProgressHUDMode;
+</code></pre>
+
+<p>通过设置MBProgressHUD的模式，我们可以使用MBProgressHUD自定义的表示进度的视图来满足我们的需求，也可以自定义这个进度视图，当然还可以只显示文本。在下面我们会讨论源码中是如何使用这几个值的。</p>
+
+<h2>外观</h2>
+
+<p>我们先来了解一下MBProgressHUD的基本组成。一个MBProgressHUD视图主要由四个部分组成：</p>
+
+<ol>
+<li>loading动画视图(在此做个统称，当然这个区域可以是自定义的一个UIImageView视图)。这个视图由我们设定的模式值决定，可以是菊花、进度条，也可以是我们自定义的视图；</li>
+<li>标题文本框(label)：主要用于显示提示的主题信息。这个文本框是可选的，通常位于loading动画视图的下面，且它是单行显示。它会根据labelText属性来自适应文本的大小(有一个长度上限)，如果过长，则超出的部分会显示为"&hellip;&ldquo;；</li>
+<li>详情文本框(detailsLabel)。如果觉得标题不够详细，或者有附属信息，就可以将详细信息放在这里面显示。该文本框对应的是显示detailsLabelText属性的值，它是可以多行显示的。另外，详情的显示还依赖于labelText属性的设置，只有labelText属性被设置了，且不为空串，才会显示detailsLabel；</li>
+<li>HUD背景框。主要是作为上面三个部分的一个背景，用来突出上面三部分。</li>
+</ol>
+
+
+<p>为了让我们更好地自定义这几个部分，MBProgressHUD还提供了一些属性，我们简单了解一下：</p>
+
+<pre><code>// 背景框的透明度，默认值是0.8
+@property (assign) float opacity;
+
+// 背景框的颜色
+// 需要注意的是如果设置了这个属性，则opacity属性会失效，即不会有半透明效果
+@property (MB_STRONG) UIColor *color;
+
+// 背景框的圆角半径。默认值是10.0
+@property (assign) float cornerRadius;
+
+// 标题文本的字体及颜色
+@property (MB_STRONG) UIFont* labelFont;
+@property (MB_STRONG) UIColor* labelColor;
+
+// 详情文本的字体及颜色
+@property (MB_STRONG) UIFont* detailsLabelFont;
+@property (MB_STRONG) UIColor* detailsLabelColor;
+
+// 菊花的颜色，默认是白色
+@property (MB_STRONG) UIColor *activityIndicatorColor;
+</code></pre>
+
+<p>通过以上属性，我们可以根据自己的需要来设置这几个部分的外观。</p>
+
+<p>另外还有一个比较有意思的属性是dimBackground，用于为HUD窗口的视图区域覆盖上一层径向渐变(radial gradient)层，其定义如下：</p>
+
+<pre><code>@property (assign) BOOL dimBackground;
+</code></pre>
+
+<p>让我们来看看通过它，MBProgressHUD都做了些什么。代码如下：</p>
+
+<pre><code>- (void)drawRect:(CGRect)rect {
+
+    ...
+
+    if (self.dimBackground) {
+        //Gradient colours
+        size_t gradLocationsNum = 2;
+        CGFloat gradLocations[2] = {0.0f, 1.0f};
+        CGFloat gradColors[8] = {0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.75f}; 
+        CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+        CGGradientRef gradient = CGGradientCreateWithColorComponents(colorSpace, gradColors, gradLocations, gradLocationsNum);
+        CGColorSpaceRelease(colorSpace);
+
+        //Gradient center
+        CGPoint gradCenter= CGPointMake(self.bounds.size.width/2, self.bounds.size.height/2);
+        //Gradient radius
+        float gradRadius = MIN(self.bounds.size.width , self.bounds.size.height) ;
+
+        // 由中心向四周绘制渐变
+        CGContextDrawRadialGradient (context, gradient, gradCenter,
+                                     0, gradCenter, gradRadius,
+                                     kCGGradientDrawsAfterEndLocation);
+        CGGradientRelease(gradient);
+    }
+    ... 
+}
+</code></pre>
+
+<p>这段代码由中心向MBProgressHUD视图的四周绘制了一个渐变层。当然，这里的颜色值是写死的，我们无法自行定义。有兴趣的话，大家可以将这个属性设置为YES，看看实际的效果。</p>
+
+<h2>创建、布局与绘制</h2>
+
+<p>除了继承自UIView的-initWithFrame:初始化方法，MBProgressHUD还为我们提供了两个初始化方法，如下所示：</p>
+
+<pre><code>- (id)initWithWindow:(UIWindow *)window;
+
+- (id)initWithView:(UIView *)view;
+</code></pre>
+
+<p>这两个方法分别传入一个UIWindow对象和一个UIView对象。传入的视图对象仅仅是做为MBProgressHUD视图定义其frame属性的参照，而不会直接将MBProgressHUD视图添加到传入的视图对象上。这个添加操作还得我们自行处理(当然，MBProgressHUD还提供了几个便捷的类方法，我们下面会说明)。</p>
+
+<p>MBProgressHUD提供了几个属性，可以让我们控制HUD的布局，这些属性主要有以下几个：</p>
+
+<pre><code>// HUD相对于父视图中心点的x轴偏移量和y轴偏移量
+@property (assign) float xOffset;
+@property (assign) float yOffset;
+
+// HUD各元素与HUD边缘的间距
+@property (assign) float margin;
+
+// HUD背景框的最小大小
+@property (assign) CGSize minSize;
+
+// HUD的实际大小
+@property (atomic, assign, readonly) CGSize size;
+
+// 是否强制HUD背景框宽高相等
+@property (assign, getter = isSquare) BOOL square;
+</code></pre>
+
+<p>需要注意的是，MBProgressHUD视图会充满其父视图的frame内，为此，在MBProgressHUD的layoutSubviews方法中，还专门做了处理，如下代码所示：</p>
+
+<pre><code>- (void)layoutSubviews {
+    [super layoutSubviews];
+
+    // Entirely cover the parent view
+    UIView *parent = self.superview;
+    if (parent) {
+        self.frame = parent.bounds;
+    }
+
+    ...
+}
+</code></pre>
+
+<p>也因此，当MBProgressHUD显示时，它也会屏蔽父视图的各种交互操作。</p>
+
+<p>在布局的过程中，会先根据我们要显示的视图计算出容纳这些视图所需要的总的宽度和高度。当然，会设置一个最大值。我们截取其中一段来看看：</p>
+
+<pre><code>CGRect bounds = self.bounds;
+
+...
+
+CGFloat remainingHeight = bounds.size.height - totalSize.height - kPadding - 4 * margin; 
+CGSize maxSize = CGSizeMake(maxWidth, remainingHeight);
+CGSize detailsLabelSize = MB_MULTILINE_TEXTSIZE(detailsLabel.text, detailsLabel.font, maxSize, detailsLabel.lineBreakMode);
+totalSize.width = MAX(totalSize.width, detailsLabelSize.width);
+totalSize.height += detailsLabelSize.height;
+if (detailsLabelSize.height &gt; 0.f &amp;&amp; (indicatorF.size.height &gt; 0.f || labelSize.height &gt; 0.f)) {
+    totalSize.height += kPadding;
+}
+
+totalSize.width += 2 * margin;
+totalSize.height += 2 * margin;
+</code></pre>
+
+<p>之后，就开始从上到下放置各个视图。在布局代码的最后，计算了一个size值，这是为后面绘制背景框做准备的。</p>
+
+<p>在上面的布局代码中，主要是处理了loading动画视图、标题文本框和详情文本框，而HUD背景框主要是在drawRect:中来绘制的。背景框的绘制代码如下：</p>
+
+<pre><code>// Center HUD
+CGRect allRect = self.bounds;
+// Draw rounded HUD backgroud rect
+CGRect boxRect = CGRectMake(round((allRect.size.width - size.width) / 2) + self.xOffset,
+                            round((allRect.size.height - size.height) / 2) + self.yOffset, size.width, size.height);
+float radius = self.cornerRadius;
+CGContextBeginPath(context);
+CGContextMoveToPoint(context, CGRectGetMinX(boxRect) + radius, CGRectGetMinY(boxRect));
+CGContextAddArc(context, CGRectGetMaxX(boxRect) - radius, CGRectGetMinY(boxRect) + radius, radius, 3 * (float)M_PI / 2, 0, 0);
+CGContextAddArc(context, CGRectGetMaxX(boxRect) - radius, CGRectGetMaxY(boxRect) - radius, radius, 0, (float)M_PI / 2, 0);
+CGContextAddArc(context, CGRectGetMinX(boxRect) + radius, CGRectGetMaxY(boxRect) - radius, radius, (float)M_PI / 2, (float)M_PI, 0);
+CGContextAddArc(context, CGRectGetMinX(boxRect) + radius, CGRectGetMinY(boxRect) + radius, radius, (float)M_PI, 3 * (float)M_PI / 2, 0);
+CGContextClosePath(context);
+CGContextFillPath(context);
+</code></pre>
+
+<p>这是最平常的绘制操作，在此不多做解释。</p>
+
+<p>我们上面讲过MBProgressHUD提供了几种窗口模式，这几种模式的主要区别在于loading动画视图的展示。默认情况下，使用的是菊花(MBProgressHUDModeIndeterminate)。我们可以通过设置以下属性，来改变loading动画视图：</p>
+
+<pre><code>@property (assign) MBProgressHUDMode mode;
+</code></pre>
+
+<p>对于其它几种模式，MBProgressHUD专门我们提供了几个视图类。如果是进度条模式(MBProgressHUDModeDeterminateHorizontalBar)，则使用的是MBBarProgressView类；如果是饼图模式(MBProgressHUDModeDeterminate)或环形模式(MBProgressHUDModeAnnularDeterminate)，则使用的是MBRoundProgressView类。上面这两个类的主要操作就是在drawRect:中根据一些进度参数来绘制形状，大家可以自己详细看一下。</p>
+
+<p>当然，我们还可以自定义loading动画视图，此时选择的模式是MBProgressHUDModeCustomView。或者不显示loading动画视图，而只显示文本框(MBProgressHUDModeText)。</p>
+
+<p>具体显示哪一种loading动画视图，是在-updateIndicators方法中来处理的，其实现如下所示：</p>
+
+<pre><code>- (void)updateIndicators {
+
+    BOOL isActivityIndicator = [indicator isKindOfClass:[UIActivityIndicatorView class]];
+    BOOL isRoundIndicator = [indicator isKindOfClass:[MBRoundProgressView class]];
+
+    if (mode == MBProgressHUDModeIndeterminate) {
+        ...
+    }
+    else if (mode == MBProgressHUDModeDeterminateHorizontalBar) {
+        // Update to bar determinate indicator
+        [indicator removeFromSuperview];
+        self.indicator = MB_AUTORELEASE([[MBBarProgressView alloc] init]);
+        [self addSubview:indicator];
+    }
+    else if (mode == MBProgressHUDModeDeterminate || mode == MBProgressHUDModeAnnularDeterminate) {
+        if (!isRoundIndicator) {
+            ...
+        }
+        if (mode == MBProgressHUDModeAnnularDeterminate) {
+            [(MBRoundProgressView *)indicator setAnnular:YES];
+        }
+    } 
+    else if (mode == MBProgressHUDModeCustomView &amp;&amp; customView != indicator) {
+        ...
+    } else if (mode == MBProgressHUDModeText) {
+        ...
+    }
+}
+</code></pre>
+
+<h2>显示与隐藏</h2>
+
+<p>MBRoundProgressView为我们提供了丰富的显示与隐藏HUD窗口的。在分析这些方法之前，我们先来看看MBProgressHUD为显示与隐藏提供的一些属性：</p>
+
+<pre><code>// HUD显示和隐藏的动画类型
+@property (assign) MBProgressHUDAnimation animationType;
+
+// HUD显示的最短时间。设置这个值是为了避免HUD显示后立即被隐藏。默认值为0
+@property (assign) float minShowTime;
+
+// 这个属性设置了一个宽限期，它是在没有显示HUD窗口前被调用方法可能运行的时间。
+// 如果被调用方法在宽限期内执行完，则HUD不会被显示。
+// 这主要是为了避免在执行很短的任务时，去显示一个HUD窗口。
+// 默认值是0。只有当任务状态是已知时，才支持宽限期。具体我们看实现代码。
+@property (assign) float graceTime;
+
+// 这是一个标识位，标明执行的操作正在处理中。这个属性是配合graceTime使用的。
+// 如果没有设置graceTime，则这个标识是没有太大意义的。在使用showWhileExecuting:onTarget:withObject:animated:方法时，
+// 会自动去设置这个属性为YES，其它情况下都需要我们自己手动设置。
+@property (assign) BOOL taskInProgress;
+
+// 隐藏时是否将HUD从父视图中移除，默认是NO。
+@property (assign) BOOL removeFromSuperViewOnHide;
+
+// 进度指示器，从0.0到1.0，默认值为0.0
+@property (assign) float progress;
+
+// 在HUD被隐藏后的回调
+@property (copy) MBProgressHUDCompletionBlock completionBlock;
+</code></pre>
+
+<p>以上这些属性都还好理解，可能需要注意的就是graceTime和taskInProgress的配合使用。在下面我们将会看看这两个属性的用法。</p>
+
+<p>对于显示操作，最基本的就是-show:方法(其它几个显示方法都会调用该方法来显示HUD窗口)，我们先来看看它的实现，</p>
+
+<pre><code>- (void)show:(BOOL)animated {
+    useAnimation = animated;
+    // If the grace time is set postpone the HUD display
+    if (self.graceTime &gt; 0.0) {
+        self.graceTimer = [NSTimer scheduledTimerWithTimeInterval:self.graceTime target:self 
+                           selector:@selector(handleGraceTimer:) userInfo:nil repeats:NO];
+    } 
+    // ... otherwise show the HUD imediately 
+    else {
+        [self showUsingAnimation:useAnimation];
+    }
+}
+</code></pre>
+
+<p>可以看到，如果我们没有设置graceTime属性，则会立即显示HUD；而如果设置了graceTime，则会创建一个定时器，并让显示操作延迟到graceTime所设定的时间再执行，而-handleGraceTimer:实现如下：</p>
+
+<pre><code>- (void)handleGraceTimer:(NSTimer *)theTimer {
+    // Show the HUD only if the task is still running
+    if (taskInProgress) {
+        [self showUsingAnimation:useAnimation];
+    }
+}
+</code></pre>
+
+<p>可以看到，只有在设置了taskInProgress标识位为YES的情况下，才会去显示HUD窗口。所以，如果我们要自己调用-show:方法的话，需要酌情考虑设置taskInProgress标识位。</p>
+
+<p>除了-show:方法以外，MBProgressHUD还为我们提供了一组显示方法，可以让我们在显示HUD的同时，执行一些后台任务，我们在此主要介绍两个。其中一个是-showWhileExecuting:onTarget:withObject:animated:，它是基于target-action方式的调用，在执行一个后台任务时显示HUD，等后台任务执行完成后再隐藏HUD，具体实现如下所示：</p>
+
+<pre><code>- (void)showWhileExecuting:(SEL)method onTarget:(id)target withObject:(id)object animated:(BOOL)animated {
+    methodForExecution = method;
+    targetForExecution = MB_RETAIN(target);
+    objectForExecution = MB_RETAIN(object); 
+    // Launch execution in new thread
+    self.taskInProgress = YES;
+    [NSThread detachNewThreadSelector:@selector(launchExecution) toTarget:self withObject:nil];
+    // Show HUD view
+    [self show:animated];
+}
+
+- (void)launchExecution {
+    @autoreleasepool {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
+        // Start executing the requested task
+        [targetForExecution performSelector:methodForExecution withObject:objectForExecution];
+#pragma clang diagnostic pop
+        // Task completed, update view in main thread (note: view operations should
+        // be done only in the main thread)
+        [self performSelectorOnMainThread:@selector(cleanUp) withObject:nil waitUntilDone:NO];
+    }
+}
+</code></pre>
+
+<p>可以看到，-showWhileExecuting:onTarget:withObject:animated:首先将taskInProgress属性设置为YES，这样在调用-show:方法时，即使设置了graceTime，也确保能在任务完成之前显示HUD。然后开启一个新线程，来异步执行我们的后台任务，最后去显示HUD。</p>
+
+<p>而在异步调用方法-launchExecution中，线程首先是维护了自己的一个@autoreleasepool，所以在我们自己的方法中，就不需要再去维护一个@autoreleasepool了。之后是去执行我们的任务，在任务完成之后，再回去主线程去执行清理操作，并隐藏HUD窗口。</p>
+
+<p>另一个显示方法是-showAnimated:whileExecutingBlock:onQueue:completionBlock:，它是基于GCD的调用，当block中的任务在指定的队列中执行时，显示HUD窗口，任务完成之后执行completionBlock操作，最后隐藏HUD窗口。我们来看看它的具体实现：</p>
+
+<pre><code>- (void)showAnimated:(BOOL)animated whileExecutingBlock:(dispatch_block_t)block onQueue:(dispatch_queue_t)queue
+     completionBlock:(MBProgressHUDCompletionBlock)completion {
+    self.taskInProgress = YES;
+    self.completionBlock = completion;
+    dispatch_async(queue, ^(void) {
+        block();
+        dispatch_async(dispatch_get_main_queue(), ^(void) {
+            [self cleanUp];
+        });
+    });
+    [self show:animated];
+}
+</code></pre>
+
+<p>这个方法也是首先将taskInProgress属性设置为YES，然后开启一个线程去执行block任务，最后主线程去执行清理操作，并隐藏HUD窗口。</p>
+
+<p>对于HUD的隐藏，MBProgressHUD提供了两个方法，一个是-hide:，另一个是-hide:afterDelay:，后者基于前者，所以我们主要来看看-hide:的实现：</p>
+
+<pre><code>- (void)hide:(BOOL)animated {
+    useAnimation = animated;
+    // If the minShow time is set, calculate how long the hud was shown,
+    // and pospone the hiding operation if necessary
+    if (self.minShowTime &gt; 0.0 &amp;&amp; showStarted) {
+        NSTimeInterval interv = [[NSDate date] timeIntervalSinceDate:showStarted];
+        if (interv &lt; self.minShowTime) {
+            self.minShowTimer = [NSTimer scheduledTimerWithTimeInterval:(self.minShowTime - interv) target:self 
+                                selector:@selector(handleMinShowTimer:) userInfo:nil repeats:NO];
+            return;
+        } 
+    }
+    // ... otherwise hide the HUD immediately
+    [self hideUsingAnimation:useAnimation];
+}
+</code></pre>
+
+<p>我们可以看到，在设置了minShowTime属性并且已经显示了HUD窗口的情况下，会去判断显示的时间是否小于minShowTime指定的时间，如果是，则会开启一个定时器，等到显示的时间到了minShowTime所指定的时间，才会去隐藏HUD窗口；否则会直接去隐藏HUD窗口。</p>
+
+<p>隐藏的实际操作主要是去做了些清理操作，包括根据设定的removeFromSuperViewOnHide值来执行是否从父视图移除HUD窗口，以及执行completionBlock操作，还有就是执行代理的hudWasHidden:方法。这些操作是在私有方法-done里面执行的，实现如下：</p>
+
+<pre><code>- (void)done {
+    [NSObject cancelPreviousPerformRequestsWithTarget:self];
+    isFinished = YES;
+    self.alpha = 0.0f;
+    if (removeFromSuperViewOnHide) {
+        [self removeFromSuperview];
+    }
+#if NS_BLOCKS_AVAILABLE
+    if (self.completionBlock) {
+        self.completionBlock();
+        self.completionBlock = NULL;
+    }
+#endif
+    if ([delegate respondsToSelector:@selector(hudWasHidden:)]) {
+        [delegate performSelector:@selector(hudWasHidden:) withObject:self];
+    }
+}
+</code></pre>
+
+<h2>其它</h2>
+
+<p>MBProgressHUD的一些主要的代码差不多已经分析完了，最后还有些边边角角的地方，一起来看看。</p>
+
+<h3>显示和隐藏的便捷方法</h3>
+
+<p>除了上面描述的实例方法之外，MBProgressHUD还为我们提供了几个便捷显示和隐藏HUD窗口的方法，如下所示：</p>
+
+<pre><code>+ (MB_INSTANCETYPE)showHUDAddedTo:(UIView *)view animated:(BOOL)animated
+
++ (BOOL)hideHUDForView:(UIView *)view animated:(BOOL)animated
+
++ (NSUInteger)hideAllHUDsForView:(UIView *)view animated:(BOOL)animated
+</code></pre>
+
+<p>方法的签名已经很能说明问题了，在此不多描述。</p>
+
+<h3>部分属性值的设置</h3>
+
+<p>对于部分属性(主要是"外观"一节中针对菊花、标题文本框和详情文本框的几个属性值)，为了在设置将这些属性时修改对应视图的属性，并没有直接为每个属性生成一个setter，而是通过KVO来监听这些属性值的变化，再将这些值赋值给视图的对应属性，如下所示：</p>
+
+<pre><code>// 监听的属性数组
+- (NSArray *)observableKeypaths {
+    return [NSArray arrayWithObjects:@"mode", @"customView", @"labelText", @"labelFont", @"labelColor", ..., nil];
+}
+
+// 注册KVO
+- (void)registerForKVO {
+    for (NSString *keyPath in [self observableKeypaths]) {
+        [self addObserver:self forKeyPath:keyPath options:NSKeyValueObservingOptionNew context:NULL];
+    }
+}
+
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
+    if (![NSThread isMainThread]) {
+        [self performSelectorOnMainThread:@selector(updateUIForKeypath:) withObject:keyPath waitUntilDone:NO];
+    } else {
+        [self updateUIForKeypath:keyPath];
+    }
+}
+
+- (void)updateUIForKeypath:(NSString *)keyPath {
+    if ([keyPath isEqualToString:@"mode"] || [keyPath isEqualToString:@"customView"] ||
+        [keyPath isEqualToString:@"activityIndicatorColor"]) {
+        [self updateIndicators];
+    } else if ([keyPath isEqualToString:@"labelText"]) {
+        label.text = self.labelText;
+    } 
+
+    ...
+
+    [self setNeedsLayout];
+    [self setNeedsDisplay];
+}
+</code></pre>
+
+<h3>代理</h3>
+
+<p>MBProgressHUD还为我们提供了一个代理MBProgressHUDDelegate，这个代理中只提供了一个方法，即：</p>
+
+<pre><code>- (void)hudWasHidden:(MBProgressHUD *)hud;
+</code></pre>
+
+<p>这个代理方法是在隐藏HUD窗口后调用，如果此时我们需要在我们自己的实现中执行某些操作，则可以实现这个方法。</p>
+
+<h2>问题</h2>
+
+<p>MBProgressHUD为我们提供了一个HUD窗口的很好的实现，不过个人在使用过程中，觉得它给我们提供的交互功能太少。其代理只提供了一个-hudWasHidden:方法，而且我们也无法通过点击HUD来执行一些操作。在现实的需求中，可能存在这种情况：比如一个网络操作，在发送请求等待响应的过程中，我们会显示一个HUD窗口以显示一个loading框。但如果我们想在等待响应的过程中，在当前视图中取消这个网络请求，就没有相应的处理方式，MBProgressHUD没有为我们提供这样的交互操作。当然这时候，我们可以根据自己的需求来修改源码。</p>
+
+<h2>与SVProgressHUD的对比</h2>
+
+<p>与MBProgressHUD类似，SVProgressHUD类库也为我们提供了在视图中显示一个HUD窗口的功能。两者的基本思路是差不多的，差别更多的是在实现细节上。相对于MBProgressHUD来说，SVProgressHUD的实现有以下几点不同：</p>
+
+<ol>
+<li>SVProgressHUD类对外提供的都是类方法，包括显示、隐藏、和视图属性设置都是使用类方法来操作。其内部实现为一个单例对象，类方法实际是针对这个单例对象来操作的。</li>
+<li>SVProgressHUD主要包含三部分：loading视图、提示文本框和背景框，没有详情文本框。</li>
+<li>SVProgressHUD默认提供了正确、错误和信息三种状态视图(与loading视图同一位置，根据需要来设置)。当然MBProgressHUD中，也可以自定义视图(customView)来显示相应的状态视图。</li>
+<li>SVProgressHUD为我们提供了更多的交互操作，包括点击事件、显示事件及隐藏事件。不过这些都是通过通知的形式向外发送，所以我们需要自己去监听这些事件。</li>
+<li>SVProgressHUD中一些loading动画是以Layer动画的形式来实现的。</li>
+</ol>
+
+
+<p>SVProgressHUD的实现细节还未详细去看，有兴趣的读者可以去研究一下。这两个HUD类库各有优点，大家在使用时，可根据自己的需要和喜好来选择。</p>
+
+<h2>小结</h2>
+
+<p>总体来说，MBProgressHUD的代码相对朴实，简单易懂，没有什么花哨难懂的东西。就技术点而言，也没有太多复杂的技术，都是我们常用的一些东西。就使用而言，也是挺方便的，参考一下github上的使用指南就能很快上手。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[NSNotificationCenter]]></title>
+    <link href="http://southpeak.github.io/blog/2015/03/20/nsnotificationcenter/"/>
+    <updated>2015-03-20T17:45:28+08:00</updated>
+    <id>http://southpeak.github.io/blog/2015/03/20/nsnotificationcenter</id>
+    <content type="html"><![CDATA[<p>一个NSNotificationCenter对象(通知中心)提供了在程序中广播消息的机制，它实质上就是一个通知分发表。这个分发表负责维护为各个通知注册的观察者，并在通知到达时，去查找相应的观察者，将通知转发给他们进行处理。</p>
+
+<p>本文主要了整理了一下NSNotificationCenter的使用及需要注意的一些问题，并提出了一些未解决的问题，希望能在此得到解答。</p>
+
+<h2>获取通知中心</h2>
+
+<p>每个程序都会有一个默认的通知中心。为此，NSNotificationCenter提供了一个类方法来获取这个通知中心：</p>
+
+<pre><code>+ (NSNotificationCenter *)defaultCenter
+</code></pre>
+
+<p>获取了这个默认的通知中心对象后，我们就可以使用它来处理通知相关的操作了，包括注册观察者，移除观察者、发送通知等。</p>
+
+<p>通常如果不是出于必要，我们一般都使用这个默认的通知中心，而不自己创建维护一个通知中心。</p>
+
+<h2>添加观察者</h2>
+
+<p>如果想让对象监听某个通知，则需要在通知中心中将这个对象注册为通知的观察者。早先，NSNotificationCenter提供了以下方法来添加观察者：</p>
+
+<pre><code>- (void)addObserver:(id)notificationObserver
+           selector:(SEL)notificationSelector
+               name:(NSString *)notificationName
+             object:(id)notificationSender
+</code></pre>
+
+<p>这个方法带有4个参数，分别指定了通知的观察者、处理通知的回调、通知名及通知的发送对象。这里需要注意几个问题：</p>
+
+<ol>
+<li>notificationObserver不能为nil。</li>
+<li>notificationSelector回调方法有且只有一个参数(NSNotification对象)。</li>
+<li>如果notificationName为nil，则会接收所有的通知(如果notificationSender不为空，则接收所有来自于notificationSender的所有通知)。如代码清单1所示。</li>
+<li>如果notificationSender为nil，则会接收所有notificationName定义的通知；否则，接收由notificationSender发送的通知。</li>
+<li>监听同一条通知的多个观察者，在通知到达时，它们执行回调的顺序是不确定的，所以我们不能去假设操作的执行会按照添加观察者的顺序来执行。</li>
+</ol>
+
+
+<p>对于以上几点，我们来重点关注一下第3条。以下代码演示了当我们的notificationName设置为nil时，通知的监听情况。</p>
+
+<p><strong>代码清单1：添加一个Observer，其中notificationName为nil</strong></p>
+
+<pre><code>@implementation ViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleNotification:) name:nil object:nil];
+
+    [[NSNotificationCenter defaultCenter] postNotificationName:TEST_NOTIFICATION object:nil];
+}
+
+- (void)handleNotification:(NSNotification *)notification
+{
+    NSLog(@"notification = %@", notification.name);
+}
+
+@end
+</code></pre>
+
+<p>运行后的输出结果如下：</p>
+
+<pre><code>notification = TestNotification
+notification = UIWindowDidBecomeVisibleNotification
+notification = UIWindowDidBecomeKeyNotification
+notification = UIApplicationDidFinishLaunchingNotification
+notification = _UIWindowContentWillRotateNotification
+notification = _UIApplicationWillAddDeactivationReasonNotification
+notification = _UIApplicationDidRemoveDeactivationReasonNotification
+notification = UIDeviceOrientationDidChangeNotification
+notification = _UIApplicationDidRemoveDeactivationReasonNotification
+notification = UIApplicationDidBecomeActiveNotification
+</code></pre>
+
+<p>可以看出，我们的对象基本上监听了测试程序启动后的所示消息。当然，我们很少会去这么做。</p>
+
+<p>而对于第4条，使用得比较多的场景是监听UITextField的修改事件，通常我们在一个ViewController中，只希望去监听当前视图中的UITextField修改事件，而不希望监听所有UITextField的修改事件，这时我们就可以将当前页面的UITextField对象指定为notificationSender。</p>
+
+<p>在iOS 4.0之后，NSNotificationCenter为了跟上时代，又提供了一个以block方式实现的添加观察者的方法，如下所示：</p>
+
+<pre><code>- (id&lt;NSObject&gt;)addObserverForName:(NSString *)name
+                            object:(id)obj
+                             queue:(NSOperationQueue *)queue
+                        usingBlock:(void (^)(NSNotification *note))block
+</code></pre>
+
+<p>大家第一次看到这个方法时是否会有这样的疑问：观察者呢？参数中并没有指定具体的观察者，那谁是观察者呢？实际上，与前一个方法不同的是，前者使用一个现存的对象作为观察者，而这个方法会创建一个匿名的对象作为观察者(即方法返回的id&lt;NSObject>对象)，这个匿名对象会在指定的队列(queue)上去执行我们的block。</p>
+
+<p>这个方法的优点在于添加观察者的操作与回调处理操作的代码更加紧凑，不需要拼命滚动鼠标就能直接找到处理代码，简单直观。这个方法也有几个地方需要注意：</p>
+
+<ol>
+<li>name和obj为nil时的情形与前面一个方法是相同的。</li>
+<li>如果queue为nil，则消息是默认在post线程中同步处理，即通知的post与转发是在同一线程中；但如果我们指定了操作队列，情况就变得有点意思了，我们一会再讲。</li>
+<li>block块会被通知中心拷贝一份(执行copy操作)，以在堆中维护一个block对象，直到观察者被从通知中心中移除。所以，应该特别注意在block中使用外部对象，避免出现对象的循环引用，这个我们在下面将举例说明。</li>
+<li>如果一个给定的通知触发了多个观察者的block操作，则这些操作会在各自的Operation Queue中被并发执行。所以我们不能去假设操作的执行会按照添加观察者的顺序来执行。</li>
+<li>该方法会返回一个表示观察者的对象，记得在不用时释放这个对象。</li>
+</ol>
+
+
+<p>下面我们重点说明一下第2点和第3点。</p>
+
+<p>关于第2点，当我们指定一个Operation Queue时，不管通知是在哪个线程中post的，都会在Operation Queue所属的线程中进行转发，如代码清单2所示：</p>
+
+<p><strong>代码清单2：在指定队列中接收通知</strong></p>
+
+<pre><code>@implementation ViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    [[NSNotificationCenter defaultCenter] addObserverForName:TEST_NOTIFICATION object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *note) {
+
+        NSLog(@"receive thread = %@", [NSThread currentThread]);
+    }];
+
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+
+        NSLog(@"post thread = %@", [NSThread currentThread]);
+        [[NSNotificationCenter defaultCenter] postNotificationName:TEST_NOTIFICATION object:nil];
+    });
+}
+
+@end
+</code></pre>
+
+<p>在这里，我们在主线程里添加了一个观察者，并指定在主线程队列中去接收处理这个通知。然后我们在一个全局队列中post了一个通知。我们来看下输出结果：</p>
+
+<pre><code>post thread = &lt;NSThread: 0x7ffe0351f5f0&gt;{number = 2, name = (null)}
+receive thread = &lt;NSThread: 0x7ffe03508b30&gt;{number = 1, name = main}
+</code></pre>
+
+<p>可以看到，消息的post与接收处理并不是在同一个线程中。如上面所提到的，如果queue为nil，则消息是默认在post线程中同步处理，大家可以试一下。</p>
+
+<p>对于第3点，由于使用的是block，所以需要注意的就是避免引起循环引用的问题，如代码清单3所示：</p>
+
+<p><strong>代码清单3：block引发的循环引用问题</strong></p>
+
+<pre><code>@interface Observer : NSObject
+
+@property (nonatomic, assign) NSInteger i;
+@property (nonatomic, weak) id&lt;NSObject&gt; observer;
+
+@end
+
+@implementation Observer
+
+- (instancetype)init
+{
+    self = [super init];
+
+    if (self)
+    {
+        NSLog(@"Init Observer");
+
+        // 添加观察者
+        _observer =  [[NSNotificationCenter defaultCenter] addObserverForName:TEST_NOTIFICATION object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *note) {
+
+            NSLog(@"handle notification");
+
+            // 使用self
+            self.i = 10;
+        }];
+    }
+
+    return self;
+}
+
+@end
+
+#pragma mark - ViewController
+
+@implementation ViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    [self createObserver];
+
+    // 发送消息
+    [[NSNotificationCenter defaultCenter] postNotificationName:TEST_NOTIFICATION object:nil];
+}
+
+- (void)createObserver {
+
+    Observer *observer = [[Observer alloc] init];
+}
+
+@end
+</code></pre>
+
+<p>运行后的输出如下：</p>
+
+<pre><code>Init Observer
+handle notification
+</code></pre>
+
+<p>我们可以看到createObserver中创建的observer并没有被释放。所以，使用
+&ndash; addObserverForName:object:queue:usingBlock:一定要注意这个问题。</p>
+
+<h2>移除观察者</h2>
+
+<p>与注册观察者相对应的，NSNotificationCenter为我们提供了两个移除观察者的方法。它们的定义如下：</p>
+
+<pre><code>- (void)removeObserver:(id)notificationObserver
+
+- (void)removeObserver:(id)notificationObserver name:(NSString *)notificationName object:(id)notificationSender
+</code></pre>
+
+<p>前一个方法会将notificationObserver从通知中心中移除，这样notificationObserver就无法再监听任何消息。而后一个会根据三个参数来移除相应的观察者。</p>
+
+<p>这两个方法也有几点需要注意：</p>
+
+<ol>
+<li>由于注册观察者时(不管是哪个方法)，通知中心会维护一个观察者的弱引用，所以在释放对象时，要确保移除对象所有监听的通知。否则，可能会导致程序崩溃或一些莫名其妙的问题。</li>
+<li>对于第二个方法，如果notificationName为nil，则会移除所有匹配notificationObserver和notificationSender的通知，同理notificationSender也是一样的。而如果notificationName和notificationSender都为nil，则其效果就与第一个方法是一样的了。大家可以试一下。</li>
+<li>最有趣的应该是这两个方法的使用时机。–removeObserver:适合于在类的dealloc方法中调用，这样可以确保将对象从通知中心中清除；而在viewWillDisappear:这样的方法中，则适合于使用-removeObserver:name:object:方法，以避免不知情的情况下移除了不应该移除的通知观察者。例如，假设我们的ViewController继承自一个类库的某个ViewController类(假设为SKViewController吧)，可能SKViewController自身也监听了某些通知以执行特定的操作，但我们使用时并不知道。如果直接在viewWillDisappear:中调用–removeObserver:，则也会把父类监听的通知也给移除。</li>
+</ol>
+
+
+<p>关于注册监听者，还有一个需要注意的问题是，每次调用addObserver时，都会在通知中心重新注册一次，即使是同一对象监听同一个消息，而不是去覆盖原来的监听。这样，当通知中心转发某一消息时，如果同一对象多次注册了这个通知的观察者，则会收到多个通知，如代码清单4所示：</p>
+
+<p><strong>代码清单4：同一对象多次注册同一消息</strong></p>
+
+<pre><code>@implementation ViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleNotification:) name:TEST_NOTIFICATION object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleNotification:) name:TEST_NOTIFICATION object:nil];
+
+    [[NSNotificationCenter defaultCenter] postNotificationName:TEST_NOTIFICATION object:nil];
+}
+
+- (void)handleNotification:(NSNotification *)notification
+{
+    NSLog(@"notification = %@", notification.name);
+}
+
+@end
+</code></pre>
+
+<p>其输出结果如下所示：</p>
+
+<pre><code>notification = TestNotification
+notification = TestNotification
+</code></pre>
+
+<p>可以看到对象处理了两次通知。所以，如果我们需要在viewWillAppear监听一个通知时，一定要记得在对应的viewWillDisappear里面将观察者移除，否则就可能会出现上面的情况。</p>
+
+<p><strong>最后，再特别重点强调的非常重要的一点是，在释放对象前，一定要记住如果它监听了通知，一定要将它从通知中心移除。如果是用
+&ndash; addObserverForName:object:queue:usingBlock:，也记得一定得移除这个匿名观察者。说白了就一句话，添加和移除要配对出现。</strong></p>
+
+<h2>post消息</h2>
+
+<p>注册了通知观察者，我们便可以随时随地的去post一个通知了(当然，如果闲着没事，也可以不注册观察者，post通知随便玩，只是没人理睬罢了)。NSNotificationCenter提供了三个方法来post一个通知，如下所示：</p>
+
+<pre><code>- postNotification:
+– postNotificationName:object:
+– postNotificationName:object:userInfo:
+</code></pre>
+
+<p>我们可以根据需要指定通知的发送者(object)并附带一些与通知相关的信息(userInfo)，当然这些发送者和userInfo可以封装在一个NSNotification对象中，由- postNotification:来发送。注意，- postNotification:的参数不能为空，否则会引发一个异常，如下所示：</p>
+
+<pre><code>*** Terminating app due to uncaught exception 'NSInvalidArgumentException', reason: '*** -[NSNotificationCenter postNotification:]: notification is nil'
+</code></pre>
+
+<p>每次post一个通知时，通知中心都会去遍历一下它的分发表，然后将通知转发给相应的观察者。</p>
+
+<p>另外，通知的发送与处理是同步的，在某个地方post一个消息时，会等到所有观察者对象执行完处理操作后，才回到post的地方，继续执行后面的代码。如代码清单5所示：</p>
+
+<p><strong>代码清单5：通知的同步处理</strong></p>
+
+<pre><code>@implementation ViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleNotification:) name:TEST_NOTIFICATION object:nil];
+
+    [[NSNotificationCenter defaultCenter] postNotificationName:TEST_NOTIFICATION object:nil];
+
+    NSLog(@"continue");
+}
+
+- (void)handleNotification:(NSNotification *)notification
+{
+    NSLog(@"handle notification");
+}
+
+@end
+</code></pre>
+
+<p>运行后输出结果是：</p>
+
+<pre><code>handle notification
+continue
+</code></pre>
+
+<h2>一些思考</h2>
+
+<p>翻了好些资料，还有两个问题始终没有明确的答案。</p>
+
+<p>首先就是通知中心是如何维护观察者对象的。可以明确的是，添加观察者时，通知中心没有对观察者做retain操作，即不会使观察者的引用计数加1。那通知中心维护的是观察者的weak引用呢还是unsafe_unretained引用呢？</p>
+
+<p>个人认为可能是unsafe_unretained的引用，因为我们知道如果是weak引用，其所指的对象被释放后，这个引用会被置成nil。而实际情况是通知中心还会给这个对象发送消息，并引发一个异常。而如果向nil发送一个消息是不会导致异常的。</p>
+
+<p>【非常感谢 <a href="http://weibo.com/u/2814972697">@lv-pw</a>，上面这个问题在<a href="http://open.163.com/movie/2014/1/L/H/M9H7S9F1H_M9H801GLH.html">《斯坦福大学公开课：iOS 7应用开发》的第5集</a>的第57分50秒中得到了解答：确实使用的是unsafe_unretained，老师的解释是，之所以使用unsafe_unretained，而不使用weak，是为了兼容老版本的系统。】</p>
+
+<p>另外，我们知道NSNotificationCenter实现的是观察者模式，而且通常情况下消息在哪个线程被post，就在哪个线程被转发。而从上面的描述可以发现，
+-addObserverForName:object:queue:usingBlock:添加的匿名观察者可以在指定的队列中处理通知，那它的实现机制是什么呢？</p>
+
+<h2>小结</h2>
+
+<p>在我们的应用程序中，一个大的话题就是两个对象之间如何通信。我们需要根据对象之间的关系来确定采用哪一种通信方式。对象之间的通信方式主要有以下几种：</p>
+
+<ol>
+<li>直接方法调用</li>
+<li>Target-Action</li>
+<li>Delegate</li>
+<li>回调(block)</li>
+<li>KVO</li>
+<li>通知</li>
+</ol>
+
+
+<p>一般情况下，我们可以根据以下两点来确定使用哪种方式：</p>
+
+<ol>
+<li>通信对象是一对一的还是一对多的</li>
+<li>对象之间的耦合度，是强耦合还是松耦合</li>
+</ol>
+
+
+<p>Objective-C中的通知由于其广播性及松耦合性，非常适合于大的范围内对象之间的通信(模块与模块，或一些框架层级)。通知使用起来非常方便，也正因为如此，所以容易导致滥用。所以在使用前还是需要多想想，是否有更好的方法来实现我们所需要的对象间通信。毕竟，通知机制会在一定程度上会影响到程序的性能。</p>
+
+<p>对于使用NSNotificationCenter，最后总结一些小建议：</p>
+
+<ol>
+<li>在需要的地方使用通知。</li>
+<li>注册的观察者在不使用时一定要记得移除，即添加和移除要配对出现。</li>
+<li>尽可能迟地去注册一个观察者，并尽可能早将其移除，这样可以改善程序的性能。因为，每post一个通知，都会是遍历通知中心的分发表，确保通知发给每一个观察者。</li>
+<li>记住通知的发送和处理是在同一个线程中。</li>
+<li>使用-addObserverForName:object:queue:usingBlock:务必处理好内存问题，避免出现循环引用。</li>
+<li>NSNotificationCenter是线程安全的，但并不意味着在多线程环境中不需要关注线程安全问题。不恰当的使用仍然会引发线程问题。</li>
+</ol>
+
+
+<p>最后，“<a href="http://weibo.com/u/1438670852">@叶孤城___</a>”叶大大在微博中推荐了几篇文章，即参考中的4-7，值得细读一下。</p>
+
+<h2>参考</h2>
+
+<ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/Foundation/Classes/NSNotificationCenter_Class/">NSNotificationCenter Class Reference</a></li>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/Notifications/Articles/NotificationQueues.html">Notification Programming Topics</a></li>
+<li><a href="http://nshipster.com/nsnotification-and-nsnotificationcenter/">NSNotification &amp; NSNotification​Center</a></li>
+<li><a href="http://www.hpique.com/2013/12/nsnotificationcenter-part-1/">NSNotificationCenter part 1: Receiving and sending notifications</a></li>
+<li><a href="http://www.hpique.com/2013/12/nsnotificationcenter-part-2/">NSNotificationCenter part 2: Implementing the observer pattern with notifications</a></li>
+<li><a href="http://www.hpique.com/2013/12/nsnotificationcenter-part-3/">NSNotificationCenter part 3: Unit testing notifications with OCMock</a></li>
+<li><a href="http://www.hpique.com/2013/12/nsnotificationcenter-part-4/">NSNotificationCenter part 4: Asynchronous notifications with NSNotificationQueue</a></li>
+<li><a href="http://stackoverflow.com/questions/12699118/view-controller-dealloc-not-called-when-using-nsnotificationcenter-code-block-me">View controller dealloc not called when using NSNotificationCenter code block method with ARC</a></li>
+<li><a href="http://open.163.com/movie/2014/1/L/H/M9H7S9F1H_M9H801GLH.html">《斯坦福大学公开课：iOS 7应用开发》第5集</a></li>
+</ol>
+
+]]></content>
+  </entry>
+  
+</feed>

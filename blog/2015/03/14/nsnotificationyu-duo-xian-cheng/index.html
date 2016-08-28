@@ -1,0 +1,608 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Notification与多线程 - 南峰子的技术博客</title>
+  <meta name="author" content="南峰子">
+      
+  <meta name="baidu-site-verification" content="HoscFhWICI" />
+
+  
+  <meta name="description" content="前几天与同事讨论到Notification在多线程下的转发问题，所以就此整理一下。 先来看看官方的文档，是这样写的： In a multithreaded application, notifications are always delivered in the thread in which &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://southpeak.github.io/blog/2015/03/14/nsnotificationyu-duo-xian-cheng">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="南峰子的技术博客" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <!-- <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script> -->
+  <!-- googleapis is fucked by gfw -->
+  <script src="http://cdn.staticfile.org/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<!--<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">-->
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">南峰子的技术博客</a></h1>
+  
+    <h2>攀登，一步一个脚印，方能知其乐</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:southpeak.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/categories/ios">iOS开发</a></li>
+  <li><a href="/blog/archives">所有文章</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Notification与多线程</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-03-14T12:58:59+08:00" pubdate data-updated="true">Mar 14<sup>th</sup>, 2015</time>
+        
+        
+           | <a href="#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>前几天与同事讨论到Notification在多线程下的转发问题，所以就此整理一下。</p>
+
+<p>先来看看官方的文档，是这样写的：</p>
+
+<pre><code>In a multithreaded application, notifications are always delivered in the thread in which the notification was posted, which may not be the same thread in which an observer registered itself.
+</code></pre>
+
+<p>翻译过来是：</p>
+
+<pre><code>在多线程应用中，Notification在哪个线程中post，就在哪个线程中被转发，而不一定是在注册观察者的那个线程中。
+</code></pre>
+
+<p>也就是说，Notification的发送与接收处理都是在同一个线程中。为了说明这一点，我们先来看一个示例：</p>
+
+<p><strong>代码清单1：Notification的发送与处理</strong></p>
+
+<pre><code>@implementation ViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    NSLog(@"current thread = %@", [NSThread currentThread]);
+
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleNotification:) name:TEST_NOTIFICATION object:nil];
+
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+
+        [[NSNotificationCenter defaultCenter] postNotificationName:TEST_NOTIFICATION object:nil userInfo:nil];
+    });
+}
+
+- (void)handleNotification:(NSNotification *)notification
+{
+    NSLog(@"current thread = %@", [NSThread currentThread]);
+
+    NSLog(@"test notification");
+}
+
+@end
+</code></pre>
+
+<p>其输出结果如下：</p>
+
+<pre><code>2015-03-11 22:05:12.856 test[865:45102] current thread = &lt;NSThread: 0x7fbb23412f30&gt;{number = 1, name = main}
+2015-03-11 22:05:12.857 test[865:45174] current thread = &lt;NSThread: 0x7fbb23552370&gt;{number = 2, name = (null)}
+2015-03-11 22:05:12.857 test[865:45174] test notification
+</code></pre>
+
+<p>可以看到，虽然我们在主线程中注册了通知的观察者，但在全局队列中post的Notification，并不是在主线程处理的。所以，这时候就需要注意，如果我们想在回调中处理与UI相关的操作，需要确保是在主线程中执行回调。</p>
+
+<p>这时，就有一个问题了，如果我们的Notification是在二级线程中post的，如何能在主线程中对这个Notification进行处理呢？或者换个提法，如果我们希望一个Notification的post线程与转发线程不是同一个线程，应该怎么办呢？我们看看官方文档是怎么说的：</p>
+
+<pre><code>For example, if an object running in a background thread is listening for notifications from the user interface, such as a window closing, you would like to receive the notifications in the background thread instead of the main thread. In these cases, you must capture the notifications as they are delivered on the default thread and redirect them to the appropriate thread.
+</code></pre>
+
+<p>这里讲到了“重定向”，就是我们在Notification所在的默认线程中捕获这些分发的通知，然后将其重定向到指定的线程中。</p>
+
+<p>一种重定向的实现思路是自定义一个通知队列(注意，不是NSNotificationQueue对象，而是一个数组)，让这个队列去维护那些我们需要重定向的Notification。我们仍然是像平常一样去注册一个通知的观察者，当Notification来了时，先看看post这个Notification的线程是不是我们所期望的线程，如果不是，则将这个Notification存储到我们的队列中，并发送一个信号(signal)到期望的线程中，来告诉这个线程需要处理一个Notification。指定的线程在收到信号后，将Notification从队列中移除，并进行处理。</p>
+
+<p>官方文档已经给出了示例代码，在此借用一下，以测试实际结果：</p>
+
+<p><strong>代码清单2：在不同线程中post和转发一个Notification</strong></p>
+
+<pre><code>@interface ViewController () &lt;NSMachPortDelegate&gt;
+
+@property (nonatomic) NSMutableArray    *notifications;         // 通知队列
+@property (nonatomic) NSThread          *notificationThread;    // 期望线程
+@property (nonatomic) NSLock            *notificationLock;      // 用于对通知队列加锁的锁对象，避免线程冲突
+@property (nonatomic) NSMachPort        *notificationPort;      // 用于向期望线程发送信号的通信端口
+
+@end
+
+@implementation ViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    NSLog(@"current thread = %@", [NSThread currentThread]);
+
+    // 初始化
+    self.notifications = [[NSMutableArray alloc] init];
+    self.notificationLock = [[NSLock alloc] init];
+
+    self.notificationThread = [NSThread currentThread];
+    self.notificationPort = [[NSMachPort alloc] init];
+    self.notificationPort.delegate = self;
+
+    // 往当前线程的run loop添加端口源
+    // 当Mach消息到达而接收线程的run loop没有运行时，则内核会保存这条消息，直到下一次进入run loop
+    [[NSRunLoop currentRunLoop] addPort:self.notificationPort
+                                forMode:(__bridge NSString *)kCFRunLoopCommonModes];
+
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(processNotification:) name:@"TestNotification" object:nil];
+
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+
+        [[NSNotificationCenter defaultCenter] postNotificationName:TEST_NOTIFICATION object:nil userInfo:nil];
+
+    });
+}
+
+- (void)handleMachMessage:(void *)msg {
+
+    [self.notificationLock lock];
+
+    while ([self.notifications count]) {
+        NSNotification *notification = [self.notifications objectAtIndex:0];
+        [self.notifications removeObjectAtIndex:0];
+        [self.notificationLock unlock];
+        [self processNotification:notification];
+        [self.notificationLock lock];
+    };
+
+    [self.notificationLock unlock];
+}
+
+- (void)processNotification:(NSNotification *)notification {
+
+    if ([NSThread currentThread] != _notificationThread) {
+        // Forward the notification to the correct thread.
+        [self.notificationLock lock];
+        [self.notifications addObject:notification];
+        [self.notificationLock unlock];
+        [self.notificationPort sendBeforeDate:[NSDate date]
+                                   components:nil
+                                         from:nil
+                                     reserved:0];
+    }
+    else {
+        // Process the notification here;
+        NSLog(@"current thread = %@", [NSThread currentThread]);
+        NSLog(@"process notification");
+    }
+}
+
+@end
+</code></pre>
+
+<p>运行后，其输出如下：</p>
+
+<pre><code>2015-03-11 23:38:31.637 test[1474:92483] current thread = &lt;NSThread: 0x7ffa4070ed50&gt;{number = 1, name = main}
+2015-03-11 23:38:31.663 test[1474:92483] current thread = &lt;NSThread: 0x7ffa4070ed50&gt;{number = 1, name = main}
+2015-03-11 23:38:31.663 test[1474:92483] process notification
+</code></pre>
+
+<p>可以看到，我们在全局dispatch队列中抛出的Notification，如愿地在主线程中接收到了。</p>
+
+<p>这种实现方式的具体解析及其局限性大家可以参考官方文档<a href="https://developer.apple.com/library/mac/documentation/Cocoa/Conceptual/Notifications/Articles/Threading.html#//apple_ref/doc/uid/20001289-CEGJFDFG">Delivering Notifications To Particular Threads</a>，在此不多做解释。当然，更好的方法可能是我们自己去子类化一个NSNotificationCenter，或者单独写一个类来处理这种转发。</p>
+
+<h2>NSNotificationCenter的线程安全性</h2>
+
+<p>苹果之所以采取通知中心在同一个线程中post和转发同一消息这一策略，应该是出于线程安全的角度来考量的。官方文档告诉我们，NSNotificationCenter是一个线程安全类，我们可以在多线程环境下使用同一个NSNotificationCenter对象而不需要加锁。原文在<a href="https://developer.apple.com/library/mac/documentation/Cocoa/Conceptual/Multithreading/ThreadSafetySummary/ThreadSafetySummary.html">Threading Programming Guide</a>中，具体如下：</p>
+
+<pre><code>The following classes and functions are generally considered to be thread-safe. You can use the same instance from multiple threads without first acquiring a lock.
+
+NSArray
+...
+NSNotification
+NSNotificationCenter
+...
+</code></pre>
+
+<p>我们可以在任何线程中添加/删除通知的观察者，也可以在任何线程中post一个通知。</p>
+
+<p>NSNotificationCenter在线程安全性方面已经做了不少工作了，那是否意味着我们可以高枕无忧了呢？再回过头来看看第一个例子，我们稍微改造一下，一点一点来：</p>
+
+<p><strong>代码清单3：NSNotificationCenter的通用模式</strong></p>
+
+<pre><code>@interface Observer : NSObject
+
+@end
+
+@implementation Observer
+
+- (instancetype)init
+{
+    self = [super init];
+
+    if (self)
+    {
+        _poster = [[Poster alloc] init];
+
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleNotification:) name:TEST_NOTIFICATION object:nil]
+    }
+
+    return self;
+}
+
+- (void)handleNotification:(NSNotification *)notification
+{
+    NSLog(@"handle notification ");
+}
+
+- (void)dealloc
+{
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+@end
+
+// 其它地方
+[[NSNotificationCenter defaultCenter] postNotificationName:TEST_NOTIFICATION object:nil];   
+</code></pre>
+
+<p>上面的代码就是我们通常所做的事情：添加一个通知监听者，定义一个回调，并在所属对象释放时移除监听者；然后在程序的某个地方post一个通知。简单明了，如果这一切都是发生在一个线程里面，或者至少dealloc方法是在-postNotificationName:的线程中运行的(注意：NSNotification的post和转发是同步的)，那么都OK，没有线程安全问题。但如果dealloc方法和-postNotificationName:方法不在同一个线程中运行时，会出现什么问题呢？</p>
+
+<p>我们再改造一下上面的代码：</p>
+
+<p><strong>代码清单4：NSNotificationCenter引发的线程安全问题</strong></p>
+
+<pre><code>#pragma mark - Poster
+
+@interface Poster : NSObject
+
+@end
+
+@implementation Poster
+
+- (instancetype)init
+{
+    self = [super init];
+
+    if (self)
+    {
+        [self performSelectorInBackground:@selector(postNotification) withObject:nil];
+    }
+
+    return self;
+}
+
+- (void)postNotification
+{
+    [[NSNotificationCenter defaultCenter] postNotificationName:TEST_NOTIFICATION object:nil];
+}
+
+@end
+
+#pragma mark - Observer
+
+@interface Observer : NSObject
+{
+    Poster  *_poster;
+}
+
+@property (nonatomic, assign) NSInteger i;
+
+@end
+
+@implementation Observer
+
+- (instancetype)init
+{
+    self = [super init];
+
+    if (self)
+    {
+        _poster = [[Poster alloc] init];
+
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleNotification:) name:TEST_NOTIFICATION object:nil];
+    }
+
+    return self;
+}
+
+- (void)handleNotification:(NSNotification *)notification
+{
+    NSLog(@"handle notification begin");
+    sleep(1);
+    NSLog(@"handle notification end");
+
+    self.i = 10;
+}
+
+- (void)dealloc
+{
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+
+    NSLog(@"Observer dealloc");
+}
+
+@end
+
+#pragma mark - ViewController
+
+@implementation ViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    __autoreleasing Observer *observer = [[Observer alloc] init];
+}
+
+@end
+</code></pre>
+
+<p>这段代码是在主线程添加了一个TEST_NOTIFICATION通知的监听者，并在主线程中将其移除，而我们的NSNotification是在后台线程中post的。在通知处理函数中，我们让回调所在的线程睡眠1秒钟，然后再去设置属性i值。这时会发生什么呢？我们先来看看输出结果：</p>
+
+<pre><code>2015-03-14 00:31:41.286 SKTest[932:88791] handle notification begin
+2015-03-14 00:31:41.291 SKTest[932:88713] Observer dealloc
+2015-03-14 00:31:42.361 SKTest[932:88791] handle notification end
+(lldb) 
+
+// 程序在self.i = 10处抛出了"Thread 6: EXC_BAD_ACCESS(code=EXC_I386_GPFLT)"
+</code></pre>
+
+<p>经典的内存错误，程序崩溃了。其实从输出结果中，我们就可以看到到底是发生了什么事。我们简要描述一下：</p>
+
+<ol>
+<li>当我们注册一个观察者是，通知中心会持有观察者的一个弱引用，来确保观察者是可用的。</li>
+<li>主线程调用dealloc操作会让Observer对象的引用计数减为0，这时对象会被释放掉。</li>
+<li>后台线程发送一个通知，如果此时Observer还未被释放，则会向其转发消息，并执行回调方法。而如果在回调执行的过程中对象被释放了，就会出现上面的问题。</li>
+</ol>
+
+
+<p>当然，上面这个例子是故意而为之，但不排除在实际编码中会遇到类似的问题。虽然NSNotificationCenter是线程安全的，但并不意味着我们在使用时就可以保证线程安全的，如果稍不注意，还是会出现线程问题。</p>
+
+<p>那我们该怎么做呢？这里有一些好的建议：</p>
+
+<ol>
+<li>尽量在一个线程中处理通知相关的操作，大部分情况下，这样做都能确保通知的正常工作。不过，我们无法确定到底会在哪个线程中调用dealloc方法，所以这一点还是比较困难。</li>
+<li>注册监听都时，使用基于block的API。这样我们在block还要继续调用self的属性或方法，就可以通过weak-strong的方式来处理。具体大家可以改造下上面的代码试试是什么效果。</li>
+<li>使用带有安全生命周期的对象，这一点对象单例对象来说再合适不过了，在应用的整个生命周期都不会被释放。</li>
+<li>使用代理。</li>
+</ol>
+
+
+<h2>小结</h2>
+
+<p>NSNotificationCenter虽然是线程安全的，但不要被这个事实所误导。在涉及到多线程时，我们还是需要多加小心，避免出现上面的线程问题。想进一步了解的话，可以查看<a href="http://inessential.com/2013/12/20/observers_and_thread_safety">Observers and Thread Safety</a>。</p>
+
+<h2>参考</h2>
+
+<ol>
+<li><a href="https://developer.apple.com/library/mac/documentation/Cocoa/Conceptual/Notifications/Articles/Notifications.html">Notification Programming Topics</a></li>
+<li><a href="https://developer.apple.com/library/mac/documentation/Cocoa/Conceptual/Multithreading/ThreadSafetySummary/ThreadSafetySummary.html">Threading Programming Guide</a></li>
+<li><a href="http://blog.csdn.net/wzzvictory/article/details/8489516">NSNotification的几点说明</a></li>
+<li><a href="http://lapcatsoftware.com/articles/nsnotificationcenter-is-threadsafe-not.html">NSNotificationCenter is thread-safe NOT</a></li>
+<li><a href="http://inessential.com/2013/12/20/observers_and_thread_safety">Observers and Thread Safety</a></li>
+</ol>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">南峰子</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-03-14T12:58:59+08:00" pubdate data-updated="true">Mar 14<sup>th</sup>, 2015</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/ios/'>ios</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/03/07/uiresponder/" title="Previous Post: UIResponder">&laquo; UIResponder</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2015/03/20/nsnotificationcenter/" title="Next Post: NSNotificationCenter">NSNotificationCenter &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+
+
+<section>
+    <h1>Comments</h1>
+    <div id="comments" aria-live="polite"><!-- Duoshuo Comment BEGIN -->
+<div class="ds-thread" data-title="Notification与多线程"></div>
+<script type="text/javascript">
+    var duoshuoQuery = {short_name:"southpeak"};
+    (function() {
+     var ds = document.createElement('script');
+     ds.type = 'text/javascript';ds.async = true;
+     ds.src = 'http://static.duoshuo.com/embed.js';
+     ds.charset = 'UTF-8';
+     (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+     })();
+</script>
+<!-- Duoshuo Comment END --></div>
+</section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+<section>
+<h1>分类</h1>
+<ul>
+  <li><a href='/blog/categories/ios'>ios (65)</a></li>
+  <li><a href='/blog/categories/network'>network (3)</a></li>
+  <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
+  <li><a href='/blog/categories/swift'>swift (7)</a></li>
+  <li><a href='/blog/categories/system'>system (1)</a></li>
+  <li><a href='/blog/categories/网络'>网络 (8)</a></li>
+</ul>
+</section>
+
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/05/31/ioszhi-shi-xiao-ji-di-er-qi-2015-dot-05-dot-31/">iOS知识小集 第二期(2015.05.31)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/05/10/ioszhi-shi-xiao-ji-di-%5B%3F%5D-qi-2015-dot-05-dot-10/">iOS知识小集 第一期(2015.05.10)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/04/23/nskeyvalueobserving-kvo/">NSKeyValueObserving(KVO)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/24/yuan-ma-pian-:mbprogresshud/">源码篇：MBProgressHUD</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/20/nsnotificationcenter/">NSNotificationCenter</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/14/nsnotificationyu-duo-xian-cheng/">Notification与多线程</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/07/uiresponder/">UIResponder</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/01/fan-yi-pian-:ios-8-handoff-tutorial/">翻译篇：iOS 8 Handoff Tutorial</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/11/nscache/">NSCache</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/07/yuan-ma-pian-:sdwebimage/">源码篇：SDWebImage</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2015 - 南峰子 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

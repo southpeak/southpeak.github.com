@@ -1,0 +1,483 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Swift中C指针的基本使用方法 - 南峰子的技术博客</title>
+  <meta name="author" content="南峰子">
+      
+  <meta name="baidu-site-verification" content="HoscFhWICI" />
+
+  
+  <meta name="description" content="Swift尽可能避免让我们直接去访问指针。但当我们需要直接访问内存时，我们可以使用Swift提供的几种指针类型。在下面几个表中列出了各种情况下C类型指针语法与Swift语法对应关系，其中Type作为实际类型的占位符 对于函数参数，有以下对应关系 C语法 Swift语法 const void * &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://southpeak.github.io/blog/2014/07/02/ios-swift-cpointer">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="南峰子的技术博客" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <!-- <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script> -->
+  <!-- googleapis is fucked by gfw -->
+  <script src="http://cdn.staticfile.org/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<!--<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">-->
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">南峰子的技术博客</a></h1>
+  
+    <h2>攀登，一步一个脚印，方能知其乐</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:southpeak.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/categories/ios">iOS开发</a></li>
+  <li><a href="/blog/archives">所有文章</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Swift中C指针的基本使用方法</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-07-02T20:51:30+08:00" pubdate data-updated="true">Jul 2<sup>nd</sup>, 2014</time>
+        
+        
+           | <a href="#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Swift尽可能避免让我们直接去访问指针。但当我们需要直接访问内存时，我们可以使用Swift提供的几种指针类型。在下面几个表中列出了各种情况下C类型指针语法与Swift语法对应关系，其中Type作为实际类型的占位符</p>
+
+<p>对于函数参数，有以下对应关系</p>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th>    C语法    </th>
+<th>   Swift语法   </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td> const void * </td>
+<td>  CConstVoidPointer |</td>
+</tr>
+<tr>
+<td></td>
+<td>  void *  </td>
+<td>  CMutableVoidPointer |</td>
+</tr>
+<tr>
+<td></td>
+<td>const Type * </td>
+<td> CConstPointer<Type> |</td>
+</tr>
+<tr>
+<td></td>
+<td>Type *</td>
+<td>CMutablePointer<Type>|</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>对于返回值，变量，二级以上的指针参数，有以下对应关系</p>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th>    C语法    </th>
+<th>   Swift语法   </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td>void * </td>
+<td> COpaquePointer|</td>
+</tr>
+<tr>
+<td></td>
+<td>Type * </td>
+<td> UnsafePointer<Type>|</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>对于类类型，有以下对应关系</p>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th>    C语法    </th>
+<th>   Swift语法   </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td>Type * const * </td>
+<td> CConstPointer<Type> |</td>
+</tr>
+<tr>
+<td></td>
+<td>Type * __strong * </td>
+<td> CMutablePointer<Type> |</td>
+</tr>
+<tr>
+<td></td>
+<td>Type ** </td>
+<td> AutoreleasingUnsafePointer<Type>|</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>下面简单介绍一下这几种类型的指针</p>
+
+<h2>C可变指针</h2>
+
+<p>当我们声明一个包含CMutablePointer<Type>参数的指针时，可以接收以下类型的值</p>
+
+<ol>
+<li>nil, 作为空指针传入</li>
+<li>一个CMutablePointer<Type>值</li>
+<li>一个in-out表达式，它的操作数是Type类型的左值。该表达式作为左值地址传入</li>
+<li>一个in-out Type[]值，它作为数组的首地址指针传入，且在调用时扩展了数据的生命周期</li>
+</ol>
+
+
+<p>假如我们声明了如下一个函数：</p>
+
+<pre><code>func takesAMutablePointer(x: CMutablePointer&lt;Float&gt;) { /*...*/ }
+</code></pre>
+
+<p>那么我们可以用以下任何一种方式来调用</p>
+
+<pre><code>var x: Float = 0.0
+var p: CMutablePointer&lt;Float&gt; = &amp;x
+var a: Float[] = [1.0, 2.0, 3.0]
+
+takesAMutablePointer(nil)
+takesAMutablePointer(p)
+takesAMutablePointer(&amp;x)
+takesAMutablePointer(&amp;a)
+</code></pre>
+
+<p>当声明一个包含CMutableVoidPointer参数的函数时，它可以接收与CMutablePointer<Type>相同的形参，其中Type为任意类型。需要注意的是如果直接传递CMutablePointer<Type>，目前的编译器会直接报编译错误</p>
+
+<pre><code>func takesAMutableVoidPointer(x: CMutableVoidPointer) { /* ... */ }
+
+var x: Float = 0.0, y: Int = 0
+var p: CMutablePointer&lt;Float&gt; = &amp;x, q: CMutablePointer&lt;Int&gt; = &amp;y
+var a: Float[] = [1.0, 2.0, 3.0], b: Int[] = [1, 2, 3]
+
+takesAMutableVoidPointer(nil)
+//takesAMutableVoidPointer(p)   编辑错误:CMutablePointer&lt;Float&gt; is not convertible to CMutableVoidPointer
+//takesAMutableVoidPointer(q)
+takesAMutableVoidPointer(&amp;x)
+takesAMutableVoidPointer(&amp;y)
+takesAMutableVoidPointer(&amp;a)
+takesAMutableVoidPointer(&amp;b)
+</code></pre>
+
+<h2>C常量指针</h2>
+
+<p>当我们声明一个带有CConstPointer<Type>参数的函数时，可以接收以下类型的值：</p>
+
+<ol>
+<li>nil, 作为空指针传入</li>
+<li>一个CMutablePointer<Type>, CMutableVoidPointer, CConstPointer<Type>, CConstVoidPointer, 或者AutoreleasingUnsafePointer<Type>类型的值，如果需要则会转换成CConstPointer<Type></li>
+<li>一个in-out表达式，它的操作数是Type类型的左值。该表达式作为左值地址传入</li>
+<li>一个in-out Type[]值，它作为数组的首地址指针传入，且在调用时扩展了数据的生命周期</li>
+</ol>
+
+
+<p>假如我们声明如下函数:</p>
+
+<pre><code>func takesAConstPointer(x: CConstPointer&lt;Float&gt;) { /*...*/ }
+</code></pre>
+
+<p>那么我们可以用以下任何一种方式来调用</p>
+
+<pre><code>var x: Float = 0.0
+var p: CConstPointer&lt;Float&gt; = nil
+
+takesAConstPointer(nil)
+takesAConstPointer(p)
+takesAConstPointer(&amp;x)
+takesAConstPointer([1.0, 2.0, 3.0])
+</code></pre>
+
+<p>当声明一个包含CConstVoidPointer参数的函数时，它可以接收与CConstPointer<Type>相同的形参，其中Type为任意类型。</p>
+
+<pre><code>func takesAConstVoidPointer(x: CConstVoidPointer) { /* ... */ }
+
+var x: Float = 0.0, y: Int = 0
+var p:CConstPointer&lt;Float&gt; = nil, q: CConstPointer&lt;Int&gt; = nil
+
+takesAConstVoidPointer(nil)
+//takesAConstVoidPointer(p)
+//takesAConstVoidPointer(q)
+takesAConstVoidPointer(&amp;x)
+takesAConstVoidPointer(&amp;y)
+takesAConstVoidPointer([1.0, 2.0, 3.0])
+takesAConstVoidPointer([1, 2, 3])
+</code></pre>
+
+<h2>AutoreleasingUnsafePointer</h2>
+
+<p>当我们声明一个带有AutoreleasingUnsafePointer参数的函数时，可以接收以下类型的值：</p>
+
+<ol>
+<li>nil, 作为空指针传入</li>
+<li>一个AutoreleasingUnsafePointer<Type>值</li>
+<li>一个in-out表达式，其操作数是临时非所属(nonowning)缓冲区，存储了原始值的拷贝。缓冲区的地址被传递给调用函数，且在返回时，缓冲区的值被加载(loaded)、保留(retained)并重新指派(reassigned)给操作数</li>
+</ol>
+
+
+<p>注意上面清单中不包含数组</p>
+
+<p>如果我们声明了以下函数</p>
+
+<pre><code>func takesAnAutoreleasingUnsafePointer(x: AutoreleasingUnsafePointer&lt;NSDate?&gt;) { /*...*/ }
+</code></pre>
+
+<p>则可以用以下方式来调用</p>
+
+<pre><code>var x: NSDate? = nil
+var p: AutoreleasingUnsafePointer&lt;NSDate?&gt; = nil
+
+takesAnAutoreleasingUnsafePointer(nil)
+takesAnAutoreleasingUnsafePointer(p)
+takesAnAutoreleasingUnsafePointer(&amp;x)
+</code></pre>
+
+<p>最后需要注意的是在Swift中，没有导入C函数指针</p>
+
+<p>参考文档：<a href="https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/BuildingCocoaApps/index.html">Using Swift with Cocoa and Objective-C</a></p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">南峰子</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-07-02T20:51:30+08:00" pubdate data-updated="true">Jul 2<sup>nd</sup>, 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/ios/'>ios</a>, <a class='category' href='/blog/categories/swift/'>swift</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/07/02/ios-swift-protocol/" title="Previous Post: Swift协议基础">&laquo; Swift协议基础</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2014/07/05/cover-flow/" title="Next Post: Cover flow基本原理及Tapku实现方法">Cover flow基本原理及Tapku实现方法 &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+
+
+<section>
+    <h1>Comments</h1>
+    <div id="comments" aria-live="polite"><!-- Duoshuo Comment BEGIN -->
+<div class="ds-thread" data-title="Swift中C指针的基本使用方法"></div>
+<script type="text/javascript">
+    var duoshuoQuery = {short_name:"southpeak"};
+    (function() {
+     var ds = document.createElement('script');
+     ds.type = 'text/javascript';ds.async = true;
+     ds.src = 'http://static.duoshuo.com/embed.js';
+     ds.charset = 'UTF-8';
+     (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+     })();
+</script>
+<!-- Duoshuo Comment END --></div>
+</section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+<section>
+<h1>分类</h1>
+<ul>
+  <li><a href='/blog/categories/ios'>ios (65)</a></li>
+  <li><a href='/blog/categories/network'>network (3)</a></li>
+  <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
+  <li><a href='/blog/categories/swift'>swift (7)</a></li>
+  <li><a href='/blog/categories/system'>system (1)</a></li>
+  <li><a href='/blog/categories/网络'>网络 (8)</a></li>
+</ul>
+</section>
+
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/05/31/ioszhi-shi-xiao-ji-di-er-qi-2015-dot-05-dot-31/">iOS知识小集 第二期(2015.05.31)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/05/10/ioszhi-shi-xiao-ji-di-%5B%3F%5D-qi-2015-dot-05-dot-10/">iOS知识小集 第一期(2015.05.10)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/04/23/nskeyvalueobserving-kvo/">NSKeyValueObserving(KVO)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/24/yuan-ma-pian-:mbprogresshud/">源码篇：MBProgressHUD</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/20/nsnotificationcenter/">NSNotificationCenter</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/14/nsnotificationyu-duo-xian-cheng/">Notification与多线程</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/07/uiresponder/">UIResponder</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/01/fan-yi-pian-:ios-8-handoff-tutorial/">翻译篇：iOS 8 Handoff Tutorial</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/11/nscache/">NSCache</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/07/yuan-ma-pian-:sdwebimage/">源码篇：SDWebImage</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2015 - 南峰子 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

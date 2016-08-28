@@ -1,0 +1,1146 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>南峰子的技术博客</title>
+  <meta name="author" content="南峰子">
+      
+  <meta name="baidu-site-verification" content="HoscFhWICI" />
+
+  
+  <meta name="description" content="注：原文由Mattt Thompson发表于nshipster：instancetype。文章是2012年写的，所以有些内容现在已不适用。 在Objective-C中，约定(conventions)不仅仅是编码最佳实践的问题，同时对编译器来说，也是一种隐式说明。 例如， &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://southpeak.github.io/posts/8">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="南峰子的技术博客" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <!-- <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script> -->
+  <!-- googleapis is fucked by gfw -->
+  <script src="http://cdn.staticfile.org/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<!--<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">-->
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">南峰子的技术博客</a></h1>
+  
+    <h2>攀登，一步一个脚印，方能知其乐</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:southpeak.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/categories/ios">iOS开发</a></li>
+  <li><a href="/blog/archives">所有文章</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div class="blog-index">
+  
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/10/19/instancetype/">instancetype</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-10-19T00:26:03+08:00" pubdate data-updated="true">Oct 19<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/10/19/instancetype/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>注：原文由Mattt Thompson发表于nshipster：<a href="http://nshipster.com/instancetype/">instancetype</a>。<strong>文章是2012年写的，所以有些内容现在已不适用。</strong></p>
+
+<p>在Objective-C中，约定(conventions)不仅仅是编码最佳实践的问题，同时对编译器来说，也是一种隐式说明。</p>
+
+<p>例如，alloc和init两个方法都返回id类型，而在Xcode中，编译器会对它们进行类型检查。这是怎么做到的呢？</p>
+
+<p>在Cocoa中，有一个这样的约定，命名为alloc/init的方法总是返回接收者类的实例。这些方法有一个相关的返回类型。</p>
+
+<p>而类的构造方法(类方法)，虽然他们都是返回id类型，但没有从类型检查中获得好处，因为他们不遵循命名约定。</p>
+
+<p>我们可以试试以下代码：</p>
+
+<pre><code>[[[NSArray alloc] init] mediaPlaybackAllowsAirPlay]; // 报错： "No visible @interface for `NSArray` declares the selector `mediaPlaybackAllowsAirPlay`"
+
+[[NSArray array] mediaPlaybackAllowsAirPlay]; // (No error) 注：这个方法调用只在老的编译器上成立，新的编译器会报相同的错误。
+</code></pre>
+
+<p>由于alloc和init遵循返回相关结果类型的约定，所以会对NSArray执行类型检查。然而等价的类构造方法array则不遵循这一约定，只解释为id类型。</p>
+
+<p>id类型在不需要确保类型安全时非常有用，但一旦需要时，就无法处理了。</p>
+
+<p>而另一种方法，即显示声明返回类型(如前面例子中的(NSArray *))稍微改善了一些，但写起来有点麻烦，而且在继承体系中表现得不是很好。</p>
+
+<p>这时编译器就需要去解决这种针对Objective-C类型系统的边界情况了:</p>
+
+<p>instancetype是一个上下文关键字，可用在返回类型中以表示方法返回一个相关的结果类型，如：</p>
+
+<pre><code>@interface Person
++ (instancetype)personWithName:(NSString *)name;
+@end
+</code></pre>
+
+<p>使用instancetype，编译器可以正确地知道personWithName:的返回结果是一个Person实例。</p>
+
+<p>我们现在看Foundation中的类构造器，可以发现大部分已经开始使用了instancetype了。新的API，如UICollectionViewLayoutAttributes，都是使用instancetype了。</p>
+
+<p><em>注：instancetype与id不同的是，它只能用在方法声明的返回值中。</em></p>
+
+<h4>更进一步的启示</h4>
+
+<p>语言特性是特别有趣的，因为它不清楚在软件设计的更高层次方面会带来什么样的影响。</p>
+
+<p>虽然instancetype看上去非常一般，只是对编译器有用，但也可能被用于一些更聪明的目的。</p>
+
+<p>Jonathan Sterling的文章<a href="http://www.jonmsterling.com/posts/2012-02-05-typed-collections-with-self-types-in-objective-c.html">this quite interesting article</a>，详细描述了instancetype如何被用于编码静态类型集合，而不需要使用泛型：</p>
+
+<pre><code>NSURL &lt;MapCollection&gt; *sites = (id)[NSURL mapCollection];
+[sites put:[NSURL URLWithString:@"http://www.jonmsterling.com/"]
+        at:@"jon"];
+[sites put:[NSURL URLWithString:@"http://www.nshipster.com/"]
+        at:@"nshipster"];
+
+NSURL *jonsSite = [sites at:@"jon"]; // =&gt; http://www.jonmsterling.com/
+</code></pre>
+
+<p>静态类型集合使得API更有表现力，这样开发者将不再需要去确定集合中的参数可以使用使用类型的对象了。</p>
+
+<p>不管这会不会成为Objective-C公认的约定，诸如instancetype这样一个低层特性可用于改变语言的形态已是非常棒的一件事了。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/10/17/osatomicyuan-zi-cao-zuo/">OSAtomic原子操作</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-10-17T10:56:00+08:00" pubdate data-updated="true">Oct 17<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/10/17/osatomicyuan-zi-cao-zuo/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>并发编程一个主要问题就是如何同步数据。同步数据的方式有很多种，这里我们介绍一下libkern/OSAtomic.h。这个头文件包含是大量关于原子操作和同步操作的函数，如果要对数据进行同步操作，这里面的函数可以作为我们的首选项。不同平台这些函数的实现是自定义的。另外，它们是线程安全的。</p>
+
+<p>需要注意的是，传递给这些函数的所有地址都必须是“自然对齐”的，例如int32_t * 指针必须是32位对齐的(地址的低位2个bit为0)，int64_t * 指针必须是64位对齐的(低3位为0)。</p>
+
+<p>这些原子函数的一些版本整合了内存屏障(memory barriers)，而另一些则没有。在诸如PPC这样的弱有序(weakly-ordered)架构中，Barriers严格限制了内存访问顺序。所有出现在barriers之前的加载和存储操作完成后，才会运行barriers之后的加载和存储操作。</p>
+
+<p>在单处理器系统中，barriers操作通常是一个空操作。在多处理器系统中，barriers在某些平台上可能是相当昂贵的操作，如PPC。</p>
+
+<p>大多数代码都应该使用barrier函数来确保在线程间共享的内存是正确同步的。例如，如果我们想要初始化一个共享的数据结构，然后自动增加某个变量值来标识初始化操作完成，则我们必须使用OSAtomicIncrement32Barrier来确保数据结构的存储操作在变量自动增加前完成。</p>
+
+<p>同样的，该数据结构的消费者也必须使用OSAtomicIncrement32Barrier，以确保在自动递增变量值之后再去加载这些数据。另一方面，如果我们只是简单地递增一个全局计数器，那么使用OSAtomicIncrement32会更安全且可能更快。</p>
+
+<p>如果不能确保我们使用的是哪个版本，则使用barrier变量以保证是安全的。</p>
+
+<p>另外，自旋锁和队列操作总是包含一个barrier。</p>
+
+<p>这个头文件中的函数主要可以分为以下几类</p>
+
+<h2>内存屏障(Memory barriers)</h2>
+
+<p>内存屏障的概念如上所述，它是一种屏障和指令类，可以让CPU或编译器强制将barrier之前和之后的内存操作分开。CPU采用了一些可能导致乱序执行的性能优化。在单个线程的执行中，内存操作的顺序一般是悄无声息的，但是在并发编程和设备驱动程序中就可能出现一些不可预知的行为，除非我们小心地去控制。排序约束的特性是依赖于硬件的，并由架构的内存顺序模型来定义。一些架构定义了多种barrier来执行不同的顺序约束。</p>
+
+<p>OSMemoryBarrier()函数就是用来设置内存屏障，它即可以用于读操作，也可以用于写操作。</p>
+
+<p>示例代码：</p>
+
+<pre><code>// 代码来自ReactiveCocoa:RACDisposable类
+
+- (id)initWithBlock:(void (^)(void))block {
+    NSCParameterAssert(block != nil);
+
+    self = [super init];
+    if (self == nil) return nil;
+
+    _disposeBlock = (void *)CFBridgingRetain([block copy]);
+    OSMemoryBarrier();
+
+    return self;
+}
+</code></pre>
+
+<h2>自旋锁(Spinlocks)</h2>
+
+<p>自旋锁是在多处理器系统(SMP)上为保护一段关键代码的执行或者关键数据的一种保护机制，是实现synchronization的一种手段。</p>
+
+<p>libkern/OSAtomic.h中包含了三个关于自旋锁的函数：OSSpinLockLock, OSSpinLockTry, OSSpinLockUnlock</p>
+
+<p>示例代码：</p>
+
+<pre><code>// 代码来自ReactiveCocoa:RACCompoundDisposable类
+
+- (void)dispose {
+#if RACCompoundDisposableInlineCount
+    RACDisposable *inlineCopy[RACCompoundDisposableInlineCount];
+#endif
+
+    CFArrayRef remainingDisposables = NULL;
+
+    OSSpinLockLock(&amp;_spinLock);
+    {
+        _disposed = YES;
+
+#if RACCompoundDisposableInlineCount
+        for (unsigned i = 0; i &lt; RACCompoundDisposableInlineCount; i++) {
+            inlineCopy[i] = _inlineDisposables[i];
+            _inlineDisposables[i] = nil;
+        }
+#endif
+
+        remainingDisposables = _disposables;
+        _disposables = NULL;
+    }
+    OSSpinLockUnlock(&amp;_spinLock);
+
+#if RACCompoundDisposableInlineCount
+    // Dispose outside of the lock in case the compound disposable is used
+    // recursively.
+    for (unsigned i = 0; i &lt; RACCompoundDisposableInlineCount; i++) {
+        [inlineCopy[i] dispose];
+    }
+#endif
+
+    if (remainingDisposables == NULL) return;
+
+    CFIndex count = CFArrayGetCount(remainingDisposables);
+    CFArrayApplyFunction(remainingDisposables, CFRangeMake(0, count), &amp;disposeEach, NULL);
+    CFRelease(remainingDisposables);
+}
+</code></pre>
+
+<h2>原子队列操作</h2>
+
+<p>队列操作主要包含两类：</p>
+
+<ol>
+<li>不加锁的FIFO入队和出队原子操作，包含OSAtomicFifoDequeue和OSAtomicFifoEnqueue两个函数</li>
+<li>不加锁的LIFO入队和出队原子操作，包含OSAtomicDequeue和OSAtomicEnqueue两个函数。这两个函数是线程安全的，对有潜在精确要求的代码来说，这会是强大的构建方式。</li>
+</ol>
+
+
+<h2>比较和交换</h2>
+
+<p>这组函数可以细分为三组函数：</p>
+
+<ol>
+<li>OSAtomicCompareAndSwap**[Barrier](type __oldValue, type __newValue, volatile type *__theValue)：这组函数用于比较__oldValue是否与__theValue指针指向的内存位置的值匹配，如果匹配，则将__newValue的值存储到__theValue指向的内存位置。可以根据需要使用barrier版本。</li>
+<li>OSAtomicTestAndClear/OSAtomicTestAndClearBarrier( uint32_t __n, volatile void *__theAddress )：这组函数用于测试__theAddress指向的值中由__n指定的bit位，如果该位未被清除，则清除它。需要注意的是最低bit位应该是1，而不是0。对于一个64-bit的值来说，如果要清除最高位的值，则__n应该是64。</li>
+<li>OSAtomicTestAndSet/OSAtomicTestAndSetBarrier(uint32_t __n, volatile void *__theAddress)：与OSAtomicTestAndClear相反，这组函数测试值后，如果指定位没有设置，则设置它。</li>
+</ol>
+
+
+<p>示例代码：</p>
+
+<pre><code>void * sharedBuffer(void)
+{
+    static void * buffer;
+    if (buffer == NULL) {
+        void * newBuffer = calloc(1, 1024);
+        if (!OSAtomicCompareAndSwapPtrBarrier(NULL, newBuffer, &amp;buffer)) {
+            free(newBuffer);
+        }
+    }
+    return buffer;
+}
+</code></pre>
+
+<p>上述代码的作用是如果没有缓冲区，我们将创建一个newBuffer，然后将其写到buffer中。</p>
+
+<h2>布尔操作(AND, OR, XOR)</h2>
+
+<p>这组函数可根据以下两个规则来分类：</p>
+
+<ol>
+<li>是否使用Barrier</li>
+<li>返回值是原始值还是操作完成后的值</li>
+</ol>
+
+
+<p>以And为例，有4个函数：OSAtomicAnd32, OSAtomicAnd32Barrier, OSAtomicAnd32Orig, OSAtomicAnd32OrigBarrier。每个函数均带有两个参数：__theMask(uint32_t)和__theValue(volatile uint32_t *)。函数将__theMask与__theValue指向的值做AND操作。</p>
+
+<p>类似，还有OR操作和XOR操作。</p>
+
+<h2>数学操作</h2>
+
+<p>这组函数主要包括：</p>
+
+<ol>
+<li>加操作：OSAtomicAdd**, OSAtomicAdd**Barrier</li>
+<li>递减操作：OSAtomicDecrement**, OSAtomicDecrement**Barrier</li>
+<li>递增操作：OSAtomicIncrement**, OSAtomicIncrement**Barrier</li>
+</ol>
+
+
+<p>示例代码：</p>
+
+<pre><code>// 代码摘自ReactiveCocoa:RACDynamicSequence
+
+- (void)dealloc {
+    static volatile int32_t directDeallocCount = 0;
+
+    if (OSAtomicIncrement32(&amp;directDeallocCount) &gt;= DEALLOC_OVERFLOW_GUARD) {
+        OSAtomicAdd32(-DEALLOC_OVERFLOW_GUARD, &amp;directDeallocCount);
+
+        // Put this sequence's tail onto the autorelease pool so we stop
+        // recursing.
+        __autoreleasing RACSequence *tail __attribute__((unused)) = _tail;
+    }
+
+    _tail = nil;
+}
+</code></pre>
+
+<h2>小结</h2>
+
+<p>相较于@synchronized，OSAtomic原子操作更趋于数据的底层，从更深层次来对单例进行保护。同时，它没有阻断其它线程对函数的访问。</p>
+
+<h2>参考</h2>
+
+<ol>
+<li><a href="https://developer.apple.com/library/mac/documentation/System/Reference/OSAtomic_header_reference/Reference/reference.html">OSAtomic.h User-Space Reference</a></li>
+<li><a href="http://blog.csdn.net/wzb56_earl/article/details/6634622">Memory barrier</a></li>
+<li><a href="http://www.cocoachina.com/industry/20130821/6842.html">Objc的底层并发API</a></li>
+<li><a href="http://blog.csdn.net/tuxiangqi/article/details/8076972">OSATOMIC与synchronized加锁的对比</a></li>
+</ol>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/09/23/xing-neng-yu-shi-jian/">性能与时间</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-09-23T23:55:35+08:00" pubdate data-updated="true">Sep 23<sup>rd</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/09/23/xing-neng-yu-shi-jian/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>原文链接：<a href="http://www.macresearch.org/tutorial_performance_and_time">http://www.macresearch.org/tutorial_performance_and_time</a></p>
+
+<p>在讨论性能之前，先讨论一个重要的话题：时间。为了理解代码中的变化如何影响性能，我们需要一个排序的指标。有许多方法用于时间例程，一些比另一些合适。在本教程中我们将讨论Mach Absolute Time。</p>
+
+<h2>为什么是Mach?</h2>
+
+<p>时间例程依赖于所需要测量的时间域。某些情况下使用诸如clock()或getrusage()函数来做些简单的数学运算就足够了。如果时间例程将用于实际的开发框架之外，可移植性就很重要了。我不使用这些。为什么？</p>
+
+<p>对于我来说，调试代码的典型问题是：</p>
+
+<ol>
+<li>我只需要在即时测试时使用时间例程</li>
+<li>我不喜欢依赖于多种函数来包含不同的时间域。它们的行为可能不一致</li>
+<li>有时我需要一个高精度定时器</li>
+</ol>
+
+
+<h2>欢迎了解mach_absolute_time</h2>
+
+<p>mach_absolute_time是一个CPU/总线依赖函数，返回一个基于系统启动后的时钟”嘀嗒”数。它没有很好的文档定义，但这不应该成为使用它的障碍，因为在MAC OS X上可以确保它的行为，并且，它包含系统时钟包含的所有时间区域。那是否应该在产品代码中使用它呢？可能不应该。但是对于测试，它却恰到好处。</p>
+
+<p>使用mach_absolute_time时需要考虑两个因素：</p>
+
+<ol>
+<li>如何获取当前的Mach绝对时间</li>
+<li>如何将其转换为有意义的数字</li>
+</ol>
+
+
+<h2>获取mach_absolute_time</h2>
+
+<p>这非常简单</p>
+
+<pre><code>#include &lt;stdint.h&gt; 
+uint64_t start = mach_absolute_time();
+uint64_t stop = mach_absolute_time(); 
+</code></pre>
+
+<p>这样就可以了。我们通常获取两个值，以得到这两个时间的时间差。</p>
+
+<h2>将mach_absolute_time时间差转换为秒数</h2>
+
+<p>这稍微有点复杂，因为我们需要获取mach_absolute_time所基于的系统时间基准。如下代码：</p>
+
+<pre><code>#include &lt;stdint.h&gt;
+#include&lt;mach/mach_time.h&gt; 
+//Raw mach_absolute_times going in,difference in seconds out
+double subtractTimes( uint64_tendTime, uint64_t startTime )
+{
+    uint64_t difference = endTime - startTime;
+    static double conversion = 0.0;
+
+    if( conversion == 0.0 )
+    {
+        mach_timebase_info_data_t info;
+        kern_return_t err =mach_timebase_info( &amp;info );
+
+        //Convert the timebase into seconds
+        if( err == 0  )
+            conversion= 1e-9 * (double) info.numer / (double) info.denom;
+    }
+
+    return conversion * (double)difference;
+} 
+</code></pre>
+
+<p>这里最重要的是调用mach_timebase_info。我们传递一个结构体以返回时间基准值。最后，一旦我们获取到系统的心跳，我们便能生成一个转换因子。通常，转换是通过分子(info.numer)除以分母(info.denom)。这里我乘了一个1e-9来获取秒数。最后，我们获取两个时间的差值，并乘以转换因子，便得到真实的时间差。</p>
+
+<p>现在我们可能会想，为什么这比用clock好？看起来做了更多的事情。确实是有点，这便是为什么它在一个函数中。我们只需要传递我们的值到函数中并取得答案。</p>
+
+<h2>例子</h2>
+
+<p>让我们写个例子。下面是完整的代码清单(包括mach函数)。可以使用gcc mach.c –o mach来编译它：</p>
+
+<pre><code>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;math.h&gt;
+#include&lt;mach/mach_time.h&gt; 
+
+//Raw mach_absolute_times going in,difference in seconds out
+double subtractTimes( uint64_tendTime, uint64_t startTime )
+{
+    uint64_t difference = endTime -startTime;
+    static double conversion = 0.0;
+
+    if( conversion == 0.0 )
+    {        
+        mach_timebase_info_data_tinfo;        
+        kern_return_terr = mach_timebase_info( &amp;info );                       //Convert the timebaseinto seconds        
+
+        if(err == 0  )                       
+            conversion= 1e-9 * (double) info.numer / (double) info.denom;    
+    }
+
+    return conversion * (double)difference;
+} 
+
+int main()
+{
+    inti, j, count;
+    uint64_t start,stop;
+    doublecurrent = 0.0;
+    doubleanswer = 0.0;
+    doubleelapsed = 0.0;
+    intdim1 = 256;
+    intdim2 = 256;
+    intsize = 4*dim1*dim2;
+
+    //Allocatesome memory and warm it up
+    double *array =(double*)malloc(size*sizeof(double));       
+    for(i=0;i&lt;size;i++)array = (double)i;
+
+    count= 5;     
+    for(i=0;i&lt;count;i++)
+    {              
+        start = mach_absolute_time();                                 
+        //dosome work
+        for(j=0;j&lt;size;j++)
+        {
+            answer+= sqrt(array[j]);
+        }
+        stop = mach_absolute_time();
+        current= subtractTimes(stop,start);
+        printf("Timefor iteration: %1.12lf for answer: %1.12lf\n",current, answer);
+        elapsed+= current;
+    } 
+
+    printf("\nTotaltime in seconds = %1.12lf for answer: %1.12lf\n",elapsed/count,answer);
+    free(array);
+    return 0;
+} 
+</code></pre>
+
+<p>我们在这里做了什么？在这个例子中，我们有一个适当大小的double数组，当中存放了一些数字，然后获取这些数值的和的开方。为了测试，我们迭代了5次这个计算。每次迭代后我们打印花费的时间，并总结了计算所需的运行时间。在我的PowerMac G5(2.5)机器上，我获得如下结果：</p>
+
+<pre><code>[bigmac:~/misc] macresearch% gcc mach.c -omach
+[bigmac:~/misc] macresearch%./mach 
+Time for iteration: 0.006717496412for answer: 89478229.125529855490
+Time for iteration: 0.007274204955for answer: 178956458.251062750816
+Time for iteration: 0.006669191332for answer: 268434687.376589745283
+Time for iteration: 0.006953711252for answer: 357912916.502135872841
+Time for iteration: 0.007582157340for answer: 447391145.627681851387 
+Average time in seconds =0.007039352258 for answer: 447391145.627681851387
+</code></pre>
+
+<p>注意，在这里我没有进行优化，因为编译器有方法避开这样的无脑循环。另外，这只是一个例子。如果是真正的代码，我们会进行优化。</p>
+
+<p>好了，这就是这个例子的两个目的。</p>
+
+<p>首先，我使用的数组大小比我的缓存大。我这样做的目的是因为我们需要注意到数据溢出缓存的情况(正如这个例子一样，至少在我的系统中是这样。如果是在MacPro中，不会出现这种情况)。我们将在以后讨论缓存的事宜。当然，这是一个做作的例子，但有一些东西可供思考。其次，你注意到在内存分配之前我写了一句注释，这是什么意思呢？</p>
+
+<p>这在实际情况下是不需要关心的事情，因为内存总是在需要时已准备好使用。但当做一些小测试时来测试函数的性能时，它却可能是会影响到测试结果的实际问题。</p>
+
+<p>当动态分配内存时，第一次访问内存管理时会将其清0(在OS X中不管使用哪种动态分配函数:malloc, calloc…所有内存在用户使用前都会清0)。内存清零是一种安全预防措施(我们不需要递交一些包含安全信息的内容，如解密密钥)</p>
+
+<p>清零过程产生一个副作用(被系统标记为零填充页面故障)。所以为了让我们的计时更精确些，我们在使用内存之前一次性填充数据，以确保我们不会获取到零填充页面故障的处理时间。</p>
+
+<p>让我们来测试一下，注释下面这行代码</p>
+
+<pre><code>for(i=0;i&lt;size;i++) array =(double)i;
+</code></pre>
+
+<p>为:</p>
+
+<pre><code>//for(i=0;i&lt;size;i++) array =(double)i;
+</code></pre>
+
+<p>再次运行测试</p>
+
+<pre><code>[bigmac:~/misc] macresearch% ./mach
+Time for iteration: 0.009478866798for answer: 0.000000000000
+Time for iteration: 0.004756880234for answer: 0.000000000000
+Time for iteration: 0.004927868215for answer: 0.000000000000
+Time for iteration: 0.005227029674for answer: 0.000000000000
+Time for iteration: 0.004891864428for answer: 0.000000000000 
+Average time in seconds =0.005856501870 for answer: 0.000000000000
+</code></pre>
+
+<p>注意第一次迭代的时间比后序的时间多了将近一倍。同时还需要注意所有的answer都是0。再次说明内存被清零了。如果我们从堆上获取了内存，我们获取到的是无意义的数值。</p>
+
+<p>最后，但很重要的一点。不要依赖于内存的清零操作。很有可能获取到的内存是从一个静态分配区而来，那么可能会导致如下这样的问题</p>
+
+<pre><code>double array[3][3];
+</code></pre>
+
+<p>在我的系统上的打印结果是：</p>
+
+<pre><code>-1.99844 -1.29321e-231 -1.99844
+-3.30953e-232 -5.31401e+303 0
+1.79209e-313 3.3146e-314 0
+</code></pre>
+
+<p>所以需要特别注意</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/09/21/zai-reactivecocoazhong-jiang-%5B%3F%5D-ge-viewmodelbang-ding-dao-uitableviewshang/">在ReactiveCocoa中将一个ViewModel绑定到UITableView上</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-09-21T14:14:19+08:00" pubdate data-updated="true">Sep 21<sup>st</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/09/21/zai-reactivecocoazhong-jiang-%5B%3F%5D-ge-viewmodelbang-ding-dao-uitableviewshang/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>英文作者Colin Eberhardt，原文可查看<a href="http://www.scottlogic.com/blog/2014/05/11/reactivecocoa-tableview-binding.html">BINDING TO A UITABLEVIEW FROM A REACTIVECOCOA VIEWMODEL</a></p>
+
+<p>这篇博客介绍了一个工具类，这个类将ReactiveCocoa中的ViewModels绑定到UITableView，而不需要通常的datasource和delegate。下面是这个辅助类的使用方法：</p>
+
+<pre><code>// 创建一个cell
+UINib *nib = [UINib nibWithNibName:@"CETweetTableViewCell" bundle:nil];
+
+// 将ViewModels的searchResults属性绑定到table view
+[CETableViewBindingHelper bindingHelperForTableView:self.searchResultsTable
+                        sourceSignal:RACObserve(self.viewModel, searchResults)
+                        templateCell:nib];
+</code></pre>
+
+<h2>介绍</h2>
+
+<p>我总是在不断的编写代码：在工作中，在家里，在火车上&hellip;如果我不写代码，我就会觉得不快乐！(注：这才是真正的程序员啊)</p>
+
+<p>在过去的几个月中，我开始在我的工程中越来越多地使用ReactiveCocoa了。这个框架可以用来创建一些非常优雅的解决方案，但同时它非常具有挑战性，因为对于任何一个问题，都有许多可用的解决方案。对于像我这样的编码狂人来说，这再好不过了。</p>
+
+<p>几个月之前，我在Ray Wenderlich的网站上发表了两篇关于ReactiveCocoa的文章(<a href="http://www.raywenderlich.com/62699/reactivecocoa-tutorial-pt1">第一部分</a>、<a href="http://www.raywenderlich.com/62796/reactivecocoa-tutorial-pt2">第二部分</a>)，以及一个<a href="http://www.raywenderlich.com/70598/reactivecocoa-tech-talk-video">Tech Talk</a>视频。这些覆盖了ReactiveCocoa的基本用法，希望能让广大读者熟悉ReactiveCocoa。不过，我收到不少请求，希望能讨论一些使用ReactiveCocoa实现MVVM模式的高级话题。</p>
+
+<p>正因此，我开始写这篇文章。不过，在我发布之前，我想先分享一个已纠缠我很久的问题&hellip;</p>
+
+<p>如果将一个UITableView绑定到一个ReactiveCocoa的ViewModel中？</p>
+
+<h2>视图模式</h2>
+
+<p>我以一个简单的例子开头&mdash;一个允许我们搜索Twitter的ViewModel：</p>
+
+<pre><code>/// A view model which provides a mechanism for searching twitter
+@interface CETwitterSearchViewModel : NSObject
+
+/// The current search text
+@property NSString *searchText;
+
+/// An array of CETweetViewModel instances which indicate
+/// the current search results
+@property NSArray *searchResults;
+
+/// A command which when executed searches twitter using the current searchText
+@property RACCommand *searchCommand;
+
+@end
+</code></pre>
+
+<p>这个ViewModel的实现重用了我在ReactiveCocoa指南第二部分所创建的信号，所以我不在此重复。如果想要看详细的代码，可以在github上查找。</p>
+
+<p>将ViewModel绑定到一个带有UITextField和UIButton的UI是使用ReactiveCocoa最普通不过工作了</p>
+
+<pre><code>// bind the UITextField text updates to the view model
+RAC(self.viewModel, searchText) = self.searchTextField.rac_textSignal;
+
+// bind a button to the search command
+self.searchButton.rac_command = self.viewModel.searchCommand;
+
+// when the search executes hide the keyboard
+[self.viewModel.searchCommand.executing subscribeNext:^(id x) {
+  [self.searchTextField resignFirstResponder];
+}];
+
+// show a network activity indicator when the search is being executed
+RAC([UIApplication sharedApplication], networkActivityIndicatorVisible) =
+  self.viewModel.searchCommand.executing;
+</code></pre>
+
+<p>在上面的代码中，当点击go按钮时，我们处理了诸如隐藏键盘这样的操作，并将网络连接的activity indicator绑定到了searchCommand.executing信号。</p>
+
+<p><img src="http://www.scottlogic.com/blog/ceberhardt/assets/mvvm/UIBinding.png" alt="image" /></p>
+
+<p>这样就将ViewModel三个属性中的两个绑定到了UI，到目前为止，一切都还不错！</p>
+
+<p>最后一个属性是searchResults；这个属性是一个数组，包含了搜索结果。我们可以通过RACObserve来观察这个属性的修改，RACObserve创建了一个信号，该信号会在每次更新时发出一个next事件。但不幸的是，我们不能只给UITableView一个对象的数组，并告诉它去渲染自己。</p>
+
+<p>如果我们在StackOverflow上搜索相关帖子，或者查看别人的ReactiveCocoa实例，可以看到传统的方式似乎是我们需要自己去实现table view的代理和数据源。换句话说，我们之前优雅的只需要几行绑定代码的视图类代码会由于需要实现table view的各种逻辑而显示异常丑陋。</p>
+
+<p>不过，我们有更好的方法。</p>
+
+<h2>一个Table View绑定辅助类</h2>
+
+<p>在MVVM模式中，每一个View都由一个ViewModel支撑着。一个视图可能占据整个屏幕(此时我们将一个视图控制器绑定到一个ViewModel)，或者只占据屏幕的一部分。</p>
+
+<p>我们的顶层ViewModel的searchResults属性包含了一个对象数组，其中每一个元素都是一个ViewModel。为了解决这个问题，我们需要的是一个通用的机制来为每个视图创建一个ViewModel，并将这两者绑定在一起。</p>
+
+<p>Nib提供了一种便捷的机制来定义可重用的视图。可以方便地使用nib来定义一个table view的单元格。</p>
+
+<p>一个合理的table view绑定辅助类的接口如下：</p>
+
+<pre><code>/// A helper class for binding view models with NSArray properties
+/// to a UITableView.
+@interface CETableViewBindingHelper : NSObject
+
+- (instancetype) initWithTableView:(UITableView *)tableView
+                      sourceSignal:(RACSignal *)source
+                      templateCell:(UINib *)templateCellNib;
+
+@end
+</code></pre>
+
+<p>这个绑定类使用提供的table view来渲染由源信号所提供的view model，另外templeteCell定义了视图。让我们来看看这个辅助类的实现：</p>
+
+<pre><code>＠interface CETableViewBindingHelper () &lt;UITableViewDataSource&gt;
+
+＠end
+
+＠implementation CETableViewBindingHelper {
+  UITableView *_tableView;
+  NSArray *_data;
+  UITableViewCell *_templateCell;
+}
+
+- (instancetype)initWithTableView:(UITableView *)tableView
+                     sourceSignal:(RACSignal *)source
+                     templateCell:(UINib *)templateCellNib {
+
+  if (self = [super init]) {
+    _tableView = tableView;
+    _data = [NSArray array];
+
+    // each time the view model updates the array property, store the latest
+    // value and reload the table view
+    [source subscribeNext:^(id x) {
+      _data = x;
+      [_tableView reloadData];
+    }];
+
+    // create an instance of the template cell and register
+    // with the table view
+    _templateCell = [[templateCellNib instantiateWithOwner:nil
+                                          options:nil] firstObject];
+    [_tableView registerNib:templateCellNib
+              forCellReuseIdentifier:_templateCell.reuseIdentifier];
+
+    // use the template cell to set the row height
+    _tableView.rowHeight = _templateCell.bounds.size.height;
+
+    _tableView.dataSource = self;
+  }
+  return self;
+}
+
+#pragma mark - UITableViewDataSource implementation
+
+- (NSInteger)tableView:(UITableView *)tableView
+                       numberOfRowsInSection:(NSInteger)section {
+  return _data.count;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView
+                        cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+  id&lt;CEReactiveView&gt; cell = [tableView
+      dequeueReusableCellWithIdentifier:_templateCell.reuseIdentifier];
+  [cell bindViewModel:_data[indexPath.row]];
+  return (UITableViewCell *)cell;
+}
+
+＠end
+</code></pre>
+
+<p>注意，初始化方法是内在逻辑所在。在这里，sourceSignal添加了一个subscriber，这样每次ViewModel的数组属性变化时，当前属性值的引用都会被保存，而table view也会重新加载。同样，也会创建templeteCell实例，来确定单元格的高度。</p>
+
+<p>最后，这个类实现了table view的数据源方法，并通过信号来获取数据。</p>
+
+<p>其中，单元格Cell必须实现以下协议，该协议提供了一个信号方法来将Cell绑定到相应的ViewModel上。</p>
+
+<pre><code>/// A protocol which is adopted by views which are backed by view models.
+@protocol CEReactiveView &lt;NSObject&gt;
+
+/// Binds the given view model to the view
+- (void)bindViewModel:(id)viewModel;
+
+@end 
+</code></pre>
+
+<p>将这个用于实际当中，现在只需要几行代码就可以将一个数组属性绑定到一个table view上了。</p>
+
+<pre><code>// create a cell template
+UINib *nib = [UINib nibWithNibName:@"CETweetTableViewCell" bundle:nil];
+
+// bind the view models 'searchResults' property to a table view
+[[CETableViewBindingHelper alloc]
+      initWithTableView:self.searchResultsTable
+           sourceSignal:RACObserve(self.viewModel, searchResults)
+           templateCell:nib];
+</code></pre>
+
+<p>注意，源信号是通过RACObserver宏来创建的。这个信号在每次属性通过setter来改变都会发出一个next事件。</p>
+
+<p>cell的实现类似于视图控制器；它们的UI控件定义在一个nib文件中并连接到相应的outlet属性。下图是该示例程序中定义cell的nib：</p>
+
+<p><img src="http://www.scottlogic.com/blog/ceberhardt/assets/mvvm/CellNib.png" alt="image" /></p>
+
+<p>定义在CEReactiveView协议中的ViewModel绑定方法实现如下：</p>
+
+<pre><code>- (void)bindViewModel:(id)viewModel {
+
+  CETweetViewModel *tweet = (CETweetViewModel *)viewModel;
+
+  // set the tweet 'status' label, sizing it to fit the text
+  self.titleTextField.frame =
+                 CGRectInset(self.titleBackgroundView.frame, 5.0f, 5.0f) ;
+  self.titleTextField.text = tweet.status;
+  [self.titleTextField sizeToFit];
+
+  // set the username
+  self.usernameTextField.text = tweet.username;
+
+  // use signals to fetch the images for each image view
+  self.profileImage.image = nil;
+  [[self signalForImage:[NSURL URLWithString:tweet.profileBannerUrl]]
+    subscribeNext:^(id x) {
+      self.ghostImageView.image = x;
+    }];
+
+  self.ghostImageView.image = nil;
+  [[self signalForImage:[NSURL URLWithString:tweet.profileImageUrl]]
+    subscribeNext:^(id x) {
+      self.profileImage.image = x;
+    }];
+} 
+</code></pre>
+
+<p>注意，由于CETweetViewModel的属性不会发生变化，因此它们的值直接被拷贝到相应的UI控件上。当然，如果它们的值会改变，我们也可以使用ReactiveCocoa来将两者绑定到一起。</p>
+
+<p>cell的实现同样使用了ReactiveCocoa在后台加载图片：</p>
+
+<pre><code>// creates a signal that fetches an image in the background, delivering
+// it on the UI thread. This signal 'cancels' itself if the cell is re-used before the
+// image is downloaded.
+-(RACSignal *)signalForImage:(NSURL *)imageUrl {
+
+  RACScheduler *scheduler = [RACScheduler 
+                 schedulerWithPriority:RACSchedulerPriorityBackground];
+
+  RACSignal *imageDownloadSignal = [[RACSignal
+    createSignal:^RACDisposable *(id&lt;RACSubscriber&gt; subscriber) {
+      NSData *data = [NSData dataWithContentsOfURL:imageUrl];
+      UIImage *image = [UIImage imageWithData:data];
+      [subscriber sendNext:image];
+      [subscriber sendCompleted];
+      return nil;
+    }] subscribeOn:scheduler];
+
+  return [[imageDownloadSignal
+          takeUntil:self.rac_prepareForReuseSignal]
+          deliverOn:[RACScheduler mainThreadScheduler]];
+
+}
+</code></pre>
+
+<p>通过这种方式，我们就可以让我们的视图控制器保持少量的代码。看，是不是很整洁。</p>
+
+<p>下面是完整的程序的实现效果：</p>
+
+<p><img src="http://www.scottlogic.com/blog/ceberhardt/assets/mvvm/CellBinding.png" alt="image" /></p>
+
+<h2>处理选中事件</h2>
+
+<p>当前的绑定辅助类允许我们在一个table view中渲染ViewModel的数组，但如果我们需要处理选中事件呢？传统的方法是在视图控制器的手动处理，实现table view的代理方法，并执行相关的ViewModel的命令。</p>
+
+<p>不过，这部分逻辑代码也可以放入到绑定辅助类中。</p>
+
+<p>首先，我们在初始化方法中添加一个选择命令：</p>
+
+<pre><code>- (instancetype) initWithTableView:(UITableView *)tableView
+                      sourceSignal:(RACSignal *)source
+                  selectionCommand:(RACCommand *)selection                  
+                      templateCell:(UINib *)templateCellNib;
+</code></pre>
+
+<p>这个初始化方法的实现现在存储了这个命令的引用。辅助类同样也实现了table view的代理，即tableView:didSelectRowAtIndexPath:方法的实现如下：</p>
+
+<pre><code>- (void)tableView:(UITableView *)tableView
+               didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+  [_selection execute:_data[indexPath.row]];
+}
+</code></pre>
+
+<p>即当命令被调用时，会将选择的ViewModel作为执行参数传入。</p>
+
+<p>在顶层ViewModel中，我已经添加了一个命令，这个操作只是简单地记录一下日志：</p>
+
+<pre><code> // create the tweet selected command, that simply logs
+ self.tweetSelectedCommand = [[RACCommand alloc]
+             initWithSignalBlock:^RACSignal *(CETweetViewModel *selected) {
+   NSLog(selected.status);
+   return [RACSignal empty];
+ }];
+</code></pre>
+
+<h2>结论</h2>
+
+<p>希望这个table view绑定辅助类能够帮助那些使用MVVM和ReactiveCocoa来开发iOS应用的开发者们。所有的代码都在github上。如果您有任何意见、想法或建议，请让我知道。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/09/18/ios8zhong-sao-miao-wi-fishi-macdi-zhi-de-sui-ji-hua/">iOS8中扫描Wi-Fi时MAC地址的随机化</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-09-18T15:51:54+08:00" pubdate data-updated="true">Sep 18<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/09/18/ios8zhong-sao-miao-wi-fishi-macdi-zhi-de-sui-ji-hua/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>继在iOS6和iOS7系统中面向开发者关闭IP地址和MAC地址的获取后，苹果在iOS8中又出新招：在扫描Wi-Fi时使用随机的、本地管理的MAC地址。基于苹果保护用户隐私的一贯政策，这一步是必然的，它会封死所以获取用户隐私信息的通道。这对于苹果用户来说，当然是件好事。而对于想通过MAC地址来获取用户信息的商家们或黑客们，可能就得另想办法了。我们在此粗略地总结一下iOS对MAC地址所做的随机化处理。</p>
+
+<h2>MAC地址</h2>
+
+<p>在当今基于OSI模型的七层网络系统中，所有有网络接口的设备至少都有一个MAC地址(Media Access Control)。MAC地址位于OSI模型的第二层中，用于帮助网络交换机(有机或无线)确定哪个设备正在传输包及哪个设备应该接收这些包。根据设计，MAC地址应该是唯一的，它被写入到设备的物理网络芯片中，两个不同的设备MAC地址是不一样的。由于像智能手机设备中的无线以太网适配器在广播MAC地址时，采用的的类似于“嘿，这里有没有Wi-Fi”这种形式，所以，我们可以很容易地通过记录这个唯一识别来跟踪用户是否到过某个公共区域。</p>
+
+<h2>随机MAC地址的技术实现</h2>
+
+<p>在WWDC 2014上，Frederic Jacobs在对iOS8新特性的介绍中，提到了如下一条:</p>
+
+<p><img src="http://cdn.arstechnica.net/wp-content/uploads/2014/06/Screen-Shot-2014-06-09-at-10.15.22-AM-1280x551.png" alt="image" /></p>
+
+<p>其大意是在iOS8系统中，Wi-Fi扫描过程中将使用随机的、本地管理的MAC地址，这个MAC地址并不总是设备的真实的MAC地址。</p>
+
+<p>首先需要注意的是MAC地址的随机化。</p>
+
+<p>如果是主动扫描，手机的无线设备会广播一个Probe请求，它包含一个随机的MAC地址。然后手机会等待周围的无线访问接入点(AP)返回Probe响应。一般来说会扫描所有的信道channel1-channel13(或者channel1, 5, 13)，每个信道扫描10ms左右。当然，手机也可以通过点对点的方式将请求(Directed Probe)发送给特定的AP。我们一般隐藏一个无线路由的SSID的方法，就是让这个无线路由不响应广播的Probe，不主动发Beacon，只响应Directed Probe。</p>
+
+<p>而如果是被动扫描，则手机不会广播任何Probe请求，只是周期性地在不同的信道上监听AP发出的beacon包。</p>
+
+<p>另外一个需要注意的是这个随机化是发生在扫描过程中的。而在手机与无线接入点进行关联的过程以及数据传输的过程中，使用MAC地址仍然是设备真实的MAC地址。通常只有在关联阶段才是让AP记录手机MAC地址的阶段，这时候记录的MAC地址，才是将来作为数据传输的MAC地址。</p>
+
+<p>更详细的介绍，可以参看<a href="http://www.zhihu.com/people/qiang-meta">@Qiang Meta</a>在知乎上对《<a href="http://www.zhihu.com/question/24094236?sort=created">iOS 8 设备随机 MAC 地址躲避 Wi-Fi 热点的记录追踪，技术上是怎么实现，有何影响？</a>》的作答。</p>
+
+<h2>影响</h2>
+
+<p>如果我们是在家中或者在办公区域，我们通常会自己去主动关联无线接入点，那么等到下次再进入这一区域时，我们的手机等设备就会自动去连接无线网络。由于这些Wi-Fi是受我们信任的，所以无所谓。但是当我们到达一个陌生区域或公共区域时，我们的设备就会去搜索可用的无线接入点。这时候就涉及到隐私的问题了。</p>
+
+<p>现在，已经有一些公司已经开发了可以记住所扫描到的MAC地址的Wi-Fi集线器。这种设备可以记住我们的MAC地址，无论我们有没有连接它。这些公司已经在许多地方部署了这些设备，以便他们能在用户不知道的情况下了解用户的一些基本行为。</p>
+
+<p>正如WWDC上所指出的一样，“诸如Euclid或其同行Turnstyle Solutions这样的公司，它们会使用MAC地址这样的数据来记录用户进出商店的一些信息，如人们何时走进一个商店，他们在某个区域停留多久，他们来商店的频率是多少”。而MAC地址的随机化正是为了规避这个问题。</p>
+
+<p>这对于广告商和营销商来说无疑是个不小的打击，如果iOS8设备使用不断变化的MAC地址来广播Wi-Fi Probe请求，则不可能通过MAC地址来跟踪进出商店或其它场所的移动设备。这对于保护用户的隐私来说，又是更进了一步。</p>
+
+<h2>苹果的替代方案</h2>
+
+<p>不过苹果也没有完全关闭追踪用户并向用户推送广告的通道，它推出了另外一种方案&mdash;即基于位置服务的iBeacon。iBeacon已经内置在最近的iOS设备中了。不同于使用设备的MAC地址，iBeacon使用低功耗蓝牙技术来发现那边带有支持iBeacon功能的App的设备，以向这些设备发送广告或通知。iBeacon不同于基于MAC地址跟踪技术(iBeacon发射器不会从设备中获取数据)，它只是在匹配到带有基于iBeacon的应用时，才可以察看设备位置。这样就无法推测出一个用户的习惯，从而保护了用户的隐私了。</p>
+
+<p>当然，苹果在随机化MAC地址时，也综合考虑了用户隐私的泄露与商家基于地理位置来发送广告的需求之间的平衡。那些不愿意使用iBeacon的iOS用户可以通过关闭蓝牙来禁用iBeacon感知功能。在iOS8之前，用户只能通过禁用Wi-Fi来避免自己的设备被通过MAC地址的方式跟踪到。</p>
+
+<h2>总结</h2>
+
+<p>苹果这次对MAC地址的随机化处理，又一次展示了它对保护用户隐私的决定。相信以后类似的事情还会出现。而对于开发商或者开发者来说，在iOS设备上获取用户信息的渠道将会越来越少。我们改变不了苹果，或许也就只能另辟蹊径。</p>
+
+<h2>参考</h2>
+
+<ol>
+<li><a href="http://www.zhihu.com/question/24094236">iOS 8 设备随机 MAC 地址躲避 Wi-Fi 热点的记录追踪，技术上是怎么实现，有何影响？</a></li>
+<li><a href="http://arstechnica.com/apple/2014/06/ios8-to-stymie-trackers-and-marketers-with-mac-address-randomization/">iOS 8 to stymie trackers and marketers with MAC address randomization</a></li>
+<li><a href="http://www.tuicool.com/articles/rUv6Br">Why iOS 8′s MAC address randomizing is a huge win for privacy</a></li>
+</ol>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  <div class="pagination">
+    
+      <a class="prev" href="/posts/9">&larr; Older</a>
+    
+    <a href="/blog/archives">Blog Archives</a>
+    
+    <a class="next" href="/posts/7">Newer &rarr;</a>
+    
+  </div>
+</div>
+<aside class="sidebar">
+  
+    
+<section>
+<h1>分类</h1>
+<ul>
+  <li><a href='/blog/categories/ios'>ios (65)</a></li>
+  <li><a href='/blog/categories/network'>network (3)</a></li>
+  <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
+  <li><a href='/blog/categories/swift'>swift (7)</a></li>
+  <li><a href='/blog/categories/system'>system (1)</a></li>
+  <li><a href='/blog/categories/网络'>网络 (8)</a></li>
+</ul>
+</section>
+
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/05/31/ioszhi-shi-xiao-ji-di-er-qi-2015-dot-05-dot-31/">iOS知识小集 第二期(2015.05.31)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/05/10/ioszhi-shi-xiao-ji-di-%5B%3F%5D-qi-2015-dot-05-dot-10/">iOS知识小集 第一期(2015.05.10)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/04/23/nskeyvalueobserving-kvo/">NSKeyValueObserving(KVO)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/24/yuan-ma-pian-:mbprogresshud/">源码篇：MBProgressHUD</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/20/nsnotificationcenter/">NSNotificationCenter</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/14/nsnotificationyu-duo-xian-cheng/">Notification与多线程</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/07/uiresponder/">UIResponder</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/01/fan-yi-pian-:ios-8-handoff-tutorial/">翻译篇：iOS 8 Handoff Tutorial</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/11/nscache/">NSCache</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/07/yuan-ma-pian-:sdwebimage/">源码篇：SDWebImage</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2015 - 南峰子 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

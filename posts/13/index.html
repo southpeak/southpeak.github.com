@@ -1,0 +1,1331 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>南峰子的技术博客</title>
+  <meta name="author" content="南峰子">
+      
+  <meta name="baidu-site-verification" content="HoscFhWICI" />
+
+  
+  <meta name="description" content="这篇是两年前在CocoaChina上写的(德鲁伊)，现在把它归集到这边来。大家也可以查看原文。 Cover flow是苹果首创的将多首歌曲的封面以3D界面的形式显示出来的方式。如下图所示： 从图中可以看到，显示在中间的图片为目标图片，两侧的图片在y轴都旋转了一定的角度， &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://southpeak.github.io/posts/13">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="南峰子的技术博客" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <!-- <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script> -->
+  <!-- googleapis is fucked by gfw -->
+  <script src="http://cdn.staticfile.org/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<!--<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">-->
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">南峰子的技术博客</a></h1>
+  
+    <h2>攀登，一步一个脚印，方能知其乐</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:southpeak.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/categories/ios">iOS开发</a></li>
+  <li><a href="/blog/archives">所有文章</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div class="blog-index">
+  
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/07/05/cover-flow/">Cover flow基本原理及Tapku实现方法</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-07-05T17:51:43+08:00" pubdate data-updated="true">Jul 5<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/07/05/cover-flow/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>这篇是两年前在CocoaChina上写的(德鲁伊)，现在把它归集到这边来。大家也可以查看<a href="http://www.cocoachina.com/bbs/read.php?tid=75699">原文</a>。</p>
+
+<p>Cover flow是苹果首创的将多首歌曲的封面以3D界面的形式显示出来的方式。如下图所示：</p>
+
+<p><img src="http://cc.cocimg.com/bbs/attachment/Fid_6/6_38018_be3432a30663e7e.png" alt="image" /></p>
+
+<p>从图中可以看到，显示在中间的图片为目标图片，两侧的图片在y轴都旋转了一定的角度，并且每两张图片之间都保持了一定的距离。在交互（如点击两侧的图片）的时候，滑动到中间的图片会逐渐放大，旋转的角度由原来的旋转角度a变为0，且位置上移动中间，变成新的目标图片；同时原处于中间位置的图片则缩小、旋转一定的角度、位置偏移到一侧。所以在整个过程中，主要有两个属性发生了变化：角度与位置(缩放只是视觉上的，并没有进行缩放操作)。</p>
+
+<p>在每次点击一张图片时，如果这张图片在目标图片的左边，则所有的图片都会向右移动，同时做相应的旋转；相反，点击目标图片右侧的图片时，所有图片都会向左移动并做相应的旋转。</p>
+
+<p>从如上描述的效果，可以看出在Cover Flow中最主要的的操作有两个：3D仿射变换与动画。仿射变换实质上是一种线性变换，通常主要用到的仿射变换有平移(Translation)、旋转(Rotation)、缩放(Scale)。
+对于这两种操作，iOS都提供了非常简便的接口来实现。接下来我们便以tapku的实现方法为例，来说明实现Cover Flow的基本过程。</p>
+
+<h2>一、图片的布局</h2>
+
+<p>从效果图可以看出，图片是按一条直接排列，图片与图片之间有一定的间距，目标图片是正向显示，两侧的图片则按一定的角度进行了旋转，与目标图片形成一定的角度。同时我们还能看到每个图片都有一个倒影，并且这个倒影是渐变的，由上而下逐渐透明度逐渐减小。</p>
+
+<h4>1、 Cover Flow单元的定义</h4>
+
+<p>在tapku中，每一个图片附属于一个视图(TKCoverflowCoverView)，这个视图相当于UITableViewCell，它包含了三个要素：图片(imageView)，倒影图片(reflected)，渐变层(gradientLayer)。渐变层覆盖于倒影图片上，且大小位置一致。</p>
+
+<p>TKCoverflowCoverView的声明及布局代码如下所示：</p>
+
+<pre><code>@interface TKCoverflowCoverView : UIView {
+    float baseline;
+    UIImageView *imageView;
+    UIImageView *reflected;
+    CAGradientLayer *gradientLayer;
+}
+@end
+
+- (id)initWithFrame:(CGRect)frame {
+    self = [super initWithFrame:frame];
+    if (self) {
+        self.opaque = NO;
+        self.backgroundColor = [UIColor clearColor];
+        self.layer.anchorPoint = CGPointMake(0.5, 0.5);
+
+        imageView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, self.frame.size.width, self.frame.size.width)];
+        [self addSubview:imageView];
+        reflected = [[UIImageView alloc] initWithFrame:CGRectMake(0, self.frame.size.width, self.frame.size.width, self.frame.size.width)];
+        reflected.transform = CGAffineTransformScale(reflected.transform, 1, -1);
+        [self addSubview:reflected];
+
+        gradientLayer = [CAGradientLayer layer];
+        gradientLayer.colors = [NSArray arrayWithObjects:(id)[UIColor colorWithWhite:0 alpha:0.5].CGColor,(id)[UIColor colorWithWhite:0 alpha:1].CGColor,nil];
+        gradientLayer.startPoint = CGPointMake(0, 0);
+        gradientLayer.endPoint = CGPointMake(0, 0.4);
+        gradientLayer.frame = CGRectMake(0, self.frame.size.width, self.frame.size.width, self.frame.size.width);
+        [self.layer addSublayer:gradientLayer];
+    }
+
+    return self;
+}
+</code></pre>
+
+<p>注意：此次将视图的锚点(anchorPoint属性)设置为(0.5, 0.5)，即视图的中心点，目的是让视图以中心点为基点进行旋转。</p>
+
+<p>在进行仿射变换时，视图作为一个整体进行变换。</p>
+
+<h4>2、图片的布局</h4>
+
+<p>tapku中，图片的布局与交互是在TKCoverflowView类中完成的。类TKCoverflowView继承自UIScrollView，相当于是TableView。</p>
+
+<p>该类中定义是两个仿射变量：</p>
+
+<pre><code>CATransform3D leftTransform, rightTransform
+</code></pre>
+
+<p>这两个变量分别设置了两侧图片的仿射变换，具体的设置方法为</p>
+
+<pre><code>- (void) setupTransforms{
+    leftTransform = CATransform3DMakeRotation(coverAngle, 0, 1, 0);
+    leftTransform = CATransform3DConcat(leftTransform,CATransform3DMakeTranslation(-spaceFromCurrent, 0, -300));
+    rightTransform = CATransform3DMakeRotation(-coverAngle, 0, 1, 0);
+    rightTransform = CATransform3DConcat(rightTransform,CATransform3DMakeTranslation(spaceFromCurrent, 0, -300));
+}
+</code></pre>
+
+<p>其中coverAngle为旋转的角度。对每个仿射变量同时设置了旋转也平移变换。</p>
+
+<p>Cover Flow单元是存储在一个数组中：
+复制代码
+NSMutableArray *coverViews;</p>
+
+<p>初始化时设置数组的大小，并存入空对象。在后期获取某个索引位置的单元时，如果该单元为空，则生成一个新的TKCoverflowCoverView并放入相应位置。</p>
+
+<pre><code>if([coverViews objectAtIndex:cnt] == [NSNull null]){
+    TKCoverflowCoverView *cover = [dataSource coverflowView:self coverAtIndex:cnt];
+    [coverViews replaceObjectAtIndex:cnt withObject:cover];
+    ......
+}
+</code></pre>
+
+<p>每个Cover Flow单元的位置计算如下</p>
+
+<pre><code>CGRect r = cover.frame;
+r.origin.y = currentSize.height / 2 - (coverSize.height/2) - (coverSize.height/16);
+r.origin.x = (currentSize.width/2 - (coverSize.width/ 2)) + (coverSpacing) * cnt;
+cover.frame = r;
+</code></pre>
+
+<p>其中currentSize,coverSize,coverSpacing都是固定值。从中可以看出所有单元的y值都是一样的，而x值则与其在数组中的索引值相关，索引越大，x值也越大。而这就涉及我们之后的一个问题。一会再讲。
+假定目标图片的索引为currentIndex，则目标图片两侧的仿射属性设置如下：</p>
+
+<pre><code>if(cnt &gt; currentIndex){
+    cover.layer.transform = rightTransform;
+}
+else
+    cover.layer.transform = leftTransform;
+</code></pre>
+
+<p>如上即为Cover Flow的基本布局，可以与UITableView比较一下。</p>
+
+<h2>二、交互</h2>
+
+<p>Cover Flow的基本交互是点击两侧的图片，则被点击的图片成为新的目标图片并移动中屏幕中间，而其它图片一起移动，在这个过程中所需要做的就两件事：旋转与平移。</p>
+
+<p>方法很简单：在动画块中重新设置Cover Flow单元的transform属性，这样就可以缓动实现这个动画的过程。实际上只有新旧目标图片及中间的图片需要做这种变换，其余图片的transform属性都是不变的。</p>
+
+<pre><code>float speed = 0.3;
+[UIView beginAnimations:string context:nil];
+[UIView setAnimationDuration:speed];
+[UIView setAnimationCurve:UIViewAnimationCurveEaseOut];
+[UIView setAnimationBeginsFromCurrentState:YES];
+[UIView setAnimationDelegate:self];
+[UIView setAnimationDidStopSelector:@selector(animationDidStop:finished:context:)]; 
+for(UIView *v in views){
+int i = [coverViews indexOfObject:v];
+    if(i &lt; index) v.layer.transform = leftTransform;
+    else if(i &gt; index) v.layer.transform = rightTransform;
+    else v.layer.transform = CATransform3DIdentity;
+}
+[UIView commitAnimations];
+</code></pre>
+
+<p>但这在做的只是旋转了Cover Flow的内容，并没有对Cover Flow进行水平平移，Cover Flow水平位置已由其origin.x值固定。那么水平上的平移是如何实现的呢，我们看下面的代码：</p>
+
+<pre><code>- (void) snapToAlbum:(BOOL)animated{
+    UIView *v = [coverViews objectAtIndex:currentIndex];
+    if((NSObject*)v!=[NSNull null]){
+        [self setContentOffset:CGPointMake(v.center.x - (currentSize.width/2), 0) animated:animated];
+    }
+    else
+    {  
+        [self setContentOffset:CGPointMake(coverSpacing*currentIndex, 0) animated:animated];
+    }
+}
+</code></pre>
+
+<p>其所做的就是以目标图片为中心，整体平移TKCoverflowView视图。</p>
+
+<h2>三、总结</h2>
+
+<p>由上可以看出，Cover Flow特效的原理很简单：对新旧目标图片及中间的图片以动画的形式做仿射变换。至于仿射变换如何处理，有不同的方法。tapku所实现的方法可以说相对简单灵活。</p>
+
+<p>Android, Flash都有类似的Cover Flow特效实现方法，有兴趣的童鞋可以参考一下。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/07/02/ios-swift-cpointer/">Swift中C指针的基本使用方法</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-07-02T20:51:30+08:00" pubdate data-updated="true">Jul 2<sup>nd</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/07/02/ios-swift-cpointer/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Swift尽可能避免让我们直接去访问指针。但当我们需要直接访问内存时，我们可以使用Swift提供的几种指针类型。在下面几个表中列出了各种情况下C类型指针语法与Swift语法对应关系，其中Type作为实际类型的占位符</p>
+
+<p>对于函数参数，有以下对应关系</p>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th>    C语法    </th>
+<th>   Swift语法   </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td> const void * </td>
+<td>  CConstVoidPointer |</td>
+</tr>
+<tr>
+<td></td>
+<td>  void *  </td>
+<td>  CMutableVoidPointer |</td>
+</tr>
+<tr>
+<td></td>
+<td>const Type * </td>
+<td> CConstPointer<Type> |</td>
+</tr>
+<tr>
+<td></td>
+<td>Type *</td>
+<td>CMutablePointer<Type>|</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>对于返回值，变量，二级以上的指针参数，有以下对应关系</p>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th>    C语法    </th>
+<th>   Swift语法   </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td>void * </td>
+<td> COpaquePointer|</td>
+</tr>
+<tr>
+<td></td>
+<td>Type * </td>
+<td> UnsafePointer<Type>|</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>对于类类型，有以下对应关系</p>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th>    C语法    </th>
+<th>   Swift语法   </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td>Type * const * </td>
+<td> CConstPointer<Type> |</td>
+</tr>
+<tr>
+<td></td>
+<td>Type * __strong * </td>
+<td> CMutablePointer<Type> |</td>
+</tr>
+<tr>
+<td></td>
+<td>Type ** </td>
+<td> AutoreleasingUnsafePointer<Type>|</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>下面简单介绍一下这几种类型的指针</p>
+
+<h2>C可变指针</h2>
+
+<p>当我们声明一个包含CMutablePointer<Type>参数的指针时，可以接收以下类型的值</p>
+
+<ol>
+<li>nil, 作为空指针传入</li>
+<li>一个CMutablePointer<Type>值</li>
+<li>一个in-out表达式，它的操作数是Type类型的左值。该表达式作为左值地址传入</li>
+<li>一个in-out Type[]值，它作为数组的首地址指针传入，且在调用时扩展了数据的生命周期</li>
+</ol>
+
+
+<p>假如我们声明了如下一个函数：</p>
+
+<pre><code>func takesAMutablePointer(x: CMutablePointer&lt;Float&gt;) { /*...*/ }
+</code></pre>
+
+<p>那么我们可以用以下任何一种方式来调用</p>
+
+<pre><code>var x: Float = 0.0
+var p: CMutablePointer&lt;Float&gt; = &amp;x
+var a: Float[] = [1.0, 2.0, 3.0]
+
+takesAMutablePointer(nil)
+takesAMutablePointer(p)
+takesAMutablePointer(&amp;x)
+takesAMutablePointer(&amp;a)
+</code></pre>
+
+<p>当声明一个包含CMutableVoidPointer参数的函数时，它可以接收与CMutablePointer<Type>相同的形参，其中Type为任意类型。需要注意的是如果直接传递CMutablePointer<Type>，目前的编译器会直接报编译错误</p>
+
+<pre><code>func takesAMutableVoidPointer(x: CMutableVoidPointer) { /* ... */ }
+
+var x: Float = 0.0, y: Int = 0
+var p: CMutablePointer&lt;Float&gt; = &amp;x, q: CMutablePointer&lt;Int&gt; = &amp;y
+var a: Float[] = [1.0, 2.0, 3.0], b: Int[] = [1, 2, 3]
+
+takesAMutableVoidPointer(nil)
+//takesAMutableVoidPointer(p)   编辑错误:CMutablePointer&lt;Float&gt; is not convertible to CMutableVoidPointer
+//takesAMutableVoidPointer(q)
+takesAMutableVoidPointer(&amp;x)
+takesAMutableVoidPointer(&amp;y)
+takesAMutableVoidPointer(&amp;a)
+takesAMutableVoidPointer(&amp;b)
+</code></pre>
+
+<h2>C常量指针</h2>
+
+<p>当我们声明一个带有CConstPointer<Type>参数的函数时，可以接收以下类型的值：</p>
+
+<ol>
+<li>nil, 作为空指针传入</li>
+<li>一个CMutablePointer<Type>, CMutableVoidPointer, CConstPointer<Type>, CConstVoidPointer, 或者AutoreleasingUnsafePointer<Type>类型的值，如果需要则会转换成CConstPointer<Type></li>
+<li>一个in-out表达式，它的操作数是Type类型的左值。该表达式作为左值地址传入</li>
+<li>一个in-out Type[]值，它作为数组的首地址指针传入，且在调用时扩展了数据的生命周期</li>
+</ol>
+
+
+<p>假如我们声明如下函数:</p>
+
+<pre><code>func takesAConstPointer(x: CConstPointer&lt;Float&gt;) { /*...*/ }
+</code></pre>
+
+<p>那么我们可以用以下任何一种方式来调用</p>
+
+<pre><code>var x: Float = 0.0
+var p: CConstPointer&lt;Float&gt; = nil
+
+takesAConstPointer(nil)
+takesAConstPointer(p)
+takesAConstPointer(&amp;x)
+takesAConstPointer([1.0, 2.0, 3.0])
+</code></pre>
+
+<p>当声明一个包含CConstVoidPointer参数的函数时，它可以接收与CConstPointer<Type>相同的形参，其中Type为任意类型。</p>
+
+<pre><code>func takesAConstVoidPointer(x: CConstVoidPointer) { /* ... */ }
+
+var x: Float = 0.0, y: Int = 0
+var p:CConstPointer&lt;Float&gt; = nil, q: CConstPointer&lt;Int&gt; = nil
+
+takesAConstVoidPointer(nil)
+//takesAConstVoidPointer(p)
+//takesAConstVoidPointer(q)
+takesAConstVoidPointer(&amp;x)
+takesAConstVoidPointer(&amp;y)
+takesAConstVoidPointer([1.0, 2.0, 3.0])
+takesAConstVoidPointer([1, 2, 3])
+</code></pre>
+
+<h2>AutoreleasingUnsafePointer</h2>
+
+<p>当我们声明一个带有AutoreleasingUnsafePointer参数的函数时，可以接收以下类型的值：</p>
+
+<ol>
+<li>nil, 作为空指针传入</li>
+<li>一个AutoreleasingUnsafePointer<Type>值</li>
+<li>一个in-out表达式，其操作数是临时非所属(nonowning)缓冲区，存储了原始值的拷贝。缓冲区的地址被传递给调用函数，且在返回时，缓冲区的值被加载(loaded)、保留(retained)并重新指派(reassigned)给操作数</li>
+</ol>
+
+
+<p>注意上面清单中不包含数组</p>
+
+<p>如果我们声明了以下函数</p>
+
+<pre><code>func takesAnAutoreleasingUnsafePointer(x: AutoreleasingUnsafePointer&lt;NSDate?&gt;) { /*...*/ }
+</code></pre>
+
+<p>则可以用以下方式来调用</p>
+
+<pre><code>var x: NSDate? = nil
+var p: AutoreleasingUnsafePointer&lt;NSDate?&gt; = nil
+
+takesAnAutoreleasingUnsafePointer(nil)
+takesAnAutoreleasingUnsafePointer(p)
+takesAnAutoreleasingUnsafePointer(&amp;x)
+</code></pre>
+
+<p>最后需要注意的是在Swift中，没有导入C函数指针</p>
+
+<p>参考文档：<a href="https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/BuildingCocoaApps/index.html">Using Swift with Cocoa and Objective-C</a></p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/07/02/ios-swift-protocol/">Swift协议基础</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-07-02T14:09:11+08:00" pubdate data-updated="true">Jul 2<sup>nd</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/07/02/ios-swift-protocol/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Swift的Protocol(协议)与Objective-C的协议一样，用于定义一系列的特定任务和功能的集合。Protocol自身并不提供这些任务的实现，只是描述实现看起来应该是什么样的。类、结构体或枚举可以实现一个Protocol，并提供Protocol中任务和功能的具体实现。Protocol可以要求这些实现类型有指定的实例属性、实例方法、类型方法、操作符和下标等。</p>
+
+<p>Protocol的语法如下所示:</p>
+
+<pre><code>protocol SomeProtocol {
+    // 协议定义
+}
+</code></pre>
+
+<p>类、结构体、枚举可以同时实现多个Protocol，如下所示:</p>
+
+<pre><code>struct SomeStructure: SomeProtocol, AnotherProcotol {
+    // 协议定义
+}
+</code></pre>
+
+<p>需要注意的是，子类在实现Protocol时，需要把父类写在前面，后面再跟上Protocol列表。</p>
+
+<p>我们下面介绍Protocol可以定义的一些功能需求</p>
+
+<h2>属性</h2>
+
+<p>Protocol可以要求实现类型提供指定名称和类型的实例属性或类型属性。Protocol不指定属性是存储属性还是计算属性，它只定义属性名和类型。Protocol也可以指定每个属性是只读的还是可读写的。</p>
+
+<p>如果Protocol要求属性是可读写的，那么这个属性不能是常量存储属性或者只读的计算属性；如果Protocol只是要求属性是可读的，则这个属性可以是任何类型的属性，这种情况下我们的实现代码同样可以指定属性为可写的。通常情况下，在Protocol中属性一般定义为变量，具体语法如下所示：</p>
+
+<pre><code>protocol SomeProtocol {
+    var mustBeSettable: Int { get set }
+    var doesNotNeedToBeSettable: Int { get }
+    class var someTypeProperty: Int { get set }
+}
+</code></pre>
+
+<p>如果是类型属性，我们需要在前面加上class，即便是结构体可枚举来实现这个Protocol，也是一样。如上面代码所示。</p>
+
+<p>代码清单1是一个详细的例子，定义了一个协议FullyNamed，其中声明了fullName属性，而在其两个个体的实现类型中，将fullName实现为不同的属性类型</p>
+
+<h6>代码清单1</h6>
+
+<pre><code>protocol FullyNamed {
+    var fullName: String { get }
+}
+
+struct Person: FullyNamed {
+    var fullName: String        // 可读写存储属性
+}
+
+class Sharship: FullyNamed {
+
+    var prefix: String?
+    var name: String?
+
+    var fullName: String {      // 只读的计算属性
+    return (prefix ? prefix! + " " : "") + name
+    }
+}
+</code></pre>
+
+<h2>方法</h2>
+
+<p>在Protocol中声明方法与在类中定义类似，只是没有实现体。另外声明方法是使用可变参数也是可以的，唯一的不同是在Protocol的方法声明中不能指定默认值。</p>
+
+<p>与属性声明一样，如果是类型方法，需要加上class前缀。方法的声明及实现类型的实现如代码清单2所示：</p>
+
+<pre><code>protocol RandomNumberGenerator {
+    func random() -&gt; Double
+}
+
+
+class LinearCongruentialGenerator: RandomNumberGenerator {
+    var lastRandom = 42.0
+    let m = 139968.0
+    let a = 3877.0
+    let c = 29573.0
+    func random() -&gt; Double {
+        lastRandom = ((lastRandom * a + c) % m)
+        return lastRandom / m
+    }
+}
+let generator = LinearCongruentialGenerator()
+
+generator.random()      // 0.37464991998171
+</code></pre>
+
+<p>另外，如果我们需要在方法中修改实例，则在方法前添加mutating关键字，与结构体中方法的定义是一样的。需要注意的是，只有在结构体和枚举的实现中才需要加mutating，类的实现是不需要的。</p>
+
+<h2>该Protocol做为类型</h2>
+
+<p>Protocol可以作为一种类型在代码中使用。因为它是一种类型，所以在很多情况下都可以使用，包括</p>
+
+<ol>
+<li>作为函数、方法、初始化方法的参数或返回值</li>
+<li>作为常量、变量或属性的类型</li>
+<li>作为数组、字典或其它容器的元素</li>
+</ol>
+
+
+<p>基于此，Protocol也可以放入集合中，如数组、字典等。</p>
+
+<p>下面是将Protocol作为类型的例子</p>
+
+<pre><code>class Dice {
+    let sides: Int
+    let generator: RandomNumberGenerator
+    init (sides: Int, generator: RandomNumberGenerator) {
+        self.sides = sides
+        self.generator = generator
+    }
+
+    func roll() -&gt; Int {
+        return Int(generator.random() * Double(sides)) + 1
+    }
+}
+
+// 具体使用
+var dice = Dice(sides: 6, generator: LinearCongruentialGenerator())
+</code></pre>
+
+<h2>代理(Delegation)</h2>
+
+<p>Swift与Objective-C的代理一样，允许将一个类或结构体的一些处理放到另外一个类型中(代理类)。Swift中代理模式的实现就是通过定义一个Protocol来封装代理方法，然后具体的实现类来实现这些代理方法。代理可以用于响应特定的行为，或者从外部资源获取数据，而不需要知道这些资源的类型。</p>
+
+<p>如下是一个实现UITableView代理的简单例子</p>
+
+<pre><code>class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
+
+    var tableView: UITableView?
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        // Do any additional setup after loading the view, typically from a nib.
+
+        tableView = UITableView(frame: self.view.bounds, style: UITableViewStyle.Plain)
+        tableView!.delegate = self
+        tableView!.dataSource = self
+    }
+
+    // 实现UITableViewDataSource
+
+    func tableView(tableView: UITableView!, numberOfRowsInSection section: Int) -&gt; Int {
+        return 20
+    }
+
+    func tableView(tableView: UITableView!, cellForRowAtIndexPath indexPath: NSIndexPath!) -&gt; UITableViewCell! {
+        return nil
+    }
+}
+</code></pre>
+
+<h2>在扩展中实现Protocol</h2>
+
+<p>如果我们想让某个已存在的类型(我们没有源码的情况下)实现某个Protocol，则可以借助扩展。当类型的扩展实现了Protocol时，该类会自动实现Protocol(听着有点绕口)。但如果类型已经实现了Protocol的所有必须的方法(类型未采用Protocol)，这种情况下，若想让类型采用Protocol，则可以使用一个空的扩展来声明类型采用Protocol。如下代码所示：</p>
+
+<pre><code>protocol TextRepresentable {
+    func asText() -&gt; String
+}
+
+struct Hamster {
+    var name: String
+    func asText() -&gt; String {
+        return "A Hamster"
+    }
+}
+
+extension Hamster : TextRepresentable {}
+</code></pre>
+
+<h2>Protocol继承</h2>
+
+<p>一个Protocol可以继承自一个或多个Protocol，并在自己的实现中添加更多的功能需求。Protocol继承的语法与类型继承是一样的，其语法如下所示：</p>
+
+<pre><code>protocol InheritingProtocol : SomeProtocol, AnotherProtocol {
+
+}
+</code></pre>
+
+<p>在上面的例子中，所有实现子InheritingProtocol的类型都必须实现InheritingProtocol、SomeProtocol、AnotherProtocol三者中所有的必要功能。</p>
+
+<h2>Protocol组合</h2>
+
+<p>让一个类型同时实现多个Protocol是很有用的。这种情况下，我们可以使用Protocol组合来将多个Protocol组合成一个整体。其语法如下所示：</p>
+
+<pre><code>protocol&lt;SomeProtocol, AnotherProtocol&gt;
+</code></pre>
+
+<p>我们可以将多个Protocol放在&lt;>中，在使用时，我们将其当成一个整体来处理，这种组合的实际含义是：任何同时实现&lt;>所有Protocol的类型。让我们看看下面的例子：</p>
+
+<pre><code>protocol P1 {
+    var variable1 : String { get }
+}
+
+protocol P2 {
+    var variable2 : Int { get }
+}
+
+struct MyStruct : P1, P2 {
+    var variable1: String
+    var variable2: Int
+}
+
+func funcWithProtocols(protocols: protocol&lt;P1, P2&gt;) {
+
+}
+
+let st = MyStruct(variable1: "v", variable2: 2)
+
+funcWithProtocols(st)
+</code></pre>
+
+<p>需要注意的是，Protocol组合并没有定义一个新的永久的Protocol类型，它仅仅是定义了一个临时的本地Protocol，该Protocol包含了组合中所有的功能。</p>
+
+<h2>检查Protocol的一致性</h2>
+
+<p>我们可以使用is操作符来检查Protocol的一致性，用as操作符来作Protocol转换。</p>
+
+<ol>
+<li>如果is操作符返回true，则一个实例实现了protocol，否则没有</li>
+<li>as?操作符返回protocol类型的可选值，如果实例没有实现protocol，则返回nil</li>
+<li>as操作符强制作类型转换，如果实例没有实现protocol，则引发一个错误</li>
+</ol>
+
+
+<p>需要注意的是，只有当protocol使用@objc属性标记时，才可以检查其一致性。@objc属性表明protocol应该暴露给Objective-C代码。但即使我们的代码不与Objective-C交互，如果需要对protocol进行一致性检测，也需要使用这个属性。另外@objc标明的protocol只能被类实现，而不能被结构体或枚举实现。</p>
+
+<p>我们举个具体的例子：</p>
+
+<pre><code>@objc protocol HasArea {
+    var area: Double { get }
+}
+
+class Circle: HasArea {
+    let pi = 3.1415927
+    var radius: Double
+    var area: Double { return pi * radius * radius }
+    init(radius: Double) { self.radius = radius }
+}
+
+class Country: HasArea {
+    var area: Double
+    init(area: Double) { self.area = area }
+}
+
+class Animal {
+    var legs: Int
+    init(legs: Int) { self.legs = legs }
+}
+
+let objects: AnyObject[] = [
+    Circle(radius: 2.0),
+    Country(area: 243_610),
+    Animal(legs: 4)
+]
+
+for object : AnyObject in objects {
+    if let objectWithArea = object as? HasArea {
+        println("Area is \(objectWithArea.area)")
+    } else {
+        println("Something that doesn't have an area")
+    }
+}
+
+// Area is 12.5663708
+// Area is 243610.0
+// Something that doesn't have an area
+</code></pre>
+
+<h2>可选需求</h2>
+
+<p>与Objective-C类似，Swift的Protocol可以定义一些可选的需求，这些需求在实现类型中可以选择性的实现。我们使用@optional修饰符来定义这些需求。</p>
+
+<p>一个可选的需求可以通过可选链来实现，这个可选链可以满足当某个类型没有实现所采用的Protocol的可选需求。这种调用的基本语法如下：</p>
+
+<pre><code>someOptionalMethod?(someArgument)
+</code></pre>
+
+<p>另外，可选的方法如果有返回值，总是返回一个可选值，以满足可能未被实现的需求。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/06/27/ios-swift-extension/">Swift扩展(Extension)基础</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-06-27T20:54:59+08:00" pubdate data-updated="true">Jun 27<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/06/27/ios-swift-extension/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>扩展(Extension)用于为已存在的类、结构体或枚举添加新的功能。它类似于Objecitve-C中的分类，不同的是Swift的扩展没有名字</p>
+
+<p>Swift的扩展可以做以下事情：</p>
+
+<ul>
+<li><p> 添加计算属性和静态计算属性</p></li>
+<li><p> 定义实例方法和类型方法</p></li>
+<li><p> 提供新的初始化方法</p></li>
+<li><p> 定义下标操作符</p></li>
+<li><p> 定义并使用新的嵌套类型</p></li>
+<li><p> 让已存在类型实现一个协议</p></li>
+</ul>
+
+
+<p>在定义类型的扩展后，访扩展中的功能可以用于类型所有已存在的实例中，即使这些实例在扩展之前定义。</p>
+
+<p>我们使用关键字extension来声明一个扩展，一个扩展可以让类型实现一个或多个协议，如代码清单1所示：</p>
+
+<h6>代码清单1：</h6>
+
+<pre><code>extension SomeType: SomeProtocol, AnotherProtocol {
+    // implementation of protocol requirement goes here
+}
+</code></pre>
+
+<p>下面我们分别介绍如何去扩展一个已有类型的各种功能</p>
+
+<h2>计算属性</h2>
+
+<p>扩展可以添加实例计算属性和类型计算属性。如代码清单2所示：</p>
+
+<h6>代码清单2：</h6>
+
+<pre><code>extension Double {
+    var km: Double {return self * 1_000.0}
+    var m: Double { return self }
+    var cm: Double { return self / 100.0 }
+    var mm: Double { return self / 1_000.0 }
+    var ft: Double { return self / 3.28084 }
+}
+
+let onInch = 25.4.mm        // 0.0254
+let threeFeet = 3.ft        // 0.914399970739201
+</code></pre>
+
+<p>上例扩展了Double，并定义了一些实例计算属性。我们可以将其用于Double的实例，也可以用于Double类型的字面值。</p>
+
+<p>需要注意的是，扩展可以添加新的计算属性，但不能添加存储属性，也不能给已存在的属性添加观察者</p>
+
+<h2>初始化方法</h2>
+
+<p>扩展可以为已存在类型添加新的初始化方法。这可以让我们扩展某一类型以接受我们自定义的类型作为它的初始化方法，或者为现有类型提供额外的初始化方法。</p>
+
+<p>扩展可以为类添加新的便捷初始化方法，但不能添加命名初始化方法(designated initializers)和析构方法，这两者必须由类型的原始实现来提供。</p>
+
+<p>代码清单3定义了Rect类型，并通过扩展为其定义了一个新的初始化方法</p>
+
+<h6>代码清单3</h6>
+
+<pre><code>struct Size {
+    var width = 0.0, height = 0.0
+}
+
+struct Point {
+    var x = 0.0, y = 0.0
+}
+
+struct Rect {
+    var origin = Point()
+    var size = Size()
+}
+
+let defaultRect = Rect()
+let memeberwiseRect = Rect(origin: Point(x: 1.0, y: 2.0), size: Size(width: 5.0, height: 10.0))
+
+extension Rect {
+    init (center: Point, size: Size) {
+        let originX = center.x - (size.width / 2)
+        let originY = center.y - size.height / 2
+        self.init(origin: Point(x: originX, y: originY), size:size)
+    }
+}
+
+let centerRect = Rect(center: Point(x: 20.0, y: 3.0), size: Size(width: 10.0, height: 40.0))
+</code></pre>
+
+<p>需要注意的是，如果我们提供新的初始化方法，仍然需要确保在初始化方法结束前初始化实例的所有常量和变量。</p>
+
+<p>另外，如果我们扩展的类型的所有存储属性都有默认值，而没有定义初始化方法时，我们可以在扩展的初始化方法中调用默认的初始化方法和</p>
+
+<h2>方法</h2>
+
+<p>扩展可以为已存在类型添加新的实例方法和类型方法。对于结构体和枚举类型而言，如果扩展的方法需要修改self或者它的属性的话，需要将实例方法标记为mutating(与结构体和枚举的原始实现相同)。</p>
+
+<h6>代码清单4：演示了扩展方法的定义</h6>
+
+<pre><code>extension Int {
+    func repetitions(task: () -&gt; ()) {
+        for i in  0..self {
+            task()
+        }
+    }
+
+    mutating func square() {        // mutating
+        self = self * self
+    }
+}
+
+var someInt = 3
+someInt.square()
+</code></pre>
+
+<h2>下标</h2>
+
+<p>扩展可以为已存在类型添加新的下标。例如我们想为Int类型添加一个下标操作，指定下标为n时，返回数字从右侧起第n个数字，即</p>
+
+<ul>
+<li><p> 123456789[0] = 9</p></li>
+<li><p> 123456789[1] = 8</p></li>
+<li><p> …</p></li>
+</ul>
+
+
+<p>代码清单5给出了相应的实现</p>
+
+<h6>代码清单5</h6>
+
+<pre><code>extension Int {
+    subscript(digitIndex: Int) -&gt; Int {
+        var decimalBase = 1
+            for _ in 1...digitIndex {
+                decimalBase * 10
+            }
+            return (self / decimalBase) % 10
+    }
+}
+
+8738793219[0]   // 9
+8738793219[1]   // 1
+8738793219[2]   // 2
+8738793219[8]   // 7
+</code></pre>
+
+<h2>嵌套类型</h2>
+
+<p>扩展可以为已存在类型添加新的嵌套类型，如代码清单6所示</p>
+
+<h6>代码清单6：</h6>
+
+<pre><code>extension Character {
+    enum Kind {
+        case Vowel, Consonant, Other
+    }
+
+    var kind:Kind {
+    switch String(self).lowercaseString {
+        case "a", "e", "i", "o", "u":
+            return .Vowel
+        case "b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n",
+             "p", "q", "r", "s", "t", "v", "w", "x", "y", "z":
+            return .Consonant
+        default:
+            return .Other
+    }
+    }
+}
+</code></pre>
+
+<p>上面为Character类型添加了一个嵌套枚举，以表示字符的类型。定义之后，嵌套类型就可以用于Character的值了。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/06/27/ios-swift-property/">Swift属性Property</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-06-27T20:34:38+08:00" pubdate data-updated="true">Jun 27<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/06/27/ios-swift-property/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Swift的属性与Objective-C中的属性是一样的，不同的是Swift细化了属性的类型，另外除了类之外，结构体和枚举也可以有属性。</p>
+
+<p>Swift中有这么几种属性：</p>
+
+<ol>
+<li>存储属性(Stored properties)：存储实例的常量和变量，与类、结构体、枚举的实例相关</li>
+<li>计算属性(Computed properties)：通过某种方式计算出来的属性，只与类、结构体的实例相关，枚举没有计算属性</li>
+<li>类型属性(type properties)：与类型自身相关。</li>
+</ol>
+
+
+<p>另外，我们可以定义属性观察者来监听属性值的改变，以执行一些额外的操作。属性观察者可以添加到自定义的存储属性上，也可以添加到父类继承而来的属性上。</p>
+
+<p>下面我们将详细介绍这些属性</p>
+
+<h2>存储属性</h2>
+
+<p>存储属性是最简单的属性，它作为类或结构体实例的一部分，用于存储常量和变量。</p>
+
+<p>关于存储属性，有以下几点：</p>
+
+<ol>
+<li>我们可以给存储属性提供一个默认值，也可以在初始化方法中对其进行初始化，即使是常量型属性，也可以这样做。</li>
+<li>如果创建一个常量结构体实例，我们不能修改该实例的变量型存储属性。这是因为结构体是值类型，当一个值类型的实例标记为常量时，它的所有属性也是常量。由于类是引用类型，所以该条不适用于类类型。</li>
+<li>如果我们希望属性在使用到的时候再初始化，则可以使用懒惰存储属性(lazy stored property，使用修饰符@lazy)。懒惰存储属性总是应该定义为变量，因为常量型属性总需要在初始化方法完成之前初始化。</li>
+<li>与Objective-C不同的是，Swift中的属性不需要一个与之对应的成员变量，我们不能直接访问属性的后备存储(backing store)。这种方式避免了混淆不同上下文环境下对值的访问，并将属性简化为单一、明确的声明。</li>
+</ol>
+
+
+<h6>代码清单1：</h6>
+
+<pre><code>struct FixedLengthRange {
+    var firstValue:Int      // 变量存储属性
+    let length:Int          // 常量存储属性
+}
+
+var item1 = FixedLengthRange(firstValue: 10, length: 10)
+
+let item2 = FixedLengthRange(firstValue: 10, length: 10)
+//item2.firstValue = 6        // 错误：不能修改常量结构体实例的存储属性
+</code></pre>
+
+<h2>计算属性</h2>
+
+<p>计算属性并不存储实际的值，而是提供一个getter和一个可选的setter来间接获取和设置其它属性。</p>
+
+<p>关于计算属性，有以下几点：</p>
+
+<ol>
+<li>如果计算属性的setter没有定义一个新值的变量名，则默认为newValue</li>
+<li>如果只提供getter，而不提供setter，则该计算属性为只读属性</li>
+<li>我们只能声明变量型只读属性，因为它们的值不是固定的</li>
+<li>如果计算属性是只读的，则可以不使用get{}</li>
+</ol>
+
+
+<p>计算属性的实例如代码清单2：</p>
+
+<h6>代码清单2：</h6>
+
+<pre><code>struct Point {
+    var x = 0.0, y = 0.0
+}
+
+struct Size {
+    var width = 0.0, height = 0.0
+}
+
+struct Rect {
+    var origin = Point()
+    var size = Size()
+
+    var center:Point {          // 计算属性
+    get {
+        let centerX = origin.x + (size.width / 2)
+        let centerY = origin.y + (size.height / 2)
+        return Point(x: centerX, y: centerY)
+    }
+    set(newCenter) {            // 若不提供新值变量名，则默认为newValue
+        origin.x = newCenter.x - size.width / 2
+        origin.y = newCenter.y - size.height / 2
+    }
+    }
+
+    var maxX:Float {        // 只读属性，省略get{}
+        return Float(origin.x) + Float(size.width)
+    }
+}
+
+var square = Rect(origin:Point(x: 0.0, y: 0.0), size:Size(width:100, height:100))
+
+let initialSquareCenter = square.center
+square.center = Point(x: 15.0, y:15.0)
+square.maxX
+</code></pre>
+
+<h2>类型属性</h2>
+
+<p>类型属性是与类型相关联的，而不是与类型的实例相关联。对于某一类型的所有实例，类型属性都只有一份拷贝。对于值类型，我们可以定义存储类型属性和计算类型属性。对于类，我们只能定义计算类型属性。和实例属性不同的是，我们总是需要给存储类型属性一个默认值。这是因为类型没有初始化方法来初始化类型属性。</p>
+
+<p>类型属性的访问和设置与实例属性一样，不一样的是，类型属性通过类型来获取和设置，而不是类型的实例</p>
+
+<h6>代码清单3</h6>
+
+<pre><code>struct AudioChannel {
+    static let threaholdLevel = 10
+    static var maxInputLevelForAllChannels = 0
+
+    var currentLevel:Int = 0 {
+    didSet{
+        if currentLevel &gt; AudioChannel.threaholdLevel {
+            currentLevel = AudioChannel.threaholdLevel
+        }
+
+        if currentLevel &gt; AudioChannel.maxInputLevelForAllChannels {
+            AudioChannel.maxInputLevelForAllChannels = currentLevel
+        }
+    }
+    }
+}
+
+var leftChannel = AudioChannel()
+var rightChannel = AudioChannel()
+
+leftChannel.currentLevel = 7
+
+println(leftChannel.currentLevel)       // 7
+println(AudioChannel.maxInputLevelForAllChannels)   // 7
+
+rightChannel.currentLevel = 11
+println(rightChannel.currentLevel)      // 10
+println(AudioChannel.maxInputLevelForAllChannels)   // 10
+</code></pre>
+
+<h2>属性观察者</h2>
+
+<p>属性观察者用于监听和响应属性值的变化。在每次设置属性值的时候都会调用属性观察者方法，即使新旧值是一样的。我们可以为任何存储属性定义属性观察者，除了懒惰存储属性。我们同样可以在子类中给继承而来的属性添加观察者。</p>
+
+<p>对于计算属性，我们不需要定义属性观察者，因为我们可以在计算属性的setter中直接观察并响应这种值的变化。</p>
+
+<p>我们通过设置以下观察方法来定义观察者</p>
+
+<ol>
+<li>willSet：在属性值被存储之前设置。此时新属性值作为一个常量参数被传入。该参数名默认为newValue，我们可以自己定义该参数名</li>
+<li>didSet：在新属性值被存储后立即调用。与willSet相同，此时传入的是属性的旧值，默认参数名为oldValue。</li>
+</ol>
+
+
+<p>willSet与didSet只有在属性第一次被设置时才会调用，在初始化时，不会去调用这些监听方法。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  <div class="pagination">
+    
+      <a class="prev" href="/posts/14">&larr; Older</a>
+    
+    <a href="/blog/archives">Blog Archives</a>
+    
+    <a class="next" href="/posts/12">Newer &rarr;</a>
+    
+  </div>
+</div>
+<aside class="sidebar">
+  
+    
+<section>
+<h1>分类</h1>
+<ul>
+  <li><a href='/blog/categories/ios'>ios (65)</a></li>
+  <li><a href='/blog/categories/network'>network (3)</a></li>
+  <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
+  <li><a href='/blog/categories/swift'>swift (7)</a></li>
+  <li><a href='/blog/categories/system'>system (1)</a></li>
+  <li><a href='/blog/categories/网络'>网络 (8)</a></li>
+</ul>
+</section>
+
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/05/31/ioszhi-shi-xiao-ji-di-er-qi-2015-dot-05-dot-31/">iOS知识小集 第二期(2015.05.31)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/05/10/ioszhi-shi-xiao-ji-di-%5B%3F%5D-qi-2015-dot-05-dot-10/">iOS知识小集 第一期(2015.05.10)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/04/23/nskeyvalueobserving-kvo/">NSKeyValueObserving(KVO)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/24/yuan-ma-pian-:mbprogresshud/">源码篇：MBProgressHUD</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/20/nsnotificationcenter/">NSNotificationCenter</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/14/nsnotificationyu-duo-xian-cheng/">Notification与多线程</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/07/uiresponder/">UIResponder</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/01/fan-yi-pian-:ios-8-handoff-tutorial/">翻译篇：iOS 8 Handoff Tutorial</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/11/nscache/">NSCache</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/07/yuan-ma-pian-:sdwebimage/">源码篇：SDWebImage</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2015 - 南峰子 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

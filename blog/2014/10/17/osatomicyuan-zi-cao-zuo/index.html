@@ -1,0 +1,453 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>OSAtomic原子操作 - 南峰子的技术博客</title>
+  <meta name="author" content="南峰子">
+      
+  <meta name="baidu-site-verification" content="HoscFhWICI" />
+
+  
+  <meta name="description" content="并发编程一个主要问题就是如何同步数据。同步数据的方式有很多种，这里我们介绍一下libkern/OSAtomic.h。这个头文件包含是大量关于原子操作和同步操作的函数，如果要对数据进行同步操作，这里面的函数可以作为我们的首选项。不同平台这些函数的实现是自定义的。另外，它们是线程安全的。 需要注意的是 &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://southpeak.github.io/blog/2014/10/17/osatomicyuan-zi-cao-zuo">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="南峰子的技术博客" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <!-- <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script> -->
+  <!-- googleapis is fucked by gfw -->
+  <script src="http://cdn.staticfile.org/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<!--<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">-->
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">南峰子的技术博客</a></h1>
+  
+    <h2>攀登，一步一个脚印，方能知其乐</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:southpeak.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/categories/ios">iOS开发</a></li>
+  <li><a href="/blog/archives">所有文章</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">OSAtomic原子操作</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-10-17T10:56:00+08:00" pubdate data-updated="true">Oct 17<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>并发编程一个主要问题就是如何同步数据。同步数据的方式有很多种，这里我们介绍一下libkern/OSAtomic.h。这个头文件包含是大量关于原子操作和同步操作的函数，如果要对数据进行同步操作，这里面的函数可以作为我们的首选项。不同平台这些函数的实现是自定义的。另外，它们是线程安全的。</p>
+
+<p>需要注意的是，传递给这些函数的所有地址都必须是“自然对齐”的，例如int32_t * 指针必须是32位对齐的(地址的低位2个bit为0)，int64_t * 指针必须是64位对齐的(低3位为0)。</p>
+
+<p>这些原子函数的一些版本整合了内存屏障(memory barriers)，而另一些则没有。在诸如PPC这样的弱有序(weakly-ordered)架构中，Barriers严格限制了内存访问顺序。所有出现在barriers之前的加载和存储操作完成后，才会运行barriers之后的加载和存储操作。</p>
+
+<p>在单处理器系统中，barriers操作通常是一个空操作。在多处理器系统中，barriers在某些平台上可能是相当昂贵的操作，如PPC。</p>
+
+<p>大多数代码都应该使用barrier函数来确保在线程间共享的内存是正确同步的。例如，如果我们想要初始化一个共享的数据结构，然后自动增加某个变量值来标识初始化操作完成，则我们必须使用OSAtomicIncrement32Barrier来确保数据结构的存储操作在变量自动增加前完成。</p>
+
+<p>同样的，该数据结构的消费者也必须使用OSAtomicIncrement32Barrier，以确保在自动递增变量值之后再去加载这些数据。另一方面，如果我们只是简单地递增一个全局计数器，那么使用OSAtomicIncrement32会更安全且可能更快。</p>
+
+<p>如果不能确保我们使用的是哪个版本，则使用barrier变量以保证是安全的。</p>
+
+<p>另外，自旋锁和队列操作总是包含一个barrier。</p>
+
+<p>这个头文件中的函数主要可以分为以下几类</p>
+
+<h2>内存屏障(Memory barriers)</h2>
+
+<p>内存屏障的概念如上所述，它是一种屏障和指令类，可以让CPU或编译器强制将barrier之前和之后的内存操作分开。CPU采用了一些可能导致乱序执行的性能优化。在单个线程的执行中，内存操作的顺序一般是悄无声息的，但是在并发编程和设备驱动程序中就可能出现一些不可预知的行为，除非我们小心地去控制。排序约束的特性是依赖于硬件的，并由架构的内存顺序模型来定义。一些架构定义了多种barrier来执行不同的顺序约束。</p>
+
+<p>OSMemoryBarrier()函数就是用来设置内存屏障，它即可以用于读操作，也可以用于写操作。</p>
+
+<p>示例代码：</p>
+
+<pre><code>// 代码来自ReactiveCocoa:RACDisposable类
+
+- (id)initWithBlock:(void (^)(void))block {
+    NSCParameterAssert(block != nil);
+
+    self = [super init];
+    if (self == nil) return nil;
+
+    _disposeBlock = (void *)CFBridgingRetain([block copy]);
+    OSMemoryBarrier();
+
+    return self;
+}
+</code></pre>
+
+<h2>自旋锁(Spinlocks)</h2>
+
+<p>自旋锁是在多处理器系统(SMP)上为保护一段关键代码的执行或者关键数据的一种保护机制，是实现synchronization的一种手段。</p>
+
+<p>libkern/OSAtomic.h中包含了三个关于自旋锁的函数：OSSpinLockLock, OSSpinLockTry, OSSpinLockUnlock</p>
+
+<p>示例代码：</p>
+
+<pre><code>// 代码来自ReactiveCocoa:RACCompoundDisposable类
+
+- (void)dispose {
+#if RACCompoundDisposableInlineCount
+    RACDisposable *inlineCopy[RACCompoundDisposableInlineCount];
+#endif
+
+    CFArrayRef remainingDisposables = NULL;
+
+    OSSpinLockLock(&amp;_spinLock);
+    {
+        _disposed = YES;
+
+#if RACCompoundDisposableInlineCount
+        for (unsigned i = 0; i &lt; RACCompoundDisposableInlineCount; i++) {
+            inlineCopy[i] = _inlineDisposables[i];
+            _inlineDisposables[i] = nil;
+        }
+#endif
+
+        remainingDisposables = _disposables;
+        _disposables = NULL;
+    }
+    OSSpinLockUnlock(&amp;_spinLock);
+
+#if RACCompoundDisposableInlineCount
+    // Dispose outside of the lock in case the compound disposable is used
+    // recursively.
+    for (unsigned i = 0; i &lt; RACCompoundDisposableInlineCount; i++) {
+        [inlineCopy[i] dispose];
+    }
+#endif
+
+    if (remainingDisposables == NULL) return;
+
+    CFIndex count = CFArrayGetCount(remainingDisposables);
+    CFArrayApplyFunction(remainingDisposables, CFRangeMake(0, count), &amp;disposeEach, NULL);
+    CFRelease(remainingDisposables);
+}
+</code></pre>
+
+<h2>原子队列操作</h2>
+
+<p>队列操作主要包含两类：</p>
+
+<ol>
+<li>不加锁的FIFO入队和出队原子操作，包含OSAtomicFifoDequeue和OSAtomicFifoEnqueue两个函数</li>
+<li>不加锁的LIFO入队和出队原子操作，包含OSAtomicDequeue和OSAtomicEnqueue两个函数。这两个函数是线程安全的，对有潜在精确要求的代码来说，这会是强大的构建方式。</li>
+</ol>
+
+
+<h2>比较和交换</h2>
+
+<p>这组函数可以细分为三组函数：</p>
+
+<ol>
+<li>OSAtomicCompareAndSwap**[Barrier](type __oldValue, type __newValue, volatile type *__theValue)：这组函数用于比较__oldValue是否与__theValue指针指向的内存位置的值匹配，如果匹配，则将__newValue的值存储到__theValue指向的内存位置。可以根据需要使用barrier版本。</li>
+<li>OSAtomicTestAndClear/OSAtomicTestAndClearBarrier( uint32_t __n, volatile void *__theAddress )：这组函数用于测试__theAddress指向的值中由__n指定的bit位，如果该位未被清除，则清除它。需要注意的是最低bit位应该是1，而不是0。对于一个64-bit的值来说，如果要清除最高位的值，则__n应该是64。</li>
+<li>OSAtomicTestAndSet/OSAtomicTestAndSetBarrier(uint32_t __n, volatile void *__theAddress)：与OSAtomicTestAndClear相反，这组函数测试值后，如果指定位没有设置，则设置它。</li>
+</ol>
+
+
+<p>示例代码：</p>
+
+<pre><code>void * sharedBuffer(void)
+{
+    static void * buffer;
+    if (buffer == NULL) {
+        void * newBuffer = calloc(1, 1024);
+        if (!OSAtomicCompareAndSwapPtrBarrier(NULL, newBuffer, &amp;buffer)) {
+            free(newBuffer);
+        }
+    }
+    return buffer;
+}
+</code></pre>
+
+<p>上述代码的作用是如果没有缓冲区，我们将创建一个newBuffer，然后将其写到buffer中。</p>
+
+<h2>布尔操作(AND, OR, XOR)</h2>
+
+<p>这组函数可根据以下两个规则来分类：</p>
+
+<ol>
+<li>是否使用Barrier</li>
+<li>返回值是原始值还是操作完成后的值</li>
+</ol>
+
+
+<p>以And为例，有4个函数：OSAtomicAnd32, OSAtomicAnd32Barrier, OSAtomicAnd32Orig, OSAtomicAnd32OrigBarrier。每个函数均带有两个参数：__theMask(uint32_t)和__theValue(volatile uint32_t *)。函数将__theMask与__theValue指向的值做AND操作。</p>
+
+<p>类似，还有OR操作和XOR操作。</p>
+
+<h2>数学操作</h2>
+
+<p>这组函数主要包括：</p>
+
+<ol>
+<li>加操作：OSAtomicAdd**, OSAtomicAdd**Barrier</li>
+<li>递减操作：OSAtomicDecrement**, OSAtomicDecrement**Barrier</li>
+<li>递增操作：OSAtomicIncrement**, OSAtomicIncrement**Barrier</li>
+</ol>
+
+
+<p>示例代码：</p>
+
+<pre><code>// 代码摘自ReactiveCocoa:RACDynamicSequence
+
+- (void)dealloc {
+    static volatile int32_t directDeallocCount = 0;
+
+    if (OSAtomicIncrement32(&amp;directDeallocCount) &gt;= DEALLOC_OVERFLOW_GUARD) {
+        OSAtomicAdd32(-DEALLOC_OVERFLOW_GUARD, &amp;directDeallocCount);
+
+        // Put this sequence's tail onto the autorelease pool so we stop
+        // recursing.
+        __autoreleasing RACSequence *tail __attribute__((unused)) = _tail;
+    }
+
+    _tail = nil;
+}
+</code></pre>
+
+<h2>小结</h2>
+
+<p>相较于@synchronized，OSAtomic原子操作更趋于数据的底层，从更深层次来对单例进行保护。同时，它没有阻断其它线程对函数的访问。</p>
+
+<h2>参考</h2>
+
+<ol>
+<li><a href="https://developer.apple.com/library/mac/documentation/System/Reference/OSAtomic_header_reference/Reference/reference.html">OSAtomic.h User-Space Reference</a></li>
+<li><a href="http://blog.csdn.net/wzb56_earl/article/details/6634622">Memory barrier</a></li>
+<li><a href="http://www.cocoachina.com/industry/20130821/6842.html">Objc的底层并发API</a></li>
+<li><a href="http://blog.csdn.net/tuxiangqi/article/details/8076972">OSATOMIC与synchronized加锁的对比</a></li>
+</ol>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">南峰子</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-10-17T10:56:00+08:00" pubdate data-updated="true">Oct 17<sup>th</sup>, 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/ios/'>ios</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/09/23/xing-neng-yu-shi-jian/" title="Previous Post: 性能与时间">&laquo; 性能与时间</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2014/10/19/instancetype/" title="Next Post: instancetype">instancetype &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+
+
+<section>
+    <h1>Comments</h1>
+    <div id="comments" aria-live="polite"><!-- Duoshuo Comment BEGIN -->
+<div class="ds-thread" data-title="OSAtomic原子操作"></div>
+<script type="text/javascript">
+    var duoshuoQuery = {short_name:"southpeak"};
+    (function() {
+     var ds = document.createElement('script');
+     ds.type = 'text/javascript';ds.async = true;
+     ds.src = 'http://static.duoshuo.com/embed.js';
+     ds.charset = 'UTF-8';
+     (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+     })();
+</script>
+<!-- Duoshuo Comment END --></div>
+</section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+<section>
+<h1>分类</h1>
+<ul>
+  <li><a href='/blog/categories/ios'>ios (65)</a></li>
+  <li><a href='/blog/categories/network'>network (3)</a></li>
+  <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
+  <li><a href='/blog/categories/swift'>swift (7)</a></li>
+  <li><a href='/blog/categories/system'>system (1)</a></li>
+  <li><a href='/blog/categories/网络'>网络 (8)</a></li>
+</ul>
+</section>
+
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/05/31/ioszhi-shi-xiao-ji-di-er-qi-2015-dot-05-dot-31/">iOS知识小集 第二期(2015.05.31)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/05/10/ioszhi-shi-xiao-ji-di-%5B%3F%5D-qi-2015-dot-05-dot-10/">iOS知识小集 第一期(2015.05.10)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/04/23/nskeyvalueobserving-kvo/">NSKeyValueObserving(KVO)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/24/yuan-ma-pian-:mbprogresshud/">源码篇：MBProgressHUD</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/20/nsnotificationcenter/">NSNotificationCenter</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/14/nsnotificationyu-duo-xian-cheng/">Notification与多线程</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/07/uiresponder/">UIResponder</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/01/fan-yi-pian-:ios-8-handoff-tutorial/">翻译篇：iOS 8 Handoff Tutorial</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/11/nscache/">NSCache</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/07/yuan-ma-pian-:sdwebimage/">源码篇：SDWebImage</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2015 - 南峰子 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

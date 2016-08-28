@@ -1,0 +1,373 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Quartz 2D编程指南之七：阴影 - 南峰子的技术博客</title>
+  <meta name="author" content="南峰子">
+      
+  <meta name="baidu-site-verification" content="HoscFhWICI" />
+
+  
+  <meta name="description" content="阴影是绘制在一个图形对象下的且有一定偏移的图片，它用于模拟光源照射到图形对象上所形成的阴影效果，如果7-1所示。文本也可以有阴影。阴影可以让一幅图像看上去是立体的或者是浮动的。 Figure 7-1 A shadow 阴影有三个属性： x偏移值，用于指定阴影相对于图片在水平方向上的偏移值。 &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://southpeak.github.io/blog/2014/12/05/quartz-2dbian-cheng-zhi-nan-zhi-qi-:yin-ying">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="南峰子的技术博客" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <!-- <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script> -->
+  <!-- googleapis is fucked by gfw -->
+  <script src="http://cdn.staticfile.org/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<!--<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">-->
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">南峰子的技术博客</a></h1>
+  
+    <h2>攀登，一步一个脚印，方能知其乐</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:southpeak.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/categories/ios">iOS开发</a></li>
+  <li><a href="/blog/archives">所有文章</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Quartz 2D编程指南之七：阴影</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-12-05T21:47:51+08:00" pubdate data-updated="true">Dec 5<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>阴影是绘制在一个图形对象下的且有一定偏移的图片，它用于模拟光源照射到图形对象上所形成的阴影效果，如果7-1所示。文本也可以有阴影。阴影可以让一幅图像看上去是立体的或者是浮动的。</p>
+
+<p>Figure 7-1  A shadow</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/angle.gif" alt="image" /></p>
+
+<p>阴影有三个属性：</p>
+
+<ol>
+<li>x偏移值，用于指定阴影相对于图片在水平方向上的偏移值。</li>
+<li>y偏移值，用于指定阴影相对于图片在竖直方向上的偏移值。</li>
+<li>模糊(blur)值，用于指定图像是有一个硬边(hard edge，如图7-2左边图片所示)，还是一个漫射边(diffuse edge，如图7-1右边图片所示)</li>
+</ol>
+
+
+<p>本章将描述阴影是如何工作的及如何用Quartz 2D API来创建阴影。</p>
+
+<p>Figure 7-2  A shadow with no blur and another with a soft edge</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blur_value.gif" alt="image" /></p>
+
+<h2>阴影是如何工作的</h2>
+
+<p>Quartz中的阴影是图形状态的一部分。我们可以调用函数CGContextSetShadow来创建，并传入一个图形上下文、偏移值及模糊值。阴影被设置后，任何绘制的对象都有一个阴影，且该阴影在设备RGB颜色空间中呈现出黑色的且alpha值为1/3。换句话说，阴影是用RGBA值{0, 0, 0, 1.0/3.0}设置的。</p>
+
+<p>我们可以调用函数CGContextSetShadowWithColor来设置彩色阴影，并传递一个图形上下文、 偏移值、模糊值有CGColor颜色对象。颜色值依赖于颜色空间。</p>
+
+<p>如何在调用CGContextSetShadow或CGContextSetShadowWithColor之前保存了图形状态，我们可以通过恢复图形状态来关闭阴影。我们也可以通过设置阴影颜色为NULL来关闭阴影。</p>
+
+<h2>基于图形上下文的阴影绘制惯例</h2>
+
+<p>偏移值指定了阴影相对于相关图像的位置。这些偏移值由图形上下文来描述，并用于计算阴影的位置：</p>
+
+<ol>
+<li>一个正值的x偏移量指定阴影位于图形对象的右侧。</li>
+<li>在Mac OS X中，正值的y指定阴影位于图形对象的上边，这与Quartz 2D默认的坐标值匹配。</li>
+<li>在iOS中，如果我们用Quartz 2D API来创建PDF或者位图图形上下文，则正值的y指定阴影位于图形对象的上边。</li>
+<li>在iOS中，如果图形上下文是由UIKit创建的，则正值的y指定阴影位于图形对象的下边。这与UIKit坐标系统相匹配。</li>
+<li>阴影绘制惯例不受CTM影响</li>
+</ol>
+
+
+<h2>绘制阴影</h2>
+
+<p>按照如下步骤来绘制阴影</p>
+
+<ol>
+<li>保存图形状态</li>
+<li>调用函数CGContextSetShadow，传递相应的值</li>
+<li>使用阴影绘制所有的对象</li>
+<li>恢复图形状态</li>
+</ol>
+
+
+<p>按照如下步骤来绘制彩色阴影</p>
+
+<ol>
+<li>保存图形状态</li>
+<li>创建一个CGColorSpace对象，确保Quartz能正确地解析阴影颜色</li>
+<li>创建一个CGColor对象来指定阴影的颜色</li>
+<li>调用CGContextSetShadowWithColor，并传递相应的值</li>
+<li>使用阴影绘制所有的对象</li>
+<li>恢复图形状态</li>
+</ol>
+
+
+<p>图7-3显示了两个带有阴影的矩形，其中一个是彩色阴影。</p>
+
+<p>Figure 7-3  A colored shadow and a gray shadow</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/code_shadows.gif" alt="image" /></p>
+
+<p>列表清单显示了如何创建图7-3中的图像。</p>
+
+<p>Listing 7-1  A function that sets up shadows</p>
+
+<pre><code>void MyDrawWithShadows (CGContextRef myContext, float wd, float ht);
+{
+    CGSize          myShadowOffset = CGSizeMake (-15,  20);
+    float           myColorValues[] = {1, 0, 0, .6};
+    CGColorRef      myColor;
+    CGColorSpaceRef myColorSpace;
+
+    CGContextSaveGState(myContext);
+
+    CGContextSetShadow (myContext, myShadowOffset, 5); 
+
+    // Your drawing code here
+    CGContextSetRGBFillColor (myContext, 0, 1, 0, 1);
+    CGContextFillRect (myContext, CGRectMake (wd/3 + 75, ht/2 , wd/4, ht/4));
+
+    myColorSpace = CGColorSpaceCreateDeviceRGB ();
+    myColor = CGColorCreate (myColorSpace, myColorValues);
+    CGContextSetShadowWithColor (myContext, myShadowOffset, 5, myColor);
+
+    // Your drawing code here
+    CGContextSetRGBFillColor (myContext, 0, 0, 1, 1);
+    CGContextFillRect (myContext, CGRectMake (wd/3-75,ht/2-100,wd/4,ht/4));
+
+    CGColorRelease (myColor);
+    CGColorSpaceRelease (myColorSpace); 
+
+    CGContextRestoreGState(myContext);
+}
+</code></pre>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">南峰子</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-12-05T21:47:51+08:00" pubdate data-updated="true">Dec 5<sup>th</sup>, 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/ios/'>ios</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/12/05/quartz-2dbian-cheng-zhi-nan-zhi-liu-:mo-shi-pattern/" title="Previous Post: Quartz 2D编程指南之六：模式(Pattern)">&laquo; Quartz 2D编程指南之六：模式(Pattern)</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2014/12/10/quartz-2dbian-cheng-zhi-nan-zhi-ba-:jian-bian/" title="Next Post: Quartz 2D编程指南之八：渐变">Quartz 2D编程指南之八：渐变 &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+
+
+<section>
+    <h1>Comments</h1>
+    <div id="comments" aria-live="polite"><!-- Duoshuo Comment BEGIN -->
+<div class="ds-thread" data-title="Quartz 2D编程指南之七：阴影"></div>
+<script type="text/javascript">
+    var duoshuoQuery = {short_name:"southpeak"};
+    (function() {
+     var ds = document.createElement('script');
+     ds.type = 'text/javascript';ds.async = true;
+     ds.src = 'http://static.duoshuo.com/embed.js';
+     ds.charset = 'UTF-8';
+     (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+     })();
+</script>
+<!-- Duoshuo Comment END --></div>
+</section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+<section>
+<h1>分类</h1>
+<ul>
+  <li><a href='/blog/categories/ios'>ios (65)</a></li>
+  <li><a href='/blog/categories/network'>network (3)</a></li>
+  <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
+  <li><a href='/blog/categories/swift'>swift (7)</a></li>
+  <li><a href='/blog/categories/system'>system (1)</a></li>
+  <li><a href='/blog/categories/网络'>网络 (8)</a></li>
+</ul>
+</section>
+
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/05/31/ioszhi-shi-xiao-ji-di-er-qi-2015-dot-05-dot-31/">iOS知识小集 第二期(2015.05.31)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/05/10/ioszhi-shi-xiao-ji-di-%5B%3F%5D-qi-2015-dot-05-dot-10/">iOS知识小集 第一期(2015.05.10)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/04/23/nskeyvalueobserving-kvo/">NSKeyValueObserving(KVO)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/24/yuan-ma-pian-:mbprogresshud/">源码篇：MBProgressHUD</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/20/nsnotificationcenter/">NSNotificationCenter</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/14/nsnotificationyu-duo-xian-cheng/">Notification与多线程</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/07/uiresponder/">UIResponder</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/01/fan-yi-pian-:ios-8-handoff-tutorial/">翻译篇：iOS 8 Handoff Tutorial</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/11/nscache/">NSCache</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/07/yuan-ma-pian-:sdwebimage/">源码篇：SDWebImage</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2015 - 南峰子 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,320 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>iOS8中扫描Wi-Fi时MAC地址的随机化 - 南峰子的技术博客</title>
+  <meta name="author" content="南峰子">
+      
+  <meta name="baidu-site-verification" content="HoscFhWICI" />
+
+  
+  <meta name="description" content="继在iOS6和iOS7系统中面向开发者关闭IP地址和MAC地址的获取后，苹果在iOS8中又出新招：在扫描Wi-Fi时使用随机的、本地管理的MAC地址。基于苹果保护用户隐私的一贯政策，这一步是必然的，它会封死所以获取用户隐私信息的通道。这对于苹果用户来说，当然是件好事。 &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://southpeak.github.io/blog/2014/09/18/ios8zhong-sao-miao-wi-fishi-macdi-zhi-de-sui-ji-hua">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="南峰子的技术博客" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <!-- <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script> -->
+  <!-- googleapis is fucked by gfw -->
+  <script src="http://cdn.staticfile.org/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<!--<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">-->
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">南峰子的技术博客</a></h1>
+  
+    <h2>攀登，一步一个脚印，方能知其乐</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:southpeak.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/categories/ios">iOS开发</a></li>
+  <li><a href="/blog/archives">所有文章</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">iOS8中扫描Wi-Fi时MAC地址的随机化</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-09-18T15:51:54+08:00" pubdate data-updated="true">Sep 18<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>继在iOS6和iOS7系统中面向开发者关闭IP地址和MAC地址的获取后，苹果在iOS8中又出新招：在扫描Wi-Fi时使用随机的、本地管理的MAC地址。基于苹果保护用户隐私的一贯政策，这一步是必然的，它会封死所以获取用户隐私信息的通道。这对于苹果用户来说，当然是件好事。而对于想通过MAC地址来获取用户信息的商家们或黑客们，可能就得另想办法了。我们在此粗略地总结一下iOS对MAC地址所做的随机化处理。</p>
+
+<h2>MAC地址</h2>
+
+<p>在当今基于OSI模型的七层网络系统中，所有有网络接口的设备至少都有一个MAC地址(Media Access Control)。MAC地址位于OSI模型的第二层中，用于帮助网络交换机(有机或无线)确定哪个设备正在传输包及哪个设备应该接收这些包。根据设计，MAC地址应该是唯一的，它被写入到设备的物理网络芯片中，两个不同的设备MAC地址是不一样的。由于像智能手机设备中的无线以太网适配器在广播MAC地址时，采用的的类似于“嘿，这里有没有Wi-Fi”这种形式，所以，我们可以很容易地通过记录这个唯一识别来跟踪用户是否到过某个公共区域。</p>
+
+<h2>随机MAC地址的技术实现</h2>
+
+<p>在WWDC 2014上，Frederic Jacobs在对iOS8新特性的介绍中，提到了如下一条:</p>
+
+<p><img src="http://cdn.arstechnica.net/wp-content/uploads/2014/06/Screen-Shot-2014-06-09-at-10.15.22-AM-1280x551.png" alt="image" /></p>
+
+<p>其大意是在iOS8系统中，Wi-Fi扫描过程中将使用随机的、本地管理的MAC地址，这个MAC地址并不总是设备的真实的MAC地址。</p>
+
+<p>首先需要注意的是MAC地址的随机化。</p>
+
+<p>如果是主动扫描，手机的无线设备会广播一个Probe请求，它包含一个随机的MAC地址。然后手机会等待周围的无线访问接入点(AP)返回Probe响应。一般来说会扫描所有的信道channel1-channel13(或者channel1, 5, 13)，每个信道扫描10ms左右。当然，手机也可以通过点对点的方式将请求(Directed Probe)发送给特定的AP。我们一般隐藏一个无线路由的SSID的方法，就是让这个无线路由不响应广播的Probe，不主动发Beacon，只响应Directed Probe。</p>
+
+<p>而如果是被动扫描，则手机不会广播任何Probe请求，只是周期性地在不同的信道上监听AP发出的beacon包。</p>
+
+<p>另外一个需要注意的是这个随机化是发生在扫描过程中的。而在手机与无线接入点进行关联的过程以及数据传输的过程中，使用MAC地址仍然是设备真实的MAC地址。通常只有在关联阶段才是让AP记录手机MAC地址的阶段，这时候记录的MAC地址，才是将来作为数据传输的MAC地址。</p>
+
+<p>更详细的介绍，可以参看<a href="http://www.zhihu.com/people/qiang-meta">@Qiang Meta</a>在知乎上对《<a href="http://www.zhihu.com/question/24094236?sort=created">iOS 8 设备随机 MAC 地址躲避 Wi-Fi 热点的记录追踪，技术上是怎么实现，有何影响？</a>》的作答。</p>
+
+<h2>影响</h2>
+
+<p>如果我们是在家中或者在办公区域，我们通常会自己去主动关联无线接入点，那么等到下次再进入这一区域时，我们的手机等设备就会自动去连接无线网络。由于这些Wi-Fi是受我们信任的，所以无所谓。但是当我们到达一个陌生区域或公共区域时，我们的设备就会去搜索可用的无线接入点。这时候就涉及到隐私的问题了。</p>
+
+<p>现在，已经有一些公司已经开发了可以记住所扫描到的MAC地址的Wi-Fi集线器。这种设备可以记住我们的MAC地址，无论我们有没有连接它。这些公司已经在许多地方部署了这些设备，以便他们能在用户不知道的情况下了解用户的一些基本行为。</p>
+
+<p>正如WWDC上所指出的一样，“诸如Euclid或其同行Turnstyle Solutions这样的公司，它们会使用MAC地址这样的数据来记录用户进出商店的一些信息，如人们何时走进一个商店，他们在某个区域停留多久，他们来商店的频率是多少”。而MAC地址的随机化正是为了规避这个问题。</p>
+
+<p>这对于广告商和营销商来说无疑是个不小的打击，如果iOS8设备使用不断变化的MAC地址来广播Wi-Fi Probe请求，则不可能通过MAC地址来跟踪进出商店或其它场所的移动设备。这对于保护用户的隐私来说，又是更进了一步。</p>
+
+<h2>苹果的替代方案</h2>
+
+<p>不过苹果也没有完全关闭追踪用户并向用户推送广告的通道，它推出了另外一种方案&mdash;即基于位置服务的iBeacon。iBeacon已经内置在最近的iOS设备中了。不同于使用设备的MAC地址，iBeacon使用低功耗蓝牙技术来发现那边带有支持iBeacon功能的App的设备，以向这些设备发送广告或通知。iBeacon不同于基于MAC地址跟踪技术(iBeacon发射器不会从设备中获取数据)，它只是在匹配到带有基于iBeacon的应用时，才可以察看设备位置。这样就无法推测出一个用户的习惯，从而保护了用户的隐私了。</p>
+
+<p>当然，苹果在随机化MAC地址时，也综合考虑了用户隐私的泄露与商家基于地理位置来发送广告的需求之间的平衡。那些不愿意使用iBeacon的iOS用户可以通过关闭蓝牙来禁用iBeacon感知功能。在iOS8之前，用户只能通过禁用Wi-Fi来避免自己的设备被通过MAC地址的方式跟踪到。</p>
+
+<h2>总结</h2>
+
+<p>苹果这次对MAC地址的随机化处理，又一次展示了它对保护用户隐私的决定。相信以后类似的事情还会出现。而对于开发商或者开发者来说，在iOS设备上获取用户信息的渠道将会越来越少。我们改变不了苹果，或许也就只能另辟蹊径。</p>
+
+<h2>参考</h2>
+
+<ol>
+<li><a href="http://www.zhihu.com/question/24094236">iOS 8 设备随机 MAC 地址躲避 Wi-Fi 热点的记录追踪，技术上是怎么实现，有何影响？</a></li>
+<li><a href="http://arstechnica.com/apple/2014/06/ios8-to-stymie-trackers-and-marketers-with-mac-address-randomization/">iOS 8 to stymie trackers and marketers with MAC address randomization</a></li>
+<li><a href="http://www.tuicool.com/articles/rUv6Br">Why iOS 8′s MAC address randomizing is a huge win for privacy</a></li>
+</ol>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">南峰子</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-09-18T15:51:54+08:00" pubdate data-updated="true">Sep 18<sup>th</sup>, 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/ios/'>ios</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/09/15/dui-yu-ios-8de-size-classesde-si-kao/" title="Previous Post: 对于iOS 8的Size Classes的思考">&laquo; 对于iOS 8的Size Classes的思考</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2014/09/21/zai-reactivecocoazhong-jiang-%5B%3F%5D-ge-viewmodelbang-ding-dao-uitableviewshang/" title="Next Post: 在ReactiveCocoa中将一个ViewModel绑定到UITableView上">在ReactiveCocoa中将一个ViewModel绑定到UITableView上 &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+
+
+<section>
+    <h1>Comments</h1>
+    <div id="comments" aria-live="polite"><!-- Duoshuo Comment BEGIN -->
+<div class="ds-thread" data-title="iOS8中扫描Wi-Fi时MAC地址的随机化"></div>
+<script type="text/javascript">
+    var duoshuoQuery = {short_name:"southpeak"};
+    (function() {
+     var ds = document.createElement('script');
+     ds.type = 'text/javascript';ds.async = true;
+     ds.src = 'http://static.duoshuo.com/embed.js';
+     ds.charset = 'UTF-8';
+     (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+     })();
+</script>
+<!-- Duoshuo Comment END --></div>
+</section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+<section>
+<h1>分类</h1>
+<ul>
+  <li><a href='/blog/categories/ios'>ios (65)</a></li>
+  <li><a href='/blog/categories/network'>network (3)</a></li>
+  <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
+  <li><a href='/blog/categories/swift'>swift (7)</a></li>
+  <li><a href='/blog/categories/system'>system (1)</a></li>
+  <li><a href='/blog/categories/网络'>网络 (8)</a></li>
+</ul>
+</section>
+
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/05/31/ioszhi-shi-xiao-ji-di-er-qi-2015-dot-05-dot-31/">iOS知识小集 第二期(2015.05.31)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/05/10/ioszhi-shi-xiao-ji-di-%5B%3F%5D-qi-2015-dot-05-dot-10/">iOS知识小集 第一期(2015.05.10)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/04/23/nskeyvalueobserving-kvo/">NSKeyValueObserving(KVO)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/24/yuan-ma-pian-:mbprogresshud/">源码篇：MBProgressHUD</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/20/nsnotificationcenter/">NSNotificationCenter</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/14/nsnotificationyu-duo-xian-cheng/">Notification与多线程</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/07/uiresponder/">UIResponder</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/01/fan-yi-pian-:ios-8-handoff-tutorial/">翻译篇：iOS 8 Handoff Tutorial</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/11/nscache/">NSCache</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/07/yuan-ma-pian-:sdwebimage/">源码篇：SDWebImage</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2015 - 南峰子 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>
