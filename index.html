@@ -310,6 +310,170 @@
             
               
                 
+                <a class="post-title-link" href="/2016/08/31/ios-techset-7/" itemprop="url">
+                  iOS知识小集 第7期(2016.08.31)
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-08-31T09:02:14+08:00" content="2016-08-31">
+              2016-08-31
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/techset/" itemprop="url" rel="index">
+                    <span itemprop="name">知识小集</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>好久没写这个系列了，一看都快一年了，当时说好的呢？嗯，说来总是有各种借口，所以还是不说，直接开始新的一期。之前在微博上发了不少知识小集，到现在应该有50多条了，都是平时开发遇到的一些问题，或者看书，看文档，看博客，看WWDC的一些笔记，分享出来。所以在这偷个懒，做一个合集，每期把微博上的知识小集集中一下，可别吐槽。</p>
+<p>本期主要收集以下几个小问题：</p>
+<ol>
+<li>UIImageView显示gif图片有两种方式</li>
+<li>Objective-C中的BOOL类型</li>
+<li>dispatch_once死锁</li>
+<li>GNU 复合语句</li>
+<li>URL转义</li>
+</ol>
+<h2 id="UIImageView显示gif图片有两种方式"><a href="#UIImageView显示gif图片有两种方式" class="headerlink" title="UIImageView显示gif图片有两种方式"></a>UIImageView显示gif图片有两种方式</h2><p>UIImageView显示gif图片有两种方式。当然前提都是先将gif中的每一帧取出来放到一个个UIImage对象中，将这些对象放到一个数组中，如下代码所示。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">CGImageSourceRef</span> source = <span class="built_in">CGImageSourceCreateWithData</span>((__bridge <span class="built_in">CFDataRef</span>)data, <span class="literal">NULL</span>);</div><div class="line">size_t count = <span class="built_in">CGImageSourceGetCount</span>(source);</div><div class="line">    </div><div class="line"><span class="built_in">NSMutableArray</span> *images = [<span class="built_in">NSMutableArray</span> array];</div><div class="line"><span class="keyword">for</span> (size_t i = <span class="number">0</span>; i &lt; count; i++) &#123;</div><div class="line">   <span class="built_in">CGImageRef</span> image = <span class="built_in">CGImageSourceCreateImageAtIndex</span>(source, i, <span class="literal">NULL</span>);</div><div class="line">   [images addObject:[<span class="built_in">UIImage</span> imageWithCGImage:image scale:[<span class="built_in">UIScreen</span> mainScreen] orientation:<span class="built_in">UIImageOrientationUp</span>]];</div><div class="line">   <span class="built_in">CGImageRelease</span>(image);</div><div class="line">&#125;</div><div class="line">    </div><div class="line"><span class="built_in">CFRelease</span>(source)</div></pre></td></tr></table></figure>
+<p>一种方式是将这些UIImage对象通过UIImage的类方法<code>+animatedImageWithImages:duration:</code>组合成一个UIImage对象，然后赋值给UIImageView对象的image属性。</p>
+<p>第二种方式是将UIImage对象的数组赋值给UIImageView对象的<code>animationImages</code>属性，然后调用UIImageView对象的<code>startAnimating</code>方法来启动动画。</p>
+<p>当然，两种方式都需要计算<code>duration</code>。</p>
+<h2 id="Objective-C中的BOOL类型"><a href="#Objective-C中的BOOL类型" class="headerlink" title="Objective-C中的BOOL类型"></a>Objective-C中的BOOL类型</h2><p>Objective-C中的BOOL类型在Watch和64位iOS上的原始类型为bool，而在其它情况下是<code>signed char</code>。我们用<code>@encode</code>去看看BOOL的类型串：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">@encode(BOOL)		// 64位iOS系统：&quot;B&quot;</div><div class="line">@encode(BOOL)		// 32位iOS系统，32/64位OS X：&quot;c&quot;</div></pre></td></tr></table></figure>
+<p>所有这边有一个问题，下面这段代码中变量b的值在不同环境下，其结果可能是不一样的：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">BOOL a = 100 &amp; 20;</div><div class="line">BOOL b = (a == YES);</div></pre></td></tr></table></figure>
+<p>当BOOL为bool时，b的值为1；而当BOOL为<code>signed char</code>时，b的值为0。所以，如果我们判断一个BOOL值是否为真时，不应该通过<code>if(a == YES)</code>这种方式来判断，要么直接就<code>if (a)</code>，要么就<code>if (a != NO)</code>。</p>
+<h2 id="dispatch-once死锁"><a href="#dispatch-once死锁" class="headerlink" title="dispatch_once死锁"></a>dispatch_once死锁</h2><p>在iOS开发中，我们经常会使用到单例，现在Objective-C中写单例的标配是使用<code>dispatch_once</code>。相信这个函数的意义大家都非常清楚了，就是希望<code>dispatch_once</code>参数中的block在全局只执行一次。这个基本上没什么问题。</p>
+<p>不过，今天在工程中看到类似于下面这样的代码。在主线程中调用<code>test()</code>方法，会有什么结果呢？</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">void</span> test() &#123;</div><div class="line">    </div><div class="line">    <span class="keyword">static</span> <span class="built_in">dispatch_once_t</span> onceToken;</div><div class="line">    <span class="built_in">dispatch_once</span>(&amp;onceToken, ^&#123;</div><div class="line">        test();</div><div class="line">    &#125;);</div><div class="line">    </div><div class="line">    printf(<span class="string">"This is a test"</span>);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>死锁。是的，死锁，线程直接卡住了。为什么呢？</p>
+<p>我们暂停程序，可以看到程序的调用栈，如下图所示：</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/dispatch_once%201.jpg?raw=true" alt="image"></p>
+<p>发现程序是卡在<code>dispatch_once_f</code>中。研究一下<code>dispatch_once_f</code>的实现吧，如下代码所示，会发现一些有意思的东西。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">void</span></span></div><div class="line"><span class="title">dispatch_once_f</span><span class="params">(<span class="keyword">dispatch_once_t</span> *val, <span class="keyword">void</span> *ctxt, <span class="keyword">dispatch_function_t</span> func)</span></div><div class="line">&#123;</div><div class="line">	<span class="keyword">struct</span> <span class="number">_</span>dispatch_once_waiter_s * <span class="keyword">volatile</span> *vval =</div><div class="line">			(<span class="keyword">struct</span> <span class="number">_</span>dispatch_once_waiter_s**)val;</div><div class="line">	<span class="keyword">struct</span> <span class="number">_</span>dispatch_once_waiter_s dow = &#123; <span class="literal">NULL</span>, <span class="number">0</span> &#125;;</div><div class="line">	<span class="keyword">struct</span> <span class="number">_</span>dispatch_once_waiter_s *tail, *tmp;</div><div class="line">	<span class="keyword">_dispatch_thread_semaphore_t</span> sema;</div><div class="line"></div><div class="line">	<span class="keyword">if</span> (dispatch_atomic_cmpxchg(vval, <span class="literal">NULL</span>, &amp;dow)) &#123;</div><div class="line">		dispatch_atomic_acquire_barrier();</div><div class="line">		<span class="number">_</span>dispatch_client_callout(ctxt, func);</div><div class="line"></div><div class="line">		dispatch_atomic_maximally_synchronizing_barrier();</div><div class="line">		<span class="comment">//dispatch_atomic_release_barrier(); // assumed contained in above</span></div><div class="line">		tmp = dispatch_atomic_xchg(vval, DISPATCH_ONCE_DONE);</div><div class="line">		tail = &amp;dow;</div><div class="line">		<span class="keyword">while</span> (tail != tmp) &#123;</div><div class="line">			<span class="keyword">while</span> (!tmp-&gt;dow_next) &#123;</div><div class="line">				<span class="number">_</span>dispatch_hardware_pause();</div><div class="line">			&#125;</div><div class="line">			sema = tmp-&gt;dow_sema;</div><div class="line">			tmp = (<span class="keyword">struct</span> <span class="number">_</span>dispatch_once_waiter_s*)tmp-&gt;dow_next;</div><div class="line">			<span class="number">_</span>dispatch_thread_semaphore_signal(sema);</div><div class="line">		&#125;</div><div class="line">	&#125; <span class="keyword">else</span> &#123;</div><div class="line">		dow.dow_sema = <span class="number">_</span>dispatch_get_thread_semaphore();</div><div class="line">		<span class="keyword">for</span> (;;) &#123;</div><div class="line">			tmp = *vval;</div><div class="line">			<span class="keyword">if</span> (tmp == DISPATCH_ONCE_DONE) &#123;</div><div class="line">				<span class="keyword">break</span>;</div><div class="line">			&#125;</div><div class="line">			dispatch_atomic_store_barrier();</div><div class="line">			<span class="keyword">if</span> (dispatch_atomic_cmpxchg(vval, tmp, &amp;dow)) &#123;</div><div class="line">				dow.dow_next = tmp;</div><div class="line">				<span class="number">_</span>dispatch_thread_semaphore_wait(dow.dow_sema);</div><div class="line">			&#125;</div><div class="line">		&#125;</div><div class="line">		<span class="number">_</span>dispatch_put_thread_semaphore(dow.dow_sema);</div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>简单描述一下吧。<code>onceToken</code>在第一次执行block之前，其值将由NULL变为指向第一个调用者的指针(<code>&amp;dow</code>)。如果在<code>block</code>完成之前，有其它的调用者进来，则会把这些调用者放到一个<code>waiter</code>链表中(走else分支)，直到<code>block</code>执行完成。<code>waiter</code>链中的每个调用者都会等待一个信号量(<code>dow.dow_sema</code>)。在block执行完成后，除了将<code>onceToken</code>置为<code>DISPATCH_ONCE_DONE</code>外，还会去遍历<code>waiter</code>链中的所有<code>waiter</code>，抛出相应的信号量，以告知<code>waiter</code>们调用结束。</p>
+<p>因此上面的死锁问题就好理解了。递归调用<code>test()</code>时，第二次调用作为一个<code>waiter</code>，在等待block完成，而block的完成依赖于<code>test()</code>的执行完成，这就成了一个死锁。</p>
+<p>所以应该避免在<code>dispatch_once</code>做递归调用，不管是直接的还是间接的。</p>
+<p>再说回单例，个人看法是单例是个好东西，但应该在适当的场景使用。不能因为简便就滥用。抛开内存问题不说，使用不当的话，单例类迟早会变成一个垃圾场。</p>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><ol>
+<li><a href="http://stackoverflow.com/questions/19176219/why-am-i-getting-deadlock-with-dispatch-once" target="_blank" rel="external">Why am I getting deadlock with dispatch_once?</a></li>
+<li><a href="https://satanwoo.github.io/2016/04/11/dispatch-once/" target="_blank" rel="external">滥用单例之dispatch_once死锁</a></li>
+<li><a href="https://github.com/nickhutchinson/libdispatch/blob/d7c78607cd2d971da86a8e3ac8b8ff0fb97ef6b8/src/once.c" target="_blank" rel="external">libdispatch</a></li>
+</ol>
+<h2 id="GNU-复合语句"><a href="#GNU-复合语句" class="headerlink" title="GNU 复合语句"></a>GNU 复合语句</h2><p>我们在看一些第三方的代码时，可能会看到类似于下面的代码。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">[<span class="keyword">self</span>.view addSubview:(&#123;</div><div class="line">   <span class="built_in">UIView</span> *view = [[<span class="built_in">UIView</span> alloc] initWithFrame:(<span class="built_in">CGRect</span>)&#123;<span class="built_in">CGPointZero</span>, <span class="number">100.0</span>f, <span class="number">100.0</span>f&#125;];</div><div class="line">   view.backgroundColor = [<span class="built_in">UIColor</span> blueColor];</div><div class="line">   view.layer.masksToBounds = <span class="literal">YES</span>;</div><div class="line">   view.layer.cornerRadius = <span class="number">4.0</span>f;</div><div class="line">   view;</div><div class="line">&#125;)];</div></pre></td></tr></table></figure>
+<p><code>addSubview</code>的参数放在一个”({})”代码块中，而view的创建及属性设置都是在”({})”完成，代码块最后一句即我们要添加的子view。</p>
+<p>这种写法沿用了<code>GNU C</code>的一个特性，即复合语句(<code>compound statement</code>)。即在”({})”代码块中，我们可以放置多个语句，这些语句可以是循环、分支、变量声明、函数调用等。而复合语句的最后一句是一个表达式，其作为整个复合语句的最终值。</p>
+<p>在写Objective-C代码时，使用复合语句能让我们的代码变得更优雅，特别是创建并添加一堆子view时，能让我们的代码看上去更整洁。建议经常使用。</p>
+<h3 id="参考-1"><a href="#参考-1" class="headerlink" title="参考"></a>参考</h3><ol>
+<li><a href="https://gcc.gnu.org/onlinedocs/gcc/Statement-Exprs.html#Statement-Exprs" target="_blank" rel="external"> Statements and Declarations in Expressions</a></li>
+</ol>
+<h2 id="URL转义"><a href="#URL转义" class="headerlink" title="URL转义"></a>URL转义</h2><p>在使用<code>+URLWithString:</code>或<code>-initWithString:</code>来创建一个URL对象时，提供的参数字符串必须符合RFC 2396标准<a href="https://www.ietf.org/rfc/rfc2396.txt" target="_blank" rel="external">Uniform Resource Identifiers (URI): Generic Syntax</a>。而这两个方法又是根据RFC 1738 <a href="https://www.ietf.org/rfc/rfc1738.txt" target="_blank" rel="external">Uniform Resource Locators (URL)</a>和1808 <a href="https://www.ietf.org/rfc/rfc1808.txt" target="_blank" rel="external">Relative Uniform Resource Locators</a>两个标准来解析字符串的。故弄玄虚一下。当然我们不需要去了解所有的细节，简单了解一下就行，可以参考一下阮大侠的这篇<a href="http://www.ruanyifeng.com/blog/2010/02/url_encoding.html" target="_blank" rel="external">关于URL编码</a>。</p>
+<p>这里要说明的就是：对于我们而言，如果用带有中文的字符串(如”<a href="https://www.baidu.com?q=北京" target="_blank" rel="external">https://www.baidu.com?q=北京</a>“)去创建一个URL对象的话，返回的是一个nil。</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/url%20encode%201.jpg?raw=true" alt="image"></p>
+<p>我们所需要做的就是对不符合标准的字符串进行转义操作。<code>NSString</code>类提供了两个方法来做这种转义操作，一个是<code>-stringByAddingPercentEscapesUsingEncoding:</code>，不过这个方法在iOS 9.0已被废弃；现在更提倡的是用<code>-stringByAddingPercentEncodingWithAllowedCharacters:</code>方法，这个方法是iOS 7.0后添加的。</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>知识是一点一点积累的，每天一两点，一段时间后，收获也会很大。知识小集的初衷就是这样。</p>
+<p>当然，另一方面也需要系统性地去学习整理一些知识，才能把零零碎碎的东西串起来。</p>
+<hr>
+<p>欢迎关注我的微信公众号：iOS知识小集，扫扫左边<strong>站点概览</strong>里的二维码就OK了。对了，还有微博：<a href="http://weibo.com/touristdiary" target="_blank" rel="external">@南峰子_老驴</a>。</p>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
                 <a class="post-title-link" href="/2016/08/01/javascriptcore-tutorial-for-ios-getting-started/" itemprop="url">
                   JavaScriptCore Tutorial for iOS: Getting Started
                 </a>
@@ -1608,7 +1772,7 @@
               
                 
                 <a class="post-title-link" href="/2015/10/20/ios-techset-6/" itemprop="url">
-                  iOS知识小集 第六期(2015.10.20)
+                  iOS知识小集 第6期(2015.10.20)
                 </a>
               
             
@@ -1816,7 +1980,7 @@
               
                 
                 <a class="post-title-link" href="/2015/09/26/ios-techset-5/" itemprop="url">
-                  iOS知识小集 第五期(2015.09.26)
+                  iOS知识小集 第5期(2015.09.26)
                 </a>
               
             
@@ -2033,161 +2197,6 @@
 
 
     
-      
-
-  
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/2015/09/23/sourcecode-mmtweenanimation/" itemprop="url">
-                  MMTweenAnimation实现分析
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            <span class="post-meta-item-icon">
-              <i class="fa fa-calendar-o"></i>
-            </span>
-            <span class="post-meta-item-text">发表于</span>
-            <time itemprop="dateCreated" datetime="2015-09-23T20:18:24+08:00" content="2015-09-23">
-              2015-09-23
-            </time>
-          </span>
-
-          
-            <span class="post-category" >
-              &nbsp; | &nbsp;
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-              
-                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
-                  <a href="/categories/sourcecode/" itemprop="url" rel="index">
-                    <span itemprop="name">源码分析</span>
-                  </a>
-                </span>
-
-                
-                
-
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-
-          
-          
-
-          
-        </div>
-      </header>
-    
-
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>先来个效果图吧：</p>
-<p><img src="https://raw.githubusercontent.com/adad184/MMTweenAnimation/master/Images/2.gif" alt="image"></p>
-<p>这是<code>MMTweenAnimation</code>库实现的一个弹跳动画。<code>MMTweenAnimation</code>基于Facebook的<code>pop</code>动画库，它提供了10套自定义的动画曲线，分别是：<code>Back</code>、<code>Bounce</code>、<code>Circ</code>、<code>Cubic</code>、<code>Elastic</code>、<code>Expo</code>、<code>Quad</code>、<code>Quart</code>、<code>Quint</code>、<code>Sine</code>。具体的效果可以参考<a href="https://github.com/adad184/MMTweenAnimation" target="_blank" rel="external">MMTweenAnimation</a>。</p>
-<p>在这里，我们主要来<code>MMTweenAnimation</code>的具体实现及使用。</p>
-<p>我们知道，动画实际上是许多帧静止的画面，以一定的速度连续播放，由于肉眼视觉残象产生的错觉，因此我们感觉画面是活动的。这就是动画的基本原理。所以，我们要做的就是按一定的速率去播放帧，在每一帧中计算曲线的路径，并将其绘制到界面上。这主要涉及到曲线的插值算法。</p>
-<h3 id="主要部件"><a href="#主要部件" class="headerlink" title="主要部件"></a>主要部件</h3><p><code>MMTweenAnimation</code>的主体类主要有两个：<code>MMTweenAnimation</code>和<code>MMTweenFunction</code>。<code>MMTweenFunction</code>类主要定义各种插值算法，<code>MMTweenAnimation</code>主要是实现动画操作。</p>
-<h4 id="MMTweenFunction类"><a href="#MMTweenFunction类" class="headerlink" title="MMTweenFunction类"></a>MMTweenFunction类</h4><p><code>MMTweenFunction</code>类主要是实现各种插值算法。这些插值算法分别10类，即上面列出的10套动画。而每套根据不同的缓动方式，又分为<code>EaseIn</code>、<code>EaseOut</code>、<code>EaseInOut</code>三种，因此<code>MMTweenAnimation</code>库实际上是实现了30种动画。每个插值算法都实现为一个闭包函数，其定义如下：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">typealias MMTweenFunctionBlock = (t: <span class="built_in">CFTimeInterval</span>,            <span class="comment">// 当前时间与起始时间的差值</span></div><div class="line">                                  b: Double,                    <span class="comment">// 起点</span></div><div class="line">                                  c: Double,                    <span class="comment">// 起点与终点的差值</span></div><div class="line">                                  d: <span class="built_in">CFTimeInterval</span>) -&gt; Double  <span class="comment">// 动画持续时间</span></div></pre></td></tr></table></figure>
-<p>而每个动画的插值都是根据数学公式算法出来的，我们以图例中的<code>Bounce-EaseOut</code>动画为例，其实现如下：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">let bounceOut: MMTweenFunctionBlock = &#123; (t, b, c, d) -&gt; Double <span class="keyword">in</span></div><div class="line">    let k: Double = <span class="number">2.75</span></div><div class="line">    var t1 = t / d</div><div class="line">    <span class="keyword">if</span> t1 &lt; (<span class="number">1</span> / k) &#123;</div><div class="line">        <span class="keyword">return</span> c * (<span class="number">7.5625</span> * t1 * t1) + b</div><div class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> t1 &lt; (<span class="number">2</span> / k) &#123;</div><div class="line">        t1 -= <span class="number">1.5</span> / k</div><div class="line">        <span class="keyword">return</span> c * (<span class="number">7.5625</span> * t1 * t1 + <span class="number">0.75</span>) + b</div><div class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> t1 &lt; (<span class="number">2.5</span> / k) &#123;</div><div class="line">        t1 -= <span class="number">2.25</span> / k</div><div class="line">        <span class="keyword">return</span> c * (<span class="number">7.5625</span> * t1 * t1 + <span class="number">0.9375</span>) + b</div><div class="line">    &#125; <span class="keyword">else</span> &#123;</div><div class="line">        t1 -= <span class="number">2.625</span> / k</div><div class="line">        <span class="keyword">return</span> c * (<span class="number">7.5625</span> * t1 * t1 + <span class="number">0.984375</span>) + b</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>计算出来的插值将会用于计算当前帧的终点值。</p>
-<h4 id="MMTweenAnimation类"><a href="#MMTweenAnimation类" class="headerlink" title="MMTweenAnimation类"></a>MMTweenAnimation类</h4><p><code>MMTweenAnimation</code>是实现动画的主体类。这个类继承自<code>pop</code>的<code>POPCustomAnimation</code>，<code>POPCustomAnimation</code> 直接继承自<code>PopAnimation</code>类，用于创建自定义动画的基类，它基本上是一个 <code>display link</code>的方便的转换，来在动画的每一个<code>tick</code>的回调<code>block</code>中驱动自定义的动画。</p>
-<p><code>MMTweenAnimation</code>定义了几个基本属性，如下所示：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">class</span> MMTweenAnimation: POPCustomAnimation &#123;</div><div class="line">    var animationBlock: MMTweenAnimationBlock?          <span class="comment">// 动画回调</span></div><div class="line">    var fromValue: [<span class="built_in">CGFloat</span>]?                           <span class="comment">// 起点数组</span></div><div class="line">    var toValue: [<span class="built_in">CGFloat</span>]?                             <span class="comment">// 终点数组</span></div><div class="line">    var duration: Double = <span class="number">0.3</span>                          <span class="comment">// 动画时长</span></div><div class="line"></div><div class="line">    <span class="comment">// ......</span></div><div class="line">    var functionBlock: MMTweenFunctionBlock?			<span class="comment">// 动画插值Block</span></div><div class="line">    <span class="comment">// ......</span></div><div class="line"></div><div class="line">    <span class="comment">// ......</span></div><div class="line">    var functionType: MMTweenFunctionType				<span class="comment">// 动画插值类型</span></div><div class="line">    <span class="comment">// ......</span></div><div class="line"></div><div class="line">    <span class="comment">// ......</span></div><div class="line">    var easingType: MMTweenEasingType					<span class="comment">// 动画缓动类型</span></div><div class="line">    <span class="comment">// ......</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>而<code>MMTweenAnimation</code>类最关键的是定义它的回调<code>block</code>。<code>MMTweenAnimation</code>类定义了一个类方法<code>animation()</code>，在这个方法中，通过调用从父类继承来的便捷初始化方法</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">public convenience init!(block: POPCustomAnimationBlock!)</div></pre></td></tr></table></figure>
-<p>来创建一个<code>MMTweenAnimation</code>对象。其实现如下所示：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">class</span> func animation() -&gt; MMTweenAnimation? &#123;</div><div class="line"></div><div class="line">        let tweaner: MMTweenAnimation = MMTweenAnimation &#123; (target, animation) -&gt; Bool <span class="keyword">in</span></div><div class="line"></div><div class="line">            let anim: MMTweenAnimation = animation as! MMTweenAnimation</div><div class="line"></div><div class="line">            let t = animation.currentTime - animation.beginTime <span class="comment">// 当前时间与起始时间的差值</span></div><div class="line">            let d = anim.duration</div><div class="line"></div><div class="line">            assert(anim.fromValue!.count == anim.toValue!.count, <span class="string">"fromValue.count != toValue.count"</span>)</div><div class="line"></div><div class="line">            <span class="keyword">if</span> t &lt; d &#123;      <span class="comment">// 确保在动画持续时间类才处理</span></div><div class="line">                var values: [<span class="built_in">CGFloat</span>] = [<span class="built_in">CGFloat</span>]()</div><div class="line"></div><div class="line">                <span class="keyword">for</span> i <span class="keyword">in</span> <span class="number">0.</span>.&lt;anim.fromValue!.count &#123;</div><div class="line"></div><div class="line">                    <span class="keyword">if</span> let functionBlock = anim.functionBlock &#123;     <span class="comment">// 计算插值</span></div><div class="line">                        values.append(<span class="built_in">CGFloat</span>(functionBlock(t: t, b: Double(anim.fromValue![i]), c: Double(anim.toValue![i]) - Double(anim.fromValue![i]), d: d)))</div><div class="line">                    &#125;</div><div class="line">                &#125;</div><div class="line"></div><div class="line">                <span class="keyword">if</span> let animationBlock = anim.animationBlock &#123;   <span class="comment">// 动画回调，以实现绘制操作</span></div><div class="line">                    animationBlock(time: t, duration: d, values: values, target: target, animation: anim)</div><div class="line">                &#125;</div><div class="line"></div><div class="line">                <span class="keyword">return</span> <span class="literal">true</span></div><div class="line">            &#125; <span class="keyword">else</span> &#123;</div><div class="line">                <span class="keyword">return</span> <span class="literal">false</span></div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        <span class="keyword">return</span> tweaner</div><div class="line">    &#125;</div></pre></td></tr></table></figure>
-<p>其中动画回调的定义如下：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">typealias MMTweenAnimationBlock = (time: <span class="built_in">CFTimeInterval</span>, duration: <span class="built_in">CFTimeInterval</span>, values: [<span class="built_in">CGFloat</span>], target: AnyObject, animation: MMTweenAnimation) -&gt; Void</div></pre></td></tr></table></figure>
-<p>以上两个类便是<code>MMTweenAnimation</code>的主要部件。</p>
-<h3 id="动画示例"><a href="#动画示例" class="headerlink" title="动画示例"></a>动画示例</h3><p>有了主要部件，我们就来看看怎么去使用它。<code>MMTweenAnimation</code>给了一个示例，其效果就是开头的图例。为此，<code>MMTweenAnimation</code>定义了类<code>MMPaintView</code>，这个类的主要目的就是绘制上面的曲线，其主要操作如下：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">func addDot(point: <span class="built_in">CGPoint</span>) &#123;</div><div class="line">    __dots.append(point)</div><div class="line">    <span class="comment">// __path = __interpolateCGPointsWithHermite(__dots)</span></div><div class="line">    __path = __interpolateCGPointsWithCatmullRom(__dots)</div><div class="line">    setNeedsDisplay()</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>这个方法首先是将参数中的点(即每一帧计算出来的终点值)添加到对象的<code>__dots</code>数组中，然后再通过<code>__interpolateCGPointsWithCatmullRom</code>方法创建一条<code>Bezier</code>曲线，最后调用<code>setNeedsDisplay()</code>来重新绘制曲线。</p>
-<p>我们先来看看这个点是如何获取到的。在<code>MMAnimationController</code>类，我们定义动画对象时，设置了其动画回调，如下所示：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">__anim!.animationBlock = &#123; [unowned <span class="keyword">self</span>] (diff: <span class="built_in">CFTimeInterval</span>, duration: <span class="built_in">CFTimeInterval</span>, values: [<span class="built_in">CGFloat</span>], target: AnyObject, animation: MMTweenAnimation) -&gt; Void <span class="keyword">in</span></div><div class="line">    let value: <span class="built_in">CGFloat</span> = values[<span class="number">0</span>]          <span class="comment">// 获取当前时间结束点的值</span></div><div class="line"></div><div class="line">    <span class="keyword">self</span>.__dummy!.center = <span class="built_in">CGPoint</span>(x: <span class="keyword">self</span>.__dummy!.center.x, y: value)     <span class="comment">// 计算小红点的中心位置</span></div><div class="line">    <span class="keyword">self</span>.__ball!.center = <span class="built_in">CGPoint</span>(x: <span class="number">50.0</span> + (<span class="built_in">CGRectGetWidth</span>(<span class="built_in">UIScreen</span>.mainScreen().bounds) - <span class="number">150.0</span>) * <span class="built_in">CGFloat</span>(diff / duration), y: value)</div><div class="line"></div><div class="line">    <span class="keyword">self</span>.__paintView!.addDot(<span class="keyword">self</span>.__ball!.center)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>这个动画回调获取当前时间结束点的值，用于设置小红点的中心位置，同时将这个中心位置的值丢给<code>MMPaintView</code>对象去生成<code>Bezier</code>曲线。</p>
-<h3 id="动画渲染操作执行的时间点"><a href="#动画渲染操作执行的时间点" class="headerlink" title="动画渲染操作执行的时间点"></a>动画渲染操作执行的时间点</h3><p>知道了<code>MMTweenAnimation</code>库的主要部件，我们现在来看看动画是如何被驱动的。我们在<code>MMTweenAnimation</code>类的<code>animation()</code>方法中，在动画回调的起始位置打个断点，运行一下程序，看看调用栈，如下所示：</p>
-<p><img src="https://raw.githubusercontent.com/southpeak/Blog-images/master/MMTweenAnimation-stack.png" alt="image"></p>
-<p>可以看到在<code>Run Loop</code>中执行了一个观察者回调，在这个回调中调用了<code>POPAnimator</code>对象的<code>_scheduleProcessPendingList</code>方法的一个<code>block</code>回调，一直追溯到我们的动画操作。也就是说，是在<code>Run Loop</code>的某个时刻执行了一次动画的渲染。</p>
-<p>我们再从代码入手，来看看动画执行代码是什么时候添加到Run Loop中的。在<code>MMAnimationController</code>的<code>viewDidAppear</code>方法中，有如下调用：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">__dummy!.pop_addAnimation(__anim, forKey: <span class="string">"center"</span>)</div></pre></td></tr></table></figure>
-<p>其中<code>pop_addAnimation</code>方法是<code>POPAnimator</code>类中定义的。顺着代码，我们最终可以找到<code>_scheduleProcessPendingList</code>的定义，其实现如下：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)_scheduleProcessPendingList</div><div class="line">&#123;</div><div class="line">  <span class="comment">// ......</span></div><div class="line"></div><div class="line">  <span class="keyword">if</span> (!_pendingListObserver) &#123;</div><div class="line">    __<span class="keyword">weak</span> POPAnimator *weakSelf = <span class="keyword">self</span>;</div><div class="line">	</div><div class="line">    <span class="comment">// 添加Run Loop监听器</span></div><div class="line">    _pendingListObserver = <span class="built_in">CFRunLoopObserverCreateWithHandler</span>(kCFAllocatorDefault, kCFRunLoopBeforeWaiting | kCFRunLoopExit, <span class="literal">false</span>, POPAnimationApplyRunLoopOrder, ^(<span class="built_in">CFRunLoopObserverRef</span> observer, <span class="built_in">CFRunLoopActivity</span> activity) &#123;</div><div class="line">      [weakSelf _processPendingList];</div><div class="line">    &#125;);</div><div class="line"></div><div class="line">    <span class="keyword">if</span> (_pendingListObserver) &#123;</div><div class="line">      <span class="built_in">CFRunLoopAddObserver</span>(<span class="built_in">CFRunLoopGetMain</span>(), _pendingListObserver,  kCFRunLoopCommonModes);</div><div class="line">    &#125;</div><div class="line">  &#125;</div><div class="line">  <span class="comment">// ......</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>可以看到在这个方法中创建了一个<code>Run Loop</code>的观察者，这个观察者在<code>Run Loop</code>的<code>kCFRunLoopBeforeWaiting</code>或<code>kCFRunLoopExit</code>阶段时会执行监听回调处理函数。回调函数中调用了<code>_processPendingList</code>方法，然后从调用栈里面可以看到，一直会执行到<code>MMTweenAnimation</code>的动画闭包中，即我们打断点的地方。</p>
-<p>OK，动画渲染时间点找着了，那整个流程就可以完整拼接起来了。</p>
-<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p><code>MMTweenAnimation</code>的实现并不复杂，只要了解了动画的基本原理和其中的插值算法，再加上一些<code>pop</code>动画的基础知识，基本上就OK了。要想做出很牛B的动画，还是需要大量的数学知识。其实在<code>MMTweenAnimation</code>库中，除了那10套插值算法外，在<code>MMPaintView</code>类中，计算<code>Bezier</code>的控制点时，还用到了Catmull-Rom样条与Hermite样条，大家有兴趣可以研究一下。</p>
-<p><code>MMTweenAnimation</code>初始源码是<code>Objective-C</code>实现的，我将它用<code>Swift</code>重写了一遍，并放在github上，地址是<a href="https://github.com/southpeak/Swift/tree/master/Animation/MMTweenAnimation-Swift" target="_blank" rel="external">MMTweenAnimation-Swift</a>，有兴趣可以看一下。</p>
-<p>本想放在知识小集中，但由于篇幅稍长，所以独立成篇。</p>
-<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><ol>
-<li><a href="https://github.com/adad184/MMTweenAnimation" target="_blank" rel="external">MMTweenAnimation</a></li>
-<li><a href="http://objccn.io/issue-12-6/" target="_blank" rel="external">交互式动画</a></li>
-</ol>
-
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
   </section>
 
   
@@ -2233,7 +2242,7 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/archives">
-              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-count">83</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>

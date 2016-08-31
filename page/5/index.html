@@ -310,6 +310,191 @@
             
               
                 
+                <a class="post-title-link" href="/2014/12/01/quartz2d-4/" itemprop="url">
+                  Quartz 2D编程指南之四：颜色与颜色空间
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-12-01T22:59:58+08:00" content="2014-12-01">
+              2014-12-01
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/translate/" itemprop="url" rel="index">
+                    <span itemprop="name">翻译</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>不同的设备(显示器、打印机、扫描仪、摄像头)处理颜色的方式是不同的。每种设备都有其所能支持的颜色值范围。一种设备能支持的颜色可能在其它设备中无法支持。</p>
+<p>为了有效的使用颜色及理解Quartz 2D中用于颜色及颜色空间的函数，我们需要熟悉在Color Management Overview文档中所使用的术语。该文档中讨论了色觉、颜色值、设备依赖及设备颜色空间、颜色匹配问题、再现意图(rendering intent)、颜色管理模块和ColorSync。</p>
+<p>在本章中，我们将学习Quartz处理颜色和颜色空间，以及什么是alpha组件。本章同时也讨论如下问题：</p>
+<ol>
+<li>创建颜色空间</li>
+<li>创建和设置颜色</li>
+<li>设置再现意图</li>
+</ol>
+<h2 id="颜色与颜色空间"><a href="#颜色与颜色空间" class="headerlink" title="颜色与颜色空间"></a>颜色与颜色空间</h2><p>Quartz中的颜色是用一组值来表示。而颜色空间用于解析这些颜色信息。例如，表4-1列出了在全亮度下蓝色值在不同颜色空间下的值。如果不知道颜色空间及颜色空间所能接受的值，我们没有办法知道一组值所表示的颜色。</p>
+<p><strong>Table 4-1  Color values in different color spaces</strong></p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/quartz-2d-table4-1.png?raw=true" alt="image"></p>
+<p>如果我们使用了错误的颜色空间，我们可能会获得完全不同的颜色，如图4-1所示。</p>
+<p><strong>Figure 4-1  Applying a BGR and an RGB color profile to the same image</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/color_profiles.gif" alt="image"></p>
+<p>颜色空间可以有不同数量的组件。表4-1中的颜色空间中其中三个只有三个组件，而CMYK有四个组件。值的范围与颜色空间有关。对大部分颜色空间来说，颜色值范围为[0.0, 1.0]，1.0表示全亮度。例如，全亮度蓝色值在Quartz的RGB颜色空间中的值是(0, 0, 1.0)。在Quartz中，颜色值同样有一个alpha值来表示透明度。在表4-1中没有列出该值。</p>
+<h2 id="alpha值"><a href="#alpha值" class="headerlink" title="alpha值"></a>alpha值</h2><p>alpha值是图形状态参数，Quartz用它来确定新的绘图对象如何与已存在的对象混合。在全强度下，新的绘图对象是不透明的。在0强度下，新的绘图对象是完全透明的。图4-2显示了5个大的方形，分别使用了alpha值为1.0, 0.75, 0.5, 0.1和0.0。随着大方形逐渐变得透明，底下的小的不透明的方形逐渐显现出来。</p>
+<p><strong>Figure 4-2  A comparison of large rectangles painted using various alpha values</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/alpha_demo.gif" alt="image"></p>
+<p>我们可以将两个对象绘制到page上，而page可以在渲染前通过设置全局的graphics context来设置自己的透明度。图4-3显示了将全局的透明度设置为0.5和1.0的效果。</p>
+<p><strong>Figure 4-3  A comparison of global alpha values</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/set_alpha.gif" alt="image"></p>
+<p>在标准混合模式(图形状态的默认模式)下，Quartz使用下面的公式来混合源颜色和目标颜色的组件：</p>
+<p><strong>destination = (alpha <em> source) + (1 - alpha) </em> destination</strong></p>
+<p>其中源颜色是新绘制的颜色，目标颜色是背景颜色。该公式可用于新绘制的形状和图像。</p>
+<p>对于对象透明度来说，alpha值为1.0时表示新对象是完全不透明的，值0.0表示新对象是完全透明的。0.0与1.0之间的值指定对象的透明度。我们可以为所有接受颜色的程序指定一个alpha值作为颜色值的最后一个组件。同样也可以使用CGContextSetAlpha函数来指定全局的alpha值。记住，如果同时设置以上两个值，Quartz将混合全局alpha值与对象的alpha值。</p>
+<p>为了让page完全透明，我们可以调用CGContextClearRect函数来清除图形上下文(graphics context)的alpha通道。例如，我们可以在给图标创建一个透明遮罩或者使窗口的背景透明时，采用这种方法。</p>
+<h2 id="创建颜色空间"><a href="#创建颜色空间" class="headerlink" title="创建颜色空间"></a>创建颜色空间</h2><p>Quartz支持颜色管理系统使用的标准颜色空间，也支持通用的颜色空间、索引颜色空间和模式(pattern)颜色空间。设备颜色空间以一种简便的方法在不同设备间表示颜色。它用于在两种不同设备间的本地颜色空间转换颜色数据。设备依赖颜色空间的颜色在不同设备上显示时效果是一样的，它扩展了设备的能力。基于此，设备依赖颜色空间是显示颜色时最好的选择。</p>
+<p>如果应用程序有精确的颜色表示需求，则应该总是使用设备依赖颜色空间。通用颜色空间(generic color space)是一种常用的设备依赖颜色空间。通用颜色空间通过操作系统为我们的应用程序提供最好的颜色空间。它能使在显示器上与在打印机上打印效果是一样的。</p>
+<blockquote>
+<p>重要：IOS不支持设备依赖颜色空间或通用颜色空间。IOS应用程序必须使用设备颜色空间(device color space)。</p>
+</blockquote>
+<h3 id="创建设备依赖颜色空间"><a href="#创建设备依赖颜色空间" class="headerlink" title="创建设备依赖颜色空间"></a>创建设备依赖颜色空间</h3><p>为了创建设备依赖颜色空间，我们需要给Quartz提供白色参考点，黑色参考点及特殊设备的gamma值。Quartz使用这些信息将源颜色空间的颜色值转化为输出设备颜色空间的颜色值。</p>
+<p>Quartz支持设备依赖颜色空间，创建此空间的函数如下：</p>
+<ol>
+<li><code>L*a*b</code>是非线性转换，它属于Munsell颜色符号系统(该系统使用色度、值、饱和度来指定颜色)。 L组件表示亮度值，a组件表示绿色与红色之间的值，b组件表示蓝色与黄色之间的值。该颜色空间设计用于模拟人脑解码颜色。使用函数CGColorSpaceCreateLab来创建。</li>
+<li>ICC颜色空间是由ICC(由国际色彩聪明，International Color Consortium)颜色配置而来的。ICC颜色配置了设备支持的颜色域，该颜色域与其它设备属性相符，所以该信息可被用于将一个设备的颜色空间精确地转换为另一个设备的颜色空间。大多数设备制造商都支持ICC配置。一些彩色显示器和打印机都内嵌了ICC信息，用于处理诸如TIFF的位图格式。使用函数CGColorSpaceCreateICCBased来创建。</li>
+<li>标准化RGB是设备依赖的RGB颜色空间，它表示相对于白色参考点(设备可生成的最白的颜色)的颜色。 使用函数CGColorSpaceCreateCalibratedRGB来创建。</li>
+<li>标准化灰度是设备依赖的灰度颜色空间，它表示相对于白色参考点(设备可生成的最白的颜色)的颜色。 使用函数CGColorSpaceCreateCalibratedGray来创建。</li>
+</ol>
+<h3 id="创建通用颜色空间"><a href="#创建通用颜色空间" class="headerlink" title="创建通用颜色空间"></a>创建通用颜色空间</h3><p>通用颜色空间的颜色与系统匹配。大部分情况下，结果是可接受的。就像名字所暗示的那样，每个“通用”颜色空间(generic gray, generic RGB, generic CMYK)都是一个指定的设备依赖颜色空间。</p>
+<p>通过颜色空间非常容易使用；我们不需要提供任何参考点信息。我们使用函数CGColorSpaceCreateWithName来创建一个通用颜色空间，该函数可传入以下常量值：</p>
+<ol>
+<li>kCGColorSpaceGenericGray：指定通用灰度颜色空间，该颜色空间是单色的，可以指定从0.0(纯黑)到1.0(纯白)范围内的颜色值。</li>
+<li>kCGColorSpaceGenericRGB：指定通用RGB颜色空间，该颜色空间中的颜色值由三个组件(red, green, blue)组成，主要用于彩色显示器上的像素。RGB颜色空间中的每个组件的值范围是[0.0, 1.0]。</li>
+<li>kCGColorSpaceGenericCMYK：指定通用CMYK颜色空间，该颜色空间的颜色值由四个组件(cyan, magenta, yellow, black)，主要用于打印机。CMYK颜色空间的每个组件的值范围是[0.0, 1.0]。</li>
+</ol>
+<h3 id="创建设备颜色空间"><a href="#创建设备颜色空间" class="headerlink" title="创建设备颜色空间"></a>创建设备颜色空间</h3><p>设备颜色空间主要用于IOS应用程序，因为其它颜色空间无法在IOS上使用。大多数情况下，Mac OS X应用程序应使用通用颜色空间，而不使用设备颜色空间。但是有些Quartz程序希望图像使用设备颜色空间。例如，如果调用<strong>CGImageCreateWithMask</strong>函数来指定一个图像作为遮罩，图像必须在设备的灰度颜色空间(device gray color space)中定义。</p>
+<p>我们可以使用以下函数来创建设备颜色空间：</p>
+<ol>
+<li>CGColorSpaceCreateDeviceGray：创建设备依赖灰度颜色空间</li>
+<li>CGColorSpaceCreateDeviceRGB：创建设备依赖RGB颜色空间</li>
+<li>CGColorSpaceCreateDeviceCMYK：创建设备依赖CMYK颜色空间</li>
+</ol>
+<h3 id="创建索引颜色空间和模式颜色空间"><a href="#创建索引颜色空间和模式颜色空间" class="headerlink" title="创建索引颜色空间和模式颜色空间"></a>创建索引颜色空间和模式颜色空间</h3><p>索引颜色空间包含一个有256个词目的颜色表，和词目映射到基础颜色空间。颜色表中每个词目指定一个基础颜色空间中的颜色值。使用CGColorSpaceCreateIndexed函数来创建。</p>
+<p>模式颜色空间在绘制模式时使用。 使用CGColorSpaceCreatePattern函数来创建。</p>
+<h2 id="设置和创建颜色"><a href="#设置和创建颜色" class="headerlink" title="设置和创建颜色"></a>设置和创建颜色</h2><p>Quartz提供了一套函数用于设置填充颜色、线框颜色、颜色空间和alpha值。每个颜色参数都是图形状态参数，这就意味着一旦设置了，设置将被保存并影响后续操作，直到被修改为止。</p>
+<p>一个颜色必须有相关联的颜色空间。否则，Quartz不知道如何解析颜色值。进一步说，说是我们必须为绘制目标提供一个合适的颜色空间。如图4-4所示，左边是CMYK颜色空间中的蓝色填充色，右边是RGB颜色空间中的蓝色填充色。这两个颜色值在理论上是一样的，但只有在相同颜色空间下的相同颜色值显示出来才是一样的。</p>
+<p><strong>Figure 4-4  A CMYK fill color and an RGB fill color</strong></p>
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/cmyk_fill.gif" alt="image"></p>
+<p>我们可以使用CGContextSetFillColorSpace和CGContextSetStrokeColorSpace函数来设置填充和线框颜色空间，或者可以使用以下便利函数来设置设备颜色空间的颜色值。</p>
+<p><strong>Table 4-2  Color-setting functions</strong></p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/quartz-2d-table4-2.png?raw=true" alt="image"></p>
+<p>我们在填充及线框颜色空间中指定填充及线框颜色值。例如，在RGB颜色空间中，我们使用数组(1.0, 0.0, 0.0, 1.0)来表示红色。前三个值指定红色值为全强度，而绿色和蓝色为零强度。第四个值为alpha值，用于指定颜色的透明度。</p>
+<p>如果需要在程序中重复使用颜色，最有效的方法是通过设置填充色和线框色来创建一个CGColor对象，然后将该对象传递给函数<strong>CGContextSetFillColorWithColor</strong>及<strong>CGContextSetStrokeColorWithColor</strong>。我们可以按需要保持CGColor对象，并可以直接使用该对象来改进应用程序的显示。</p>
+<p>我们可以调用CGColorCreate函数来创建CGColor对象，该函数需要两个参数：CGColorspace对象及颜色值数组。数组的最后一个值指定alpha值。</p>
+<h2 id="设置再现意图-Rending-Intent"><a href="#设置再现意图-Rending-Intent" class="headerlink" title="设置再现意图(Rending Intent)"></a>设置再现意图(Rending Intent)</h2><p>“再现意图”用于指定如何将源颜色空间的颜色映射到图形上下文的目标颜色空间的颜色范围内。如果不显示指定再现意图，Quartz使用相对色度再现意图(relative colorimetric rendering intent)应用于所有绘制(不包含位图图像)。对于位图图像，Quartz默认使用感知(perceptual)再现意图。</p>
+<p>我们可以调用CGContextSetRenderingIntent函数来设置再现意图，并传递图形上下文(graphics context)及下例常量作为参数：</p>
+<ol>
+<li>kCGRenderingIntentDefault：使用默认的渲染意图。</li>
+<li>kCGRenderingIntentAbsoluteColorimetric：绝对色度渲染意图。将输出设备颜色域外的颜色映射为输出设备域内与之最接近的颜色。这可以产生一个裁减效果，因为色域外的两个不同的颜色值可能被映射为色域内的同一个颜色值。当图形使用的颜色值同时包含在源色域及目标色域内时，这种方法是最好的。常用于logo或者使用专色(spot color)时。</li>
+<li>kCGRenderingIntentRelativeColorimetric：相对色度渲染意图。转换所有的颜色(包括色域内的)，以补偿图形上下文的白点与输出设备白点之间的色差。kCGRenderingIntentPerceptual：感知渲染意图。通过压缩图形上下文的色域来适应输出设备的色域，并保持源颜色空间的颜色之间的相对性。感知渲染意图适用于相片及其它复杂的高细度图片。</li>
+<li>kCGRenderingIntentSaturation：饱和度渲染意图。把颜色转换到输出设备色域内时，保持颜色的相对饱和度。结果是包含亮度、饱和度颜色的图片。饱和度意图适用于生成低细度的图片，如描述性图表。</li>
+</ol>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
                 <a class="post-title-link" href="/2014/11/16/quartz2d-3/" itemprop="url">
                   Quartz 2D编程指南之三：路径(Path)
                 </a>
@@ -2105,140 +2290,6 @@
 
 
     
-      
-
-  
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/2014/10/19/instancetype/" itemprop="url">
-                  instancetype
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            <span class="post-meta-item-icon">
-              <i class="fa fa-calendar-o"></i>
-            </span>
-            <span class="post-meta-item-text">发表于</span>
-            <time itemprop="dateCreated" datetime="2014-10-19T00:26:03+08:00" content="2014-10-19">
-              2014-10-19
-            </time>
-          </span>
-
-          
-            <span class="post-category" >
-              &nbsp; | &nbsp;
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-              
-                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
-                  <a href="/categories/translate/" itemprop="url" rel="index">
-                    <span itemprop="name">翻译</span>
-                  </a>
-                </span>
-
-                
-                
-
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-
-          
-          
-
-          
-        </div>
-      </header>
-    
-
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>注：原文由Mattt <code>Thompson</code>发表于<code>nshipster</code>：<a href="http://nshipster.com/instancetype/" target="_blank" rel="external">instancetype</a>。<strong>文章是2012年写的，所以有些内容现在已不适用。</strong></p>
-<p>在<code>Objective-C</code>中，约定(<code>conventions</code>)不仅仅是编码最佳实践的问题，同时对编译器来说，也是一种隐式说明。</p>
-<p>例如，<code>alloc</code>和<code>init</code>两个方法都返回<code>id</code>类型，而在<code>Xcode</code>中，编译器会对它们进行类型检查。这是怎么做到的呢？</p>
-<p>在<code>Cocoa</code>中，有一个这样的约定，命名为<code>alloc/init</code>的方法总是返回接收者类的实例。这些方法有一个相关的返回类型。</p>
-<p>而类的构造方法(类方法)，虽然他们都是返回<code>id</code>类型，但没有从类型检查中获得好处，因为他们不遵循命名约定。</p>
-<p>我们可以试试以下代码：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">[[[<span class="built_in">NSArray</span> alloc] init] mediaPlaybackAllowsAirPlay]; <span class="comment">// 报错： "No visible @interface for `NSArray` declares the selector `mediaPlaybackAllowsAirPlay`"</span></div><div class="line"></div><div class="line">[[<span class="built_in">NSArray</span> array] mediaPlaybackAllowsAirPlay]; <span class="comment">// (No error) 注：这个方法调用只在老的编译器上成立，新的编译器会报相同的错误。</span></div></pre></td></tr></table></figure>
-<p>由于<code>alloc</code>和<code>init</code>遵循返回相关结果类型的约定，所以会对<code>NSArray</code>执行类型检查。然而等价的类构造方法<code>array</code>则不遵循这一约定，只解释为<code>id</code>类型。</p>
-<p><code>id</code>类型在不需要确保类型安全时非常有用，但一旦需要时，就无法处理了。</p>
-<p>而另一种方法，即显示声明返回类型(如前面例子中的(<code>NSArray *</code>))稍微改善了一些，但写起来有点麻烦，而且在继承体系中表现得不是很好。</p>
-<p>这时编译器就需要去解决这种针对<code>Objective-C</code>类型系统的边界情况了:</p>
-<p><code>instancetype</code>是一个上下文关键字，可用在返回类型中以表示方法返回一个相关的结果类型，如：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">Person</span></span></div><div class="line">+ (<span class="keyword">instancetype</span>)personWithName:(<span class="built_in">NSString</span> *)name;</div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
-<p>使用<code>instancetype</code>，编译器可以正确地知道<code>personWithName:</code>的返回结果是一个<code>Person</code>实例。</p>
-<p>我们现在看<code>Foundation</code>中的类构造器，可以发现大部分已经开始使用了<code>instancetype</code>了。新的<code>API</code>，如<code>UICollectionViewLayoutAttributes</code>，都是使用<code>instancetype</code>了。</p>
-<p><em>注：<code>instancetype</code>与<code>id</code>不同的是，它只能用在方法声明的返回值中。</em></p>
-<h4 id="更进一步的启示"><a href="#更进一步的启示" class="headerlink" title="更进一步的启示"></a>更进一步的启示</h4><p>语言特性是特别有趣的，因为它不清楚在软件设计的更高层次方面会带来什么样的影响。</p>
-<p>虽然<code>instancetype</code>看上去非常一般，只是对编译器有用，但也可能被用于一些更聪明的目的。</p>
-<p><code>Jonathan Sterling</code>的文章<a href="http://www.jonmsterling.com/posts/2012-02-05-typed-collections-with-self-types-in-objective-c.html" target="_blank" rel="external">this quite interesting article</a>，详细描述了<code>instancetype</code>如何被用于编码静态类型集合，而不需要使用泛型：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">NSURL</span> &lt;MapCollection&gt; *sites = (<span class="keyword">id</span>)[<span class="built_in">NSURL</span> mapCollection];</div><div class="line">[sites put:[<span class="built_in">NSURL</span> URLWithString:<span class="string">@"http://www.jonmsterling.com/"</span>]</div><div class="line">        at:<span class="string">@"jon"</span>];</div><div class="line">[sites put:[<span class="built_in">NSURL</span> URLWithString:<span class="string">@"http://www.nshipster.com/"</span>]</div><div class="line">        at:<span class="string">@"nshipster"</span>];</div><div class="line"></div><div class="line"><span class="built_in">NSURL</span> *jonsSite = [sites at:<span class="string">@"jon"</span>]; <span class="comment">// =&gt; http://www.jonmsterling.com/</span></div></pre></td></tr></table></figure>
-<p>静态类型集合使得API更有表现力，这样开发者将不再需要去确定集合中的参数可以使用使用类型的对象了。</p>
-<p>不管这会不会成为<code>Objective-C</code>公认的约定，诸如<code>instancetype</code>这样一个低层特性可用于改变语言的形态已是非常棒的一件事了。</p>
-
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
   </section>
 
   
@@ -2284,7 +2335,7 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/archives">
-              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-count">83</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>

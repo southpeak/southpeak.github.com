@@ -1,0 +1,726 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="好久没写这个系列了，一看都快一年了，当时说好的呢？嗯，说来总是有各种借口，所以还是不说，直接开始新的一期。之前在微博上发了不少知识小集，到现在应该有50多条了，都是平时开发遇到的一些问题，或者看书，看文档，看博客，看WWDC的一些笔记，分享出来。所以在这偷个懒，做一个合集，每期把微博上的知识小集集中一下，可别吐槽。
+本期主要收集以下几个小问题：
+
+UIImageView显示gif图片有两种方式
+O">
+<meta property="og:type" content="article">
+<meta property="og:title" content="iOS知识小集 第7期(2016.08.31)">
+<meta property="og:url" content="http://southpeak.github.io/2016/08/31/ios-techset-7/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="好久没写这个系列了，一看都快一年了，当时说好的呢？嗯，说来总是有各种借口，所以还是不说，直接开始新的一期。之前在微博上发了不少知识小集，到现在应该有50多条了，都是平时开发遇到的一些问题，或者看书，看文档，看博客，看WWDC的一些笔记，分享出来。所以在这偷个懒，做一个合集，每期把微博上的知识小集集中一下，可别吐槽。
+本期主要收集以下几个小问题：
+
+UIImageView显示gif图片有两种方式
+O">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/dispatch_once%201.jpg?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/url%20encode%201.jpg?raw=true">
+<meta property="og:updated_time" content="2016-08-31T13:09:49.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="iOS知识小集 第7期(2016.08.31)">
+<meta name="twitter:description" content="好久没写这个系列了，一看都快一年了，当时说好的呢？嗯，说来总是有各种借口，所以还是不说，直接开始新的一期。之前在微博上发了不少知识小集，到现在应该有50多条了，都是平时开发遇到的一些问题，或者看书，看文档，看博客，看WWDC的一些笔记，分享出来。所以在这偷个懒，做一个合集，每期把微博上的知识小集集中一下，可别吐槽。
+本期主要收集以下几个小问题：
+
+UIImageView显示gif图片有两种方式
+O">
+<meta name="twitter:image" content="https://github.com/southpeak/Blog-images/blob/master/dispatch_once%201.jpg?raw=true">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2016/08/31/ios-techset-7/"/>
+
+  <title> iOS知识小集 第7期(2016.08.31) | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                iOS知识小集 第7期(2016.08.31)
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-08-31T09:02:14+08:00" content="2016-08-31">
+              2016-08-31
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/techset/" itemprop="url" rel="index">
+                    <span itemprop="name">知识小集</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>好久没写这个系列了，一看都快一年了，当时说好的呢？嗯，说来总是有各种借口，所以还是不说，直接开始新的一期。之前在微博上发了不少知识小集，到现在应该有50多条了，都是平时开发遇到的一些问题，或者看书，看文档，看博客，看WWDC的一些笔记，分享出来。所以在这偷个懒，做一个合集，每期把微博上的知识小集集中一下，可别吐槽。</p>
+<p>本期主要收集以下几个小问题：</p>
+<ol>
+<li>UIImageView显示gif图片有两种方式</li>
+<li>Objective-C中的BOOL类型</li>
+<li>dispatch_once死锁</li>
+<li>GNU 复合语句</li>
+<li>URL转义</li>
+</ol>
+<h2 id="UIImageView显示gif图片有两种方式"><a href="#UIImageView显示gif图片有两种方式" class="headerlink" title="UIImageView显示gif图片有两种方式"></a>UIImageView显示gif图片有两种方式</h2><p>UIImageView显示gif图片有两种方式。当然前提都是先将gif中的每一帧取出来放到一个个UIImage对象中，将这些对象放到一个数组中，如下代码所示。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">CGImageSourceRef</span> source = <span class="built_in">CGImageSourceCreateWithData</span>((__bridge <span class="built_in">CFDataRef</span>)data, <span class="literal">NULL</span>);</div><div class="line">size_t count = <span class="built_in">CGImageSourceGetCount</span>(source);</div><div class="line">    </div><div class="line"><span class="built_in">NSMutableArray</span> *images = [<span class="built_in">NSMutableArray</span> array];</div><div class="line"><span class="keyword">for</span> (size_t i = <span class="number">0</span>; i &lt; count; i++) &#123;</div><div class="line">   <span class="built_in">CGImageRef</span> image = <span class="built_in">CGImageSourceCreateImageAtIndex</span>(source, i, <span class="literal">NULL</span>);</div><div class="line">   [images addObject:[<span class="built_in">UIImage</span> imageWithCGImage:image scale:[<span class="built_in">UIScreen</span> mainScreen] orientation:<span class="built_in">UIImageOrientationUp</span>]];</div><div class="line">   <span class="built_in">CGImageRelease</span>(image);</div><div class="line">&#125;</div><div class="line">    </div><div class="line"><span class="built_in">CFRelease</span>(source)</div></pre></td></tr></table></figure>
+<p>一种方式是将这些UIImage对象通过UIImage的类方法<code>+animatedImageWithImages:duration:</code>组合成一个UIImage对象，然后赋值给UIImageView对象的image属性。</p>
+<p>第二种方式是将UIImage对象的数组赋值给UIImageView对象的<code>animationImages</code>属性，然后调用UIImageView对象的<code>startAnimating</code>方法来启动动画。</p>
+<p>当然，两种方式都需要计算<code>duration</code>。</p>
+<h2 id="Objective-C中的BOOL类型"><a href="#Objective-C中的BOOL类型" class="headerlink" title="Objective-C中的BOOL类型"></a>Objective-C中的BOOL类型</h2><p>Objective-C中的BOOL类型在Watch和64位iOS上的原始类型为bool，而在其它情况下是<code>signed char</code>。我们用<code>@encode</code>去看看BOOL的类型串：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">@encode(BOOL)		// 64位iOS系统：&quot;B&quot;</div><div class="line">@encode(BOOL)		// 32位iOS系统，32/64位OS X：&quot;c&quot;</div></pre></td></tr></table></figure>
+<p>所有这边有一个问题，下面这段代码中变量b的值在不同环境下，其结果可能是不一样的：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">BOOL a = 100 &amp; 20;</div><div class="line">BOOL b = (a == YES);</div></pre></td></tr></table></figure>
+<p>当BOOL为bool时，b的值为1；而当BOOL为<code>signed char</code>时，b的值为0。所以，如果我们判断一个BOOL值是否为真时，不应该通过<code>if(a == YES)</code>这种方式来判断，要么直接就<code>if (a)</code>，要么就<code>if (a != NO)</code>。</p>
+<h2 id="dispatch-once死锁"><a href="#dispatch-once死锁" class="headerlink" title="dispatch_once死锁"></a>dispatch_once死锁</h2><p>在iOS开发中，我们经常会使用到单例，现在Objective-C中写单例的标配是使用<code>dispatch_once</code>。相信这个函数的意义大家都非常清楚了，就是希望<code>dispatch_once</code>参数中的block在全局只执行一次。这个基本上没什么问题。</p>
+<p>不过，今天在工程中看到类似于下面这样的代码。在主线程中调用<code>test()</code>方法，会有什么结果呢？</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">void</span> test() &#123;</div><div class="line">    </div><div class="line">    <span class="keyword">static</span> <span class="built_in">dispatch_once_t</span> onceToken;</div><div class="line">    <span class="built_in">dispatch_once</span>(&amp;onceToken, ^&#123;</div><div class="line">        test();</div><div class="line">    &#125;);</div><div class="line">    </div><div class="line">    printf(<span class="string">"This is a test"</span>);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>死锁。是的，死锁，线程直接卡住了。为什么呢？</p>
+<p>我们暂停程序，可以看到程序的调用栈，如下图所示：</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/dispatch_once%201.jpg?raw=true" alt="image"></p>
+<p>发现程序是卡在<code>dispatch_once_f</code>中。研究一下<code>dispatch_once_f</code>的实现吧，如下代码所示，会发现一些有意思的东西。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">void</span></span></div><div class="line"><span class="title">dispatch_once_f</span><span class="params">(<span class="keyword">dispatch_once_t</span> *val, <span class="keyword">void</span> *ctxt, <span class="keyword">dispatch_function_t</span> func)</span></div><div class="line">&#123;</div><div class="line">	<span class="keyword">struct</span> <span class="number">_</span>dispatch_once_waiter_s * <span class="keyword">volatile</span> *vval =</div><div class="line">			(<span class="keyword">struct</span> <span class="number">_</span>dispatch_once_waiter_s**)val;</div><div class="line">	<span class="keyword">struct</span> <span class="number">_</span>dispatch_once_waiter_s dow = &#123; <span class="literal">NULL</span>, <span class="number">0</span> &#125;;</div><div class="line">	<span class="keyword">struct</span> <span class="number">_</span>dispatch_once_waiter_s *tail, *tmp;</div><div class="line">	<span class="keyword">_dispatch_thread_semaphore_t</span> sema;</div><div class="line"></div><div class="line">	<span class="keyword">if</span> (dispatch_atomic_cmpxchg(vval, <span class="literal">NULL</span>, &amp;dow)) &#123;</div><div class="line">		dispatch_atomic_acquire_barrier();</div><div class="line">		<span class="number">_</span>dispatch_client_callout(ctxt, func);</div><div class="line"></div><div class="line">		dispatch_atomic_maximally_synchronizing_barrier();</div><div class="line">		<span class="comment">//dispatch_atomic_release_barrier(); // assumed contained in above</span></div><div class="line">		tmp = dispatch_atomic_xchg(vval, DISPATCH_ONCE_DONE);</div><div class="line">		tail = &amp;dow;</div><div class="line">		<span class="keyword">while</span> (tail != tmp) &#123;</div><div class="line">			<span class="keyword">while</span> (!tmp-&gt;dow_next) &#123;</div><div class="line">				<span class="number">_</span>dispatch_hardware_pause();</div><div class="line">			&#125;</div><div class="line">			sema = tmp-&gt;dow_sema;</div><div class="line">			tmp = (<span class="keyword">struct</span> <span class="number">_</span>dispatch_once_waiter_s*)tmp-&gt;dow_next;</div><div class="line">			<span class="number">_</span>dispatch_thread_semaphore_signal(sema);</div><div class="line">		&#125;</div><div class="line">	&#125; <span class="keyword">else</span> &#123;</div><div class="line">		dow.dow_sema = <span class="number">_</span>dispatch_get_thread_semaphore();</div><div class="line">		<span class="keyword">for</span> (;;) &#123;</div><div class="line">			tmp = *vval;</div><div class="line">			<span class="keyword">if</span> (tmp == DISPATCH_ONCE_DONE) &#123;</div><div class="line">				<span class="keyword">break</span>;</div><div class="line">			&#125;</div><div class="line">			dispatch_atomic_store_barrier();</div><div class="line">			<span class="keyword">if</span> (dispatch_atomic_cmpxchg(vval, tmp, &amp;dow)) &#123;</div><div class="line">				dow.dow_next = tmp;</div><div class="line">				<span class="number">_</span>dispatch_thread_semaphore_wait(dow.dow_sema);</div><div class="line">			&#125;</div><div class="line">		&#125;</div><div class="line">		<span class="number">_</span>dispatch_put_thread_semaphore(dow.dow_sema);</div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>简单描述一下吧。<code>onceToken</code>在第一次执行block之前，其值将由NULL变为指向第一个调用者的指针(<code>&amp;dow</code>)。如果在<code>block</code>完成之前，有其它的调用者进来，则会把这些调用者放到一个<code>waiter</code>链表中(走else分支)，直到<code>block</code>执行完成。<code>waiter</code>链中的每个调用者都会等待一个信号量(<code>dow.dow_sema</code>)。在block执行完成后，除了将<code>onceToken</code>置为<code>DISPATCH_ONCE_DONE</code>外，还会去遍历<code>waiter</code>链中的所有<code>waiter</code>，抛出相应的信号量，以告知<code>waiter</code>们调用结束。</p>
+<p>因此上面的死锁问题就好理解了。递归调用<code>test()</code>时，第二次调用作为一个<code>waiter</code>，在等待block完成，而block的完成依赖于<code>test()</code>的执行完成，这就成了一个死锁。</p>
+<p>所以应该避免在<code>dispatch_once</code>做递归调用，不管是直接的还是间接的。</p>
+<p>再说回单例，个人看法是单例是个好东西，但应该在适当的场景使用。不能因为简便就滥用。抛开内存问题不说，使用不当的话，单例类迟早会变成一个垃圾场。</p>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><ol>
+<li><a href="http://stackoverflow.com/questions/19176219/why-am-i-getting-deadlock-with-dispatch-once" target="_blank" rel="external">Why am I getting deadlock with dispatch_once?</a></li>
+<li><a href="https://satanwoo.github.io/2016/04/11/dispatch-once/" target="_blank" rel="external">滥用单例之dispatch_once死锁</a></li>
+<li><a href="https://github.com/nickhutchinson/libdispatch/blob/d7c78607cd2d971da86a8e3ac8b8ff0fb97ef6b8/src/once.c" target="_blank" rel="external">libdispatch</a></li>
+</ol>
+<h2 id="GNU-复合语句"><a href="#GNU-复合语句" class="headerlink" title="GNU 复合语句"></a>GNU 复合语句</h2><p>我们在看一些第三方的代码时，可能会看到类似于下面的代码。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">[<span class="keyword">self</span>.view addSubview:(&#123;</div><div class="line">   <span class="built_in">UIView</span> *view = [[<span class="built_in">UIView</span> alloc] initWithFrame:(<span class="built_in">CGRect</span>)&#123;<span class="built_in">CGPointZero</span>, <span class="number">100.0</span>f, <span class="number">100.0</span>f&#125;];</div><div class="line">   view.backgroundColor = [<span class="built_in">UIColor</span> blueColor];</div><div class="line">   view.layer.masksToBounds = <span class="literal">YES</span>;</div><div class="line">   view.layer.cornerRadius = <span class="number">4.0</span>f;</div><div class="line">   view;</div><div class="line">&#125;)];</div></pre></td></tr></table></figure>
+<p><code>addSubview</code>的参数放在一个”({})”代码块中，而view的创建及属性设置都是在”({})”完成，代码块最后一句即我们要添加的子view。</p>
+<p>这种写法沿用了<code>GNU C</code>的一个特性，即复合语句(<code>compound statement</code>)。即在”({})”代码块中，我们可以放置多个语句，这些语句可以是循环、分支、变量声明、函数调用等。而复合语句的最后一句是一个表达式，其作为整个复合语句的最终值。</p>
+<p>在写Objective-C代码时，使用复合语句能让我们的代码变得更优雅，特别是创建并添加一堆子view时，能让我们的代码看上去更整洁。建议经常使用。</p>
+<h3 id="参考-1"><a href="#参考-1" class="headerlink" title="参考"></a>参考</h3><ol>
+<li><a href="https://gcc.gnu.org/onlinedocs/gcc/Statement-Exprs.html#Statement-Exprs" target="_blank" rel="external"> Statements and Declarations in Expressions</a></li>
+</ol>
+<h2 id="URL转义"><a href="#URL转义" class="headerlink" title="URL转义"></a>URL转义</h2><p>在使用<code>+URLWithString:</code>或<code>-initWithString:</code>来创建一个URL对象时，提供的参数字符串必须符合RFC 2396标准<a href="https://www.ietf.org/rfc/rfc2396.txt" target="_blank" rel="external">Uniform Resource Identifiers (URI): Generic Syntax</a>。而这两个方法又是根据RFC 1738 <a href="https://www.ietf.org/rfc/rfc1738.txt" target="_blank" rel="external">Uniform Resource Locators (URL)</a>和1808 <a href="https://www.ietf.org/rfc/rfc1808.txt" target="_blank" rel="external">Relative Uniform Resource Locators</a>两个标准来解析字符串的。故弄玄虚一下。当然我们不需要去了解所有的细节，简单了解一下就行，可以参考一下阮大侠的这篇<a href="http://www.ruanyifeng.com/blog/2010/02/url_encoding.html" target="_blank" rel="external">关于URL编码</a>。</p>
+<p>这里要说明的就是：对于我们而言，如果用带有中文的字符串(如”<a href="https://www.baidu.com?q=北京" target="_blank" rel="external">https://www.baidu.com?q=北京</a>“)去创建一个URL对象的话，返回的是一个nil。</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/url%20encode%201.jpg?raw=true" alt="image"></p>
+<p>我们所需要做的就是对不符合标准的字符串进行转义操作。<code>NSString</code>类提供了两个方法来做这种转义操作，一个是<code>-stringByAddingPercentEscapesUsingEncoding:</code>，不过这个方法在iOS 9.0已被废弃；现在更提倡的是用<code>-stringByAddingPercentEncodingWithAllowedCharacters:</code>方法，这个方法是iOS 7.0后添加的。</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>知识是一点一点积累的，每天一两点，一段时间后，收获也会很大。知识小集的初衷就是这样。</p>
+<p>当然，另一方面也需要系统性地去学习整理一些知识，才能把零零碎碎的东西串起来。</p>
+<hr>
+<p>欢迎关注我的微信公众号：iOS知识小集，扫扫左边<strong>站点概览</strong>里的二维码就OK了。对了，还有微博：<a href="http://weibo.com/touristdiary" target="_blank" rel="external">@南峰子_老驴</a>。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/08/01/javascriptcore-tutorial-for-ios-getting-started/" rel="next" title="JavaScriptCore Tutorial for iOS: Getting Started">
+                <i class="fa fa-chevron-left"></i> JavaScriptCore Tutorial for iOS: Getting Started
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">83</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#UIImageView显示gif图片有两种方式"><span class="nav-number">1.</span> <span class="nav-text">UIImageView显示gif图片有两种方式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Objective-C中的BOOL类型"><span class="nav-number">2.</span> <span class="nav-text">Objective-C中的BOOL类型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#dispatch-once死锁"><span class="nav-number">3.</span> <span class="nav-text">dispatch_once死锁</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#参考"><span class="nav-number">3.1.</span> <span class="nav-text">参考</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GNU-复合语句"><span class="nav-number">4.</span> <span class="nav-text">GNU 复合语句</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#参考-1"><span class="nav-number">4.1.</span> <span class="nav-text">参考</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#URL转义"><span class="nav-number">5.</span> <span class="nav-text">URL转义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">6.</span> <span class="nav-text">小结</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

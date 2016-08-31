@@ -310,6 +310,145 @@
             
               
                 
+                <a class="post-title-link" href="/2014/07/15/url-load-system-3/" itemprop="url">
+                  URL加载系统之三：NSURLConnection
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-07-15T18:37:44+08:00" content="2014-07-15">
+              2014-07-15
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/translate/" itemprop="url" rel="index">
+                    <span itemprop="name">翻译</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>NSURLConnection提供了简单的接口来创建和取消一个连接，并支持一个代理方法的集合来提供连接的响应，并对连接进行多方面的控制。这个类的方法可以分为5大类：URL加载、缓存管理、认证与证书、cookie存储、协议支持。</p>
+<h2 id="创建一个连接"><a href="#创建一个连接" class="headerlink" title="创建一个连接"></a>创建一个连接</h2><p>NSURLConnection提供了三种方式来获取URL的内容：同步、异步使用完成处理器block、异步使用自定义的代理对象。</p>
+<ol>
+<li>使用同步请求时，一般是在后台线程中独占线程运行，我们可以调用sendSynchronousRequest:returningResponse:error: 方法来执行HTTP请求。当请求完成或返回错误时，该方法会返回。</li>
+<li>如果我们不需要监听请求的状态，而只是在数据完成返回时执行一些操作，则可以调用sendAsynchronousRequest:queue:completionHandler:方法来执行一个异步操作，其中需要传递一个block来处理结果。</li>
+<li>我们也可以创建一个代理对象来处理异步请求，此时我们需要实现以下方法：connection:didReceiveResponse:、connection:didReceiveData:、connection:didFailWithError:和connectionDidFinishLoading: 。这些方法在NSURLConnectionDelegate、NSURLConnectionDownloadDelegate和 NSURLConnectionDataDelegate协议中定义。</li>
+</ol>
+<p>代码清单1以代理对象异步请求为例，初始化了一个URL连接并实现代理方法来处理连接响应</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">Conn</span> : <span class="title">NSObject</span></span></div><div class="line">&#123;</div><div class="line">    <span class="built_in">NSURLConnection</span> *theConnection;</div><div class="line">    <span class="built_in">NSMutableData</span> *receivedData;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">Conn</span></span></div><div class="line"></div><div class="line">- (<span class="keyword">void</span>)createConnection</div><div class="line">&#123;</div><div class="line">    <span class="comment">// 创建一个请求</span></div><div class="line">    <span class="built_in">NSURLRequest</span> *theRequest=[<span class="built_in">NSURLRequest</span> requestWithURL:[<span class="built_in">NSURL</span> URLWithString:<span class="string">@"http://www.apple.com/"</span>]</div><div class="line">                                              cachePolicy:<span class="built_in">NSURLRequestUseProtocolCachePolicy</span></div><div class="line">                                          timeoutInterval:<span class="number">60.0</span>];</div><div class="line">    </div><div class="line">    <span class="comment">// 创建NSMutableData来保存接收到的数据</span></div><div class="line">    receivedData = [<span class="built_in">NSMutableData</span> dataWithCapacity: <span class="number">0</span>];</div><div class="line">    </div><div class="line">    <span class="comment">// 使用theRequest创建一个连接并开始加载数据</span></div><div class="line">    <span class="comment">// 调用initWithRequest:delegate后会立即开始传输</span></div><div class="line">    <span class="comment">// 请求可以在connectionDidFinishLoading:或connection:didFailWithError:消息被发送前通过调用cancel来取消</span></div><div class="line">    theConnection = [[<span class="built_in">NSURLConnection</span> alloc] initWithRequest:theRequest delegate:<span class="keyword">self</span>];</div><div class="line">    </div><div class="line">    <span class="keyword">if</span> (!theConnection) &#123;</div><div class="line">        <span class="comment">// 释放receivedData对象</span></div><div class="line">        receivedData = <span class="literal">nil</span>;</div><div class="line">        <span class="comment">// 通知用户连接失败</span></div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// 当服务端提供了有效的数据来创建NSURLResponse对象时，代理会收到connection:didReceiveResponse:消息。</span></div><div class="line"><span class="comment">// 这个代理方法会检查NSURLResponse对象并确认数据的content-type，MIME类型，文件 名和其它元数据。</span></div><div class="line"><span class="comment">// 需要注意的是，对于单个连接，我们可能会接多次收到connection:didReceiveResponse:消息；这咱情况发生在</span></div><div class="line"><span class="comment">// 响应是多重MIME编码的情况下。每次代理接收到connection:didReceiveResponse:时，应该重设进度标识</span></div><div class="line"><span class="comment">// 并丢弃之前接收到的数据。</span></div><div class="line">- (<span class="keyword">void</span>)connection:(<span class="built_in">NSURLConnection</span> *)connection didReceiveResponse:(<span class="built_in">NSURLResponse</span> *)response</div><div class="line">&#123;</div><div class="line">    [receivedData setLength:<span class="number">0</span>];</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// 代理会定期接收到connection:didReceiveData:消息，该消息用于接收服务端返回的数据实体。该方法负责存储数据。</span></div><div class="line"><span class="comment">// 我们也可以用这个方法提供进度信息，这种情况下，我们需要在connection:didReceiveResponse:方法中</span></div><div class="line"><span class="comment">// 调用响应对象的expectedContentLength方法来获取数据的总长度。</span></div><div class="line">- (<span class="keyword">void</span>)connection:(<span class="built_in">NSURLConnection</span> *)connection didReceiveData:(<span class="built_in">NSData</span> *)data</div><div class="line">&#123;</div><div class="line">    [receivedData appendData:data];</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// 如果数据传输的过程中出现了错误，代理会接收到connection:didFailWithError:消息。其中error参数给出了错误信息。</span></div><div class="line"><span class="comment">// 在代理收到connection:didFailWithError:消息后，它不会再接收指定连接的代理消息。</span></div><div class="line">- (<span class="keyword">void</span>)connection:(<span class="built_in">NSURLConnection</span> *)connection didFailWithError:(<span class="built_in">NSError</span> *)error</div><div class="line">&#123;</div><div class="line">    theConnection = <span class="literal">nil</span>;</div><div class="line">    receivedData = <span class="literal">nil</span>;</div><div class="line"></div><div class="line">    <span class="built_in">NSLog</span>(<span class="string">@"Connection failed! Error - %@ %@"</span>, [error localizedDescription], [[error userInfo] objectForKey:<span class="built_in">NSURLErrorFailingURLStringErrorKey</span>]);</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// 如果成功获取服务端返回的所有数据，则代理会收到connectionDidFinishLoading:消息。</span></div><div class="line">- (<span class="keyword">void</span>)connectionDidFinishLoading:(<span class="built_in">NSURLConnection</span> *)connection</div><div class="line">&#123;</div><div class="line">    <span class="built_in">NSLog</span>(<span class="string">@"Succeeded! Receive %lu bytes of data(unsigned long)"</span>,[receivedData length]);</div><div class="line"></div><div class="line">    theConnection = <span class="literal">nil</span>;</div><div class="line">    receivedData = <span class="literal">nil</span>;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<h2 id="发起一个POST请求"><a href="#发起一个POST请求" class="headerlink" title="发起一个POST请求"></a>发起一个POST请求</h2><p>我们可以像发起其它URL请求一样，发起一个HTTP或HTTPS POST请求。主要的区别在于我们必须先配置好NSMutableURLRequest对象，并将其作为参数传递给initWithRequest:delegate:方法。</p>
+<p>另外，我们还需要构造请求的body数据。可以以下面三种方式来处理</p>
+<ol>
+<li>对于上传短小的内存数据，我们需要对已存在的数据块进行URL编码</li>
+<li>如果是从磁盘中上传文件，则调用setHTTPBodyStream:方法来告诉NSMutableURLRequest从一个NSInputStream中读取并使用结果数据作为body的内容</li>
+<li>对于大块的数据，调用CFStreamCreateBoundPair来创建流对象对，然后调用setHTTPBodyStream:方法来告诉NSMutableURLRequest使用这些流对象中的一个作为body内容的源。通过将数据写入其它流，可以一次发送一小块数据。</li>
+</ol>
+<p>如果要上传数据到一个兼容的服务器中，URL加载系统同样支持100（继续）状态码，这样允许一个上传操作在发生认证错误或其它失败时仍能继续。为了开启这个操作，可以设置请求对象的expect头为100-continue。</p>
+<p>代码清单2展示了如何配置一个POST请求的NSMutableURLRequest对象</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)setRequestForPost</div><div class="line">&#123;</div><div class="line">    <span class="comment">// 对于application/x-www-form-urlencoded类型的body数据，form域的参数由&amp;号分开，</span></div><div class="line">    <span class="built_in">NSString</span> *bodyData = <span class="string">@"name=Jane+Doe&amp;address=123+Main+St"</span>;</div><div class="line">    <span class="built_in">NSMutableURLRequest</span> *postRequest = [<span class="built_in">NSMutableURLRequest</span> requestWithURL:[<span class="built_in">NSURL</span> URLWithString:<span class="string">@"https://www.apple.com"</span>]];</div><div class="line">    </div><div class="line">    <span class="comment">// 设置content-type为application/x-www-form-urlencoded</span></div><div class="line">    [postRequest setValue:<span class="string">@"application/x-www-form-urlencoded"</span> forHTTPHeaderField:<span class="string">@"Content-Type"</span>];</div><div class="line">    </div><div class="line">    <span class="comment">// 指定请求方法为POST</span></div><div class="line">    [postRequest setHTTPMethod:<span class="string">@"POST"</span>];</div><div class="line">    [postRequest setHTTPBody:[<span class="built_in">NSData</span> dataWithBytes:[bodyData UTF8String] length:strlen([bodyData UTF8String])]];</div><div class="line">    </div><div class="line">    <span class="comment">// Initialize the NSURLConnection and proceed as described in</span></div><div class="line">    <span class="comment">// Retrieving the Contents of a URL</span></div><div class="line">    </div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="使用Block来接收数据"><a href="#使用Block来接收数据" class="headerlink" title="使用Block来接收数据"></a>使用Block来接收数据</h2><p>NSURLConnection类提供了类方法sendAsynchronousRequest:queue:completionHandler:，该方法可以以异常的方式向服务端发起请求，并在数据返回或发生错误/超时时调用block来处理。该方法需要一个请求对象，一个完成处理block，及block运行的队列。当请求完成或错误发生时，URL加载系统调用该block来处理结果数据或错误信息。</p>
+<p>如果请求成功，则会传递一个NSData对象和一个NSURLResponse对象给block。如果失败，则传递一个NSError对象。</p>
+<p>这个方法有两个限制</p>
+<ol>
+<li>对于需要认证的请求，只提供最小的支持。</li>
+<li>没有办法来修改响应缓存和服务端重定向的默认行为。</li>
+</ol>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/URLLoadingSystem/URLLoadingSystem.html" target="_blank" rel="external">URL Loading System Programming Guide</a></p>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
                 <a class="post-title-link" href="/2014/07/11/url-load-system-2/" itemprop="url">
                   URL加载系统之二：NSURLSession
                 </a>
@@ -1796,131 +1935,6 @@
 
 
     
-      
-
-  
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/2014/06/27/ios-swift-closures-2/" itemprop="url">
-                  Swift闭包二：循环引用
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            <span class="post-meta-item-icon">
-              <i class="fa fa-calendar-o"></i>
-            </span>
-            <span class="post-meta-item-text">发表于</span>
-            <time itemprop="dateCreated" datetime="2014-06-27T19:10:38+08:00" content="2014-06-27">
-              2014-06-27
-            </time>
-          </span>
-
-          
-            <span class="post-category" >
-              &nbsp; | &nbsp;
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-              
-                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
-                  <a href="/categories/swift/" itemprop="url" rel="index">
-                    <span itemprop="name">Swift</span>
-                  </a>
-                </span>
-
-                
-                
-
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-
-          
-          
-
-          
-        </div>
-      </header>
-    
-
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>我们在<a href="http://southpeak.github.io/blog/2014/06/27/ios-swift-closures/">闭包的基础概念</a>中讲到闭包是引用类型的，因此，与Objective-C的block一样，可能导致循环引用的问题。</p>
-<h2 id="问题的产生"><a href="#问题的产生" class="headerlink" title="问题的产生"></a>问题的产生</h2><p>当我们给一个类指定一个闭包属性时，这个类的实例便包含了闭包的一个引用。如果在这个闭包中，又引用了类实例本身，这是闭包便创建了一个指向类实例的强引用，这种情况下，又产生了循环引用。</p>
-<p>如代码清单1所示：HTMLElement类定义了一个闭包属性asHTML。在这个闭包中引用了self，即闭包捕获了self，这就意味着闭包维护了一个指向HTMLElement实例的强引用。这样就在两者间创建了一个强引用循环。</p>
-<p><strong>代码清单1：闭包循环引用</strong></p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">HTMLElement</span> </span>&#123;</div><div class="line">    </div><div class="line">    <span class="keyword">let</span> name:<span class="type">String</span></div><div class="line">    <span class="keyword">let</span> text:<span class="type">String</span>?</div><div class="line">    </div><div class="line">    <span class="meta">@lazy</span> <span class="keyword">var</span> asHTML:() -&gt; <span class="type">String</span> = &#123;</div><div class="line">        <span class="keyword">if</span> <span class="keyword">let</span> text = <span class="keyword">self</span>.text &#123;</div><div class="line">            <span class="keyword">return</span> <span class="string">"&lt;\(self.name)]]&gt;\(self.text)&lt;/\(self.name)&gt;"</span></div><div class="line">        &#125; <span class="keyword">else</span> &#123;</div><div class="line">            <span class="keyword">return</span> <span class="string">"&lt;\(self.name) /&gt;"</span></div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">init</span>(name:<span class="type">String</span>, text:<span class="type">String</span>? = <span class="literal">nil</span>) &#123;</div><div class="line">        <span class="keyword">self</span>.name = name</div><div class="line">        <span class="keyword">self</span>.text = text</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">deinit</span> &#123;</div><div class="line">        <span class="built_in">println</span>(<span class="string">"\(name) is being deinitialized"</span>)</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<h2 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h2><p>我们可以通过“捕获列表”来解决这种循环引用问题。“捕获列表”定义了在闭包内部捕获的引用类型的使用规则。与两个类之间的强引用循环一样，我们声明每一个捕获引用为weak或者unowned引用。选择weak或者unowned依赖于两者之间的关系。</p>
-<p>一个“捕获列表项”是一个weak(unowned)—类实例引用对。它们放在[]中，项与项之间使用“,”号隔开。</p>
-<p>当闭包和捕获实例总是相互引用，且两者同时释放时，我们将“捕获引用”设置为unowned。如果“捕获引用”可能在某个点被设置成nil，则将其设置为weak。weak引用通常都是optional类型，当引用的实例被释放时，被设置成nil。</p>
-<p>在代码清单1中，我们可以用unowned来处理这种循环引用问题。如代码清单2所示：</p>
-<p><strong>代码清单2：unowned引用</strong></p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">HTMLElement</span> </span>&#123;</div><div class="line">    </div><div class="line">    <span class="keyword">let</span> name:<span class="type">String</span></div><div class="line">    <span class="keyword">let</span> text:<span class="type">String</span>?</div><div class="line">    </div><div class="line">    <span class="meta">@lazy</span> <span class="keyword">var</span> asHTML:() -&gt; <span class="type">String</span> = &#123;</div><div class="line">        [<span class="keyword">unowned</span> <span class="keyword">self</span>] <span class="keyword">in</span></div><div class="line">        <span class="keyword">if</span> <span class="keyword">let</span> text = <span class="keyword">self</span>.text &#123;</div><div class="line">            <span class="keyword">return</span> <span class="string">"&lt;\(self.name)]]&gt;\(self.text)&lt;/\(self.name)&gt;"</span></div><div class="line">        &#125; <span class="keyword">else</span> &#123;</div><div class="line">            <span class="keyword">return</span> <span class="string">"&lt;\(self.name) /&gt;"</span></div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">init</span>(name:<span class="type">String</span>, text:<span class="type">String</span>? = <span class="literal">nil</span>) &#123;</div><div class="line">        <span class="keyword">self</span>.name = name</div><div class="line">        <span class="keyword">self</span>.text = text</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">deinit</span> &#123;</div><div class="line">        <span class="built_in">println</span>(<span class="string">"\(name) is being deinitialized"</span>)</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>在这种情况下，闭包维护了HTMLElement实例的一个unowned引用，而不再是一个强引用。</p>
-<p>注：虽然在闭包中多次引用了self，但闭包只会维护HTMLElement实例的一个引用</p>
-
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
   </section>
 
   
@@ -1966,7 +1980,7 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/archives">
-              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-count">83</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>

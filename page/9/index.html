@@ -310,6 +310,131 @@
             
               
                 
+                <a class="post-title-link" href="/2014/06/27/ios-swift-closures-2/" itemprop="url">
+                  Swift闭包二：循环引用
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-06-27T19:10:38+08:00" content="2014-06-27">
+              2014-06-27
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/swift/" itemprop="url" rel="index">
+                    <span itemprop="name">Swift</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>我们在<a href="http://southpeak.github.io/blog/2014/06/27/ios-swift-closures/">闭包的基础概念</a>中讲到闭包是引用类型的，因此，与Objective-C的block一样，可能导致循环引用的问题。</p>
+<h2 id="问题的产生"><a href="#问题的产生" class="headerlink" title="问题的产生"></a>问题的产生</h2><p>当我们给一个类指定一个闭包属性时，这个类的实例便包含了闭包的一个引用。如果在这个闭包中，又引用了类实例本身，这是闭包便创建了一个指向类实例的强引用，这种情况下，又产生了循环引用。</p>
+<p>如代码清单1所示：HTMLElement类定义了一个闭包属性asHTML。在这个闭包中引用了self，即闭包捕获了self，这就意味着闭包维护了一个指向HTMLElement实例的强引用。这样就在两者间创建了一个强引用循环。</p>
+<p><strong>代码清单1：闭包循环引用</strong></p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">HTMLElement</span> </span>&#123;</div><div class="line">    </div><div class="line">    <span class="keyword">let</span> name:<span class="type">String</span></div><div class="line">    <span class="keyword">let</span> text:<span class="type">String</span>?</div><div class="line">    </div><div class="line">    <span class="meta">@lazy</span> <span class="keyword">var</span> asHTML:() -&gt; <span class="type">String</span> = &#123;</div><div class="line">        <span class="keyword">if</span> <span class="keyword">let</span> text = <span class="keyword">self</span>.text &#123;</div><div class="line">            <span class="keyword">return</span> <span class="string">"&lt;\(self.name)]]&gt;\(self.text)&lt;/\(self.name)&gt;"</span></div><div class="line">        &#125; <span class="keyword">else</span> &#123;</div><div class="line">            <span class="keyword">return</span> <span class="string">"&lt;\(self.name) /&gt;"</span></div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">init</span>(name:<span class="type">String</span>, text:<span class="type">String</span>? = <span class="literal">nil</span>) &#123;</div><div class="line">        <span class="keyword">self</span>.name = name</div><div class="line">        <span class="keyword">self</span>.text = text</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">deinit</span> &#123;</div><div class="line">        <span class="built_in">println</span>(<span class="string">"\(name) is being deinitialized"</span>)</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h2><p>我们可以通过“捕获列表”来解决这种循环引用问题。“捕获列表”定义了在闭包内部捕获的引用类型的使用规则。与两个类之间的强引用循环一样，我们声明每一个捕获引用为weak或者unowned引用。选择weak或者unowned依赖于两者之间的关系。</p>
+<p>一个“捕获列表项”是一个weak(unowned)—类实例引用对。它们放在[]中，项与项之间使用“,”号隔开。</p>
+<p>当闭包和捕获实例总是相互引用，且两者同时释放时，我们将“捕获引用”设置为unowned。如果“捕获引用”可能在某个点被设置成nil，则将其设置为weak。weak引用通常都是optional类型，当引用的实例被释放时，被设置成nil。</p>
+<p>在代码清单1中，我们可以用unowned来处理这种循环引用问题。如代码清单2所示：</p>
+<p><strong>代码清单2：unowned引用</strong></p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">HTMLElement</span> </span>&#123;</div><div class="line">    </div><div class="line">    <span class="keyword">let</span> name:<span class="type">String</span></div><div class="line">    <span class="keyword">let</span> text:<span class="type">String</span>?</div><div class="line">    </div><div class="line">    <span class="meta">@lazy</span> <span class="keyword">var</span> asHTML:() -&gt; <span class="type">String</span> = &#123;</div><div class="line">        [<span class="keyword">unowned</span> <span class="keyword">self</span>] <span class="keyword">in</span></div><div class="line">        <span class="keyword">if</span> <span class="keyword">let</span> text = <span class="keyword">self</span>.text &#123;</div><div class="line">            <span class="keyword">return</span> <span class="string">"&lt;\(self.name)]]&gt;\(self.text)&lt;/\(self.name)&gt;"</span></div><div class="line">        &#125; <span class="keyword">else</span> &#123;</div><div class="line">            <span class="keyword">return</span> <span class="string">"&lt;\(self.name) /&gt;"</span></div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">init</span>(name:<span class="type">String</span>, text:<span class="type">String</span>? = <span class="literal">nil</span>) &#123;</div><div class="line">        <span class="keyword">self</span>.name = name</div><div class="line">        <span class="keyword">self</span>.text = text</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">deinit</span> &#123;</div><div class="line">        <span class="built_in">println</span>(<span class="string">"\(name) is being deinitialized"</span>)</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>在这种情况下，闭包维护了HTMLElement实例的一个unowned引用，而不再是一个强引用。</p>
+<p>注：虽然在闭包中多次引用了self，但闭包只会维护HTMLElement实例的一个引用</p>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
                 <a class="post-title-link" href="/2014/06/27/ios-swift-closures-1/" itemprop="url">
                   Swift闭包一：闭包基础概念
                 </a>
@@ -599,7 +724,7 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/archives">
-              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-count">83</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>

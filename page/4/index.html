@@ -310,6 +310,181 @@
             
               
                 
+                <a class="post-title-link" href="/2015/01/11/tool-mantle/" itemprop="url">
+                  工具篇：Mantle
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-01-11T21:55:03+08:00" content="2015-01-11">
+              2015-01-11
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/something/" itemprop="url" rel="index">
+                    <span itemprop="name">杂项</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>来源：<a href="https://github.com/Mantle/Mantle" target="_blank" rel="external">https://github.com/Mantle/Mantle</a></p>
+<p>版本：1.5.3</p>
+<blockquote>
+<p>Mantle makes it easy to write a simple model layer for your Cocoa or Cocoa Touch application.</p>
+</blockquote>
+<p>由上面这句话可知，<code>Mantle</code>的目的是让我们能简化<code>Cocoa</code>和<code>Cocoa Touch</code>应用的<code>model</code>层。那先来看看通常我们是怎么处理<code>model</code>层的吧。</p>
+<h2 id="解决的问题"><a href="#解决的问题" class="headerlink" title="解决的问题"></a>解决的问题</h2><p>在我们写代码时，总要面对不同的数据来源。这些数据可能是来自网络服务器、本地数据库或者是内存中。通常我们需要将这些数据存储到一个<code>Model</code>中。一般情况下，我们会怎么去定义一个<code>Model</code>呢？以<code>Mantle</code>官方的例子为例，可能是这样的：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">typedef</span> <span class="keyword">enum</span> : <span class="built_in">NSUInteger</span> &#123;</div><div class="line">    GHIssueStateOpen,</div><div class="line">    GHIssueStateClosed</div><div class="line">&#125; GHIssueState;</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">GHIssue</span> : <span class="title">NSObject</span> &lt;<span class="title">NSCoding</span>, <span class="title">NSCopying</span>&gt;</span></div><div class="line">  </div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">copy</span>, <span class="keyword">readonly</span>) <span class="built_in">NSURL</span> *URL;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">copy</span>, <span class="keyword">readonly</span>) <span class="built_in">NSURL</span> *HTMLURL;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">copy</span>, <span class="keyword">readonly</span>) <span class="built_in">NSNumber</span> *number;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">assign</span>, <span class="keyword">readonly</span>) GHIssueState state;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">copy</span>, <span class="keyword">readonly</span>) <span class="built_in">NSString</span> *reporterLogin;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">copy</span>, <span class="keyword">readonly</span>) <span class="built_in">NSDate</span> *updatedAt;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">strong</span>, <span class="keyword">readonly</span>) GHUser *assignee;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">copy</span>, <span class="keyword">readonly</span>) <span class="built_in">NSDate</span> *retrievedAt;</div><div class="line"></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">copy</span>) <span class="built_in">NSString</span> *title;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">copy</span>) <span class="built_in">NSString</span> *body;</div><div class="line"></div><div class="line">- (<span class="keyword">id</span>)initWithDictionary:(<span class="built_in">NSDictionary</span> *)dictionary;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>假定我们从网络服务器上获取了一组<code>GHIssue</code>对应的<code>JSON</code>数据，并已经将其转换为字典后，我们便可以用这个字典对<code>GHIssue</code>对象进行初始化了，<code>-initWithDictionary:</code>的实现如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">id</span>)initWithDictionary:(<span class="built_in">NSDictionary</span> *)dictionary &#123;</div><div class="line">    <span class="keyword">self</span> = [<span class="keyword">self</span> init];</div><div class="line">    <span class="keyword">if</span> (<span class="keyword">self</span> == <span class="literal">nil</span>) <span class="keyword">return</span> <span class="literal">nil</span>;</div><div class="line">    </div><div class="line">    _URL = [<span class="built_in">NSURL</span> URLWithString:dictionary[<span class="string">@"url"</span>]];</div><div class="line">    _HTMLURL = [<span class="built_in">NSURL</span> URLWithString:dictionary[<span class="string">@"html_url"</span>]];</div><div class="line">    _number = dictionary[<span class="string">@"number"</span>];</div><div class="line">    </div><div class="line">    <span class="keyword">if</span> ([dictionary[<span class="string">@"state"</span>] isEqualToString:<span class="string">@"open"</span>]) &#123;</div><div class="line">        _state = GHIssueStateOpen;</div><div class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> ([dictionary[<span class="string">@"state"</span>] isEqualToString:<span class="string">@"closed"</span>]) &#123;</div><div class="line">        _state = GHIssueStateClosed;</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    _title = [dictionary[<span class="string">@"title"</span>] <span class="keyword">copy</span>];</div><div class="line">    _retrievedAt = [<span class="built_in">NSDate</span> date];</div><div class="line">    _body = [dictionary[<span class="string">@"body"</span>] <span class="keyword">copy</span>];</div><div class="line">    _reporterLogin = [dictionary[<span class="string">@"user"</span>][<span class="string">@"login"</span>] <span class="keyword">copy</span>];</div><div class="line">    _assignee = [[GHUser alloc] initWithDictionary:dictionary[<span class="string">@"assignee"</span>]];</div><div class="line">    </div><div class="line">    _updatedAt = [<span class="keyword">self</span>.class.dateFormatter dateFromString:dictionary[<span class="string">@"updated_at"</span>]];</div><div class="line">    </div><div class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>如果<code>GHIssue</code>对象有归档需求，则还需要实现以下两个方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">id</span>)initWithCoder:(<span class="built_in">NSCoder</span> *)coder &#123;</div><div class="line">    <span class="keyword">self</span> = [<span class="keyword">self</span> init];</div><div class="line">    <span class="keyword">if</span> (<span class="keyword">self</span> == <span class="literal">nil</span>) <span class="keyword">return</span> <span class="literal">nil</span>;</div><div class="line">    </div><div class="line">    _URL = [coder decodeObjectForKey:<span class="string">@"URL"</span>];</div><div class="line">    _HTMLURL = [coder decodeObjectForKey:<span class="string">@"HTMLURL"</span>];</div><div class="line">    _number = [coder decodeObjectForKey:<span class="string">@"number"</span>];</div><div class="line">    _state = [coder decodeUnsignedIntegerForKey:<span class="string">@"state"</span>];</div><div class="line">    _title = [coder decodeObjectForKey:<span class="string">@"title"</span>];</div><div class="line">    _retrievedAt = [<span class="built_in">NSDate</span> date];</div><div class="line">    _body = [coder decodeObjectForKey:<span class="string">@"body"</span>];</div><div class="line">    _reporterLogin = [coder decodeObjectForKey:<span class="string">@"reporterLogin"</span>];</div><div class="line">    _assignee = [coder decodeObjectForKey:<span class="string">@"assignee"</span>];</div><div class="line">    _updatedAt = [coder decodeObjectForKey:<span class="string">@"updatedAt"</span>];</div><div class="line">    </div><div class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (<span class="keyword">void</span>)encodeWithCoder:(<span class="built_in">NSCoder</span> *)coder &#123;</div><div class="line">    <span class="keyword">if</span> (<span class="keyword">self</span>.URL != <span class="literal">nil</span>) [coder encodeObject:<span class="keyword">self</span>.URL forKey:<span class="string">@"URL"</span>];</div><div class="line">    <span class="keyword">if</span> (<span class="keyword">self</span>.HTMLURL != <span class="literal">nil</span>) [coder encodeObject:<span class="keyword">self</span>.HTMLURL forKey:<span class="string">@"HTMLURL"</span>];</div><div class="line">    <span class="keyword">if</span> (<span class="keyword">self</span>.number != <span class="literal">nil</span>) [coder encodeObject:<span class="keyword">self</span>.number forKey:<span class="string">@"number"</span>];</div><div class="line">    <span class="keyword">if</span> (<span class="keyword">self</span>.title != <span class="literal">nil</span>) [coder encodeObject:<span class="keyword">self</span>.title forKey:<span class="string">@"title"</span>];</div><div class="line">    <span class="keyword">if</span> (<span class="keyword">self</span>.body != <span class="literal">nil</span>) [coder encodeObject:<span class="keyword">self</span>.body forKey:<span class="string">@"body"</span>];</div><div class="line">    <span class="keyword">if</span> (<span class="keyword">self</span>.reporterLogin != <span class="literal">nil</span>) [coder encodeObject:<span class="keyword">self</span>.reporterLogin forKey:<span class="string">@"reporterLogin"</span>];</div><div class="line">    <span class="keyword">if</span> (<span class="keyword">self</span>.assignee != <span class="literal">nil</span>) [coder encodeObject:<span class="keyword">self</span>.assignee forKey:<span class="string">@"assignee"</span>];</div><div class="line">    <span class="keyword">if</span> (<span class="keyword">self</span>.updatedAt != <span class="literal">nil</span>) [coder encodeObject:<span class="keyword">self</span>.updatedAt forKey:<span class="string">@"updatedAt"</span>];</div><div class="line">    </div><div class="line">    [coder encodeUnsignedInteger:<span class="keyword">self</span>.state forKey:<span class="string">@"state"</span>];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>额，好多代码。嗯，说实话，以前也经常写这种代码，真可谓又臭又长啊。也许我的工程中还有很多这样的Model，然后，然后……靠，好烦啊。再然后，某天，服务端的同事告诉我有N个接口需要加字段，额～～崩溃中。而且，从上面的<code>Model</code>中，我无法将其还原为对应的<code>JSON</code>串，且如果某些信息变了，那么归档的数据可能就无法使用了。</p>
+<p><code>Mantle</code>就是针对这几个问题而开发的一个开源库。</p>
+<h2 id="使用方法"><a href="#使用方法" class="headerlink" title="使用方法"></a>使用方法</h2><p>其实<code>Mantle</code>的使用还是很简单的，它最主要的就是二个类和一个协议，即：</p>
+<ol>
+<li><code>MTLModel</code>类：通常是作为我们的<code>Model</code>的基类，该类提供了一些默认的行为来处理对象的初始化和归档操作，同时可以获取到对象所有属性的键值集合。</li>
+<li><code>MTLJSONAdapter</code>类：用于在<code>MTLModel</code>对象和<code>JSON</code>字典之间进行相互转换，相当于是一个适配器。</li>
+<li><code>MTLJSONSerializing</code>协议：需要与<code>JSON</code>字典进行相互转换的<code>MTLModel</code>的子类都需要实现该协议，以方便<code>MTLJSONApadter</code>对象进行转换。</li>
+</ol>
+<p>还以<code>GHIssue</code>为例，我们通常会以以下方式来定义我们的<code>Model</code>：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">GHIssue</span> : <span class="title">MTLModel</span> &lt;<span class="title">MTLJSONSerializing</span>&gt;</span></div><div class="line"></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">copy</span>, <span class="keyword">readonly</span>) <span class="built_in">NSURL</span> *URL;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">copy</span>, <span class="keyword">readonly</span>) <span class="built_in">NSURL</span> *HTMLURL;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">copy</span>, <span class="keyword">readonly</span>) <span class="built_in">NSNumber</span> *number;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">assign</span>, <span class="keyword">readonly</span>) GHIssueState state;</div><div class="line"></div><div class="line">...</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>可以看到，我们的<code>Model</code>继承了通常是<code>MTLModel</code>类，同时实现了<code>MTLJSONSerializing</code>协议。这样，我们不再需要像上面那样写一大堆的赋值代码和编码解码方法，而只需要实现<code>MTLJSONSerializing</code>协议的<code>+JSONKeyPathsByPropertyKey</code>类方法，将我们的属性名的键值与<code>JSON</code>字典的键值做一个映射，我们便可以在<code>MTLJSONAdapter</code>对象的帮助下自动进行赋值操作和编码解码操作。我们来看看<code>GHIssue</code>类的具体实现：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">GHIssue</span></span></div><div class="line"></div><div class="line">...</div><div class="line"></div><div class="line">+ (<span class="built_in">NSDictionary</span> *)JSONKeyPathsByPropertyKey &#123;</div><div class="line">    <span class="keyword">return</span> @&#123;</div><div class="line">        <span class="string">@"URL"</span>: <span class="string">@"url"</span>,</div><div class="line">        <span class="string">@"HTMLURL"</span>: <span class="string">@"html_url"</span>,</div><div class="line">        <span class="string">@"reporterLogin"</span>: <span class="string">@"user.login"</span>,</div><div class="line">        <span class="string">@"assignee"</span>: <span class="string">@"assignee"</span>,</div><div class="line">        <span class="string">@"updatedAt"</span>: <span class="string">@"updated_at"</span></div><div class="line">    &#125;;</div><div class="line">&#125;</div><div class="line"></div><div class="line">...</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>可以看到，<code>Model</code>对象的属性与<code>JSON</code>数据之间的映射是通过字典来实现的。通过这种对应关系，<code>Model</code>对象便可以和<code>JSON</code>数据相互转换。需要注意的是返回中字典中的<code>key</code>值在<code>Model</code>对象中必须有对应的属性，否则Model对象将无法初始化成功。</p>
+<p>当然这两者的值之间的转换关系可能需要我们自己来定义，这时我们就可以在<code>Model</code>中自定义<code>+(NSValueTransformer *)&lt;key&gt;JSONTransformer</code>方法来完成这一操作，如下代码所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">GHIssue</span></span></div><div class="line"></div><div class="line">...</div><div class="line"></div><div class="line">+ (<span class="built_in">NSValueTransformer</span> *)URLJSONTransformer &#123;</div><div class="line">    <span class="keyword">return</span> [<span class="built_in">NSValueTransformer</span> valueTransformerForName:<span class="built_in">MTLURLValueTransformerName</span>];</div><div class="line">&#125;</div><div class="line"></div><div class="line">+ (<span class="built_in">NSValueTransformer</span> *)HTMLURLJSONTransformer &#123;</div><div class="line">    <span class="keyword">return</span> [<span class="built_in">NSValueTransformer</span> valueTransformerForName:<span class="built_in">MTLURLValueTransformerName</span>];</div><div class="line">&#125;</div><div class="line"></div><div class="line">+ (<span class="built_in">NSValueTransformer</span> *)stateJSONTransformer &#123;</div><div class="line">    <span class="keyword">return</span> [<span class="built_in">NSValueTransformer</span> mtl_valueMappingTransformerWithDictionary:@&#123;</div><div class="line">        <span class="string">@"open"</span>: @(GHIssueStateOpen),</div><div class="line">        <span class="string">@"closed"</span>: @(GHIssueStateClosed)</div><div class="line">    &#125;];</div><div class="line">&#125;</div><div class="line"></div><div class="line">...</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>​    </p>
+<p>这样，在转换过程中，会自动调用这些方法来做数据的转换。而如果没有实现相应的方法，则会调用默认的<code>+JSONTransformerForKey:</code>来做处理，具体的实现可以参考<a href="http://southpeak.github.io/blog/2015/01/11/sourcecode-mantle/">《Mantle实现分析》</a>。</p>
+<p>有了上面这些准备工作，我们就需要通过<code>MTLJSONAdapter</code>类来适配<code>MTLModel</code>对象和<code>JSON</code>数据了，这个更容易了，代码如下所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">NSError</span> *error = <span class="literal">nil</span>;</div><div class="line"></div><div class="line"><span class="built_in">NSDictionary</span> *JSONDictionary = ...;</div><div class="line"></div><div class="line">GHIssue *issue = [<span class="built_in">MTLJSONAdapter</span> modelOfClass:GHIssue.class fromJSONDictionary:JSONDictionary error:&amp;error];</div></pre></td></tr></table></figure>
+<p>这样就根据一个<code>JSON</code>字典创建了一个<code>GHIssue</code>对象，而如果要从这个对象中获取到相应的<code>JSON</code>字典，则可以如下操作：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">NSDictionary</span> *JSONDictionary = [<span class="built_in">MTLJSONAdapter</span> JSONDictionaryFromModel:issue];</div></pre></td></tr></table></figure>
+<p>以上便是<code>Mantle</code>的简单使用，当然更多的使用方式还需要在实践中多挖掘了。</p>
+<p>这里还需要注意的是：</p>
+<ol>
+<li><code>MTLModel</code>的转换只针对我们定义的属性，而无法支持成员变量。</li>
+<li>支持嵌套属性的转换，这对于对象属性来说非常有用。</li>
+</ol>
+<h2 id="导入工程"><a href="#导入工程" class="headerlink" title="导入工程"></a>导入工程</h2><p>想在我们的工程中使用<code>Mantle</code>，可以通过以下步骤导入：</p>
+<ol>
+<li>将<code>Mantle</code>库作为应用的子模块添加进来。</li>
+<li>运行<code>Mantle</code>文件夹下的<code>script/bootstrap</code>脚本。</li>
+<li>将<code>Mantle.xcodeproj</code>拖进我们的<code>XCode</code>工程或工作空间。</li>
+<li>在程序<code>target</code>的<code>Build Phases</code>选项卡中，在<code>Link Binary With Libraries</code>下添加<code>Mantle</code>的相关信息。在<code>iOS</code>工程中，添加<code>libMantle.a</code>库。</li>
+<li>在<code>&quot;Header Search Paths&quot;</code>设置中添加<code>&quot;$(BUILD_ROOT)/../IntermediateBuildFilesPath/UninstalledProducts/include&quot; $(inherited)</code>。</li>
+<li>对于<code>iOS</code>目标，在<code>&quot;Other Linker Flags&quot;</code>设置中添加<code>-ObjC</code>。</li>
+<li>如果我们将<code>Mantle</code>添加到工程(而不是工作空间)，则我们需要将<code>Mantle</code>依赖的库添加到程序的<code>&quot;Target Dependencies&quot;</code>中。</li>
+</ol>
+<p>不过，我还是喜欢用<code>CocoaPods</code>来处理，只需要在<code>Podfile</code>中添加以下代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">pod &apos;Mantle&apos;, &apos;~&gt; 1.5.3&apos;</div></pre></td></tr></table></figure>
+<p>然后在对应目录下运行<code>pod install</code>，稍等片刻便可以使用<code>Mantle</code>了。关于<code>CocoaPods</code>的使用，可参考<a href="https://github.com/CocoaPods/CocoaPods" target="_blank" rel="external">github上的cocoapods工程</a>。</p>
+<h2 id="不足之处"><a href="#不足之处" class="headerlink" title="不足之处"></a>不足之处</h2><p><code>Mantle</code>使用简单方便，极大的简化了我们的代码，可以满足我们大部分的需求。不过有时候我们可能会遇到这样的情况，由服务端提供的两个接口A和B，其实际上返回的数据可以转换为程序的同一个<code>Model</code>，只不过由于提供接口的是两个人，而且没有相互约定；抑或是服务端接口返回的数据与本地数据库的数据可以转换化同一个<code>Model</code>，但由于历史原因，这两者的字段也没对应上，如下所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// A接口返回的JSON数据为</span></div><div class="line">&#123;<span class="string">"user"</span>: <span class="string">"abc"</span>, <span class="string">"password"</span>: <span class="string">"abc"</span>&#125;</div><div class="line"></div><div class="line"><span class="comment">// B接口返回的JSON数据为</span></div><div class="line">&#123;<span class="string">"user"</span>: <span class="string">"123"</span>, <span class="string">"pwd"</span>: <span class="string">"123"</span>&#125;</div></pre></td></tr></table></figure>
+<p>这种情况下如何使用<code>Mantle</code>呢？看着实际上都一样，只是字段名不一样。这时似乎就不好处理了。因为<code>+JSONKeyPathsByPropertyKey</code>中，字典的<code>key</code>表示的是<code>MTLModel</code>的属性键值，是通过属性的键值去找相应的<code>JSON</code>数据的<code>key</code>。因此，这种情况下可能就得定义两个<code>Model</code>了。</p>
+<p>在我们之前的工程中，也有做过类似<code>Mantle</code>的处理，只不过没有做得这么细致。针对上面的问题，我们的方案是刚好反过来，这个映射字典的key是<code>JSON</code>字典的<code>key</code>值，而映射字典的<code>value</code>是对象属性的<code>key</code>值。这样，我们就可以将不回数据来源的<code>JSON</code>字典的不同<code>key</code>映射到同一个<code>Model</code>对象的同一个属性上了。</p>
+<p>另外一方面，由于转换过程涉及到一些映射查找操作，所以性能上也不如直接写赋值语句来得快。不过<code>Mantle</code>已以通过缓存对此做了优化，所以这一点还是可以接受的。</p>
+<h2 id="参考与推荐"><a href="#参考与推荐" class="headerlink" title="参考与推荐"></a>参考与推荐</h2><ol>
+<li><a href="https://github.com/Mantle/Mantle" target="_blank" rel="external">Mantle工程</a></li>
+<li><a href="http://southpeak.github.io/blog/2015/01/11/yuan-ma-pian-:mantle/">源码篇：Mantle</a></li>
+<li><a href="http://ourui.github.io/blog/2014/01/22/mantle-use/" target="_blank" rel="external">Mantle 初步使用</a></li>
+<li><a href="http://blog.codingcoder.com/use-mantle-to-model/" target="_blank" rel="external">使用Mantle处理Model层对象</a></li>
+</ol>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
                 <a class="post-title-link" href="/2015/01/08/quartz2d-13/" itemprop="url">
                   Quartz 2D编程指南之十三：PDF文档的创建、显示及转换
                 </a>
@@ -2043,191 +2218,6 @@
 
 
     
-      
-
-  
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/2014/12/01/quartz2d-4/" itemprop="url">
-                  Quartz 2D编程指南之四：颜色与颜色空间
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            <span class="post-meta-item-icon">
-              <i class="fa fa-calendar-o"></i>
-            </span>
-            <span class="post-meta-item-text">发表于</span>
-            <time itemprop="dateCreated" datetime="2014-12-01T22:59:58+08:00" content="2014-12-01">
-              2014-12-01
-            </time>
-          </span>
-
-          
-            <span class="post-category" >
-              &nbsp; | &nbsp;
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-              
-                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
-                  <a href="/categories/translate/" itemprop="url" rel="index">
-                    <span itemprop="name">翻译</span>
-                  </a>
-                </span>
-
-                
-                
-
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-
-          
-          
-
-          
-        </div>
-      </header>
-    
-
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>不同的设备(显示器、打印机、扫描仪、摄像头)处理颜色的方式是不同的。每种设备都有其所能支持的颜色值范围。一种设备能支持的颜色可能在其它设备中无法支持。</p>
-<p>为了有效的使用颜色及理解Quartz 2D中用于颜色及颜色空间的函数，我们需要熟悉在Color Management Overview文档中所使用的术语。该文档中讨论了色觉、颜色值、设备依赖及设备颜色空间、颜色匹配问题、再现意图(rendering intent)、颜色管理模块和ColorSync。</p>
-<p>在本章中，我们将学习Quartz处理颜色和颜色空间，以及什么是alpha组件。本章同时也讨论如下问题：</p>
-<ol>
-<li>创建颜色空间</li>
-<li>创建和设置颜色</li>
-<li>设置再现意图</li>
-</ol>
-<h2 id="颜色与颜色空间"><a href="#颜色与颜色空间" class="headerlink" title="颜色与颜色空间"></a>颜色与颜色空间</h2><p>Quartz中的颜色是用一组值来表示。而颜色空间用于解析这些颜色信息。例如，表4-1列出了在全亮度下蓝色值在不同颜色空间下的值。如果不知道颜色空间及颜色空间所能接受的值，我们没有办法知道一组值所表示的颜色。</p>
-<p><strong>Table 4-1  Color values in different color spaces</strong></p>
-<p><img src="https://github.com/southpeak/Blog-images/blob/master/quartz-2d-table4-1.png?raw=true" alt="image"></p>
-<p>如果我们使用了错误的颜色空间，我们可能会获得完全不同的颜色，如图4-1所示。</p>
-<p><strong>Figure 4-1  Applying a BGR and an RGB color profile to the same image</strong></p>
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/color_profiles.gif" alt="image"></p>
-<p>颜色空间可以有不同数量的组件。表4-1中的颜色空间中其中三个只有三个组件，而CMYK有四个组件。值的范围与颜色空间有关。对大部分颜色空间来说，颜色值范围为[0.0, 1.0]，1.0表示全亮度。例如，全亮度蓝色值在Quartz的RGB颜色空间中的值是(0, 0, 1.0)。在Quartz中，颜色值同样有一个alpha值来表示透明度。在表4-1中没有列出该值。</p>
-<h2 id="alpha值"><a href="#alpha值" class="headerlink" title="alpha值"></a>alpha值</h2><p>alpha值是图形状态参数，Quartz用它来确定新的绘图对象如何与已存在的对象混合。在全强度下，新的绘图对象是不透明的。在0强度下，新的绘图对象是完全透明的。图4-2显示了5个大的方形，分别使用了alpha值为1.0, 0.75, 0.5, 0.1和0.0。随着大方形逐渐变得透明，底下的小的不透明的方形逐渐显现出来。</p>
-<p><strong>Figure 4-2  A comparison of large rectangles painted using various alpha values</strong></p>
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/alpha_demo.gif" alt="image"></p>
-<p>我们可以将两个对象绘制到page上，而page可以在渲染前通过设置全局的graphics context来设置自己的透明度。图4-3显示了将全局的透明度设置为0.5和1.0的效果。</p>
-<p><strong>Figure 4-3  A comparison of global alpha values</strong></p>
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/set_alpha.gif" alt="image"></p>
-<p>在标准混合模式(图形状态的默认模式)下，Quartz使用下面的公式来混合源颜色和目标颜色的组件：</p>
-<p><strong>destination = (alpha <em> source) + (1 - alpha) </em> destination</strong></p>
-<p>其中源颜色是新绘制的颜色，目标颜色是背景颜色。该公式可用于新绘制的形状和图像。</p>
-<p>对于对象透明度来说，alpha值为1.0时表示新对象是完全不透明的，值0.0表示新对象是完全透明的。0.0与1.0之间的值指定对象的透明度。我们可以为所有接受颜色的程序指定一个alpha值作为颜色值的最后一个组件。同样也可以使用CGContextSetAlpha函数来指定全局的alpha值。记住，如果同时设置以上两个值，Quartz将混合全局alpha值与对象的alpha值。</p>
-<p>为了让page完全透明，我们可以调用CGContextClearRect函数来清除图形上下文(graphics context)的alpha通道。例如，我们可以在给图标创建一个透明遮罩或者使窗口的背景透明时，采用这种方法。</p>
-<h2 id="创建颜色空间"><a href="#创建颜色空间" class="headerlink" title="创建颜色空间"></a>创建颜色空间</h2><p>Quartz支持颜色管理系统使用的标准颜色空间，也支持通用的颜色空间、索引颜色空间和模式(pattern)颜色空间。设备颜色空间以一种简便的方法在不同设备间表示颜色。它用于在两种不同设备间的本地颜色空间转换颜色数据。设备依赖颜色空间的颜色在不同设备上显示时效果是一样的，它扩展了设备的能力。基于此，设备依赖颜色空间是显示颜色时最好的选择。</p>
-<p>如果应用程序有精确的颜色表示需求，则应该总是使用设备依赖颜色空间。通用颜色空间(generic color space)是一种常用的设备依赖颜色空间。通用颜色空间通过操作系统为我们的应用程序提供最好的颜色空间。它能使在显示器上与在打印机上打印效果是一样的。</p>
-<blockquote>
-<p>重要：IOS不支持设备依赖颜色空间或通用颜色空间。IOS应用程序必须使用设备颜色空间(device color space)。</p>
-</blockquote>
-<h3 id="创建设备依赖颜色空间"><a href="#创建设备依赖颜色空间" class="headerlink" title="创建设备依赖颜色空间"></a>创建设备依赖颜色空间</h3><p>为了创建设备依赖颜色空间，我们需要给Quartz提供白色参考点，黑色参考点及特殊设备的gamma值。Quartz使用这些信息将源颜色空间的颜色值转化为输出设备颜色空间的颜色值。</p>
-<p>Quartz支持设备依赖颜色空间，创建此空间的函数如下：</p>
-<ol>
-<li><code>L*a*b</code>是非线性转换，它属于Munsell颜色符号系统(该系统使用色度、值、饱和度来指定颜色)。 L组件表示亮度值，a组件表示绿色与红色之间的值，b组件表示蓝色与黄色之间的值。该颜色空间设计用于模拟人脑解码颜色。使用函数CGColorSpaceCreateLab来创建。</li>
-<li>ICC颜色空间是由ICC(由国际色彩聪明，International Color Consortium)颜色配置而来的。ICC颜色配置了设备支持的颜色域，该颜色域与其它设备属性相符，所以该信息可被用于将一个设备的颜色空间精确地转换为另一个设备的颜色空间。大多数设备制造商都支持ICC配置。一些彩色显示器和打印机都内嵌了ICC信息，用于处理诸如TIFF的位图格式。使用函数CGColorSpaceCreateICCBased来创建。</li>
-<li>标准化RGB是设备依赖的RGB颜色空间，它表示相对于白色参考点(设备可生成的最白的颜色)的颜色。 使用函数CGColorSpaceCreateCalibratedRGB来创建。</li>
-<li>标准化灰度是设备依赖的灰度颜色空间，它表示相对于白色参考点(设备可生成的最白的颜色)的颜色。 使用函数CGColorSpaceCreateCalibratedGray来创建。</li>
-</ol>
-<h3 id="创建通用颜色空间"><a href="#创建通用颜色空间" class="headerlink" title="创建通用颜色空间"></a>创建通用颜色空间</h3><p>通用颜色空间的颜色与系统匹配。大部分情况下，结果是可接受的。就像名字所暗示的那样，每个“通用”颜色空间(generic gray, generic RGB, generic CMYK)都是一个指定的设备依赖颜色空间。</p>
-<p>通过颜色空间非常容易使用；我们不需要提供任何参考点信息。我们使用函数CGColorSpaceCreateWithName来创建一个通用颜色空间，该函数可传入以下常量值：</p>
-<ol>
-<li>kCGColorSpaceGenericGray：指定通用灰度颜色空间，该颜色空间是单色的，可以指定从0.0(纯黑)到1.0(纯白)范围内的颜色值。</li>
-<li>kCGColorSpaceGenericRGB：指定通用RGB颜色空间，该颜色空间中的颜色值由三个组件(red, green, blue)组成，主要用于彩色显示器上的像素。RGB颜色空间中的每个组件的值范围是[0.0, 1.0]。</li>
-<li>kCGColorSpaceGenericCMYK：指定通用CMYK颜色空间，该颜色空间的颜色值由四个组件(cyan, magenta, yellow, black)，主要用于打印机。CMYK颜色空间的每个组件的值范围是[0.0, 1.0]。</li>
-</ol>
-<h3 id="创建设备颜色空间"><a href="#创建设备颜色空间" class="headerlink" title="创建设备颜色空间"></a>创建设备颜色空间</h3><p>设备颜色空间主要用于IOS应用程序，因为其它颜色空间无法在IOS上使用。大多数情况下，Mac OS X应用程序应使用通用颜色空间，而不使用设备颜色空间。但是有些Quartz程序希望图像使用设备颜色空间。例如，如果调用<strong>CGImageCreateWithMask</strong>函数来指定一个图像作为遮罩，图像必须在设备的灰度颜色空间(device gray color space)中定义。</p>
-<p>我们可以使用以下函数来创建设备颜色空间：</p>
-<ol>
-<li>CGColorSpaceCreateDeviceGray：创建设备依赖灰度颜色空间</li>
-<li>CGColorSpaceCreateDeviceRGB：创建设备依赖RGB颜色空间</li>
-<li>CGColorSpaceCreateDeviceCMYK：创建设备依赖CMYK颜色空间</li>
-</ol>
-<h3 id="创建索引颜色空间和模式颜色空间"><a href="#创建索引颜色空间和模式颜色空间" class="headerlink" title="创建索引颜色空间和模式颜色空间"></a>创建索引颜色空间和模式颜色空间</h3><p>索引颜色空间包含一个有256个词目的颜色表，和词目映射到基础颜色空间。颜色表中每个词目指定一个基础颜色空间中的颜色值。使用CGColorSpaceCreateIndexed函数来创建。</p>
-<p>模式颜色空间在绘制模式时使用。 使用CGColorSpaceCreatePattern函数来创建。</p>
-<h2 id="设置和创建颜色"><a href="#设置和创建颜色" class="headerlink" title="设置和创建颜色"></a>设置和创建颜色</h2><p>Quartz提供了一套函数用于设置填充颜色、线框颜色、颜色空间和alpha值。每个颜色参数都是图形状态参数，这就意味着一旦设置了，设置将被保存并影响后续操作，直到被修改为止。</p>
-<p>一个颜色必须有相关联的颜色空间。否则，Quartz不知道如何解析颜色值。进一步说，说是我们必须为绘制目标提供一个合适的颜色空间。如图4-4所示，左边是CMYK颜色空间中的蓝色填充色，右边是RGB颜色空间中的蓝色填充色。这两个颜色值在理论上是一样的，但只有在相同颜色空间下的相同颜色值显示出来才是一样的。</p>
-<p><strong>Figure 4-4  A CMYK fill color and an RGB fill color</strong></p>
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/cmyk_fill.gif" alt="image"></p>
-<p>我们可以使用CGContextSetFillColorSpace和CGContextSetStrokeColorSpace函数来设置填充和线框颜色空间，或者可以使用以下便利函数来设置设备颜色空间的颜色值。</p>
-<p><strong>Table 4-2  Color-setting functions</strong></p>
-<p><img src="https://github.com/southpeak/Blog-images/blob/master/quartz-2d-table4-2.png?raw=true" alt="image"></p>
-<p>我们在填充及线框颜色空间中指定填充及线框颜色值。例如，在RGB颜色空间中，我们使用数组(1.0, 0.0, 0.0, 1.0)来表示红色。前三个值指定红色值为全强度，而绿色和蓝色为零强度。第四个值为alpha值，用于指定颜色的透明度。</p>
-<p>如果需要在程序中重复使用颜色，最有效的方法是通过设置填充色和线框色来创建一个CGColor对象，然后将该对象传递给函数<strong>CGContextSetFillColorWithColor</strong>及<strong>CGContextSetStrokeColorWithColor</strong>。我们可以按需要保持CGColor对象，并可以直接使用该对象来改进应用程序的显示。</p>
-<p>我们可以调用CGColorCreate函数来创建CGColor对象，该函数需要两个参数：CGColorspace对象及颜色值数组。数组的最后一个值指定alpha值。</p>
-<h2 id="设置再现意图-Rending-Intent"><a href="#设置再现意图-Rending-Intent" class="headerlink" title="设置再现意图(Rending Intent)"></a>设置再现意图(Rending Intent)</h2><p>“再现意图”用于指定如何将源颜色空间的颜色映射到图形上下文的目标颜色空间的颜色范围内。如果不显示指定再现意图，Quartz使用相对色度再现意图(relative colorimetric rendering intent)应用于所有绘制(不包含位图图像)。对于位图图像，Quartz默认使用感知(perceptual)再现意图。</p>
-<p>我们可以调用CGContextSetRenderingIntent函数来设置再现意图，并传递图形上下文(graphics context)及下例常量作为参数：</p>
-<ol>
-<li>kCGRenderingIntentDefault：使用默认的渲染意图。</li>
-<li>kCGRenderingIntentAbsoluteColorimetric：绝对色度渲染意图。将输出设备颜色域外的颜色映射为输出设备域内与之最接近的颜色。这可以产生一个裁减效果，因为色域外的两个不同的颜色值可能被映射为色域内的同一个颜色值。当图形使用的颜色值同时包含在源色域及目标色域内时，这种方法是最好的。常用于logo或者使用专色(spot color)时。</li>
-<li>kCGRenderingIntentRelativeColorimetric：相对色度渲染意图。转换所有的颜色(包括色域内的)，以补偿图形上下文的白点与输出设备白点之间的色差。kCGRenderingIntentPerceptual：感知渲染意图。通过压缩图形上下文的色域来适应输出设备的色域，并保持源颜色空间的颜色之间的相对性。感知渲染意图适用于相片及其它复杂的高细度图片。</li>
-<li>kCGRenderingIntentSaturation：饱和度渲染意图。把颜色转换到输出设备色域内时，保持颜色的相对饱和度。结果是包含亮度、饱和度颜色的图片。饱和度意图适用于生成低细度的图片，如描述性图表。</li>
-</ol>
-
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
   </section>
 
   
@@ -2273,7 +2263,7 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/archives">
-              <span class="site-state-item-count">82</span>
+              <span class="site-state-item-count">83</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>
