@@ -1,0 +1,734 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="今年的Apple发布会也开完了，没有什么太出彩的地方。不过广受非议的iPhone 7依然大卖。群里、微信里都是各种讨论外加各种炫，而我只能静静地看着，等着公司的测试机了。
+每次都感叹时间过得快，总是有各种事情，这一晃又三个星期了，哎。这期整理了之前的5个问题，无规则无主题，大伙慢慢看：
+
+block未判空导致的EXC_BAD_ACCESS崩溃;
+多Target开发;
+dispatch_sync导致">
+<meta property="og:type" content="article">
+<meta property="og:title" content="iOS知识小集 第8期(2016.09.20)">
+<meta property="og:url" content="http://southpeak.github.io/2016/09/20/ios-techset-8/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="今年的Apple发布会也开完了，没有什么太出彩的地方。不过广受非议的iPhone 7依然大卖。群里、微信里都是各种讨论外加各种炫，而我只能静静地看着，等着公司的测试机了。
+每次都感叹时间过得快，总是有各种事情，这一晃又三个星期了，哎。这期整理了之前的5个问题，无规则无主题，大伙慢慢看：
+
+block未判空导致的EXC_BAD_ACCESS崩溃;
+多Target开发;
+dispatch_sync导致">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/block.EXC_BAD_ACCESS.png?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/target.mutiply.png?raw=true">
+<meta property="og:updated_time" content="2016-09-20T04:13:14.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="iOS知识小集 第8期(2016.09.20)">
+<meta name="twitter:description" content="今年的Apple发布会也开完了，没有什么太出彩的地方。不过广受非议的iPhone 7依然大卖。群里、微信里都是各种讨论外加各种炫，而我只能静静地看着，等着公司的测试机了。
+每次都感叹时间过得快，总是有各种事情，这一晃又三个星期了，哎。这期整理了之前的5个问题，无规则无主题，大伙慢慢看：
+
+block未判空导致的EXC_BAD_ACCESS崩溃;
+多Target开发;
+dispatch_sync导致">
+<meta name="twitter:image" content="https://github.com/southpeak/Blog-images/blob/master/block.EXC_BAD_ACCESS.png?raw=true">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2016/09/20/ios-techset-8/"/>
+
+  <title> iOS知识小集 第8期(2016.09.20) | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                iOS知识小集 第8期(2016.09.20)
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-09-20T22:38:43+08:00" content="2016-09-20">
+              2016-09-20
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/techset/" itemprop="url" rel="index">
+                    <span itemprop="name">知识小集</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>今年的Apple发布会也开完了，没有什么太出彩的地方。不过广受非议的iPhone 7依然大卖。群里、微信里都是各种讨论外加各种炫，而我只能静静地看着，等着公司的测试机了。</p>
+<p>每次都感叹时间过得快，总是有各种事情，这一晃又三个星期了，哎。这期整理了之前的5个问题，无规则无主题，大伙慢慢看：</p>
+<ol>
+<li>block未判空导致的EXC_BAD_ACCESS崩溃;</li>
+<li>多Target开发;</li>
+<li>dispatch_sync导致死锁;</li>
+<li>makeObjectsPerformSelector:;</li>
+<li>NSSetUncaughtExceptionHandler</li>
+</ol>
+<h2 id="block未判空导致的EXC-BAD-ACCESS崩溃"><a href="#block未判空导致的EXC-BAD-ACCESS崩溃" class="headerlink" title="block未判空导致的EXC_BAD_ACCESS崩溃"></a>block未判空导致的EXC_BAD_ACCESS崩溃</h2><p>我们在调用block时，如果这个block为nil，则程序会崩溃，报类似于EXC_BAD_ACCESS(code=1, address=0xc)异常[32位下的结果，如果是64位，则address=0x10]。如下图所示，这个异常表示程序在试图读取内存地址0xc的信息时出错。</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/block.EXC_BAD_ACCESS.png?raw=true" alt=""></p>
+<p>在定义一个block时，编译器会在栈上创建一个结构体，类似于图2的结构体。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">struct</span> Block_layout &#123;</div><div class="line">	<span class="keyword">void</span> *isa;</div><div class="line">	<span class="keyword">int</span> flags;</div><div class="line">	<span class="keyword">int</span> reserved;</div><div class="line">	<span class="keyword">void</span> (*invoke)(<span class="keyword">void</span> *, ...);</div><div class="line">	<span class="keyword">struct</span> Block_descriptor *descriptor;</div><div class="line">	<span class="comment">/* Imported variables. */</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>block就是指向这个结构体的指针。其中的invoke就是指向具体实现的函数指针。当block被调用时，程序最终会跳转到这个函数指针指向的代码区。而当block为nil时，程序就会试图去读取0xc地址的信息，而这个地址什么都不会有(duff address)，于是抛出一个segmentation fault。在32位系统下，之所以是0xc，是因为invoke前面的三个成员变量的大小正好是12。</p>
+<p>所以我们在使用block时，应该首先去判断block是否为空。一种比较优雅的写法是：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">!block ?: block()</div></pre></td></tr></table></figure>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><ol>
+<li><a href="http://stackoverflow.com/questions/4145164/why-do-nil-null-blocks-cause-bus-errors-when-run" target="_blank" rel="external">Why do nil / NULL blocks cause bus errors when run?</a></li>
+</ol>
+<h2 id="多Target开发"><a href="#多Target开发" class="headerlink" title="多Target开发"></a>多Target开发</h2><p>在Xcode中，一个target表示工程中的一个product，target用于组织product所需要的源文件、资源文件、配置信息等。</p>
+<p>在一些情况下，我们可以为一个工程设置多个target，如：同时开发Lite版和正式版；开发版本和发布版本需要不同配置；单工程构建多个相似的App等等。如下图所示。</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/target.mutiply.png?raw=true" alt=""></p>
+<p>这么做的好处是在共用一份代码的情况下，可以为不同的target配置不同的资源、信息等，如不同的Info.plist, Build Setting, Build Phase配置等，最后得到不同的product。</p>
+<h3 id="参考-1"><a href="#参考-1" class="headerlink" title="参考"></a>参考</h3><ol>
+<li><a href="https://developer.apple.com/library/ios/featuredarticles/XcodeConcepts/Concept-Targets.html" target="_blank" rel="external">Xcode Target</a></li>
+<li><a href="http://blog.devtang.com/2013/10/17/the-tech-detail-of-ape-client-1/" target="_blank" rel="external">猿题库iOS客户端的技术细节（一）：使用多target来构建大量相似App</a></li>
+</ol>
+<h2 id="dispatch-sync导致死锁"><a href="#dispatch-sync导致死锁" class="headerlink" title="dispatch_sync导致死锁"></a>dispatch_sync导致死锁</h2><p>dispatch_sync函数用于将一个block提交到队列中同步执行，直到block执行完后，这个函数才会返回。</p>
+<p>这里有一个潜在的问题，如果我们在某个串行队列中调用dispatch_sync，并将其block提交到这个串行队列中执行，则会引发死锁。如下代码所示。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 死锁</span></div><div class="line"><span class="built_in">dispatch_queue_t</span> queue = dispatch_queue_create(<span class="string">"com.apple.test"</span>, <span class="literal">NULL</span>);</div><div class="line"><span class="built_in">dispatch_async</span>(queue, ^&#123;</div><div class="line">  </div><div class="line">  <span class="built_in">dispatch_sync</span>(queue, ^&#123;</div><div class="line">      <span class="built_in">NSLog</span>(<span class="string">@"B"</span>);</div><div class="line">  &#125;);</div><div class="line">  </div><div class="line">  <span class="built_in">NSLog</span>(<span class="string">@"A"</span>);</div><div class="line">&#125;);</div></pre></td></tr></table></figure>
+<p>其实还是很好理解，在com.apple.test这个串行队列中，我们执行一个task A，在这个task A中，我们又向队列提交了一个同步的task B。由于是串行队列，task A在task B之前，所以task B的执行依赖于task A的完成，而task B又包含在task A中，task A的完成依赖于task B的完成。这样就成了一个死锁。</p>
+<p>所以，千万不要在主队列中这样调用dispatch_sync，否则会导致主线程卡死。</p>
+<p>当然，如果在并行队列中这样使用是没有问题的，如下代码所示，可以正常打印出B,A。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">dispatch_queue_t</span> queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, <span class="number">0</span>);</div><div class="line"><span class="built_in">dispatch_async</span>(queue, ^&#123;</div><div class="line">  </div><div class="line">  <span class="built_in">dispatch_sync</span>(queue, ^&#123;</div><div class="line">      <span class="built_in">NSLog</span>(<span class="string">@"B"</span>);</div><div class="line">  &#125;);</div><div class="line">  </div><div class="line">  <span class="built_in">NSLog</span>(<span class="string">@"A"</span>);</div><div class="line">&#125;);</div></pre></td></tr></table></figure>
+<p>又或是dispatch_sync的目标队列不是当前队列，如下代码所示，也可以正常打印出B,A。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">dispatch_queue_t</span> queue1 = dispatch_queue_create(<span class="string">"com.apple.test1"</span>, <span class="literal">NULL</span>);</div><div class="line"><span class="built_in">dispatch_queue_t</span> queue2 = dispatch_queue_create(<span class="string">"com.apple.test2"</span>, <span class="literal">NULL</span>);</div><div class="line"><span class="built_in">dispatch_async</span>(queue1, ^&#123;</div><div class="line">  </div><div class="line">  <span class="built_in">dispatch_sync</span>(queue2, ^&#123;</div><div class="line">      <span class="built_in">NSLog</span>(<span class="string">@"B"</span>);</div><div class="line">  &#125;);</div><div class="line">  </div><div class="line">  <span class="built_in">NSLog</span>(<span class="string">@"A"</span>);</div><div class="line">&#125;);</div></pre></td></tr></table></figure>
+<p>我们在使用dispatch_sync提交task时，可以看到大部分情况下task是在dispatch_sync所在的上下文线程中执行，而不管dispatch_sync指定的队列是什么【串行或并行】，如下代码所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 串行队列</span></div><div class="line"><span class="built_in">NSLog</span>(<span class="string">@"%@"</span>, [<span class="built_in">NSThread</span> currentThread]);     <span class="comment">// &lt;NSThread: 0x100303310&gt;&#123;number = 1, name = main&#125;</span></div><div class="line">    </div><div class="line"><span class="built_in">dispatch_queue_t</span> queue = dispatch_queue_create(<span class="string">"com.apple.test"</span>, <span class="literal">NULL</span>);</div><div class="line">   </div><div class="line"><span class="built_in">dispatch_sync</span>(queue, ^&#123;</div><div class="line">  <span class="built_in">NSLog</span>(<span class="string">@"%@"</span>, [<span class="built_in">NSThread</span> currentThread]);     <span class="comment">// &lt;NSThread: 0x100303310&gt;&#123;number = 1, name = main&#125;</span></div><div class="line">&#125;);</div><div class="line"></div><div class="line"><span class="comment">// 并行队列</span></div><div class="line"><span class="built_in">dispatch_async</span>(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, <span class="number">0</span>), ^&#123;</div><div class="line">       </div><div class="line">  <span class="built_in">NSLog</span>(<span class="string">@"%@"</span>, [<span class="built_in">NSThread</span> currentThread]);     <span class="comment">// &lt;NSThread: 0x100505ea0&gt;&#123;number = 2, name = (null)&#125;</span></div><div class="line">  </div><div class="line">  <span class="built_in">dispatch_queue_t</span> queue = dispatch_queue_create(<span class="string">"com.apple.test"</span>, <span class="literal">NULL</span>);</div><div class="line">  </div><div class="line">  <span class="built_in">dispatch_sync</span>(queue, ^&#123;</div><div class="line">      <span class="built_in">NSLog</span>(<span class="string">@"%@"</span>, [<span class="built_in">NSThread</span> currentThread]);    <span class="comment">// &lt;NSThread: 0x100505ea0&gt;&#123;number = 2, name = (null)&#125;</span></div><div class="line">  &#125;);</div><div class="line">&#125;);</div></pre></td></tr></table></figure>
+<p>官方文档给我们的解释是这么做的目的是为了优化性能：</p>
+<blockquote>
+<p>As an optimization, this function invokes the block on the current thread when possible。</p>
+</blockquote>
+<p>我们需要了解的是队列和线程并不是一回事。我们将任务以block的形式提交到队列，然后由GCD来决定将队列中的block分发到系统管理的线程池中的某个线程中去执行。</p>
+<h3 id="参考-2"><a href="#参考-2" class="headerlink" title="参考"></a>参考</h3><ol>
+<li><a href="https://developer.apple.com/reference/dispatch/1452870-dispatch_sync" target="_blank" rel="external">dispatch_sync</a></li>
+</ol>
+<h2 id="makeObjectsPerformSelector"><a href="#makeObjectsPerformSelector" class="headerlink" title="makeObjectsPerformSelector:"></a>makeObjectsPerformSelector:</h2><p>遍历一个数组的方法有几种，for, forin, enumerateObjectsUsingBlock:方法。现在用得比较多的可能是enumerateObjectsUsingBlock:，它能很方便地让我们获取到数组中的元素及对应的索引，然后根据这些信息做一些操作，如下代码所示:</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">NSMutableArray</span> *array = [[<span class="built_in">NSMutableArray</span> alloc] init];</div><div class="line"><span class="keyword">for</span> (<span class="built_in">NSInteger</span> index = <span class="number">0</span>; index &lt; <span class="number">10</span>; index++) &#123;</div><div class="line">  </div><div class="line">  Test *t = [[Test alloc] init];</div><div class="line">  t.index = index;</div><div class="line">  [array addObject:t];</div><div class="line">&#125;</div><div class="line">   </div><div class="line">[array enumerateObjectsUsingBlock:^(Test *  _Nonnull obj, <span class="built_in">NSUInteger</span> idx, <span class="built_in">BOOL</span> * _Nonnull stop) &#123;</div><div class="line">  [obj test];</div><div class="line">&#125;];</div></pre></td></tr></table></figure>
+<p>不过，如果在循环中，只是想调用元素的某一个方法，则可以考虑使用makeObjectsPerformSelector:或者makeObjectsPerformSelector:withObject:，这两个方法会按元素的顺序向数组中的每个元素发送Selector指定的消息。如下代码所示:</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">NSMutableArray</span> *array = [[<span class="built_in">NSMutableArray</span> alloc] init];</div><div class="line"><span class="keyword">for</span> (<span class="built_in">NSInteger</span> index = <span class="number">0</span>; index &lt; <span class="number">10</span>; index++) &#123;</div><div class="line">  </div><div class="line">  Test *t = [[Test alloc] init];</div><div class="line">  t.index = index;</div><div class="line">  [array addObject:t];</div><div class="line">&#125;</div><div class="line">   </div><div class="line">[array makeObjectsPerformSelector:<span class="keyword">@selector</span>(test)];</div><div class="line">[array makeObjectsPerformSelector:<span class="keyword">@selector</span>(testWithNumber:) withObject:@<span class="number">10</span>];</div></pre></td></tr></table></figure>
+<p>当然，Selector不能是NULL，否则会抛NSInvalidArgumentException异常。大家如果熟悉runtime的话，应该知道消息机制是如何处理调用不存在方法的。</p>
+<h2 id="NSSetUncaughtExceptionHandler"><a href="#NSSetUncaughtExceptionHandler" class="headerlink" title="NSSetUncaughtExceptionHandler"></a>NSSetUncaughtExceptionHandler</h2><p>Foundation里面提供了一个NSSetUncaughtExceptionHandler函数，可以设置一个顶层异常处理函数，让我们在程序发生异常并终止前，有最后的机会来捕获并输出异常信息，如下代码所示。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">void</span> UncaughtExceptionHandler(<span class="built_in">NSException</span> *exception) &#123;</div><div class="line">    </div><div class="line">    <span class="built_in">NSArray</span> *symbols = [exception callStackSymbols];</div><div class="line">    <span class="built_in">NSString</span> *reason = [exception reason];</div><div class="line">    <span class="built_in">NSString</span> *name = [exception name];</div><div class="line">    </div><div class="line">    <span class="built_in">NSLog</span>(<span class="string">@"reason = %@"</span>, reason);</div><div class="line">    <span class="built_in">NSLog</span>(<span class="string">@"name = %@"</span>, name);</div><div class="line">    <span class="built_in">NSLog</span>(<span class="string">@"symbols = %@"</span>, symbols);</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">AppDelegate</span></span></div><div class="line"></div><div class="line"></div><div class="line">- (<span class="built_in">BOOL</span>)application:(<span class="built_in">UIApplication</span> *)application didFinishLaunchingWithOptions:(<span class="built_in">NSDictionary</span> *)launchOptions &#123;</div><div class="line">    </div><div class="line">    <span class="built_in">NSSetUncaughtExceptionHandler</span>(&amp;UncaughtExceptionHandler);</div><div class="line">    </div><div class="line">    <span class="keyword">return</span> <span class="literal">YES</span>;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>这个函数的参数是一个函数指针，指向的函数其签名是：void NSUncaughtExceptionHandler(NSException *exception)。可以看到这个函数有参数是一个NSException对象，通过这个对象我们就可以获取到异常的信息。假定发生数组越界异常时，会有如下输出。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div></pre></td><td class="code"><pre><div class="line"><span class="number">2016</span><span class="number">-09</span><span class="number">-20</span> <span class="number">11</span>:<span class="number">55</span>:<span class="number">36.719</span> Test111[<span class="number">5548</span>:<span class="number">199035</span>] reason = *** -[__NSSingleObjectArrayI objectAtIndex:]: index <span class="number">10</span> beyond bounds [<span class="number">0</span> .. <span class="number">0</span>]</div><div class="line"><span class="number">2016</span><span class="number">-09</span><span class="number">-20</span> <span class="number">11</span>:<span class="number">55</span>:<span class="number">36.720</span> Test111[<span class="number">5548</span>:<span class="number">199035</span>] name = <span class="built_in">NSRangeException</span></div><div class="line"><span class="number">2016</span><span class="number">-09</span><span class="number">-20</span> <span class="number">11</span>:<span class="number">55</span>:<span class="number">36.720</span> Test111[<span class="number">5548</span>:<span class="number">199035</span>] symbols = (</div><div class="line">	<span class="number">0</span>   CoreFoundation                      <span class="number">0x0000000106cef34b</span> __exceptionPreprocess + <span class="number">171</span></div><div class="line">	<span class="number">1</span>   libobjc.A.dylib                     <span class="number">0x000000010675021e</span> objc_exception_throw + <span class="number">48</span></div><div class="line">	<span class="number">2</span>   CoreFoundation                      <span class="number">0x0000000106d47bdf</span> -[__NSSingleObjectArrayI objectAtIndex:] + <span class="number">111</span></div><div class="line">	<span class="number">3</span>   Test111                             <span class="number">0x000000010617d87b</span> -[AppDelegate application:didFinishLaunchingWithOptions:] + <span class="number">235</span></div><div class="line">	<span class="number">4</span>   <span class="built_in">UIKit</span>                               <span class="number">0x000000010710968e</span> -[<span class="built_in">UIApplication</span> _handleDelegateCallbacksWithOptions:isSuspended:restoreState:] + <span class="number">290</span></div><div class="line">	<span class="number">5</span>   <span class="built_in">UIKit</span>                               <span class="number">0x000000010710b013</span> -[<span class="built_in">UIApplication</span> _callInitializationDelegatesForMainScene:transitionContext:] + <span class="number">4236</span></div><div class="line">	<span class="number">6</span>   <span class="built_in">UIKit</span>                               <span class="number">0x00000001071113b9</span> -[<span class="built_in">UIApplication</span> _runWithMainScene:transitionContext:completion:] + <span class="number">1731</span></div><div class="line">	<span class="number">7</span>   <span class="built_in">UIKit</span>                               <span class="number">0x000000010710e539</span> -[<span class="built_in">UIApplication</span> workspaceDidEndTransaction:] + <span class="number">188</span></div><div class="line">	<span class="number">8</span>   FrontBoardServices                  <span class="number">0x000000010a2ee76b</span> __FBSSERIALQUEUE_IS_CALLING_OUT_TO_A_BLOCK__ + <span class="number">24</span></div><div class="line">	<span class="number">9</span>   FrontBoardServices                  <span class="number">0x000000010a2ee5e4</span> -[FBSSerialQueue _performNext] + <span class="number">189</span></div><div class="line">	<span class="number">10</span>  FrontBoardServices                  <span class="number">0x000000010a2ee96d</span> -[FBSSerialQueue _performNextFromRunLoopSource] + <span class="number">45</span></div><div class="line">	<span class="number">11</span>  CoreFoundation                      <span class="number">0x0000000106c94311</span> __CFRUNLOOP_IS_CALLING_OUT_TO_A_SOURCE0_PERFORM_FUNCTION__ + <span class="number">17</span></div><div class="line">	<span class="number">12</span>  CoreFoundation                      <span class="number">0x0000000106c7959c</span> __CFRunLoopDoSources0 + <span class="number">556</span></div><div class="line">	<span class="number">13</span>  CoreFoundation                      <span class="number">0x0000000106c78a86</span> __CFRunLoopRun + <span class="number">918</span></div><div class="line">	<span class="number">14</span>  CoreFoundation                      <span class="number">0x0000000106c78494</span> <span class="built_in">CFRunLoopRunSpecific</span> + <span class="number">420</span></div><div class="line">	<span class="number">15</span>  <span class="built_in">UIKit</span>                               <span class="number">0x000000010710cdb6</span> -[<span class="built_in">UIApplication</span> _run] + <span class="number">434</span></div><div class="line">	<span class="number">16</span>  <span class="built_in">UIKit</span>                               <span class="number">0x0000000107112f34</span> <span class="built_in">UIApplicationMain</span> + <span class="number">159</span></div><div class="line">	<span class="number">17</span>  Test111                             <span class="number">0x000000010617db4f</span> main + <span class="number">111</span></div><div class="line">	<span class="number">18</span>  libdyld.dylib                       <span class="number">0x000000010928a68d</span> start + <span class="number">1</span></div><div class="line">	<span class="number">19</span>  ???                                 <span class="number">0x0000000000000001</span> <span class="number">0x0</span> + <span class="number">1</span></div><div class="line">)</div></pre></td></tr></table></figure>
+<p>不过这个函数有效范围局限于异常，还有很多错误是无法处理的，如EXC_BAD_ACCESS内存访问错误，这类错误抛出的是Signal，需要专门做Signal处理。</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>Crash始终是我们开发最大最头疼的问题，总会有各种各样的Crash情况出现。看着Fabric里面长长的Crash列表，总是很伤感的。我们的成长史也是一部和Bug战斗的斗争史，自己写的Bug，熬夜也要把它们搞完。继续战斗吧，Bug君。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/08/31/ios-techset-7/" rel="next" title="iOS知识小集 第7期(2016.08.31)">
+                <i class="fa fa-chevron-left"></i> iOS知识小集 第7期(2016.08.31)
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">84</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#block未判空导致的EXC-BAD-ACCESS崩溃"><span class="nav-number">1.</span> <span class="nav-text">block未判空导致的EXC_BAD_ACCESS崩溃</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#参考"><span class="nav-number">1.1.</span> <span class="nav-text">参考</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#多Target开发"><span class="nav-number">2.</span> <span class="nav-text">多Target开发</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#参考-1"><span class="nav-number">2.1.</span> <span class="nav-text">参考</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#dispatch-sync导致死锁"><span class="nav-number">3.</span> <span class="nav-text">dispatch_sync导致死锁</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#参考-2"><span class="nav-number">3.1.</span> <span class="nav-text">参考</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#makeObjectsPerformSelector"><span class="nav-number">4.</span> <span class="nav-text">makeObjectsPerformSelector:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#NSSetUncaughtExceptionHandler"><span class="nav-number">5.</span> <span class="nav-text">NSSetUncaughtExceptionHandler</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">6.</span> <span class="nav-text">小结</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

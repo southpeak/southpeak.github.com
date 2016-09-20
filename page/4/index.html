@@ -310,6 +310,188 @@
             
               
                 
+                <a class="post-title-link" href="/2015/01/11/sourcecode-mantle/" itemprop="url">
+                  Mantle实现分析
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-01-11T22:01:00+08:00" content="2015-01-11">
+              2015-01-11
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/sourcecode/" itemprop="url" rel="index">
+                    <span itemprop="name">源码分析</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p><code>Mantle</code>是一个用于简化<code>Cocoa</code>或<code>Cocoa Touch</code>程序中<code>model</code>层的第三方库。通常我们的应该中都会定义大量的<code>model</code>来表示各种数据结构，而这些<code>model</code>的初始化和编码解码都需要写大量的代码。而<code>Mantle</code>的优点在于能够大大地简化这些代码。</p>
+<p><code>Mantle</code>源码中最主要的内容包括：</p>
+<ol>
+<li><code>MTLModel</code>类：通常是作为我们的<code>Model</code>的基类，该类提供了一些默认的行为来处理对象的初始化和归档操作，同时可以获取到对象所有属性的键值集合。</li>
+<li><code>MTLJSONAdapter</code>类：用于在<code>MTLModel</code>对象和<code>JSON</code>字典之间进行相互转换，相当于是一个适配器。</li>
+<li><code>MTLJSONSerializing</code>协议：需要与<code>JSON</code>字典进行相互转换的<code>MTLModel</code>的子类都需要实现该协议，以方便<code>MTLJSONApadter</code>对象进行转换。</li>
+</ol>
+<p>在此就以这三者作为我们的分析点。</p>
+<h2 id="基类MTLModel"><a href="#基类MTLModel" class="headerlink" title="基类MTLModel"></a>基类MTLModel</h2><p><code>MTLModel</code>是一个抽象类，它主要提供了一些默认的行为来处理对象的初始化和归档操作。</p>
+<h3 id="初始化"><a href="#初始化" class="headerlink" title="初始化"></a>初始化</h3><p><code>MTLModel</code>默认的初始化方法<code>-init</code>并没有做什么事情，只是调用了下<code>[super init]</code>。而同时，它提供了一个另一个初始化方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">instancetype</span>)initWithDictionary:(<span class="built_in">NSDictionary</span> *)dictionaryValue error:(<span class="built_in">NSError</span> **)error;</div></pre></td></tr></table></figure>
+<p>其中参数<code>dictionaryValue</code>是一个字典，它包含了用于初始化对象的<code>key-value</code>对。我们来看下它的具体实现：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">instancetype</span>)initWithDictionary:(<span class="built_in">NSDictionary</span> *)dictionary error:(<span class="built_in">NSError</span> **)error &#123;</div><div class="line">	...</div><div class="line">    </div><div class="line">	<span class="keyword">for</span> (<span class="built_in">NSString</span> *key <span class="keyword">in</span> dictionary) &#123;</div><div class="line"></div><div class="line">		<span class="comment">// 1. 将value标记为__autoreleasing，这是因为在MTLValidateAndSetValue函数中，</span></div><div class="line">		<span class="comment">//	  可以会返回一个新的对象存在在该变量中</span></div><div class="line">		__autoreleasing <span class="keyword">id</span> value = [dictionary objectForKey:key];</div><div class="line">		</div><div class="line">		<span class="comment">// 2. value如果为NSNull.null，会在使用前将其转换为nil</span></div><div class="line">		<span class="keyword">if</span> ([value isEqual:<span class="built_in">NSNull</span>.null]) value = <span class="literal">nil</span>;</div><div class="line">        </div><div class="line">		<span class="comment">// 3. MTLValidateAndSetValue函数利用KVC机制来验证value的值对于key是否有效，</span></div><div class="line">		<span class="comment">//	  如果无效，则使用使用默认值来设置key的值。</span></div><div class="line">		<span class="comment">//	  这里同样使用了对象的KVC特性来将value值赋值给model对应于key的属性。</span></div><div class="line">		<span class="comment">//	  有关MTLValidateAndSetValue的实现可参考源码，在此不做详细说明。</span></div><div class="line">		<span class="built_in">BOOL</span> success = <span class="built_in">MTLValidateAndSetValue</span>(<span class="keyword">self</span>, key, value, <span class="literal">YES</span>, error);</div><div class="line">		<span class="keyword">if</span> (!success) <span class="keyword">return</span> <span class="literal">nil</span>;</div><div class="line">	&#125;</div><div class="line">    </div><div class="line">	...</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>子类可以重写该方法，以在设置完对象的属性后做进一步的处理或初始化工作，不过需要记住的是：应该通过<code>super</code>来调用父类的实现。</p>
+<h3 id="获取属性的键-key-、值-value"><a href="#获取属性的键-key-、值-value" class="headerlink" title="获取属性的键(key)、值(value)"></a>获取属性的键(key)、值(value)</h3><p><code>MTLModel</code>类提供了一个类方法<code>+propertyKeys</code>，该方法返回所有<code>@property</code>声明的属性所对应的名称字符串的一个集合，但不包括只读属性和<code>MTLModel</code>自身的属性。在这个类方法会去遍历<code>model</code>的所有属性，如果属性是非只读且其<code>ivar</code>值不为<code>NULL</code>，则获取到表示属性名的字符串，并将其放入到集合中，其实现如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div></pre></td><td class="code"><pre><div class="line">+ (<span class="built_in">NSSet</span> *)propertyKeys &#123;</div><div class="line">	<span class="comment">// 1. 如果对象中已有缓存的属性名的集合，则直接返回缓存。该缓存是放在一个关联对象中。</span></div><div class="line">    <span class="built_in">NSSet</span> *cachedKeys = objc_getAssociatedObject(<span class="keyword">self</span>, <span class="built_in">MTLModelCachedPropertyKeysKey</span>);</div><div class="line">    <span class="keyword">if</span> (cachedKeys != <span class="literal">nil</span>) <span class="keyword">return</span> cachedKeys;</div><div class="line"></div><div class="line">    <span class="built_in">NSMutableSet</span> *keys = [<span class="built_in">NSMutableSet</span> set];</div><div class="line"></div><div class="line">    <span class="comment">// 2. 遍历对象所有的属性</span></div><div class="line">    <span class="comment">//	  enumeratePropertiesUsingBlock方法会沿着superclass链一直向上遍历到MTLModel，</span></div><div class="line">    <span class="comment">//	  查找当前model所对应类的继承体系中所有的属性(不包括MTLModel)，并对该属性执行block中的操作。</span></div><div class="line">    <span class="comment">//	  有关enumeratePropertiesUsingBlock的实现可参考源码，在此不做详细说明。</span></div><div class="line">    [<span class="keyword">self</span> enumeratePropertiesUsingBlock:^(objc_property_t property, <span class="built_in">BOOL</span> *stop) &#123;</div><div class="line">        mtl_propertyAttributes *attributes = mtl_copyPropertyAttributes(property);</div><div class="line">        @onExit &#123;</div><div class="line">            free(attributes);</div><div class="line">        &#125;;</div><div class="line"></div><div class="line">        <span class="comment">// 3. 过滤只读属性和ivar为NULL的属性</span></div><div class="line">        <span class="keyword">if</span> (attributes-&gt;<span class="keyword">readonly</span> &amp;&amp; attributes-&gt;ivar == <span class="literal">NULL</span>) <span class="keyword">return</span>;</div><div class="line"></div><div class="line">        <span class="comment">// 4. 获取属性名字符串，并存储到集合中</span></div><div class="line">        <span class="built_in">NSString</span> *key = @(property_getName(property));</div><div class="line">        [keys addObject:key];</div><div class="line">    &#125;];</div><div class="line"></div><div class="line">    <span class="comment">// 5. 将集合缓存到关联对象中。</span></div><div class="line">    objc_setAssociatedObject(<span class="keyword">self</span>, <span class="built_in">MTLModelCachedPropertyKeysKey</span>, keys, OBJC_ASSOCIATION_COPY);</div><div class="line"></div><div class="line">    <span class="keyword">return</span> keys;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>有了上面这个类方法，要想获取到对象中所有属性及其对应的值就方法了。为此<code>MTLModel</code>提供了一个只读属性<code>dictionaryValue</code>来取一个包含当前<code>model</code>所有属性及其值的字典。如果属性值为<code>nil</code>，则会用<code>NSNull</code>来代替。另外该属性不会为<code>nil</code>。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">copy</span>, <span class="keyword">readonly</span>) <span class="built_in">NSDictionary</span> *dictionaryValue;</div><div class="line"></div><div class="line"><span class="comment">// 实现</span></div><div class="line">- (<span class="built_in">NSDictionary</span> *)dictionaryValue &#123;</div><div class="line">    <span class="keyword">return</span> [<span class="keyword">self</span> dictionaryWithValuesForKeys:<span class="keyword">self</span>.class.propertyKeys.allObjects];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="合并对象"><a href="#合并对象" class="headerlink" title="合并对象"></a>合并对象</h3><p>合并对象是指将两个<code>MTLModel</code>对象按照自定义的方法将其对应的属性值进行合并。为此，在<code>MTLModel</code>定义了以下方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)mergeValueForKey:(<span class="built_in">NSString</span> *)key fromModel:(<span class="built_in">MTLModel</span> *)model;</div></pre></td></tr></table></figure>
+<p>该方法将当前对象指定的<code>key</code>属性的值与<code>model</code>参数对应的属性值按照指定的规则来进行合并，这种规则由我们自定义的<code>-merge&lt;Key&gt;FromModel:</code>方法来确定。如果我们的子类中实现了<code>-merge&lt;Key&gt;FromModel:</code>方法，则会调用它；如果没有找到，且<code>model</code>不为<code>nil</code>，则会用<code>model</code>的属性的值来替代当前对象的属性的值。具体实现如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)mergeValueForKey:(<span class="built_in">NSString</span> *)key fromModel:(<span class="built_in">MTLModel</span> *)model &#123;</div><div class="line">    <span class="built_in">NSParameterAssert</span>(key != <span class="literal">nil</span>);</div><div class="line"></div><div class="line">    <span class="comment">// 1. 根据传入的key拼接"merge&lt;Key&gt;FromModel:"字符串，并从该字符串中获取到对应的selector</span></div><div class="line">    <span class="comment">//	  如果当前对象没有实现-merge&lt;Key&gt;FromModel:方法，且model不为nil，则用model的属性值</span></div><div class="line">    <span class="comment">//	  替代当前对象的属性值</span></div><div class="line">    <span class="comment">//</span></div><div class="line">    <span class="comment">// 	  MTLSelectorWithCapitalizedKeyPattern函数以C语言的方式来拼接方法字符串，具体实现请</span></div><div class="line">    <span class="comment">//	  参数源码，在此不详细说明</span></div><div class="line">    SEL selector = <span class="built_in">MTLSelectorWithCapitalizedKeyPattern</span>(<span class="string">"merge"</span>, key, <span class="string">"FromModel:"</span>);</div><div class="line">    <span class="keyword">if</span> (![<span class="keyword">self</span> respondsToSelector:selector]) &#123;</div><div class="line">        <span class="keyword">if</span> (model != <span class="literal">nil</span>) &#123;</div><div class="line">            [<span class="keyword">self</span> setValue:[model valueForKey:key] forKey:key];</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        <span class="keyword">return</span>;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="comment">// 2. 通过NSInvocation方式来调用对应的-merge&lt;Key&gt;FromModel:方法。</span></div><div class="line">    <span class="built_in">NSInvocation</span> *invocation = [<span class="built_in">NSInvocation</span> invocationWithMethodSignature:[<span class="keyword">self</span> methodSignatureForSelector:selector]];</div><div class="line">    invocation.target = <span class="keyword">self</span>;</div><div class="line">    invocation.selector = selector;</div><div class="line"></div><div class="line">    [invocation setArgument:&amp;model atIndex:<span class="number">2</span>];</div><div class="line">    [invocation invoke];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>此外，<code>MTLModel</code>还提供了另一个方法来合并两个对象所有的属性值，即：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)mergeValuesForKeysFromModel:(<span class="built_in">MTLModel</span> *)model;</div></pre></td></tr></table></figure>
+<p>需要注意的是<code>model</code>必须是当前对象所属类或其子类。</p>
+<h3 id="归档对象-Archive"><a href="#归档对象-Archive" class="headerlink" title="归档对象(Archive)"></a>归档对象(Archive)</h3><p><code>Mantle</code>将对<code>MTLModel</code>的编码解码处理都放在了<code>MTLModel</code>的<code>NSCoding</code>分类中进行处理了，该分类及相关的定义都放在<code>MTLModel+NSCoding</code>文件中。</p>
+<p>对于不同的属性，在编码解码过程中可能需要区别对待，为此<code>Mentle</code>定义了枚举<code>MTLModelEncodingBehavior</code>来确定一个<code>MTLModel</code>属性被编码到一个归档中的行为。其定义如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">typedef</span> <span class="keyword">enum</span> : <span class="built_in">NSUInteger</span> &#123;</div><div class="line">    <span class="built_in">MTLModelEncodingBehaviorExcluded</span> = <span class="number">0</span>,			<span class="comment">// 属性绝不应该被编码</span></div><div class="line">    <span class="built_in">MTLModelEncodingBehaviorUnconditional</span>,			<span class="comment">// 属性总是应该被编码</span></div><div class="line">    <span class="built_in">MTLModelEncodingBehaviorConditional</span>,			<span class="comment">// 对象只有在其它地方被无条件编码时才应该被编码。这只适用于对象属性</span></div><div class="line">&#125; <span class="built_in">MTLModelEncodingBehavior</span>;</div></pre></td></tr></table></figure>
+<p>具体每个属性的归档行为我们可以在<code>+encodingBehaviorsByPropertyKey</code>类方法中设置。<code>MTLModel</code>类为我们提供了一个默认实现，如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line">+ (<span class="built_in">NSDictionary</span> *)encodingBehaviorsByPropertyKey &#123;</div><div class="line">	<span class="comment">// 1. 获取所有属性键值</span></div><div class="line">    <span class="built_in">NSSet</span> *propertyKeys = <span class="keyword">self</span>.propertyKeys;</div><div class="line">    <span class="built_in">NSMutableDictionary</span> *behaviors = [[<span class="built_in">NSMutableDictionary</span> alloc] initWithCapacity:propertyKeys.count];</div><div class="line"></div><div class="line">    <span class="comment">// 2. 对每一个属性进行处理</span></div><div class="line">    <span class="keyword">for</span> (<span class="built_in">NSString</span> *key <span class="keyword">in</span> propertyKeys) &#123;</div><div class="line">        objc_property_t property = class_getProperty(<span class="keyword">self</span>, key.UTF8String);</div><div class="line">        <span class="built_in">NSAssert</span>(property != <span class="literal">NULL</span>, <span class="string">@"Could not find property \"%@\" on %@"</span>, key, <span class="keyword">self</span>);</div><div class="line"></div><div class="line">        mtl_propertyAttributes *attributes = mtl_copyPropertyAttributes(property);</div><div class="line">        @onExit &#123;</div><div class="line">            free(attributes);</div><div class="line">        &#125;;</div><div class="line"></div><div class="line">        <span class="comment">// 3. 当属性为weak时，默认设置为MTLModelEncodingBehaviorConditional，否则默认为MTLModelEncodingBehaviorUnconditional，设置完后，将其封装在NSNumber中并放入字典中。</span></div><div class="line">        <span class="built_in">MTLModelEncodingBehavior</span> behavior = (attributes-&gt;<span class="keyword">weak</span> ? <span class="built_in">MTLModelEncodingBehaviorConditional</span> : <span class="built_in">MTLModelEncodingBehaviorUnconditional</span>);</div><div class="line">        behaviors[key] = @(behavior);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="keyword">return</span> behaviors;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>任何不在该返回字典中的属性都不会被归档。子类可以根据自己的需要来指定各属性的归档行为。但在实际时应该通过super来调用父类的实现。</p>
+<p>而为了从归档中解码指定的属性，<code>Mantle</code>提供了以下方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">id</span>)decodeValueForKey:(<span class="built_in">NSString</span> *)key withCoder:(<span class="built_in">NSCoder</span> *)coder modelVersion:(<span class="built_in">NSUInteger</span>)modelVersion;</div></pre></td></tr></table></figure>
+<p>默认情况下，该方法会查找当前对象中类似于<strong><code>-decode&lt;Key&gt;WithCoder:modelVersion:</code></strong>的方法，如果找到便会调用相应方法，并按照自定义的方式来处理属性的解码。如果我们没有实现自定义的方法或者<code>coder</code>不需要安全编码，则会对指定的key调用<code>-[NSCoder decodeObjectForKey:]</code>方法。其具体实现如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">id</span>)decodeValueForKey:(<span class="built_in">NSString</span> *)key withCoder:(<span class="built_in">NSCoder</span> *)coder modelVersion:(<span class="built_in">NSUInteger</span>)modelVersion &#123;</div><div class="line">    ...</div><div class="line"></div><div class="line">    SEL selector = <span class="built_in">MTLSelectorWithCapitalizedKeyPattern</span>(<span class="string">"decode"</span>, key, <span class="string">"WithCoder:modelVersion:"</span>);</div><div class="line">    <span class="comment">// 1. 如果自定义了-decode&lt;Key&gt;WithCoder:modelVersion:方法，则通过NSInvocation来调用方法</span></div><div class="line">    <span class="keyword">if</span> ([<span class="keyword">self</span> respondsToSelector:selector]) &#123;</div><div class="line">        <span class="built_in">NSInvocation</span> *invocation = [<span class="built_in">NSInvocation</span> invocationWithMethodSignature:[<span class="keyword">self</span> methodSignatureForSelector:selector]];</div><div class="line">        invocation.target = <span class="keyword">self</span>;</div><div class="line">        invocation.selector = selector;</div><div class="line">        [invocation setArgument:&amp;coder atIndex:<span class="number">2</span>];</div><div class="line">        [invocation setArgument:&amp;modelVersion atIndex:<span class="number">3</span>];</div><div class="line">        [invocation invoke];</div><div class="line"></div><div class="line">        __<span class="keyword">unsafe_unretained</span> <span class="keyword">id</span> result = <span class="literal">nil</span>;</div><div class="line">        [invocation getReturnValue:&amp;result];</div><div class="line">        <span class="keyword">return</span> result;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="keyword">@try</span> &#123;</div><div class="line">    	<span class="comment">// 2. 如果没有找到自定义的-decode&lt;Key&gt;WithCoder:modelVersion:方法，</span></div><div class="line">    	<span class="comment">// 	  则走以下流程。</span></div><div class="line">    	<span class="comment">//</span></div><div class="line">    	<span class="comment">// coderRequiresSecureCoding方法的具体实现请参数源码</span></div><div class="line">        <span class="keyword">if</span> (coderRequiresSecureCoding(coder)) &#123;</div><div class="line">        	<span class="comment">// 3. 如果coder要求安全编码，则会从需要安全编码的字典中取出属性所对象的类型，然后根据指定</span></div><div class="line">        	<span class="comment">//	  类型来对属性进行解码操作。</span></div><div class="line">        	<span class="comment">//	  为此，MTLModel提供了类方法allowedSecureCodingClassesByPropertyKey，来获取</span></div><div class="line">        	<span class="comment">//	  类的对象包含的所有需要安全编码的属性及其对应的类的字典。该方法首先会查看是否已有</span></div><div class="line">        	<span class="comment">//	  缓存的字典，如果没有则遍历类的所有属性。首先过滤掉那些不需要编码的属性，</span></div><div class="line">        	<span class="comment">//	  然后遍历剩下的属性，如果是非对象类型或类类型，则其对应的类型设定为NSValue，</span></div><div class="line">        	<span class="comment">//	  如果是这两者，则对应的类型即为相应类型。</span></div><div class="line">        	<span class="comment">//	  该方法的具体实现请参考源代码。</span></div><div class="line">            <span class="built_in">NSArray</span> *allowedClasses = <span class="keyword">self</span>.class.allowedSecureCodingClassesByPropertyKey[key];</div><div class="line">            <span class="built_in">NSAssert</span>(allowedClasses != <span class="literal">nil</span>, <span class="string">@"No allowed classes specified for securely decoding key \"%@\" on %@"</span>, key, <span class="keyword">self</span>.class);</div><div class="line"></div><div class="line">            <span class="keyword">return</span> [coder decodeObjectOfClasses:[<span class="built_in">NSSet</span> setWithArray:allowedClasses] forKey:key];</div><div class="line">        &#125; <span class="keyword">else</span> &#123;</div><div class="line">        	<span class="comment">// 4. 不需要安全编码</span></div><div class="line">            <span class="keyword">return</span> [coder decodeObjectForKey:key];</div><div class="line">        &#125;</div><div class="line">    &#125; <span class="keyword">@catch</span> (<span class="built_in">NSException</span> *exception) &#123;</div><div class="line">        ...</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>当然，所有的编码解码工作还得需要我们实现<code>-initWithCoder:</code>和<code>-encodeWithCoder:</code>两个方法来完成。我们在定义<code>MTLModel</code>的子类时，可以根据自己的需要来对特定的属性进行处理，不过最好调用<code>super</code>的实现来执行父类的操作。<code>MTLModel</code>对这两个方法的实现请参考源码，在此不多作说明。</p>
+<h2 id="适配器MTLJSONApadter"><a href="#适配器MTLJSONApadter" class="headerlink" title="适配器MTLJSONApadter"></a>适配器MTLJSONApadter</h2><p>为了便于在<code>MTLModel</code>对象和<code>JSON</code>字典之间进行相互转换，<code>Mantle</code>提供了类<code>MTLJSONApadter</code>，作为这两者之间的一个适配器。</p>
+<h3 id="MTLJSONSerializing协议"><a href="#MTLJSONSerializing协议" class="headerlink" title="MTLJSONSerializing协议"></a>MTLJSONSerializing协议</h3><p><code>Mantle</code>定义了一个协议<code>MTLJSONSerializing</code>，那些需要与<code>JSON</code>字典进行相互转换的<code>MTLModel</code>的子类都需要实现该协议，以方便<code>MTLJSONApadter</code>对象进行转换。这个协议中定义了三个方法，具体如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@protocol</span> <span class="title">MTLJSONSerializing</span></span></div><div class="line"><span class="keyword">@required</span></div><div class="line"></div><div class="line">+ (<span class="built_in">NSDictionary</span> *)JSONKeyPathsByPropertyKey;</div><div class="line"></div><div class="line"><span class="keyword">@optional</span></div><div class="line">  </div><div class="line">+ (<span class="built_in">NSValueTransformer</span> *)JSONTransformerForKey:(<span class="built_in">NSString</span> *)key;</div><div class="line">+ (Class)classForParsingJSONDictionary:(<span class="built_in">NSDictionary</span> *)JSONDictionary;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>这三个方法都是类方法。其中<code>+JSONKeyPathsByPropertyKey</code>是必须实现的，它返回的字典指定了如何将对象的属性映射到<code>JSON</code>中不同的<code>key path</code>(字符串值或<code>NSNull</code>)中。任何不在此字典中的属性被认为是与<code>JSON</code>中使用的<code>key</code>值相匹配。而映射到<code>NSNull</code>的属性在<code>JSON</code>序列化过程中将不进行处理。</p>
+<p><code>+JSONTransformerForKey:</code>方法指定了如何将一个<code>JSON</code>值转换为指定的属性值。反过来，转换器也用于将属性值转换成<code>JSON</code>值。如果转换器实现了<code>+&lt;key&gt;JSONTransformer</code>方法，则<code>MTLJSONAdapter</code>会使用这个具体的方法，而不使用<code>+JSONTransformerForKey:</code>方法。另外，如果不需要执行自定义的转换，则返回nil。</p>
+<p>重写<code>+classForParsingJSONDictionary:</code>方法可以将当前<code>Model</code>解析为一个不同的类对象。这对象类簇是非常有用的，其中抽象基类将被传递给<code>-[MTLJSONAdapter initWithJSONDictionary:modelClass:]</code>方法，而实例化的则是子类。</p>
+<p>如果我们希望<code>MTLModel</code>的一个子类能使用<code>MTLJSONApadter</code>来进行转换，则需要实现这个协议，并实现相应的方法。</p>
+<h3 id="初始化-1"><a href="#初始化-1" class="headerlink" title="初始化"></a>初始化</h3><p><code>MTLJSONApadter</code>对象有一个只读属性，该属性即为适配器需要处理的<code>MTLModel</code>对象，其声明如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">strong</span>, <span class="keyword">readonly</span>) <span class="built_in">MTLModel</span>&lt;<span class="built_in">MTLJSONSerializing</span>&gt; *model;</div></pre></td></tr></table></figure>
+<p>可见该对象必须是实现了<code>MTLJSONSerializing</code>协议的<code>MTLModel</code>对象。该属性是只读的，因此它只能通过初始化方法来初始化。</p>
+<p><code>MTLJSONApadter</code>对象不能通过<code>-init</code>来初始化，这个方法会直接断言。而是需要通过类提供的两个初始化方法来初始化，如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">id</span>)initWithJSONDictionary:(<span class="built_in">NSDictionary</span> *)JSONDictionary modelClass:(Class)modelClass error:(<span class="built_in">NSError</span> **)error;</div><div class="line"></div><div class="line">- (<span class="keyword">id</span>)initWithModel:(<span class="built_in">MTLModel</span>&lt;<span class="built_in">MTLJSONSerializing</span>&gt; *)model;</div></pre></td></tr></table></figure>
+<p>其中<code>-(id)initWithJSONDictionary:modelClass:error:</code>是使用一个字典和需要转换的类来进行初始化。字典<code>JSONDictionary</code>表示一个<code>JSON</code>数据，这个字典需要符合<code>NSJSONSerialization</code>返回的格式。如果该参数为空，则方法返回<code>nil</code>，且返回带有<code>MTLJSONAdapterErrorInvalidJSONDictionary</code>码的<code>error</code>对象。该方法的具体实现如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">id</span>)initWithJSONDictionary:(<span class="built_in">NSDictionary</span> *)JSONDictionary modelClass:(Class)modelClass error:(<span class="built_in">NSError</span> **)error &#123;</div><div class="line">	...</div><div class="line"></div><div class="line">	<span class="keyword">if</span> (JSONDictionary == <span class="literal">nil</span> || ![JSONDictionary isKindOfClass:<span class="built_in">NSDictionary</span>.class]) &#123;</div><div class="line">		...</div><div class="line">		<span class="keyword">return</span> <span class="literal">nil</span>;</div><div class="line">	&#125;</div><div class="line">    </div><div class="line">	<span class="keyword">if</span> ([modelClass respondsToSelector:<span class="keyword">@selector</span>(classForParsingJSONDictionary:)]) &#123;</div><div class="line">		modelClass = [modelClass classForParsingJSONDictionary:JSONDictionary];</div><div class="line">		<span class="keyword">if</span> (modelClass == <span class="literal">nil</span>) &#123;</div><div class="line">			...</div><div class="line">            </div><div class="line">			<span class="keyword">return</span> <span class="literal">nil</span>;</div><div class="line">		&#125;</div><div class="line">        </div><div class="line">		...</div><div class="line">	&#125;</div><div class="line">    </div><div class="line">	...</div><div class="line">    </div><div class="line">	_modelClass = modelClass;</div><div class="line">	_JSONKeyPathsByPropertyKey = [[modelClass JSONKeyPathsByPropertyKey] <span class="keyword">copy</span>];</div><div class="line">    </div><div class="line">	<span class="built_in">NSMutableDictionary</span> *dictionaryValue = [[<span class="built_in">NSMutableDictionary</span> alloc] initWithCapacity:JSONDictionary.count];</div><div class="line">    </div><div class="line">	<span class="built_in">NSSet</span> *propertyKeys = [<span class="keyword">self</span>.modelClass propertyKeys];</div><div class="line">    </div><div class="line">	<span class="comment">// 1. 检验model的+JSONKeyPathsByPropertyKey中字典key-value对的有效性</span></div><div class="line">	<span class="keyword">for</span> (<span class="built_in">NSString</span> *mappedPropertyKey <span class="keyword">in</span> <span class="keyword">self</span>.JSONKeyPathsByPropertyKey) &#123;</div><div class="line">		<span class="comment">// 2. 如果model对象的属性不包含+JSONKeyPathsByPropertyKey返回的字典中的某个属性键值</span></div><div class="line">		<span class="comment">//	  则返回nil。即+JSONKeyPathsByPropertyKey中指定的属性键值必须是model对象所包含</span></div><div class="line">		<span class="comment">// 	  的属性。</span></div><div class="line">		<span class="keyword">if</span> (![propertyKeys containsObject:mappedPropertyKey]) &#123;</div><div class="line">			...</div><div class="line">			<span class="keyword">return</span> <span class="literal">nil</span>;</div><div class="line">		&#125;</div><div class="line">        </div><div class="line">		<span class="keyword">id</span> value = <span class="keyword">self</span>.JSONKeyPathsByPropertyKey[mappedPropertyKey];</div><div class="line">        </div><div class="line">		<span class="comment">// 3. 如果属性不是映射到一个JSON关键路径或者是NSNull，也返回nil。</span></div><div class="line">		<span class="keyword">if</span> (![value isKindOfClass:<span class="built_in">NSString</span>.class] &amp;&amp; value != <span class="built_in">NSNull</span>.null) &#123;</div><div class="line">			...</div><div class="line">			<span class="keyword">return</span> <span class="literal">nil</span>;</div><div class="line">		&#125;</div><div class="line">	&#125;</div><div class="line">    </div><div class="line">	<span class="keyword">for</span> (<span class="built_in">NSString</span> *propertyKey <span class="keyword">in</span> propertyKeys) &#123;</div><div class="line">		<span class="built_in">NSString</span> *JSONKeyPath = [<span class="keyword">self</span> JSONKeyPathForPropertyKey:propertyKey];</div><div class="line">		<span class="keyword">if</span> (JSONKeyPath == <span class="literal">nil</span>) <span class="keyword">continue</span>;</div><div class="line">        </div><div class="line">		<span class="keyword">id</span> value;</div><div class="line">		<span class="keyword">@try</span> &#123;</div><div class="line">			value = [JSONDictionary valueForKeyPath:JSONKeyPath];</div><div class="line">		&#125; <span class="keyword">@catch</span> (<span class="built_in">NSException</span> *ex) &#123;</div><div class="line">			...</div><div class="line">            </div><div class="line">			<span class="keyword">return</span> <span class="literal">nil</span>;</div><div class="line">		&#125;</div><div class="line">        </div><div class="line">		<span class="keyword">if</span> (value == <span class="literal">nil</span>) <span class="keyword">continue</span>;</div><div class="line">        </div><div class="line">		<span class="keyword">@try</span> &#123;</div><div class="line">			<span class="comment">// 4. 获取一个转换器，</span></div><div class="line">			<span class="comment">//	  如上所述，+JSONTransformerForKey:会先去查看是否有+&lt;key&gt;JSONTransformer方法，</span></div><div class="line">			<span class="comment">//    如果有则会使用这个具体的方法，如果没有，则调用相应的+JSONTransformerForKey:方法</span></div><div class="line">			<span class="comment">//	  该方法具体实现请参考源码</span></div><div class="line">			<span class="built_in">NSValueTransformer</span> *transformer = [<span class="keyword">self</span> JSONTransformerForKey:propertyKey];</div><div class="line">			<span class="keyword">if</span> (transformer != <span class="literal">nil</span>) &#123;</div><div class="line">				</div><div class="line">				<span class="comment">// 5. 获取转换器转换生的值</span></div><div class="line">				<span class="keyword">if</span> ([value isEqual:<span class="built_in">NSNull</span>.null]) value = <span class="literal">nil</span>;</div><div class="line">				value = [transformer transformedValue:value] ?: <span class="built_in">NSNull</span>.null;</div><div class="line">			&#125;</div><div class="line">            </div><div class="line">			dictionaryValue[propertyKey] = value;</div><div class="line">		&#125; <span class="keyword">@catch</span> (<span class="built_in">NSException</span> *ex) &#123;</div><div class="line">			...</div><div class="line">            </div><div class="line">			<span class="keyword">return</span> <span class="literal">nil</span>;</div><div class="line">		&#125;</div><div class="line">	&#125;</div><div class="line">    </div><div class="line">	<span class="comment">// 6. 初始化_model</span></div><div class="line">	_model = [<span class="keyword">self</span>.modelClass modelWithDictionary:dictionaryValue error:error];</div><div class="line">	<span class="keyword">if</span> (_model == <span class="literal">nil</span>) <span class="keyword">return</span> <span class="literal">nil</span>;</div><div class="line">    </div><div class="line">	<span class="keyword">return</span> <span class="keyword">self</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>另外，<code>MTLJSONApadter</code>还提供了几个类方法来创建一个<code>MTLJSONApadter</code>对象，如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">+ (id)modelOfClass:(Class)modelClass fromJSONDictionary:(NSDictionary *)JSONDictionary error:(NSError **)error;</div><div class="line"></div><div class="line">+ (NSArray *)modelsOfClass:(Class)modelClass fromJSONArray:(NSArray *)JSONArray error:(NSError **)error;</div><div class="line"></div><div class="line">+ (NSDictionary *)JSONDictionaryFromModel:(MTLModel&lt;MTLJSONSerializing&gt; *)model;</div></pre></td></tr></table></figure>
+<p>具体实现可参考源码。</p>
+<h3 id="从对象中获取JSON数据"><a href="#从对象中获取JSON数据" class="headerlink" title="从对象中获取JSON数据"></a>从对象中获取JSON数据</h3><p>从<code>MTLModel</code>对象中获取<code>JSON</code>数据是上述初始化过程中的一个逆过程。该过程由<code>-JSONDictionary</code>方法来实现，具体如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div></pre></td><td class="code"><pre><div class="line">- (<span class="built_in">NSDictionary</span> *)JSONDictionary &#123;</div><div class="line">	<span class="built_in">NSDictionary</span> *dictionaryValue = <span class="keyword">self</span>.model.dictionaryValue;</div><div class="line">	<span class="built_in">NSMutableDictionary</span> *JSONDictionary = [[<span class="built_in">NSMutableDictionary</span> alloc] initWithCapacity:dictionaryValue.count];</div><div class="line">    </div><div class="line">	[dictionaryValue enumerateKeysAndObjectsUsingBlock:^(<span class="built_in">NSString</span> *propertyKey, <span class="keyword">id</span> value, <span class="built_in">BOOL</span> *stop) &#123;</div><div class="line">		<span class="built_in">NSString</span> *JSONKeyPath = [<span class="keyword">self</span> JSONKeyPathForPropertyKey:propertyKey];</div><div class="line">		<span class="keyword">if</span> (JSONKeyPath == <span class="literal">nil</span>) <span class="keyword">return</span>;</div><div class="line">        </div><div class="line">		<span class="comment">// 1. 获取属性的值</span></div><div class="line">		<span class="built_in">NSValueTransformer</span> *transformer = [<span class="keyword">self</span> JSONTransformerForKey:propertyKey];</div><div class="line">		<span class="keyword">if</span> ([transformer.class allowsReverseTransformation]) &#123;</div><div class="line">			<span class="keyword">if</span> ([value isEqual:<span class="built_in">NSNull</span>.null]) value = <span class="literal">nil</span>;</div><div class="line">			value = [transformer reverseTransformedValue:value] ?: <span class="built_in">NSNull</span>.null;</div><div class="line">		&#125;</div><div class="line">        </div><div class="line">		<span class="built_in">NSArray</span> *keyPathComponents = [JSONKeyPath componentsSeparatedByString:<span class="string">@"."</span>];</div><div class="line">        </div><div class="line">		<span class="comment">// 2. 对于嵌套属性值的设置，会先从keypath中获取每一层属性，</span></div><div class="line">		<span class="comment">//	  如果当前层级的obj中没有该属性，则为其设置一个空字典；然后再进入下一层级，依此类推</span></div><div class="line">		<span class="comment">//	  最后设置如下形式的字典: @&#123;@"nested": @&#123;@"name": @"foo"&#125;&#125;</span></div><div class="line">		<span class="keyword">id</span> obj = JSONDictionary;</div><div class="line">		<span class="keyword">for</span> (<span class="built_in">NSString</span> *component <span class="keyword">in</span> keyPathComponents) &#123;</div><div class="line">			<span class="keyword">if</span> ([obj valueForKey:component] == <span class="literal">nil</span>) &#123;</div><div class="line">				[obj setValue:[<span class="built_in">NSMutableDictionary</span> dictionary] forKey:component];</div><div class="line">			&#125;</div><div class="line">            </div><div class="line">			obj = [obj valueForKey:component];</div><div class="line">		&#125;</div><div class="line">        </div><div class="line">		[JSONDictionary setValue:value forKeyPath:JSONKeyPath];</div><div class="line">	&#125;];</div><div class="line">    </div><div class="line">	<span class="keyword">return</span> JSONDictionary;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>从上可以看出，该方法实际上最终获得的是一个字典。而获得字典后，再将其序列化为<code>JSON</code>串就容易了。</p>
+<p><code>MTLJSONApadter</code>也提供了一个简便的方法，来从一个<code>model</code>中获取一个<code>JSON</code>字典，其定义如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">+ (<span class="built_in">NSDictionary</span> *)JSONDictionaryFromModel:(<span class="built_in">MTLModel</span>&lt;<span class="built_in">MTLJSONSerializing</span>&gt; *)model;</div></pre></td></tr></table></figure>
+<h3 id="MTLManagedObjectAdapter"><a href="#MTLManagedObjectAdapter" class="headerlink" title="MTLManagedObjectAdapter"></a>MTLManagedObjectAdapter</h3><p>为了适应<code>Core Data</code>，<code>Mantle</code>专门定义了<code>MTLManagedObjectAdapter</code>类。该类用作<code>MTLModel</code>对象与<code>NSManagedObject</code>对象之前的转换。具体的我们在此不详细描述。</p>
+<h2 id="技术点总结"><a href="#技术点总结" class="headerlink" title="技术点总结"></a>技术点总结</h2><p><code>Mantle</code>的功能主要是进行对象间数据的转换：即如何在一个<code>MTLModel</code>和一个<code>JSON</code>字典中进行数据的转换。因此，所使用的技术大都是<code>Cocoa Foundation</code>提供的功能。除了对于<code>Core Data</code>的处理之外，主要用到的技术的有如下几条：</p>
+<ol>
+<li><code>KVC</code>的应用：这主要体现在对<code>MTLModel</code>子类的属性赋值中，通过<code>KVC</code>机制来验证值的有效性并为属性赋值。</li>
+<li><code>NSValueTransform</code>：这主要用于对<code>JSON</code>值转换为属性值的处理，我们可以自定义转换器来满足我们自己的转换需求。</li>
+<li><code>NSInvocation</code>：这主要用于统一处理针对特定<code>key</code>值的一些方法的调用。比如<code>-merge&lt;Key&gt;FromModel:</code>这一类方法。</li>
+<li><code>Run time</code>函数的使用：这主要用于对从一个字符串中获取到方法对应的字符串，然后通过<code>sel_registerName</code>函数来注册一个<code>selector</code>。</li>
+</ol>
+<p>当然在<code>Mantle</code>中还会涉及到其它的一些技术点，在此不多做叙述。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ol>
+<li><a href="https://github.com/Mantle/Mantle" target="_blank" rel="external">Mantle工程</a></li>
+</ol>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
                 <a class="post-title-link" href="/2015/01/11/tool-mantle/" itemprop="url">
                   工具篇：Mantle
                 </a>
@@ -2043,181 +2225,6 @@
 
 
     
-      
-
-  
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/2014/12/02/quartz2d-5/" itemprop="url">
-                  Quartz 2D编程指南之五：变换
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            <span class="post-meta-item-icon">
-              <i class="fa fa-calendar-o"></i>
-            </span>
-            <span class="post-meta-item-text">发表于</span>
-            <time itemprop="dateCreated" datetime="2014-12-02T22:27:17+08:00" content="2014-12-02">
-              2014-12-02
-            </time>
-          </span>
-
-          
-            <span class="post-category" >
-              &nbsp; | &nbsp;
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-              
-                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
-                  <a href="/categories/translate/" itemprop="url" rel="index">
-                    <span itemprop="name">翻译</span>
-                  </a>
-                </span>
-
-                
-                
-
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-
-          
-          
-
-          
-        </div>
-      </header>
-    
-
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>Quartz 2D 绘制模型定义了两种独立的坐标空间：用户空间(用于表现文档页)和设备空间(用于表现设备的本地分辨率)。用户坐标空间用浮点数表示坐标，与设备空间的像素分辨率没有关系。当我们需要一个点或者显示文档时， Quartz会将用户空间坐标系统映射到设备空间坐标系统。因此，我们不需要重写应用程序或添加额外的代码来调整应用程序的输出以适应不同的设备。</p>
-<p>我们可以通过操作CTM(current transformation matrix)来修改默认的用户空间。在创建图形上下文后，CTM是单位矩阵，我们可以使用 Quartz的变换函数来修改CTM，从而修改用户空间中的绘制操作。</p>
-<p>本章内容包括：</p>
-<ol>
-<li>变换操作函数概览</li>
-<li>如何修改CTM</li>
-<li>如何创建一个仿射变换</li>
-<li>如何选择两个相同的变换</li>
-<li>如何获取user-to-device-space变换</li>
-</ol>
-<h2 id="Quartz变换函数"><a href="#Quartz变换函数" class="headerlink" title="Quartz变换函数"></a>Quartz变换函数</h2><p>我们可能使用Quartz内置的变换函数方便的平移、旋转和缩放我们的绘图。只需要短短几行代码，我们便可以按顺序应用变换或结合使用变换。图5-1显示了缩放和旋转一幅图片的效果。我们使用的每个变换操作都更新了CTM。CTM总是用于表示用户空间和设备空间的当前映射关系。这种映射确保了应用程序的输出在任何显示器或打印机上看上去都很棒。</p>
-<p><strong>Figure 5-1  Applying scaling and rotation</strong></p>
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/spaces.gif" alt="image"></p>
-<p>Quartz 2D API提供了5个函数，以允许我们获取和修改CTM。我们可以旋转、平移、缩放CTM。我们还可以联结一个仿射变换矩阵。</p>
-<p>有时我们可以不想操作用户空间，直到我们决定将变换应用到CTM时，Quartz为此允许我们创建应用于此的仿射矩阵。我们可以使用另外一组函数来创建仿射变换，这些变换可以与CTM联结在一起。</p>
-<p>我们可以不需要了解矩阵的数学含义而使用这些函数。</p>
-<h2 id="修改CTM-Current-Transformation-Matrix"><a href="#修改CTM-Current-Transformation-Matrix" class="headerlink" title="修改CTM(Current Transformation Matrix)"></a>修改CTM(Current Transformation Matrix)</h2><p>我们在绘制图像前操作CTM来旋转、缩放或平移page,从而变换我们将要绘制的对象。以变换CTM之前，我们需要保存图形状态，以便绘制后能恢复。我们同样能用仿射矩阵来联结CTM。在本节中，我们将介绍与CTM函数相关的四种操作–平移、旋转、缩放和联结。</p>
-<p>假设我们提供了一个可用的图形上下文、一个指向可绘制图像的矩形的指针和一个可用的CGImage对象，则下面一行代码绘制了一个图像。该行代码可以绘制如图5-2所示的图片。在阅读了本节余下的部分后，我们将看到如何将变换应用于图像。</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">CGContextDrawImage</span> (myContext, rect, myImage);</div></pre></td></tr></table></figure>
-<p><strong>Figure 5-2  An image that is not transformed</strong></p>
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/normal_rooster.gif" alt="image"></p>
-<p>平移变换根据我们指定的x, y轴的值移动坐标系统的原点。我们通过调用CGContextTranslateCTM函数来修改每个点的x, y坐标值。如图5-3显示了一幅图片沿x轴移动了100个单位，沿y轴移动了50个单位。具体代码如下：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">CGContextTranslateCTM</span> (myContext, <span class="number">100</span>, <span class="number">50</span>);</div></pre></td></tr></table></figure>
-<p><strong>Figure 5-3  A translated image</strong></p>
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/translated_rooster.gif" alt="image"></p>
-<p>旋转变换根据指定的角度来移动坐标空间。我们调用CGContextRotateCTM函数来指定旋转角度(以弧度为单位)。图5-4显示了图片以原点(左下角)为中心旋转45度，代码所下所示：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">CGContextRotateCTM</span> (myContext, radians(–<span class="number">45.</span>));</div></pre></td></tr></table></figure>
-<p>由于旋转操作使图片的部分区域置于上下文之外，所以区域外的部分被裁减。我们用弧度来指定旋转角度。如果需要进行旋转操作，下面的代码将会很有用</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#include <span class="meta-string">&lt;math.h&gt;</span></span></div><div class="line"><span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">double</span> radians (<span class="keyword">double</span> degrees) &#123;<span class="keyword">return</span> degrees * M_PI/<span class="number">180</span>;&#125;</div></pre></td></tr></table></figure>
-<p><strong>Figure 5-4  A rotated image</strong></p>
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rotated_rooster.gif" alt="image"></p>
-<p>缩放操作根据指定的x, y因子来改变坐标空间的大小，从而放大或缩小图像。x, y因子的大小决定了新的坐标空间是否比原始坐标空间大或者小。另外，通过指定x因子为负数，可以倒转x轴，同样可以指定y因子为负数来倒转y轴。通过调用CGContextScaleCTM函数来指定x, y缩放因子。图5-5显示了指定x因子为0.5，y因子为0.75后的缩放效果。代码如下：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">CGContextScaleCTM</span> (myContext, <span class="number">.5</span>, <span class="number">.75</span>);</div></pre></td></tr></table></figure>
-<p><strong>Figure 5-5  A scaled image</strong></p>
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/scaled_rooster.gif" alt="image"></p>
-<p>联合变换将两个矩阵相乘来联接现价变换操作。我们可以联接多个矩阵来得到一个包含所有矩阵累积效果矩阵。通过调用CGContextConcatCTM来联接CTM和仿射矩阵。<br>另外一种得到累积效果的方式是执行两个或多个变换操作而不恢复图形状态。图5-6显示了先平移后旋转一幅图片的效果，代码如下：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">CGContextTranslateCTM</span> (myContext, w,h);</div><div class="line"><span class="built_in">CGContextRotateCTM</span> (myContext, radians(<span class="number">-180.</span>));</div></pre></td></tr></table></figure>
-<p><strong>Figure 5-6  An image that is translated and rotated</strong></p>
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/tr_rooster.gif" alt="image"></p>
-<p>图5-7显示了平移、缩放和旋转一幅图片，代码如下：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">CGContextTranslateCTM</span> (myContext, w/<span class="number">4</span>, <span class="number">0</span>);</div><div class="line"><span class="built_in">CGContextScaleCTM</span> (myContext, <span class="number">.25</span>,  <span class="number">.5</span>);</div><div class="line"><span class="built_in">CGContextRotateCTM</span> (myContext, radians ( <span class="number">22.</span>));</div></pre></td></tr></table></figure>
-<p><strong>Figure 5-7  An image that is translated, scaled, and then rotated</strong></p>
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/tsr_rooster.gif" alt="image"></p>
-<p>变换操作的顺序会影响到最终的效果。如果调换顺序，将得到不同的结果。调换上面代码的顺序将得到如图5-8所示的效果，代码如下：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">CGContextRotateCTM</span> (myContext, radians ( <span class="number">22.</span>));</div><div class="line"><span class="built_in">CGContextScaleCTM</span> (myContext, <span class="number">.25</span>,  <span class="number">.5</span>);</div><div class="line"><span class="built_in">CGContextTranslateCTM</span> (myContext, w/<span class="number">4</span>, <span class="number">0</span>);</div></pre></td></tr></table></figure>
-<p><strong>Figure 5-8  An image that is rotated, scaled, and then translated</strong></p>
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rst_rooster.gif" alt="image"></p>
-<h2 id="创建仿射变换"><a href="#创建仿射变换" class="headerlink" title="创建仿射变换"></a>创建仿射变换</h2><p>仿射变换操作在矩阵上，而不是在CTM上。我们可以使用这些函数来构造一个之后用于CTM(调用函数CGContextConcatCTM)的矩阵。仿射变换函数使用或者返回一个CGAffineTransform数据对象。我们可以构建简单或复杂的仿射变换。</p>
-<p>仿射变换函数能实现与CTM函数相同的操作–平移、旋转、缩放、联合。表5-1列出了仿射变换函数及其用途。注意每种变换都有两个函数。</p>
-<p><strong>Table 5-1  Affine transform functions for translation, rotation, and scaling</strong></p>
-<p><img src="https://github.com/southpeak/Blog-images/blob/master/quartz-2d-table5-1.png?raw=true" alt="image"></p>
-<p>Quartz同样提供了一个仿射变换函数(CGAffineTransformInvert)来倒置矩阵。倒置操作通常用于在变换对象中提供点的倒置变换。当我们需要恢复一个被矩阵变换的值时，可以使用倒置操作。将值与倒置矩阵相乘，就可得到原先的值。我们通常不需要倒置操作，因为我们可以通过保存和恢复图形状态来倒置CTM的效果。</p>
-<p>在一些情况下，我们可能不需要变换整修空间，而只是一个点或一个大小。我们通过调用CGPointApplyAffineTransform在CGPoint结构上执行变换操作。调用CGSizeApplyAffineTransform在CGSize结构上执行变换操作。调用CGRectApplyAffineTransform在CGRect结构上执行变换操作。CGRectApplyAffineTransform返回一个最小的矩形，该矩形包含了被传递给CGRectApplyAffineTransform的矩形对象的角点。如果矩形上的仿射变换操作只有缩放和平移操作，则返回的矩形与四个变换后的角组成的矩形是一致的。</p>
-<p>可以通过调用函数CGAffineTransformMake来创建一个新的仿射变换，但与其它函数不同的是，它需要提供一个矩阵实体。</p>
-<h2 id="评价仿射变换"><a href="#评价仿射变换" class="headerlink" title="评价仿射变换"></a>评价仿射变换</h2><p>我们可以通过调用CGAffineTransformEqualToTransform函数来决定一个仿射变换是否与另一个相同。如果两个变换相同，则返回true；否则返回false。</p>
-<p>函数CGAffineTransformIsIdentity用于确认一个变换是否是单位变换。单位变换没有平移、缩放和旋转操作。Quartz常量CGAffineTransformIdentity表示一个单位变换。</p>
-<h2 id="获取用户空间到设备空间的变换"><a href="#获取用户空间到设备空间的变换" class="headerlink" title="获取用户空间到设备空间的变换"></a>获取用户空间到设备空间的变换</h2><p>当使用Quartz 2D时，我们只是在用户空间下工作。Quartz为我们处理用户空间和设备空间的转换。如果我们的应用程序需要获取Quartz转换用户空间和设备空间的仿射变换，我们可以调用函数CGContextGetUserSpaceToDeviceSpaceTransform。</p>
-<p>Quartz提供了一系列的函数来转换用户空间和设备空间的几何体。我们会发现这些函数使用赶来比使用CGContextGetUserSpaceToDeviceSpaceTransform函数返回的仿射变换更好用。</p>
-<ol>
-<li>点：函数CGContextConvertPointToDeviceSpace和CGContextConvertPointToUserSpace将一个CGPoint数据结构从一个空间变换到另一个空间。</li>
-<li>大小：函数CGContextConvertSizeToDeviceSpace和CGContextConvertSizeToUserSpace将一个CGSize数据结构从一个空间变换到另一个空间。</li>
-<li>矩形：函数CGContextConvertRectToDeviceSpace和CGContextConvertRectToUserSpace将一个CGPoint数据结构从一个空间变换到另一个空间。</li>
-</ol>
-
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
   </section>
 
   
@@ -2263,7 +2270,7 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/archives">
-              <span class="site-state-item-count">83</span>
+              <span class="site-state-item-count">84</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>

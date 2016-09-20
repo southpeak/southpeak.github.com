@@ -310,6 +310,247 @@
             
               
                 
+                <a class="post-title-link" href="/2014/08/02/reactivecocoa-tutorial-the-definitive-introduction-1/" itemprop="url">
+                  ReactiveCocoa Tutorial – The Definitive Introduction: Part 1/2
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-08-02T23:03:12+08:00" content="2014-08-02">
+              2014-08-02
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/translate/" itemprop="url" rel="index">
+                    <span itemprop="name">翻译</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>原文由<code>Colin Eberhardt</code>发表于<code>raywenderlich</code>，<a href="http://www.raywenderlich.com/62699/reactivecocoa-tutorial-pt1" target="_blank" rel="external">ReactiveCocoa Tutorial – The Definitive Introduction: Part 1/2</a></p>
+<p>在编写<code>iOS</code>代码时，我们的大部分代码都是在响应一些事件：按钮点击、接收网络消息、属性变化等等。但是这些事件在代码中的表现形式却不一样：如<code>target-action</code>、代理方法、<code>KVO</code>、回调或其它。<code>ReactiveCocoa</code>的目的就是定义一个统一的事件处理接口，这样它们可以非常简单地进行链接、过滤和组合。</p>
+<p><code>ReactiveCocoa</code>结合了一些编程模式：</p>
+<ol>
+<li>函数式编程：利用高阶函数，即将函数作为其它函数的参数。</li>
+<li>响应式编程：关注于数据流及变化的传播。</li>
+</ol>
+<p>基于以上两点，<code>ReactiveCocoa</code>被当成是函数响应编程(<code>Functional Reactive Programming, FRP</code>)框架。我们将在下面以实例来看看<code>ReactiveCocoa</code>的实用价值。</p>
+<h2 id="Reactive-Playground实例"><a href="#Reactive-Playground实例" class="headerlink" title="Reactive Playground实例"></a>Reactive Playground实例</h2><p>虽然这是一篇指南性质的文章，但我们将以一个简单的实例来介绍<code>ReactiveCocoa</code>。可以在<a href="http://cdn2.raywenderlich.com/wp-content/uploads/2014/01/ReactivePlayground-Starter.zip" target="_blank" rel="external">这里</a>下载源代码，然后编译并运行以确保程序可以运行。</p>
+<p><code>ReactivePlayground</code>是个非常简单的应用，只有一个用户登录界面。只需要提供正确的用户名及密码，就可以显示一幅可爱的小猫的图片。如下图所示：</p>
+<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/01/ReactivePlaygroundStarter.jpg" alt="image"></p>
+<p>这个工程很简单，所以花几分钟来熟悉一下这个工程。打开<code>RWViewController.m</code>，可以快速查找一下如何设置<code>Sign in</code>按钮可用的代码，以及显示/隐藏<code>signInFailure Label</code>的规则。在简单的实现中，我们能快速定位这些问题，但如果实现很复杂，那可能需要花一些时间来分析代码。</p>
+<p>现在，我们有了<code>ReactiveCocoa</code>，它能让代码变得更清晰。来看看它是怎么做到的吧。</p>
+<h2 id="添加ReactiveCocoa框架"><a href="#添加ReactiveCocoa框架" class="headerlink" title="添加ReactiveCocoa框架"></a>添加ReactiveCocoa框架</h2><p>添加<code>ReactiveCocoa</code>框架到我们工程的最简单的方法是使用<code>Cocoapods</code>。我们先关闭<code>ReactivePlayground</code>工程。<code>Cocoapods</code>会创建一个<code>Xcode workspace</code>，它会替代我们的原始工程文件。</p>
+<p>首先创建一个名为<code>Podfile</code>的空文件，打开并添加如下信息：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">platform :ios, '6.0'</div><div class="line">inhibit_all_warnings!</div><div class="line">xcodeproj 'RWReactivePlayground'</div><div class="line"></div><div class="line">target :RWReactivePlayground do</div><div class="line">    pod 'ReactiveCocoa', '~&gt; 2.3.1'</div><div class="line">end</div><div class="line"></div><div class="line">post_install do |installer|</div><div class="line">installer.project.targets.each do |target|</div><div class="line">puts "#&#123;target.name&#125;"</div><div class="line">end</div><div class="line">end</div></pre></td></tr></table></figure>
+<p>配置完成后保存文件，打开终端并转到工程所在目录，然后输入以下命令：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">pod install</div></pre></td></tr></table></figure>
+<p>然后终端会有如下输出</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">Analyzing dependencies</div><div class="line">Downloading dependencies</div><div class="line">Installing ReactiveCocoa (2.3.1)</div><div class="line">Generating Pods project</div><div class="line">Pods-RWReactivePlayground-ReactiveCocoa</div><div class="line">Pods-RWReactivePlayground</div><div class="line">Integrating client project</div><div class="line"></div><div class="line">[!] From now on use `RWReactivePlayground.xcworkspace`.</div></pre></td></tr></table></figure>
+<p>这表示已经下载了<code>ReactiveCocoa</code>框架，同时<code>Cocoapods</code>创建了一个<code>Xcode workspace</code>，同时将框架整合到了我们的工程中。打开新生成的<code>workspace</code>文件(<code>RWReactivePlayground.xcworkspace</code>)，将看到如下的工程结构：</p>
+<p><img src="http://cdn3.raywenderlich.com/wp-content/uploads/2014/01/AddedCocoaPods.png" alt="image"></p>
+<p>我们看到有一个命名为<code>ReactivePlayground</code>的工程，这实际上是我们的初始工程，它依赖于<code>Pods</code>工程。做完这一切后，我们就可以开始玩了，哈哈。</p>
+<h2 id="Time-to-Play"><a href="#Time-to-Play" class="headerlink" title="Time to Play"></a>Time to Play</h2><p>如上所述，<code>ReactiveCocoa</code>提供了一个标准的接口来处理不同的事件流。在<code>ReactiveCocoa</code>中，这些被统一称为信号，由<code>RACSignal</code>类表示。</p>
+<p>打开程序的初始视图控制器<code>RWViewController.m</code>文件，在文件头部导入以下头文件：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">&lt;ReactiveCocoa/ReactiveCocoa.h&gt;</span></span></div></pre></td></tr></table></figure>
+<p>我们暂时先不替换原来的代码，先看看如何使用<code>ReactiveCocoa</code>。在<code>viewDidLoad</code>方法中加入如下代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">[<span class="keyword">self</span>.usernameTextField.rac_textSignal subscribeNext:^(<span class="keyword">id</span> x) &#123;</div><div class="line"></div><div class="line">    <span class="built_in">NSLog</span>(<span class="string">@"%@"</span>, x);</div><div class="line">&#125;];</div></pre></td></tr></table></figure>
+<p>运行程序并在用户名输入框中键入”<code>reactive cocoa</code>“，我们可以看到控制台会有如下输出：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">15</span>:<span class="number">32</span>:<span class="number">30.890</span> RWReactivePlayground[<span class="number">9191</span>:<span class="number">60</span>b] r</div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">15</span>:<span class="number">32</span>:<span class="number">32.007</span> RWReactivePlayground[<span class="number">9191</span>:<span class="number">60</span>b] re</div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">15</span>:<span class="number">32</span>:<span class="number">32.289</span> RWReactivePlayground[<span class="number">9191</span>:<span class="number">60</span>b] rea</div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">15</span>:<span class="number">32</span>:<span class="number">33.990</span> RWReactivePlayground[<span class="number">9191</span>:<span class="number">60</span>b] reac</div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">15</span>:<span class="number">32</span>:<span class="number">34.889</span> RWReactivePlayground[<span class="number">9191</span>:<span class="number">60</span>b] react</div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">15</span>:<span class="number">32</span>:<span class="number">35.557</span> RWReactivePlayground[<span class="number">9191</span>:<span class="number">60</span>b] reacti</div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">15</span>:<span class="number">32</span>:<span class="number">36.022</span> RWReactivePlayground[<span class="number">9191</span>:<span class="number">60</span>b] reactiv</div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">15</span>:<span class="number">32</span>:<span class="number">36.505</span> RWReactivePlayground[<span class="number">9191</span>:<span class="number">60</span>b] reactive</div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">15</span>:<span class="number">32</span>:<span class="number">42.328</span> RWReactivePlayground[<span class="number">9191</span>:<span class="number">60</span>b] reactive </div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">15</span>:<span class="number">32</span>:<span class="number">47.223</span> RWReactivePlayground[<span class="number">9191</span>:<span class="number">60</span>b] reactive c</div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">15</span>:<span class="number">32</span>:<span class="number">47.794</span> RWReactivePlayground[<span class="number">9191</span>:<span class="number">60</span>b] reactive co</div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">15</span>:<span class="number">32</span>:<span class="number">48.191</span> RWReactivePlayground[<span class="number">9191</span>:<span class="number">60</span>b] reactive coc</div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">15</span>:<span class="number">32</span>:<span class="number">48.657</span> RWReactivePlayground[<span class="number">9191</span>:<span class="number">60</span>b] reactive coco</div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">15</span>:<span class="number">32</span>:<span class="number">49.141</span> RWReactivePlayground[<span class="number">9191</span>:<span class="number">60</span>b] reactive cocoa</div></pre></td></tr></table></figure>
+<p>我们可以看到，每次在<code>text field</code>中输入时，都会执行<code>block</code>中的代码。没有<code>target-action</code>，没有代理，只有信号与<code>block</code>。是不是很棒？</p>
+<p><code>ReactiveCocoa</code>信号发送一个事件流到它们的订阅者中。我们需要知道三种类型的事件：<code>next</code>, <code>error</code>和<code>completed</code>。一个信号可能由于<code>error</code>事件或<code>completed</code>事件而终止，在此之前它会发送很多个<code>next</code>事件。在这一部分中，我们将重点关注<code>next</code>事件。在学习关于<code>error</code>和<code>completed</code>事件前，请仔细阅读第二部分。</p>
+<p><code>RACSignal</code>有许多方法用于订阅这些不同的事件类型。每个方法会有一个或多个<code>block</code>，每个<code>block</code>执行不同的逻辑处理。在上面这个例子中，我们看到<code>subscribeNext:</code>方法提供了一个响应<code>next</code>事件的<code>block</code>。</p>
+<p><code>ReactiveCocoa</code>框架通过类别来为大部分标准<code>UIKit</code>控件添加信号，以便这些控件可以添加其相应事件的订阅，如上面的<code>UITextField</code>包含了<code>rac_textSignal</code>属性。</p>
+<p>理论讲得差不多了，我们继续吧！！！</p>
+<p><code>ReactiveCocoa</code>有大量的操作右用于处理事件流。例如，如果我们只对长度大于<code>3</code>的用户名感兴趣，则我们可以使用<code>filter</code>操作。在<code>viewDidLoad</code>中更新我们的代码如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">[[<span class="keyword">self</span>.usernameTextField.rac_textSignal filter:^<span class="built_in">BOOL</span>(<span class="keyword">id</span> value) &#123;</div><div class="line">    <span class="built_in">NSString</span> *text = value;</div><div class="line">    <span class="keyword">return</span> text.length &gt; <span class="number">3</span>;</div><div class="line">&#125;] subscribeNext:^(<span class="keyword">id</span> x) &#123;</div><div class="line">    <span class="built_in">NSLog</span>(<span class="string">@"%@"</span>, x);</div><div class="line">&#125;];</div></pre></td></tr></table></figure>
+<p>运行并在用户名输入框中输入<code>&quot;reactive cocoa&quot;</code>，我们可以看到控制台会有如下输出：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">15</span>:<span class="number">52</span>:<span class="number">13.558</span> RWReactivePlayground[<span class="number">9249</span>:<span class="number">60</span>b] reac</div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">15</span>:<span class="number">52</span>:<span class="number">15.960</span> RWReactivePlayground[<span class="number">9249</span>:<span class="number">60</span>b] react</div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">15</span>:<span class="number">52</span>:<span class="number">16.589</span> RWReactivePlayground[<span class="number">9249</span>:<span class="number">60</span>b] reacti</div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">15</span>:<span class="number">52</span>:<span class="number">17.158</span> RWReactivePlayground[<span class="number">9249</span>:<span class="number">60</span>b] reactiv</div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">15</span>:<span class="number">52</span>:<span class="number">17.807</span> RWReactivePlayground[<span class="number">9249</span>:<span class="number">60</span>b] reactive</div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">15</span>:<span class="number">52</span>:<span class="number">18.674</span> RWReactivePlayground[<span class="number">9249</span>:<span class="number">60</span>b] reactive </div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">15</span>:<span class="number">52</span>:<span class="number">19.176</span> RWReactivePlayground[<span class="number">9249</span>:<span class="number">60</span>b] reactive c</div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">15</span>:<span class="number">52</span>:<span class="number">19.710</span> RWReactivePlayground[<span class="number">9249</span>:<span class="number">60</span>b] reactive co</div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">15</span>:<span class="number">52</span>:<span class="number">20.057</span> RWReactivePlayground[<span class="number">9249</span>:<span class="number">60</span>b] reactive coc</div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">15</span>:<span class="number">52</span>:<span class="number">20.530</span> RWReactivePlayground[<span class="number">9249</span>:<span class="number">60</span>b] reactive coco</div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">15</span>:<span class="number">52</span>:<span class="number">20.978</span> RWReactivePlayground[<span class="number">9249</span>:<span class="number">60</span>b] reactive cocoa</div></pre></td></tr></table></figure>
+<p>可以看到当长度小于<code>3</code>时，并不执行后续的操作。通过这种方式，我们创建了一个简单的管道。这就是响应式编程的实质，我们将我们程序的功能表示为数据流的形式。我们可以将上述调用表示为以下图例：</p>
+<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/01/FilterPipeline.png" alt="image"></p>
+<p>从上图中我们可以看到<code>rac_textSignal</code>是事件的初始源头。通过<code>filter</code>的数据流只有在其长度大于3时，才会被传递到下一处理流程中。管道的最后一步是<code>subscribeNext:</code>，在这个<code>block</code>中，我们记录日志。</p>
+<p>在这里需要注意的是<code>filter</code>操作的输出仍然是一个<code>RACSignal</code>对象。我们可以将上面这段管道处理拆分成如下代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">RACSignal *usernameSourceSignal = <span class="keyword">self</span>.usernameTextField.rac_textSignal;</div><div class="line"></div><div class="line">RACSignal *filteredUsername = [usernameSourceSignal filter:^<span class="built_in">BOOL</span>(<span class="keyword">id</span> value) &#123;</div><div class="line"></div><div class="line">    <span class="built_in">NSString</span> *text = value;</div><div class="line">    <span class="keyword">return</span> text.length &gt; <span class="number">3</span>;</div><div class="line">&#125;];</div><div class="line"></div><div class="line">[filteredUsername subscribeNext:^(<span class="keyword">id</span> x) &#123;</div><div class="line"></div><div class="line">    <span class="built_in">NSLog</span>(<span class="string">@"%@"</span>, x);</div><div class="line">&#125;];</div></pre></td></tr></table></figure>
+<p>因为<code>RACSignal</code>对象的每个操作都返回一个<code>RACSignal</code>对象，所以我们不需要使用变量就可以构建一个管道。</p>
+<h2 id="事件是什么"><a href="#事件是什么" class="headerlink" title="事件是什么"></a>事件是什么</h2><p>目前为止，我们已经描述了<code>3</code>种不同的事件类型，但还没有深入这些事件的结构。有趣的是，事件可以包含任何东西。为了证明这一点，我们在上面的管道中加入另一个操作。更新我们的代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">[[[<span class="keyword">self</span>.usernameTextField.rac_textSignal map:^<span class="keyword">id</span>(<span class="built_in">NSString</span> *text) &#123;</div><div class="line">    <span class="keyword">return</span> @(text.length);</div><div class="line"> &#125;]</div><div class="line"> filter:^<span class="built_in">BOOL</span>(<span class="built_in">NSNumber</span> *length) &#123;</div><div class="line">     <span class="keyword">return</span> [length intValue] &gt; <span class="number">3</span>;</div><div class="line"> &#125;]</div><div class="line"> subscribeNext:^(<span class="keyword">id</span> x) &#123;</div><div class="line">     <span class="built_in">NSLog</span>(<span class="string">@"%@"</span>, x);</div><div class="line"> &#125;];</div></pre></td></tr></table></figure>
+<p>编译并运行，我们会发现控制台输出如下信息：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">16</span>:<span class="number">13</span>:<span class="number">47.652</span> RWReactivePlayground[<span class="number">9321</span>:<span class="number">60</span>b] <span class="number">4</span></div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">16</span>:<span class="number">13</span>:<span class="number">47.819</span> RWReactivePlayground[<span class="number">9321</span>:<span class="number">60</span>b] <span class="number">5</span></div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">16</span>:<span class="number">13</span>:<span class="number">47.985</span> RWReactivePlayground[<span class="number">9321</span>:<span class="number">60</span>b] <span class="number">6</span></div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">16</span>:<span class="number">13</span>:<span class="number">48.134</span> RWReactivePlayground[<span class="number">9321</span>:<span class="number">60</span>b] <span class="number">7</span></div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">16</span>:<span class="number">13</span>:<span class="number">48.284</span> RWReactivePlayground[<span class="number">9321</span>:<span class="number">60</span>b] <span class="number">8</span></div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">16</span>:<span class="number">13</span>:<span class="number">48.417</span> RWReactivePlayground[<span class="number">9321</span>:<span class="number">60</span>b] <span class="number">9</span></div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">16</span>:<span class="number">13</span>:<span class="number">48.583</span> RWReactivePlayground[<span class="number">9321</span>:<span class="number">60</span>b] <span class="number">10</span></div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">16</span>:<span class="number">13</span>:<span class="number">48.734</span> RWReactivePlayground[<span class="number">9321</span>:<span class="number">60</span>b] <span class="number">11</span></div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">16</span>:<span class="number">13</span>:<span class="number">48.883</span> RWReactivePlayground[<span class="number">9321</span>:<span class="number">60</span>b] <span class="number">12</span></div></pre></td></tr></table></figure>
+<p>新添加的<code>map</code>操作使用提供的<code>block</code>来转换事件数据。对于收到的每一个<code>next</code>事件，都会运行给定的<code>block</code>，并将返回值作为<code>next</code>事件发送。在上面的代码中，<code>map</code>操作获取一个<code>NSString</code>输入，并将其映射为一个<code>NSNumber</code>对象，并返回。下图演示了这个管道处理：</p>
+<p><img src="http://cdn2.raywenderlich.com/wp-content/uploads/2014/01/FilterAndMapPipeline.png" alt="image"></p>
+<p>我们可以看到，<code>map</code>操作后的每一步接收的都是一个<code>NSNumber</code>对象。我们可以使用<code>map</code>操作来转换我们想要的数据，只需要它是一个对象。</p>
+<p>OK，是时候修改<code>ReactivePlayground</code>应用的代码了。</p>
+<h2 id="创建有效的状态信号"><a href="#创建有效的状态信号" class="headerlink" title="创建有效的状态信号"></a>创建有效的状态信号</h2><p>我们要做的第一件事就是创建一对信号来校验用户名与密码的输入是否有效。添加如下代码到<code>RWViewController.m</code>的<code>viewDidLoad</code>中。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">RACSignal *validUsernameSignal = [<span class="keyword">self</span>.usernameTextField.rac_textSignal map:^<span class="keyword">id</span>(<span class="built_in">NSString</span> *text) &#123;</div><div class="line">    <span class="keyword">return</span> @([<span class="keyword">self</span> isValidUsername:text]);</div><div class="line">&#125;];</div><div class="line"></div><div class="line">RACSignal *validPasswordSignal = [<span class="keyword">self</span>.passwordTextField.rac_textSignal map:^<span class="keyword">id</span>(<span class="built_in">NSString</span> *text) &#123;</div><div class="line">    <span class="keyword">return</span> @([<span class="keyword">self</span> isValidPassword:text]);</div><div class="line">&#125;];</div></pre></td></tr></table></figure>
+<p>我们使用将<code>map</code>操作应用于文本输入框的<code>rac_textSignal</code>，输出是一个<code>NSNumber</code>对象。接着将转换这些信号，以便其可以为文本输入框提供一个合适的背影颜色。我们可以订阅这个信号并使用其结果来更新文本输入框的颜色。可以如下操作：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">[[validPasswordSignal map:^<span class="keyword">id</span>(<span class="built_in">NSNumber</span> *passwordValid) &#123;</div><div class="line">    <span class="keyword">return</span> [passwordValid boolValue] ? [<span class="built_in">UIColor</span> clearColor] : [<span class="built_in">UIColor</span> yellowColor];</div><div class="line">&#125;] subscribeNext:^(<span class="built_in">UIColor</span> *color) &#123;</div><div class="line">    <span class="keyword">self</span>.passwordTextField.backgroundColor = color;</div><div class="line">&#125;];</div></pre></td></tr></table></figure>
+<p>从概念上讲，我们将信号的输出值赋值给文本输入框的<code>backgroundColor</code>属性。但是这段代码有点糟糕。我们可以以另外一种方式来做相同的处理。这得益于<code>ReactiveCocoa</code>定义的一些宏。如下代码所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">RAC(<span class="keyword">self</span>.passwordTextField, backgroundColor) = [validPasswordSignal map:^<span class="keyword">id</span>(<span class="built_in">NSNumber</span> *passwordValid) &#123;</div><div class="line">    <span class="keyword">return</span> [passwordValid boolValue] ? [<span class="built_in">UIColor</span> clearColor] : [<span class="built_in">UIColor</span> yellowColor];</div><div class="line">&#125;];</div><div class="line"></div><div class="line">RAC(<span class="keyword">self</span>.usernameTextField, backgroundColor) = [validUsernameSignal map:^<span class="keyword">id</span>(<span class="built_in">NSNumber</span> *passwordValid) &#123;</div><div class="line">    <span class="keyword">return</span> [passwordValid boolValue] ? [<span class="built_in">UIColor</span> clearColor] : [<span class="built_in">UIColor</span> yellowColor];</div><div class="line">&#125;];</div></pre></td></tr></table></figure>
+<p><code>RAC</code>宏我们将信号的输入值指派给对象的属性。它带有两个参数，第一个参数是对象，第二个参数是对象的属性名。每次信号发送下一个事件时，其输出值都会指派给给定的属性。这是个非常优雅的解决方案，对吧？</p>
+<p>在运行前，我们先找到<code>updateUIState</code>方法，并注释掉下面两行代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">self</span>.usernameTextField.backgroundColor = <span class="keyword">self</span>.usernameIsValid ? [<span class="built_in">UIColor</span> clearColor] : [<span class="built_in">UIColor</span> yellowColor];</div><div class="line"><span class="keyword">self</span>.passwordTextField.backgroundColor = <span class="keyword">self</span>.passwordIsValid ? [<span class="built_in">UIColor</span> clearColor] : [<span class="built_in">UIColor</span> yellowColor];</div></pre></td></tr></table></figure>
+<p>运行程序，我们可以看到当输入无效时文本输入框是高亮的，有效时则清除高亮。在这里，我们可以看到两条带有文本信号的简单的管道，都是将它们映射到标明是否有效的布尔对象，然后再映射到<code>UIColor</code>对象。如下图所示：</p>
+<p><img src="http://cdn5.raywenderlich.com/wp-content/uploads/2014/01/TextFieldValidPipeline.png" alt="image"></p>
+<h2 id="组合信号"><a href="#组合信号" class="headerlink" title="组合信号"></a>组合信号</h2><p>在当前的程序中，<code>Sign in</code>按钮只有在两个输入框都有效时才可点击。是时候处理这个响应了。</p>
+<p>当前代码有两个信号来标识用户名和密码是否有效：<code>validUsernameSignal</code>和<code>validPasswordSignal</code>。我们的任务是要组合这两个信号，来确定按钮是否可用。</p>
+<p>在<code>viewDidLoad</code>中添加下面的代码</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">RACSignal *signUpActiveSignal = [RACSignal combineLatest:@[validUsernameSignal, validPasswordSignal]</div><div class="line">                                                  reduce:^<span class="keyword">id</span>(<span class="built_in">NSNumber</span> *usernameValid, <span class="built_in">NSNumber</span> *passwordValid)&#123;</div><div class="line"></div><div class="line">                                                      <span class="keyword">return</span> @([usernameValid boolValue] &amp;&amp; [passwordValid boolValue]);</div><div class="line">                                                  &#125;];</div></pre></td></tr></table></figure>
+<p>上面的代码使用了<code>combineLatest:reduce:</code>方法来组合<code>validUsernameSignal</code>与<code>validPasswordSignal</code>最后输出的值，并生成一个新的信号。每次两个源信号中的一个输出新值时，<code>reduce</code>块都会被执行，而返回的值会作为组合信号的下一个值。</p>
+<p><em>注意：<code>RACSignal</code>组合方法可以组合任何数量的信号，而<code>reduce</code>块的参数会对应每一个信号。</em></p>
+<p>现在我们已以有了一个合适的信号，接着在<code>viewDidLoad</code>结尾中添加以下代码，这将信号连接到按钮的<code>enabled</code>属性。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">[signUpActiveSignal subscribeNext:^(<span class="built_in">NSNumber</span> *signupActive) &#123;</div><div class="line"></div><div class="line">    <span class="keyword">self</span>.signInButton.enabled = [signupActive boolValue];</div><div class="line">&#125;];</div></pre></td></tr></table></figure>
+<p>同样，在运行前移除以下代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>) <span class="built_in">BOOL</span> passwordIsValid;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>) <span class="built_in">BOOL</span> usernameIsValid;</div></pre></td></tr></table></figure>
+<p>同时移除<code>viewDidLoad</code>中以下代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">[<span class="keyword">self</span>.usernameTextField addTarget:<span class="keyword">self</span> action:<span class="keyword">@selector</span>(usernameTextFieldChanged) forControlEvents:<span class="built_in">UIControlEventEditingChanged</span>];</div><div class="line">[<span class="keyword">self</span>.passwordTextField addTarget:<span class="keyword">self</span> action:<span class="keyword">@selector</span>(passwordTextFieldChanged) forControlEvents:<span class="built_in">UIControlEventEditingChanged</span>];</div></pre></td></tr></table></figure>
+<p>当然我们还需要移除<code>updateUIState</code>, <code>usernameTextFieldChanged</code>和<code>passwordTextFieldChanged</code>方法及相关的调用。瞧，我们已经删除了不少代码了。感谢自己吧！</p>
+<p>运行，并检查<code>Sign in</code>按钮。如同之前一下，如果用户名和密码都有效，则按钮是可用的。</p>
+<p>更新后程序的逻辑如下图所示：</p>
+<p><img src="http://cdn3.raywenderlich.com/wp-content/uploads/2014/01/CombinePipeline.png" alt="image"></p>
+<p>上面我们已经用<code>ReactiveCocoa</code>实现了一些非常棒的功能，它包含了两个重要的概念：</p>
+<ol>
+<li><code>Spliting</code>: 信号可以有多个订阅者，且作为资源服务于序列化管道的多个步骤。</li>
+<li><code>Combining</code>: 多个信号可以组合起来创建新的信号。</li>
+</ol>
+<p>在上面的程序中，这些改变让程序不再需要私有属性，来标明两个输入域的有效状态。这是使用响应式编程的关键区别–我们不需要使用实例变量来跟踪短暂的状态。</p>
+<h2 id="响应Sign-in"><a href="#响应Sign-in" class="headerlink" title="响应Sign-in"></a>响应Sign-in</h2><p>程序目前使用了响应式管道来管理输入框与按钮的状态。按钮的点击操作仍然使用<code>target-action</code>。所以，这是我们下一步的目标。</p>
+<p>Sign-in按钮的<code>Touch Up Inside</code>事件通过<code>storyboard action</code>连接到<code>RWViewController.m</code>的<code>signInButtonTouched</code>方法中。我们现在使用响应式方法来替换它，所以第一步我们需要解除当前<code>storyboard action</code>的连接。这个自己处理吧。</p>
+<p>为了处理按钮事件，我们需要使用<code>ReactiveCocoa</code>添加到<code>UIKit</code>的另一个方法：<code>rac_signalForControlEvents</code>。我们在<code>viewDidLoad</code>结尾加入以下代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">[[<span class="keyword">self</span>.signInButton rac_signalForControlEvents:<span class="built_in">UIControlEventTouchUpInside</span>] subscribeNext:^(<span class="keyword">id</span> x) &#123;</div><div class="line"></div><div class="line">    <span class="built_in">NSLog</span>(<span class="string">@"Button clicked"</span>);</div><div class="line">&#125;];</div></pre></td></tr></table></figure>
+<p>上面的代码从按钮的<code>UIControlEventTouchUpInside</code>事件中创建一个信号，并添加订阅以在每次事件发生时添加日志。</p>
+<p>运行程序，当按钮可点时点击按钮，会记录以下日志：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">17</span>:<span class="number">45</span>:<span class="number">43.660</span> RWReactivePlayground[<span class="number">9617</span>:<span class="number">60</span>b] Button clicked</div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">17</span>:<span class="number">45</span>:<span class="number">44.493</span> RWReactivePlayground[<span class="number">9617</span>:<span class="number">60</span>b] Button clicked</div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">17</span>:<span class="number">45</span>:<span class="number">44.660</span> RWReactivePlayground[<span class="number">9617</span>:<span class="number">60</span>b] Button clicked</div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">17</span>:<span class="number">45</span>:<span class="number">44.810</span> RWReactivePlayground[<span class="number">9617</span>:<span class="number">60</span>b] Button clicked</div><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">17</span>:<span class="number">45</span>:<span class="number">44.944</span> RWReactivePlayground[<span class="number">9617</span>:<span class="number">60</span>b] Button clicked</div></pre></td></tr></table></figure>
+<p>现在点击事件有一个信号了，接下来将信号与登录处理连接起来。打开<code>RWDummySignInService.h</code>文件，我们会看到下面的接口：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">typedef</span> <span class="keyword">void</span> (^RWSignInResponse)(<span class="built_in">BOOL</span>);</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">RWDummySignInService</span> : <span class="title">NSObject</span></span></div><div class="line"></div><div class="line">- (<span class="keyword">void</span>)signInWithUsername:(<span class="built_in">NSString</span> *)username password:(<span class="built_in">NSString</span> *)password complete:(RWSignInResponse)completeBlock;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>这个方法带有一个用户名、密码和一个完成<code>block</code>。<code>block</code>会在登录成功或失败时调用。我们可以在<code>subscribeNext:</code>块中直接调用这个方法，但为什么不呢？因为这是一个异步操作，小心了。</p>
+<h2 id="创建信号"><a href="#创建信号" class="headerlink" title="创建信号"></a>创建信号</h2><p>幸运的是，将一个已存在的异步<code>API</code>表示为一个信号相当简单。我们来看看。</p>
+<p>首先，从<code>RWViewController.m</code>移除当前的<code>signInButtonTouched:</code>方法。我们通过响应式编程来取代它。</p>
+<p>在<code>RWViewController.m</code>中添加以下方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">- (RACSignal *)signInSignal</div><div class="line">&#123;</div><div class="line">    <span class="keyword">return</span> [RACSignal createSignal:^RACDisposable *(<span class="keyword">id</span>&lt;RACSubscriber&gt; subscriber) &#123;</div><div class="line"></div><div class="line">        [<span class="keyword">self</span>.signInService signInWithUsername:<span class="keyword">self</span>.usernameTextField.text</div><div class="line">                                      password:<span class="keyword">self</span>.passwordTextField.text</div><div class="line">                                      complete:^(<span class="built_in">BOOL</span> success) &#123;</div><div class="line">                                          [subscriber sendNext:@(success)];</div><div class="line">                                          [subscriber sendCompleted];</div><div class="line">                                      &#125;];</div><div class="line">        <span class="keyword">return</span> <span class="literal">nil</span>;</div><div class="line">    &#125;];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>上面的代码创建了一个使用当前用户名与密码登录的信号。现在我们来分解一下这个方法。<code>createSignal:</code>方法用于创建一个信号。描述信号的<code>block</code>是一个信号参数，当信号有一个订阅者时，<code>block</code>中的代码会被执行。</p>
+<p><code>block</code>传递一个实现<code>RACSubscriber</code>协议的<code>subscriber</code>(订阅者)，这个订阅者包含我们调用的用于发送事件的方法；我们也可以发送多个<code>next</code>事件，这些事件由一个<code>error</code>事件或<code>complete</code>事件结束。在上面这种情况下，它发送一个<code>next</code>事件来表示登录是否成功，后续是一个<code>complete</code>事件。</p>
+<p>这个<code>block</code>的返回类型是一个<code>RACDisposable</code>对象，它允许我们执行一些清理任务，这些操作可能发生在订阅取消或丢弃时。上面这个这个信号没有任何清理需求，所以返回<code>nil</code>。</p>
+<p>可以看到，我们就这样在信号中封装了一个异步<code>API</code>。现在，我们可以使用这个新的信号了，更新<code>viewDidLoad</code>中我们的代码吧：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">[[[<span class="keyword">self</span>.signInButton rac_signalForControlEvents:<span class="built_in">UIControlEventTouchUpInside</span>] map:^<span class="keyword">id</span>(<span class="keyword">id</span> value) &#123;</div><div class="line">    <span class="keyword">return</span> [<span class="keyword">self</span> signInButton];</div><div class="line">&#125;] subscribeNext:^(<span class="keyword">id</span> x) &#123;</div><div class="line">    <span class="built_in">NSLog</span>(<span class="string">@"Sign in result: %@"</span>, x);</div><div class="line">&#125;];</div></pre></td></tr></table></figure>
+<p>上面的代码使用<code>map</code>方法将按钮点击信号转换为登录信号。订阅者简单输出了结果。</p>
+<p>运行程序，点击按钮，可以看到以下输出：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">18</span>:<span class="number">29</span>:<span class="number">27.134</span> RWReactivePlayground[<span class="number">9749</span>:<span class="number">60</span>b] Sign <span class="keyword">in</span> result: &lt;<span class="built_in">UIButton</span>: <span class="number">0x13651ed40</span>; frame = (<span class="number">192</span> <span class="number">201</span>; <span class="number">76</span> <span class="number">30</span>); opaque = <span class="literal">NO</span>; autoresize = RM+BM; layer = &lt;<span class="built_in">CALayer</span>: <span class="number">0x178224c00</span>&gt;&gt;</div></pre></td></tr></table></figure>
+<p>可以看到<code>subscribeNext:</code>块传递了一个正确的信号，但结果不是登录信号。我们用图来展示这个管道操作：</p>
+<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/01/SignalOfSignals.png" alt="image"></p>
+<p>当点击按钮时<code>rac_signalForControlEvents</code>发出了一个<code>next</code>事件。<code>map</code>这一步创建并返回一个登录信号，意味着接下来的管理接收一个<code>RACSignal</code>。这是我们在<code>subscribeNext:</code>中观察到的对象。</p>
+<p>上面这个方案有时候称为信号的信号(<code>signal of signals</code>)，换句话说，就是一个外部信号包含一个内部信号。可以在输出信号的<code>subscribeNext:</code>块中订阅内部信号。但这会引起嵌套的麻烦。幸运的是，这是个普遍的问题，而<code>ReactiveCocoa</code>已经提供了解决方案。</p>
+<h2 id="Signal-of-Signals"><a href="#Signal-of-Signals" class="headerlink" title="Signal of Signals"></a>Signal of Signals</h2><p>这个问题有解决方案是直观的，只需要使用<code>flattenMap</code>来替换<code>map</code>。如下代码所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">[[[<span class="keyword">self</span>.signInButton rac_signalForControlEvents:<span class="built_in">UIControlEventTouchUpInside</span>] flattenMap:^RACStream *(<span class="keyword">id</span> value) &#123;</div><div class="line">    <span class="keyword">return</span> [<span class="keyword">self</span> signInSignal];</div><div class="line">&#125;] subscribeNext:^(<span class="keyword">id</span> x) &#123;</div><div class="line">    <span class="built_in">NSLog</span>(<span class="string">@"Sign in result: %@"</span>, x);</div><div class="line">&#125;];</div></pre></td></tr></table></figure>
+<p>这将按钮点击事件映射到一个登录信号，但同时通过将事件从内部信号发送到外部信号，使这个过程变得扁平化。再次运行程序，我们将得到以下的输出</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="number">2014</span><span class="number">-07</span><span class="number">-31</span> <span class="number">18</span>:<span class="number">46</span>:<span class="number">19.535</span> RWReactivePlayground[<span class="number">9785</span>:<span class="number">60</span>b] Sign <span class="keyword">in</span> result: <span class="number">1</span></div></pre></td></tr></table></figure>
+<p>这回对了。</p>
+<p>现在管道处理得到了我们想要的结果，最后我们在<code>subscriptNext</code>中添加登录处理逻辑。使用以下代码：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">[[[<span class="keyword">self</span>.signInButton rac_signalForControlEvents:<span class="built_in">UIControlEventTouchUpInside</span>] flattenMap:^RACStream *(<span class="keyword">id</span> value) &#123;</div><div class="line">    <span class="keyword">return</span> [<span class="keyword">self</span> signInSignal];</div><div class="line">&#125;] subscribeNext:^(<span class="built_in">NSNumber</span> *signedIn) &#123;</div><div class="line"></div><div class="line">    <span class="built_in">BOOL</span> success = [signedIn boolValue];</div><div class="line">    <span class="keyword">self</span>.signInFailureText.hidden = success;</div><div class="line">    <span class="keyword">if</span> (success)</div><div class="line">    &#123;</div><div class="line">        [<span class="keyword">self</span> performSegueWithIdentifier:<span class="string">@"signInSuccess"</span> sender:<span class="keyword">self</span>];</div><div class="line">    &#125;</div><div class="line">&#125;];</div></pre></td></tr></table></figure>
+<p>运行程序，我们就可以得到下面的结果了：</p>
+<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/01/ReactivePlaygroundStarter.jpg" alt="image"></p>
+<p>不知道你是否注意到一个细节问题。当点击登录进行验证时，我们应该置灰登录按钮。这样可以阻止用户在验证的过程中再次去点击登录。那么这个逻辑添加在哪呢？改变按钮的可用状态不是个转换、过滤或其它的信号。这就是下一步要讲的。</p>
+<h2 id="添加附加操作-side-effects"><a href="#添加附加操作-side-effects" class="headerlink" title="添加附加操作(side-effects)"></a>添加附加操作(side-effects)</h2><p>使用下面的代码替换当前管道：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">[[[[<span class="keyword">self</span>.signInButton rac_signalForControlEvents:<span class="built_in">UIControlEventTouchUpInside</span>]</div><div class="line"> doNext:^(<span class="keyword">id</span> x) &#123;</div><div class="line">     <span class="keyword">self</span>.signInButton.enabled = <span class="literal">NO</span>;</div><div class="line">     <span class="keyword">self</span>.signInFailureText.hidden = <span class="literal">YES</span>;</div><div class="line"> &#125;]</div><div class="line"> flattenMap:^RACStream *(<span class="keyword">id</span> value) &#123;</div><div class="line">     <span class="keyword">return</span> [<span class="keyword">self</span> signInSignal];</div><div class="line"> &#125;]</div><div class="line"> subscribeNext:^(<span class="built_in">NSNumber</span> *signedIn) &#123;</div><div class="line">     <span class="keyword">self</span>.signInButton.enabled = <span class="literal">YES</span>;</div><div class="line">     <span class="built_in">BOOL</span> success = [signedIn boolValue];</div><div class="line">     <span class="keyword">self</span>.signInFailureText.hidden = success;</div><div class="line">     <span class="keyword">if</span> (success) &#123;</div><div class="line">         [<span class="keyword">self</span> performSegueWithIdentifier:<span class="string">@"signInSuccess"</span> sender:<span class="keyword">self</span>];</div><div class="line">     &#125;</div><div class="line"> &#125;];</div></pre></td></tr></table></figure>
+<p>我们可以看到在按钮点击事件后添加了<code>doNext:</code>步骤。注意<code>doNext:</code>并不返回一个值，因为它是附加操作。它完成时不改变事件。下图展示了这个过程：</p>
+<p><img src="http://cdn3.raywenderlich.com/wp-content/uploads/2014/01/SideEffects.png" alt="image"></p>
+<p>运行程序看看效果。如何？</p>
+<p>注意：在执行异步方法时禁用按钮是个普遍的问题，<code>ReactiveCocoa</code>同样解决了这个问题。<strong>RACCommand</strong>类封装了这个概念，同时有一个<code>enabled</code>信号以允许我们将一个按钮的<code>enabled</code>属性连接到信号。可以试试。</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p><code>ReactiveCocoa</code>的核心是信号，它是一个事件流。使用<code>ReactiveCocoa</code>时，对于同一个问题，可能会有多种不同的方法来解决。<code>ReactiveCocoa</code>的目的就是为了简化我们的代码并更容易理解。如果使用一个清晰的管道，我们可以很容易理解问题的处理过程。在下一部分，我们将会讨论错误事件的处理及完成事件的处理。</p>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
                 <a class="post-title-link" href="/2014/08/01/core-bluetooth-programming-guide-3/" itemprop="url">
                   Core Bluetooth框架之三：最佳实践
                 </a>
@@ -1937,175 +2178,6 @@
 
 
     
-      
-
-  
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/2014/07/16/url-load-system-4/" itemprop="url">
-                  URL加载系统之四：认证与TLS链验证
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            <span class="post-meta-item-icon">
-              <i class="fa fa-calendar-o"></i>
-            </span>
-            <span class="post-meta-item-text">发表于</span>
-            <time itemprop="dateCreated" datetime="2014-07-16T18:51:03+08:00" content="2014-07-16">
-              2014-07-16
-            </time>
-          </span>
-
-          
-            <span class="post-category" >
-              &nbsp; | &nbsp;
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-              
-                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
-                  <a href="/categories/translate/" itemprop="url" rel="index">
-                    <span itemprop="name">翻译</span>
-                  </a>
-                </span>
-
-                
-                
-
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-
-          
-          
-
-          
-        </div>
-      </header>
-    
-
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>一个NSURLRequest对象经常会遇到认证请求，或者需要从其所连接的服务端请求证书。当需要认证请求时，NSURLConnection、NSURLSession和NSURLDownload类会通知它们的代理对象，以便能正确地做处理。不过需要注意的是，URL加载系统只有在服务端响应包含WWW-Authenticate头时才会调用代理来处理认证请求，而类似于代理认证和TLS信任验证这样的认证类型则不需要这个头。</p>
-<h2 id="确定如何响应一个认证请求"><a href="#确定如何响应一个认证请求" class="headerlink" title="确定如何响应一个认证请求"></a>确定如何响应一个认证请求</h2><p>如果一个NSURLRequest对象需要认证时，则认证请求方式取决于使用的对象的类型：</p>
-<ol>
-<li>如果请求是与NSURLSession对象关联，则所有认证请求都会传递给代理，而不考虑认证的类型。</li>
-<li>如果请求是与NSURLConnection或NSURLDownload对象，则对象的代理接收一个connection:canAuthenticateAgainstProtectionSpace: (或者 download:canAuthenticateAgainstProtectionSpace:) 消息。这允许代理对象在尝试再次认证前分析服务端的属性，包括协议和认证方法。如果我们的代理对象不准备认证服务端的受保护空间，则返回NO，且系统尝试使用用户的keychain的信息进行认证。</li>
-<li>如果NSURLConnection或NSURLDownload的代理对象没有实现connection:canAuthenticateAgainstProtectionSpace: (或者 download:canAuthenticateAgainstProtectionSpace:)方法，且保护空间使用客户端证书认证或服务端信任认证，则系统假设我们返回NO。而对象其它所有类型，系统都返回YES。</li>
-</ol>
-<p>下一步，如果我们的代理对象同意处理认证，但是没有有效的证书（不管是作为请求URL的一部分或者在NSURLCredentialStorage中共享），则代理以收到以下消息：</p>
-<ol>
-<li>URLSession:didReceiveChallenge:completionHandler:</li>
-<li>URLSession:task:didReceiveChallenge:completionHandler:</li>
-<li>connection:didReceiveAuthenticationChallenge:</li>
-<li>download:didReceiveAuthenticationChallenge:</li>
-</ol>
-<p>为了让连接能够继续，则代理对象有三种选择：</p>
-<ol>
-<li>提供认证证书</li>
-<li>尝试在没有证书的情况下继续</li>
-<li>取消认证查询</li>
-</ol>
-<p>为了确保操作的正确流程，传递给这些方法的NSURLAuthenticationChallenge实例会包含一些信息，包括是什么触发了认证查询、查询的尝试次数、任何先前尝试的证书、请求证书的NSURLProtectionSpace对象，及查询的发送者。</p>
-<p>如果认证请求事先尝试认证且失败了(如用户在服务端修改了密码)，我们可以通过在认证请求调用proposedCredential来获取尝试凭据。代理可以使用这些证书来填充一个显示给用户的话框。</p>
-<p>调用认证请求的previousFailureCount可以返回身份验证尝试次数，这些尝试包括不同认证协议的尝试请求。代理可以将这些方法提供给用户，以确定先前提供的证书是否失败，或限制最大认证尝试次数。</p>
-<h2 id="响应认证请求"><a href="#响应认证请求" class="headerlink" title="响应认证请求"></a>响应认证请求</h2><p>前面说过三种响应我们响应connection:didReceiveAuthenticationChallenge:代理方法的方式，我们将逐一介绍：</p>
-<h3 id="提供证书"><a href="#提供证书" class="headerlink" title="提供证书"></a>提供证书</h3><p>为了进行认证，程序需要使用服务端期望的认证信息创建一个NSURLCredential对象。我们可以调用authenticationMethod来确定服务端的认证方法，这个认证方法是在提供的认证请求的保护空间中。NSURLCredential支持一些方法：</p>
-<ol>
-<li>HTTP基本认证(NSURLAuthenticationMethodHTTPBasic)：需要用户名和密码。提示用户输入必要信息并使用credentialWithUser:password:persistence:方法创建一个NSURLCredential对象。</li>
-<li>HTTP数字认证(NSURLAuthenticationMethodHTTPDigest):类似于基本认证，需要用户名和密码。提示用户输入必要信息并使用credentialWithUser:password:persistence:方法创建一个NSURLCredential对象。</li>
-<li>客户端证书认证(NSURLAuthenticationMethodClientCertificate): 需要系统标识和所有服务端认证所需要的证书。然后使用credentialWithIdentity:certificates:persistence:来创建一个NSURLCredential对象。</li>
-<li>服务端信任认证(NSURLAuthenticationMethodServerTrust)需要一个由认证请求的保护空间提供的信任。使用credentialForTrust:来创建一个NSURLCredential对象。</li>
-</ol>
-<p>在创建NSURLCredential对象后</p>
-<ol>
-<li>对于NSURLSession，使用提供的完成处理block将该对象传递给认证请求发送者</li>
-<li>对于NSURLConnection和NSURLDownload，使用useCredential:forAuthenticationChallenge:方法将对象传递给认证请求发送者。</li>
-</ol>
-<h3 id="尝试在没有证书的情况下继续"><a href="#尝试在没有证书的情况下继续" class="headerlink" title="尝试在没有证书的情况下继续"></a>尝试在没有证书的情况下继续</h3><p>如果代理选择不提供证书，可以尝试继续操作：</p>
-<ol>
-<li>对于NSURLSession，传递下面的值给完成处理block:<br> NSURLSessionAuthChallengePerformDefaultHandling:处理请求。尽管代理没有提供代理方法来处理认证请求<br> NSURLSessionAuthChallengeRejectProtectionSpace:拒绝请求。依赖于服务端响应允许的认证类型，URL加载类可能多次调用这个代理方法。</li>
-<li>对于NSURLConnection和NSURLDownload，在[challenge sender]中调用continueWithoutCredentialsForAuthenticationChallenge:。</li>
-</ol>
-<p>依赖于协议的实现，这种处理方法可能会导致连接失败而以送connectionDidFailWithError:消息，或者返回可选的不需要认证的URL内容。</p>
-<h3 id="取消连接"><a href="#取消连接" class="headerlink" title="取消连接"></a>取消连接</h3><p>代理可以选择取消认证请求</p>
-<ol>
-<li>对于NSURLSession，传递NSURLSessionAuthChallengeCancelAuthenticationChallenge给完成处理block</li>
-<li>对于NSURLConnection和NSURLDownload，在[challenge sender]中调用cancelAuthenticationChallenge:。代理接收connection:didCancelAuthenticationChallenge:消息，以提供用户反馈的机会。</li>
-</ol>
-<p>下面的代码演示了使用用户名和密码创建NSURLCredential对象来响应认证请求</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">-(<span class="keyword">void</span>)connection:(<span class="built_in">NSURLConnection</span> *)connection didReceiveAuthenticationChallenge:(<span class="built_in">NSURLAuthenticationChallenge</span> *)challenge</div><div class="line">	&#123;</div><div class="line">	    <span class="keyword">if</span> ([challenge previousFailureCount] == <span class="number">0</span>)</div><div class="line"></div><div class="line">    &#123;</div><div class="line">    	        <span class="built_in">NSURLCredential</span> *newCredential;</div><div class="line">	        newCredential = [<span class="built_in">NSURLCredential</span> credentialWithUser:[<span class="keyword">self</span> preferencesName] password:[<span class="keyword">self</span> preferencesPassword] persistence:<span class="built_in">NSURLCredentialPersistenceNone</span>];</div><div class="line">	        [[challenge sender] useCredential:newCredential forAuthenticationChallenge:challenge];</div><div class="line">	    &#125;</div><div class="line"></div><div class="line">    <span class="keyword">else</span></div><div class="line"></div><div class="line">    &#123;	        [[challenge sender] cancelAuthenticationChallenge:challenge];	        <span class="comment">// inform the user that the user name and password</span>	        <span class="comment">// in the preferences are incorrect</span>	        [<span class="keyword">self</span> showPreferencesCredentialsAreIncorrectPanel:<span class="keyword">self</span>];	    &#125;</div><div class="line"></div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>如果代理没有实现connection:didReceiveAuthenticationChallenge:，而请求需要认证，则有效的证书必须位于URL证书存储中或作为请求URL的一部分。如果证书无效或者认证失败，则底层实现会发送一个continueWithoutCredentialForAuthenticationChallenge:消息。</p>
-<h2 id="执行自定义TLS链验证"><a href="#执行自定义TLS链验证" class="headerlink" title="执行自定义TLS链验证"></a>执行自定义TLS链验证</h2><p>在NSURL系统的AIP中，TLS链验证由应用的认证代理方法来处理，但它不是提供证书给服务端以验证用户，而是在TLS握手的过程中校验服务端提供的证书，然后再告诉URL加载系统是否应该接受还是拒绝这些证书。</p>
-<p>如果需要以非标准的方法(如接收一个指定的自标识的证书用于测试)来执行链验证，则应用必须如下处理：</p>
-<ol>
-<li>对于NSURLSession，实现URLSession:didReceiveChallenge:completionHandler:和URLSession:task:didReceiveChallenge:completionHandler:代理方法。如果实现了两者，由会话级别的方法负责处理认证。</li>
-<li>对于NSURLConnection和NSURLDownload，实现connection:canAuthenticateAgainstProtectionSpace:和download:canAuthenticateAgainstProtectionSpace:方法，如果保护空间有一个NSURLAuthenticationMethodServerTrust类型的认证，则返回YES。然后，实现connection:didReceiveAuthenticationChallenge:或download:didReceiveAuthenticationChallenge:方法来处理认证。</li>
-</ol>
-<p>在认证处理代理方法中，我们需要确认认证保护空间是否有NSURLAuthenticationMethodServerTrust类型的认证，如果有，则从保护空间获取serverTrust信息。</p>
-
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
   </section>
 
   
@@ -2151,7 +2223,7 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/archives">
-              <span class="site-state-item-count">83</span>
+              <span class="site-state-item-count">84</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>

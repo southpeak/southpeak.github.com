@@ -310,6 +310,245 @@
             
               
                 
+                <a class="post-title-link" href="/2015/09/26/ios-techset-5/" itemprop="url">
+                  iOS知识小集 第5期(2015.09.26)
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-09-26T23:42:33+08:00" content="2015-09-26">
+              2015-09-26
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/techset/" itemprop="url" rel="index">
+                    <span itemprop="name">知识小集</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>忽悠一个月又过去了，今年的9月还是挺精彩的。苹果发布<code>iPhone 6s</code>，<code>iPad Pro</code>，<code>iOS 9</code>，让我们又有很多活可做了；然后是<code>XCodeGoast</code>搅得圈内沸沸扬扬的，居然还惊动了<code>CCAV</code>；再然后苏宁的小伙伴们给大家送上了一份中秋礼物，虽然是老代码，但这是要搞哪样啊？不过，正是这些事情为我等屌丝的生活平添了许多的乐趣，还是挺酸爽的嘛。</p>
+<p>嗯，回到正题上来。这期的知识小集主要是<code>Swift</code>开发的一些内容，主要的内容有三点：</p>
+<ol>
+<li><code>Swift</code>中随机数的使用</li>
+<li><code>Swift</code>中<code>String</code>与<code>CChar</code>数组的转换</li>
+<li><code>Swift</code>中<code>Selector</code>方法的访问权限控制问题</li>
+</ol>
+<p>相对<code>Objective-C</code>来说，个人觉得<code>Swift</code>写起来大多数时候还是挺爽的，简洁多了，以后有事没事还是多撸撸<code>Swift</code>。</p>
+<h2 id="Swift中随机数的使用"><a href="#Swift中随机数的使用" class="headerlink" title="Swift中随机数的使用"></a>Swift中随机数的使用</h2><p>在我们开发的过程中，时不时地需要产生一些随机数。这里我们总结一下<code>Swift</code>中常用的一些随机数生成函数。这里我们将在<code>Playground</code>中来做些示例演示。</p>
+<h3 id="整型随机数"><a href="#整型随机数" class="headerlink" title="整型随机数"></a>整型随机数</h3><p>如果我们想要一个整型的随机数，则可以考虑用<code>arc4random</code>系列函数。我们可以通过<code>man arc4random</code>命令来看一下这个函数的定义：</p>
+<blockquote>
+<p>The arc4random() function uses the key stream generator employed by the arc4 cipher, which uses 8*8 8 bit S-Boxes.  The S-Boxes can be inabout (2^1700) states.  The arc4random() function returns pseudo-random numbers in the range of 0 to (2^32)-1, and therefore has twice the range of rand(3) and random(3).</p>
+</blockquote>
+<p><code>arc4random</code>使用了<code>arc4密码</code>加密的<code>key stream</code>生成器(请脑补)，产生一个<code>[0, 2^32)</code>区间的随机数(注意是左闭右开区间)。这个函数的返回类型是<code>UInt32</code>。如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">arc4random()				// 2,919,646,954</div></pre></td></tr></table></figure>
+<p>如果我们想生成一个指定范围内的整型随机数，则可以使用<code>arc4random() % upper_bound</code>的方式，其中<code>upper_bound</code>指定的是上边界，如下处理：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">arc4random() % 10			// 8</div></pre></td></tr></table></figure>
+<p>不过使用这种方法，在<code>upper_bound</code>不是2的幂次方时，会产生一个所谓<a href="http://eternallyconfuzzled.com/arts/jsw_art_rand.aspx" target="_blank" rel="external">Modulo bias(模偏差)</a>的问题。</p>
+<p>我们在控制台中通过<code>man arc4random</code>命令，可以查看<code>arc4random</code>的文档，有这么一条：</p>
+<blockquote>
+<p>arc4random_uniform() will return a uniformly distributed random number less than upper_bound.  arc4random_uniform() is recommended over constructions like ‘’arc4random() % upper_bound’’ as it avoids “modulo bias” when the upper bound is not a power of two.</p>
+</blockquote>
+<p>因此可以使用<code>arc4random_uniform</code>，它接受一个<code>UInt32</code>类型的参数，指定随机数区间的上边界<code>upper_bound</code>，该函数生成的随机数范围是<code>[0, upper_bound)</code>，如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">arc4random_uniform(10)		// 6</div></pre></td></tr></table></figure>
+<p>而如果想指定区间的最小值（如随机数区间在<code>[5, 100)</code>），则可以如下处理：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">let max: UInt32 = 100</div><div class="line">let min: UInt32 = 5</div><div class="line">arc4random_uniform(max - min) + min			// 82</div></pre></td></tr></table></figure>
+<p>当然，在<code>Swift</code>中也可以使用传统的<code>C</code>函数<code>rand</code>与<code>random</code>。不过这两个函数有如下几个缺点：</p>
+<ol>
+<li>这两个函数都需要初始种子，通常是以当前时间来确定。</li>
+<li>这两个函数的上限在<code>RAND_MAX=0X7fffffff(2147483647)</code>，是<code>arc4random</code>的一半。</li>
+<li><code>rand</code>函数以有规律的低位循环方式实现，更容易预测</li>
+</ol>
+<p>我们以<code>rand</code>为例，看看其使用：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">srand(UInt32(time(nil)))            // 种子,random对应的是srandom</div><div class="line">rand()								// 1,314,695,483</div><div class="line">rand() % 10							// 8</div></pre></td></tr></table></figure>
+<h3 id="64位整型随机数"><a href="#64位整型随机数" class="headerlink" title="64位整型随机数"></a>64位整型随机数</h3><p>在大部分应用中，上面讲到的几个函数已经足够满足我们获取整型随机数的需求了。不过我们看看它们的函数声明，可以发现这些函数主要是针对<code>32</code>位整型来操作的。如果我们需要生成一个<code>64</code>位的整型随机数呢？毕竟现在的新机器都是支持<code>64</code>位的了。</p>
+<p>目前貌似没有现成的函数来生成<code>64</code>位的随机数，不过<code>jstn</code>在<code>stackoverflow</code>上为我们分享了他的方法。我们一起来看看。</p>
+<p>他首先定义了一个泛型函数，如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">func arc4random &lt;T: IntegerLiteralConvertible&gt; (type: T.Type) -&gt; T &#123;</div><div class="line">    var r: T = 0</div><div class="line">    arc4random_buf(&amp;r, UInt(sizeof(T)))</div><div class="line">    return r</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这个函数中使用了<code>arc4random_buf</code>来生成随机数。让我们通过<code>man arc4random_buf</code>来看看这个函数的定义：</p>
+<blockquote>
+<p>arc4random_buf() function fills the region buf of length nbytes with ARC4-derived random data.</p>
+</blockquote>
+<p>这个函数使用<code>ARC4</code>加密的随机数来填充该函数第二个参数指定的长度的缓存区域。因此，如果我们传入的是<code>sizeof(UInt64)</code>，该函数便会生成一个随机数来填充<code>8</code>个字节的区域，并返回给<code>r</code>。那么<code>64</code>位的随机数生成方法便可以如下实现：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">extension UInt64 &#123;</div><div class="line">    static func random(lower: UInt64 = min, upper: UInt64 = max) -&gt; UInt64 &#123;</div><div class="line">        var m: UInt64</div><div class="line">        let u = upper - lower</div><div class="line">        var r = arc4random(UInt64)</div><div class="line"></div><div class="line">        if u &gt; UInt64(Int64.max) &#123;</div><div class="line">            m = 1 + ~u</div><div class="line">        &#125; else &#123;</div><div class="line">            m = ((max - (u * 2)) + 1) % u</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        while r &lt; m &#123;</div><div class="line">            r = arc4random(UInt64)</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        return (r % u) + lower</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>我们来试用一下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">UInt64.random()					// 4758246381445086013</div></pre></td></tr></table></figure>
+<p>当然<code>jstn</code>还提供了<code>Int64</code>，<code>UInt32</code>，<code>Int32</code>的实现，大家可以脑补一下。</p>
+<h3 id="浮点型随机数"><a href="#浮点型随机数" class="headerlink" title="浮点型随机数"></a>浮点型随机数</h3><p>如果需要一个浮点值的随机数，则可以使用<code>drand48</code>函数，这个函数产生一个<code>[0.0, 1.0]</code>区间中的浮点数。这个函数的返回值是<code>Double</code>类型。其使用如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">srand48(Int(time(nil)))</div><div class="line">drand48()						// 0.396464773760275</div></pre></td></tr></table></figure>
+<p>记住这个函数是需要先调用<code>srand48</code>生成一个种子的初始值。</p>
+<h3 id="一个小示例"><a href="#一个小示例" class="headerlink" title="一个小示例"></a>一个小示例</h3><p>最近写了一个随机键盘，需要对<code>0-9</code>这几个数字做个随机排序，正好用上了上面的<code>arc4random</code>函数，如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">let arr = [&quot;0&quot;, &quot;1&quot;, &quot;2&quot;, &quot;3&quot;, &quot;4&quot;, &quot;5&quot;, &quot;6&quot;, &quot;7&quot;, &quot;8&quot;, &quot;9&quot;]</div><div class="line"></div><div class="line">let numbers = arr.sort &#123; (_, _) -&gt; Bool in</div><div class="line">    arc4random() &lt; arc4random()</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>在闭包中，随机生成两个数，比较它们之间的大小，来确定数组的排序规则。还是挺简单的。</p>
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p>其实如果翻看一下<code>Swift</code>中关于<code>C</code>函数的<code>API</code>，发现还有许多跟随机数相关的函数，如<code>arc4random_addrandom</code>，<code>erand48</code>等。上面的只是我们经常用到的一些函数，这几个函数基本上够用了。当然，不同场景有不同的需求，我们需要根据实际的需求来选择合适的函数。</p>
+<p>以上的代码已上传到<code>github</code>，地址是<a href="https://github.com/southpeak/Swift/tree/master/Basic/Random.playground" target="_blank" rel="external">Random.playground</a>有需要的可以参考一下。</p>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><ol>
+<li><a href="http://nshipster.com/random/" target="_blank" rel="external">rand(3) / random(3) / arc4random(3) / et al.</a></li>
+<li><a href="https://medium.com/@skreutzb/random-swift-102c23cd1755" target="_blank" rel="external">Random Swift</a></li>
+<li><a href="http://stackoverflow.com/questions/24007129/how-does-one-generate-a-random-number-in-apples-swift-language" target="_blank" rel="external">How does one generate a random number in Apple’s Swift language?</a></li>
+</ol>
+<h2 id="Swift中String与CChar数组的转换"><a href="#Swift中String与CChar数组的转换" class="headerlink" title="Swift中String与CChar数组的转换"></a>Swift中String与CChar数组的转换</h2><p>在现阶段<code>Swift</code>的编码中，我们还是有很多场景需要调用一些<code>C</code>函数。在<code>Swift</code>与<code>C</code>的混编中，经常遇到的一个问题就是需要在两者中互相转换字符串。在<code>C</code>语言中，字符串通常是用一个<code>char数组</code>来表示，在<code>Swift</code>中，是用<code>CChar数组</code>来表示。从<code>CChar</code>的定义可以看到，其实际上是一个<code>Int8</code>类型，如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">/// The C &apos;char&apos; type.</div><div class="line">///</div><div class="line">/// This will be the same as either `CSignedChar` (in the common</div><div class="line">/// case) or `CUnsignedChar`, depending on the platform.</div><div class="line">public typealias CChar = Int8</div></pre></td></tr></table></figure>
+<p>如果我们想将一个<code>String</code>转换成一个<code>CChar数组</code>，则可以使用<code>String</code>的<code>cStringUsingEncoding</code>方法，它是<code>String</code>扩展中的一个方法，其声明如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">/// Returns a representation of the `String` as a C string</div><div class="line">/// using a given encoding.</div><div class="line">@warn_unused_result</div><div class="line">public func cStringUsingEncoding(encoding: NSStringEncoding) -&gt; [CChar]?</div></pre></td></tr></table></figure>
+<p>参数指定的是编码格式，我们一般指定为<code>NSUTF8StringEncoding</code>，因此下面这段代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">let str: String = &quot;abc1个&quot;</div><div class="line"></div><div class="line">// String转换为CChar数组</div><div class="line">let charArray: [CChar] = str.cStringUsingEncoding(NSUTF8StringEncoding)!</div></pre></td></tr></table></figure>
+<p>其输出结果是：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">[97, 98, 99, 49, -28, -72, -86, 0]</div></pre></td></tr></table></figure>
+<p>可以看到<code>&quot;个&quot;</code>字由三个字节表示，这是因为<code>Swift</code>的字符串是<code>Unicode</code>编码格式，一个字符可能由1个或多个字节组成。另外需要注意的是<code>CChar</code>数组的最后一个元素是<code>0</code>，它表示的是一个字符串结束标志符<code>\n</code>。</p>
+<p>我们知道，在<code>C</code>语言中，一个数组还可以使用指针来表示，所以字符串也可以用<code>char *</code>来表示。在<code>Swift中</code>，指针是使用<code>UnsafePointer</code>或<code>UnsafeMutablePointer</code>来包装的，因此，<code>char指针</code>可以表示为<code>UnsafePointer&lt;CChar&gt;</code>，不过它与<code>[CChar]</code>是两个不同的类型，所以以下代码会报编译器错误：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">// Error: Cannot convert value of type &apos;[CChar]&apos; to specified type &apos;UnsafePointer&lt;CChar&gt;&apos;</div><div class="line">let charArray2: UnsafePointer&lt;CChar&gt; = str.cStringUsingEncoding(NSUTF8StringEncoding)!</div></pre></td></tr></table></figure>
+<p>不过有意思的是我们可以直接将<code>String</code>字符串传递给带有<code>UnsafePointer&lt;CChar&gt;</code>参数的函数或方法，如以下代码所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">func length(s: UnsafePointer&lt;CChar&gt;) &#123;</div><div class="line">    print(strlen(s))</div><div class="line">&#125;</div><div class="line"></div><div class="line">length(str)</div><div class="line"></div><div class="line">// 输出：7\n</div></pre></td></tr></table></figure>
+<p>而<code>String</code>字符串却不能传递给带有<code>[CChar]</code>参数的函数或方法，如以下代码会报错误：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">func length2(s: [CChar]) &#123;</div><div class="line">    print(strlen(s))</div><div class="line">&#125;</div><div class="line"></div><div class="line">// Error: Cannot convert value of type &apos;String&apos; to expected argument type &apos;[CChar]&apos;</div><div class="line">length2(str)</div></pre></td></tr></table></figure>
+<p>实际上，在<code>C</code>语言中，我们在使用数组参数时，很少以数组的形式来定义参数，则大多是通过指针方式来定义数组参数。</p>
+<p>如果想从<code>[CChar]</code>数组中获取一上<code>String</code>字符串，则可以使用<code>String</code>的<code>fromCString</code>方法，其声明如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">/// Creates a new `String` by copying the nul-terminated UTF-8 data</div><div class="line">/// referenced by a `CString`.</div><div class="line">///</div><div class="line">/// Returns `nil` if the `CString` is `NULL` or if it contains ill-formed</div><div class="line">/// UTF-8 code unit sequences.</div><div class="line">@warn_unused_result</div><div class="line">public static func fromCString(cs: UnsafePointer&lt;CChar&gt;) -&gt; String?</div></pre></td></tr></table></figure>
+<p>从注释可以看到，它会将<code>UTF-8</code>数据拷贝以新字符串中。如下示例：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">let chars: [CChar] = [99, 100, 101, 0]</div><div class="line">let str2: String = String.fromCString(chars)!</div><div class="line"></div><div class="line">// 输出：cde</div></pre></td></tr></table></figure>
+<p>这里需要注意的一个问题是，<code>CChar</code>数组必须以<code>0</code>结束，否则会有不可预料的结果。在我的<code>Playground</code>示例代码中，如果没有<code>0</code>，报了以下错误：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">Execution was interrupted. reason: EXC_BAD_INSTRUCTION</div></pre></td></tr></table></figure>
+<p>还有可能出现的情况是<code>CChar</code>数组的存储区域正好覆盖了之前某一对象的区域，这一对象有一个可以表示字符串结尾的标识位，则这时候，<code>str2</code>输出的可能是<code>&quot;cde1一&quot;</code>。</p>
+<h3 id="小结-1"><a href="#小结-1" class="headerlink" title="小结"></a>小结</h3><p>在<code>Swift</code>中，<code>String</code>是由独立编码的<code>Unicode</code>字符组成的，即<code>Character</code>。一个<code>Character</code>可能包括一个或多个字节。所以将<code>String</code>字符串转换成<code>C</code>语言的<code>char *</code>时，数组元素的个数与<code>String</code>字符的个数不一定相同(即在<code>Swift</code>中，与<code>str.characters.count</code>计算出来的值不一定相等)。这一点需要注意。另外还需要注意的就是将<code>CChar</code>数组转换为<code>String</code>时，数组最后一个元素应当为字符串结束标志符，即<code>0</code>。</p>
+<h3 id="参考-1"><a href="#参考-1" class="headerlink" title="参考"></a>参考</h3><ol>
+<li><a href="https://forums.developer.apple.com/thread/9386" target="_blank" rel="external">UTF8String</a></li>
+<li><a href="https://developer.apple.com/library/prerelease/ios/documentation/Swift/Reference/Swift_String_Structure/#//apple_ref/swift/structcm/String/s:ZFSS11fromCStringFMSSFGVSs13UnsafePointerVSs4Int8_GSqSS_" target="_blank" rel="external">String Structure Reference</a></li>
+<li><a href="http://wiki.jikexueyuan.com/project/swift/chapter2/03_Strings_and_Characters.html#counting_characters" target="_blank" rel="external">The Swift Programming Language中文版</a></li>
+</ol>
+<h2 id="Swift中Selector方法的访问权限控制问题"><a href="#Swift中Selector方法的访问权限控制问题" class="headerlink" title="Swift中Selector方法的访问权限控制问题"></a>Swift中Selector方法的访问权限控制问题</h2><p>今天用<code>Swift</code>写了个视图，在视图上加个手势，如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">panGestureRecognizer = UIPanGestureRecognizer(target: self, action: &quot;beginDragged:&quot;)</div><div class="line">addGestureRecognizer(panGestureRecognizer)</div></pre></td></tr></table></figure>
+<p>运行了下程序，然后崩溃了。崩溃日志如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">[**.SwipeCardView beginDragged:]: unrecognized selector sent to instance 0x125e5bc10</div></pre></td></tr></table></figure>
+<p>而我已经在<code>SwipeCardView</code>类中定义了<code>beginDragged:</code>方法，如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">private func beginDragged(gestureRecognizer: UIPanGestureRecognizer) &#123;</div><div class="line">	// ....</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>由于我并不想将<code>beginDragged:</code>方法暴露出去，所以将其定义为一个<code>private</code>方法。方法的定义一切正常，手势的<code>Selector</code>方法也设置正常，却报了未找到方法的异常。那问题可能就应该在访问权限问题上了。</p>
+<p>我们知道<code>Selector</code>是<code>Objective-C</code>的产物，它用于在运行时作为一个键值去找到对应方法的实现。一个<code>Objective-C</code>的方法是由<code>objc_method</code>结束体定义的，其声明如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">struct objc_method &#123;</div><div class="line"></div><div class="line">    SEL method_name                 	OBJC2_UNAVAILABLE;  // 方法名</div><div class="line">    char *method_types                  OBJC2_UNAVAILABLE;</div><div class="line">    IMP method_imp                      OBJC2_UNAVAILABLE;  // 方法实现</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这就要求<code>selector</code>引用的方法必须对<code>ObjC</code>运行时是可见的。而<code>Swift</code>是静态语言，虽然继承自<code>NSObject</code>的类默认对<code>ObjC</code>运行时是可见的，但如果方法是由<code>private</code>关键字修饰的，则方法默认情况下对<code>ObjC</code>运行时并不是可见的，所以就导致了以上的异常：运行时并没找到<code>SwipeCardView</code>类的<code>beginDragged:</code>方法。</p>
+<p>所以，我们必须将<code>private</code>修饰的方法暴露给运行时。正确的做法是在 <code>private</code> 前面加上 <code>@objc</code> 关键字，这样就OK了。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">@objc private func beginDragged(gestureRecognizer: UIPanGestureRecognizer) &#123;</div><div class="line">	// ....</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>另外需要注意的是，如果我们的类是纯<code>Swift</code>类，而不是继承自<code>NSObject</code>，则不管方法是<code>private</code>还是<code>internal</code>或<code>public</code>，如果要用在<code>Selector</code>中，都需要加上<code>@objc</code>修饰符。</p>
+<h3 id="参考-2"><a href="#参考-2" class="headerlink" title="参考"></a>参考</h3><ol>
+<li><a href="http://swifter.tips/selector/" target="_blank" rel="external">SELECTOR</a></li>
+<li><a href="http://stackoverflow.com/questions/24007650/selector-in-swift" target="_blank" rel="external">@selector() in Swift?</a></li>
+</ol>
+<h2 id="零碎"><a href="#零碎" class="headerlink" title="零碎"></a>零碎</h2><h3 id="Swift中枚举项设置相同的值"><a href="#Swift中枚举项设置相同的值" class="headerlink" title="Swift中枚举项设置相同的值"></a>Swift中枚举项设置相同的值</h3><p>在<code>Objective-C</code>及<code>C</code>语言中，在枚举中我们可以设置两个枚举项的值相等，如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">typedef NS_ENUM(NSUInteger, Type) &#123;</div><div class="line">    TypeIn      = 0,</div><div class="line">    TypeOut     = 1,</div><div class="line">    TypeInOut   = 2,</div><div class="line">    TypeDefault = TypeIn</div><div class="line">&#125;;</div></pre></td></tr></table></figure>
+<p>在上例中，我们让枚举项<code>TypeDefault</code>的值等于<code>TypeIn</code>。</p>
+<p>而在<code>Swift</code>中，要求枚举项的<code>rawValue</code>是唯一的，如果像下面这样写，则编译器会报错：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">enum Type: UInt &#123;</div><div class="line">    case In         = 0</div><div class="line">    case Out        = 1</div><div class="line">    case InOut      = 2</div><div class="line">    case Default    = 0		// Error: Raw value for enum case is not unique</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>那如果我们希望上面枚举中<code>Default</code>的值与<code>In</code>的值一样，那应该怎么做呢？这时候就需要充分利用<code>Swift</code>中<code>enum</code>的特性了。我们知道，<code>Swift</code>中的<code>enum</code>与结构体、类一样，可以为其定义属性和方法，所以我们可以如下处理：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">enum Type: UInt &#123;</div><div class="line">    case In         = 0</div><div class="line">    case Out        = 1</div><div class="line">    case InOut      = 2</div><div class="line"></div><div class="line">    static var Default: Type &#123;</div><div class="line">        get &#123;</div><div class="line">            return .In</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>我们将<code>Default</code>定义为<code>Type</code>的一个静态只读属性，这个属性与枚举的其它枚举项的调用方式是一样的，可以如下调用：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">let type: Type = .Default</div></pre></td></tr></table></figure>
+<h4 id="参考-3"><a href="#参考-3" class="headerlink" title="参考"></a>参考</h4><ol>
+<li><a href="http://stackoverflow.com/questions/28037772/swift-enum-multiple-cases-with-the-same-value" target="_blank" rel="external">Swift enum multiple cases with the same value</a></li>
+</ol>
+<h3 id="Swift中如何实现IBOutletCollection"><a href="#Swift中如何实现IBOutletCollection" class="headerlink" title="Swift中如何实现IBOutletCollection"></a>Swift中如何实现IBOutletCollection</h3><p>在使用IB做界面开发时，我们经常需要将界面上的元素连接到我们的代码中。<code>IBOutlet</code>和<code>IBAction</code>就是专门用来做这事的两个关键字。另外在<code>Objective-C</code>还提供了一个伪关键字<code>IBOutletCollection</code>，它的实际作用是将界面上的一组相同的控件连接到一个数组中。具体可以参考<a href="http://southpeak.github.io/blog/2015/05/10/ioszhi-shi-xiao-ji-di-%5B%3F%5D-qi-2015-dot-05-dot-10/">iOS知识小集 第一期(2015.05.10)</a>中的<code>IBOutletCollection</code>一节。</p>
+<p>在<code>Swift</code>中，同样提供了<code>@IBOutlet</code>和<code>@IBAction</code>实现<code>Objective-C</code>中对应的功能，不过却没提供<code>@IBOutletCollection</code>来将一组相同控件连接到一个数组中。那如果我们想实现类似的功能，需要怎么处理呢？</p>
+<p>实际上，我们在IB中选中一组相同的控件，然后将其连到到代码中时，会生成一个<code>IBOutlet</code>修饰的控件数组，类似于如下代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">@IBOutlet var numberButtons: [UIButton]!</div></pre></td></tr></table></figure>
+<p>这就是<code>Swift</code>中类<code>IBOutletCollection</code>的处理。如果需要往数组中添加新建的对应的控件，则只需要在代码前面的小圆点与UI上的控件做个连线就OK了。而如果要想将控件从数组中移除，则只需要将对应的连接关系移除就可以了。</p>
+<h4 id="参考-4"><a href="#参考-4" class="headerlink" title="参考"></a>参考</h4><ol>
+<li><a href="http://southpeak.github.io/blog/2015/05/10/ioszhi-shi-xiao-ji-di-%5B%3F%5D-qi-2015-dot-05-dot-10/">iOS知识小集 第一期(2015.05.10)</a></li>
+<li><a href="http://stackoverflow.com/questions/24052459/swift-iboutletcollection-equivalent" target="_blank" rel="external">Swift - IBOutletCollection equivalent</a></li>
+</ol>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
                 <a class="post-title-link" href="/2015/09/23/sourcecode-mmtweenanimation/" itemprop="url">
                   MMTweenAnimation实现分析
                 </a>
@@ -2363,200 +2602,6 @@
 
 
     
-      
-
-  
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/2015/03/24/sourcecode-mbprogresshud/" itemprop="url">
-                  MBProgressHUD实现分析
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            <span class="post-meta-item-icon">
-              <i class="fa fa-calendar-o"></i>
-            </span>
-            <span class="post-meta-item-text">发表于</span>
-            <time itemprop="dateCreated" datetime="2015-03-24T20:41:51+08:00" content="2015-03-24">
-              2015-03-24
-            </time>
-          </span>
-
-          
-            <span class="post-category" >
-              &nbsp; | &nbsp;
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-              
-                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
-                  <a href="/categories/sourcecode/" itemprop="url" rel="index">
-                    <span itemprop="name">源码分析</span>
-                  </a>
-                </span>
-
-                
-                
-
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-
-          
-          
-
-          
-        </div>
-      </header>
-    
-
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>源码来源：<a href="https://github.com/jdg/MBProgressHUD" target="_blank" rel="external">https://github.com/jdg/MBProgressHUD</a></p>
-<p>版本：0.9.1</p>
-<p><code>MBProgressHUD</code>是一个显示<code>HUD</code>窗口的第三方类库，用于在执行一些后台任务时，在程序中显示一个表示进度的<code>loading</code>视图和两个可选的文本提示的<code>HUD</code>窗口。我想最多是应用在加载网络数据的时候。其实苹果官方自己有一个带有此功能的类<code>UIProgressHUD</code>，只不过它是私有的，现在不让用。至于实际的效果，可以看看<code>github</code>上工程给出的几张图例(貌似我这经常无法单独打开图片，所以就不在这贴图片了)，也可以运行一下<code>Demo</code>。</p>
-<p>具体用法我们就不多说了，参考<code>github</code>上的说明就能用得很顺的。本文主要还是从源码的角度来分析一下它的具体实现。</p>
-<h2 id="模式"><a href="#模式" class="headerlink" title="模式"></a>模式</h2><p>在分析实现代码之前，我们先来看看<code>MBProgressHUD</code>中定义的<code>MBProgressHUDMode</code>枚举。它用来表示<code>HUD</code>窗口的模式，即我们从效果图中看到的几种显示样式。其具体定义如下：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">typedef</span> <span class="keyword">enum</span> &#123;</div><div class="line">    <span class="comment">// 使用UIActivityIndicatorView来显示进度，这是默认值</span></div><div class="line">    MBProgressHUDModeIndeterminate,</div><div class="line">    </div><div class="line">    <span class="comment">// 使用一个圆形饼图来作为进度视图</span></div><div class="line">    MBProgressHUDModeDeterminate,</div><div class="line">    </div><div class="line">    <span class="comment">// 使用一个水平进度条</span></div><div class="line">    MBProgressHUDModeDeterminateHorizontalBar,</div><div class="line">    </div><div class="line">    <span class="comment">// 使用圆环作为进度条</span></div><div class="line">    MBProgressHUDModeAnnularDeterminate,</div><div class="line">    </div><div class="line">    <span class="comment">// 显示一个自定义视图，通过这种方式，可以显示一个正确或错误的提示图</span></div><div class="line">    MBProgressHUDModeCustomView,</div><div class="line">    </div><div class="line">    <span class="comment">// 只显示文本</span></div><div class="line">    MBProgressHUDModeText</div><div class="line">    </div><div class="line">&#125; MBProgressHUDMode;</div></pre></td></tr></table></figure>
-<p>通过设置<code>MBProgressHUD</code>的模式，我们可以使用<code>MBProgressHUD</code>自定义的表示进度的视图来满足我们的需求，也可以自定义这个进度视图，当然还可以只显示文本。在下面我们会讨论源码中是如何使用这几个值的。</p>
-<h2 id="外观"><a href="#外观" class="headerlink" title="外观"></a>外观</h2><p>我们先来了解一下<code>MBProgressHUD</code>的基本组成。一个<code>MBProgressHUD</code>视图主要由四个部分组成：</p>
-<ol>
-<li><code>loading</code>动画视图(在此做个统称，当然这个区域可以是自定义的一个<code>UIImageView</code>视图)。这个视图由我们设定的模式值决定，可以是菊花、进度条，也可以是我们自定义的视图；</li>
-<li>标题文本框(<code>label</code>)：主要用于显示提示的主题信息。这个文本框是可选的，通常位于<code>loading</code>动画视图的下面，且它是单行显示。它会根据<code>labelText</code>属性来自适应文本的大小(有一个长度上限)，如果过长，则超出的部分会显示为”…”；</li>
-<li>详情文本框(<code>detailsLabel</code>)。如果觉得标题不够详细，或者有附属信息，就可以将详细信息放在这里面显示。该文本框对应的是显示<code>detailsLabelText</code>属性的值，它是可以多行显示的。另外，详情的显示还依赖于<code>labelText</code>属性的设置，只有<code>labelText</code>属性被设置了，且不为空串，才会显示<code>detailsLabel</code>；</li>
-<li><code>HUD</code>背景框。主要是作为上面三个部分的一个背景，用来突出上面三部分。</li>
-</ol>
-<p>为了让我们更好地自定义这几个部分，<code>MBProgressHUD</code>还提供了一些属性，我们简单了解一下：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 背景框的透明度，默认值是0.8</span></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">assign</span>) <span class="keyword">float</span> opacity;</div><div class="line"></div><div class="line"><span class="comment">// 背景框的颜色</span></div><div class="line"><span class="comment">// 需要注意的是如果设置了这个属性，则opacity属性会失效，即不会有半透明效果</span></div><div class="line"><span class="keyword">@property</span> (MB_STRONG) <span class="built_in">UIColor</span> *color;</div><div class="line"></div><div class="line"><span class="comment">// 背景框的圆角半径。默认值是10.0</span></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">assign</span>) <span class="keyword">float</span> cornerRadius;</div><div class="line"></div><div class="line"><span class="comment">// 标题文本的字体及颜色</span></div><div class="line"><span class="keyword">@property</span> (MB_STRONG) <span class="built_in">UIFont</span>* labelFont;</div><div class="line"><span class="keyword">@property</span> (MB_STRONG) <span class="built_in">UIColor</span>* labelColor;</div><div class="line"></div><div class="line"><span class="comment">// 详情文本的字体及颜色</span></div><div class="line"><span class="keyword">@property</span> (MB_STRONG) <span class="built_in">UIFont</span>* detailsLabelFont;</div><div class="line"><span class="keyword">@property</span> (MB_STRONG) <span class="built_in">UIColor</span>* detailsLabelColor;</div><div class="line"></div><div class="line"><span class="comment">// 菊花的颜色，默认是白色</span></div><div class="line"><span class="keyword">@property</span> (MB_STRONG) <span class="built_in">UIColor</span> *activityIndicatorColor;</div></pre></td></tr></table></figure>
-<p>通过以上属性，我们可以根据自己的需要来设置这几个部分的外观。</p>
-<p>另外还有一个比较有意思的属性是<code>dimBackground</code>，用于为<code>HUD</code>窗口的视图区域覆盖上一层径向渐变(<code>radial gradient</code>)层，其定义如下：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">@property</span> (<span class="keyword">assign</span>) <span class="built_in">BOOL</span> dimBackground;</div></pre></td></tr></table></figure>
-<p>让我们来看看通过它，<code>MBProgressHUD</code>都做了些什么。代码如下：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)drawRect:(<span class="built_in">CGRect</span>)rect &#123;</div><div class="line">	</div><div class="line">	...</div><div class="line">	<span class="keyword">if</span> (<span class="keyword">self</span>.dimBackground) &#123;</div><div class="line">		<span class="comment">//Gradient colours</span></div><div class="line">		size_t gradLocationsNum = <span class="number">2</span>;</div><div class="line">		<span class="built_in">CGFloat</span> gradLocations[<span class="number">2</span>] = &#123;<span class="number">0.0</span>f, <span class="number">1.0</span>f&#125;;</div><div class="line">		<span class="built_in">CGFloat</span> gradColors[<span class="number">8</span>] = &#123;<span class="number">0.0</span>f,<span class="number">0.0</span>f,<span class="number">0.0</span>f,<span class="number">0.0</span>f,<span class="number">0.0</span>f,<span class="number">0.0</span>f,<span class="number">0.0</span>f,<span class="number">0.75</span>f&#125;; </div><div class="line">		<span class="built_in">CGColorSpaceRef</span> colorSpace = <span class="built_in">CGColorSpaceCreateDeviceRGB</span>();</div><div class="line">		<span class="built_in">CGGradientRef</span> gradient = <span class="built_in">CGGradientCreateWithColorComponents</span>(colorSpace, gradColors, gradLocations, gradLocationsNum);</div><div class="line">		<span class="built_in">CGColorSpaceRelease</span>(colorSpace);</div><div class="line">		</div><div class="line">		<span class="comment">//Gradient center</span></div><div class="line">		<span class="built_in">CGPoint</span> gradCenter= <span class="built_in">CGPointMake</span>(<span class="keyword">self</span>.bounds.size.width/<span class="number">2</span>, <span class="keyword">self</span>.bounds.size.height/<span class="number">2</span>);</div><div class="line">		<span class="comment">//Gradient radius</span></div><div class="line">		<span class="keyword">float</span> gradRadius = MIN(<span class="keyword">self</span>.bounds.size.width , <span class="keyword">self</span>.bounds.size.height) ;</div><div class="line">		</div><div class="line">		<span class="comment">// 由中心向四周绘制渐变</span></div><div class="line">		<span class="built_in">CGContextDrawRadialGradient</span> (context, gradient, gradCenter,</div><div class="line">									 <span class="number">0</span>, gradCenter, gradRadius,</div><div class="line">									 kCGGradientDrawsAfterEndLocation);</div><div class="line">		<span class="built_in">CGGradientRelease</span>(gradient);</div><div class="line">	&#125;</div><div class="line">	...	</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>这段代码由中心向<code>MBProgressHUD</code>视图的四周绘制了一个渐变层。当然，这里的颜色值是写死的，我们无法自行定义。有兴趣的话，大家可以将这个属性设置为YES，看看实际的效果。</p>
-<h2 id="创建、布局与绘制"><a href="#创建、布局与绘制" class="headerlink" title="创建、布局与绘制"></a>创建、布局与绘制</h2><p>除了继承自<code>UIView</code>的<code>-initWithFrame:</code>初始化方法，<code>MBProgressHUD</code>还为我们提供了两个初始化方法，如下所示：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">id</span>)initWithWindow:(<span class="built_in">UIWindow</span> *)window;</div><div class="line">- (<span class="keyword">id</span>)initWithView:(<span class="built_in">UIView</span> *)view;</div></pre></td></tr></table></figure>
-<p>这两个方法分别传入一个<code>UIWindow</code>对象和一个<code>UIView</code>对象。传入的视图对象仅仅是做为<code>MBProgressHUD</code>视图定义其<code>frame</code>属性的参照，而不会直接将<code>MBProgressHUD</code>视图添加到传入的视图对象上。这个添加操作还得我们自行处理(当然，<code>MBProgressHUD</code>还提供了几个便捷的类方法，我们下面会说明)。</p>
-<p><code>MBProgressHUD</code>提供了几个属性，可以让我们控制<code>HUD</code>的布局，这些属性主要有以下几个：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// HUD相对于父视图中心点的x轴偏移量和y轴偏移量</span></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">assign</span>) <span class="keyword">float</span> xOffset;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">assign</span>) <span class="keyword">float</span> yOffset;</div><div class="line"></div><div class="line"><span class="comment">// HUD各元素与HUD边缘的间距</span></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">assign</span>) <span class="keyword">float</span> margin;</div><div class="line"></div><div class="line"><span class="comment">// HUD背景框的最小大小</span></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">assign</span>) <span class="built_in">CGSize</span> minSize;</div><div class="line"></div><div class="line"><span class="comment">// HUD的实际大小</span></div><div class="line"><span class="keyword">@property</span> (atomic, <span class="keyword">assign</span>, <span class="keyword">readonly</span>) <span class="built_in">CGSize</span> size;</div><div class="line"></div><div class="line"><span class="comment">// 是否强制HUD背景框宽高相等</span></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">assign</span>, <span class="keyword">getter</span> = isSquare) <span class="built_in">BOOL</span> square;</div></pre></td></tr></table></figure>
-<p>需要注意的是，<code>MBProgressHUD</code>视图会充满其父视图的<code>frame</code>内，为此，在<code>MBProgressHUD</code>的<code>layoutSubviews</code>方法中，还专门做了处理，如下代码所示：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)layoutSubviews &#123;</div><div class="line">	[<span class="keyword">super</span> layoutSubviews];</div><div class="line">	</div><div class="line">	<span class="comment">// Entirely cover the parent view</span></div><div class="line">	<span class="built_in">UIView</span> *parent = <span class="keyword">self</span>.superview;</div><div class="line">	<span class="keyword">if</span> (parent) &#123;</div><div class="line">		<span class="keyword">self</span>.frame = parent.bounds;</div><div class="line">	&#125;</div><div class="line">	</div><div class="line">	...</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>也因此，当<code>MBProgressHUD</code>显示时，它也会屏蔽父视图的各种交互操作。</p>
-<p>在布局的过程中，会先根据我们要显示的视图计算出容纳这些视图所需要的总的宽度和高度。当然，会设置一个最大值。我们截取其中一段来看看：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">CGRect</span> bounds = <span class="keyword">self</span>.bounds;</div><div class="line"></div><div class="line">...</div><div class="line"></div><div class="line"><span class="built_in">CGFloat</span> remainingHeight = bounds.size.height - totalSize.height - kPadding - <span class="number">4</span> * margin; </div><div class="line"><span class="built_in">CGSize</span> maxSize = <span class="built_in">CGSizeMake</span>(maxWidth, remainingHeight);</div><div class="line"><span class="built_in">CGSize</span> detailsLabelSize = MB_MULTILINE_TEXTSIZE(detailsLabel.text, detailsLabel.font, maxSize, detailsLabel.lineBreakMode);</div><div class="line">totalSize.width = MAX(totalSize.width, detailsLabelSize.width);</div><div class="line">totalSize.height += detailsLabelSize.height;</div><div class="line"><span class="keyword">if</span> (detailsLabelSize.height &gt; <span class="number">0.</span>f &amp;&amp; (indicatorF.size.height &gt; <span class="number">0.</span>f || labelSize.height &gt; <span class="number">0.</span>f)) &#123;</div><div class="line">	totalSize.height += kPadding;</div><div class="line">&#125;</div><div class="line"></div><div class="line">totalSize.width += <span class="number">2</span> * margin;</div><div class="line">totalSize.height += <span class="number">2</span> * margin;</div></pre></td></tr></table></figure>
-<p>之后，就开始从上到下放置各个视图。在布局代码的最后，计算了一个<code>size</code>值，这是为后面绘制背景框做准备的。</p>
-<p>在上面的布局代码中，主要是处理了<code>loading</code>动画视图、标题文本框和详情文本框，而<code>HUD</code>背景框主要是在<code>drawRect:</code>中来绘制的。背景框的绘制代码如下：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// Center HUD</span></div><div class="line"><span class="built_in">CGRect</span> allRect = <span class="keyword">self</span>.bounds;</div><div class="line"><span class="comment">// Draw rounded HUD backgroud rect</span></div><div class="line"><span class="built_in">CGRect</span> boxRect = <span class="built_in">CGRectMake</span>(round((allRect.size.width - size.width) / <span class="number">2</span>) + <span class="keyword">self</span>.xOffset,</div><div class="line">							round((allRect.size.height - size.height) / <span class="number">2</span>) + <span class="keyword">self</span>.yOffset, size.width, size.height);</div><div class="line"><span class="keyword">float</span> radius = <span class="keyword">self</span>.cornerRadius;</div><div class="line"><span class="built_in">CGContextBeginPath</span>(context);</div><div class="line"><span class="built_in">CGContextMoveToPoint</span>(context, <span class="built_in">CGRectGetMinX</span>(boxRect) + radius, <span class="built_in">CGRectGetMinY</span>(boxRect));</div><div class="line"><span class="built_in">CGContextAddArc</span>(context, <span class="built_in">CGRectGetMaxX</span>(boxRect) - radius, <span class="built_in">CGRectGetMinY</span>(boxRect) + radius, radius, <span class="number">3</span> * (<span class="keyword">float</span>)M_PI / <span class="number">2</span>, <span class="number">0</span>, <span class="number">0</span>);</div><div class="line"><span class="built_in">CGContextAddArc</span>(context, <span class="built_in">CGRectGetMaxX</span>(boxRect) - radius, <span class="built_in">CGRectGetMaxY</span>(boxRect) - radius, radius, <span class="number">0</span>, (<span class="keyword">float</span>)M_PI / <span class="number">2</span>, <span class="number">0</span>);</div><div class="line"><span class="built_in">CGContextAddArc</span>(context, <span class="built_in">CGRectGetMinX</span>(boxRect) + radius, <span class="built_in">CGRectGetMaxY</span>(boxRect) - radius, radius, (<span class="keyword">float</span>)M_PI / <span class="number">2</span>, (<span class="keyword">float</span>)M_PI, <span class="number">0</span>);</div><div class="line"><span class="built_in">CGContextAddArc</span>(context, <span class="built_in">CGRectGetMinX</span>(boxRect) + radius, <span class="built_in">CGRectGetMinY</span>(boxRect) + radius, radius, (<span class="keyword">float</span>)M_PI, <span class="number">3</span> * (<span class="keyword">float</span>)M_PI / <span class="number">2</span>, <span class="number">0</span>);</div><div class="line"><span class="built_in">CGContextClosePath</span>(context);</div><div class="line"><span class="built_in">CGContextFillPath</span>(context);</div></pre></td></tr></table></figure>
-<p>这是最平常的绘制操作，在此不多做解释。</p>
-<p>我们上面讲过<code>MBProgressHUD</code>提供了几种窗口模式，这几种模式的主要区别在于<code>loading</code>动画视图的展示。默认情况下，使用的是菊花(<code>MBProgressHUDModeIndeterminate</code>)。我们可以通过设置以下属性，来改变<code>loading</code>动画视图：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">@property</span> (<span class="keyword">assign</span>) MBProgressHUDMode mode;</div></pre></td></tr></table></figure>
-<p>对于其它几种模式，<code>MBProgressHUD</code>专门我们提供了几个视图类。如果是进度条模式(<code>MBProgressHUDModeDeterminateHorizontalBar</code>)，则使用的是<code>MBBarProgressView</code>类；如果是饼图模式(<code>MBProgressHUDModeDeterminate</code>)或环形模式(<code>MBProgressHUDModeAnnularDeterminate</code>)，则使用的是<code>MBRoundProgressView</code>类。上面这两个类的主要操作就是在<code>drawRect:</code>中根据一些进度参数来绘制形状，大家可以自己详细看一下。</p>
-<p>当然，我们还可以自定义<code>loading</code>动画视图，此时选择的模式是<code>MBProgressHUDModeCustomView</code>。或者不显示<code>loading</code>动画视图，而只显示文本框(<code>MBProgressHUDModeText</code>)。</p>
-<p>具体显示哪一种<code>loading</code>动画视图，是在<code>-updateIndicators</code>方法中来处理的，其实现如下所示：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)updateIndicators &#123;</div><div class="line">	</div><div class="line">	<span class="built_in">BOOL</span> isActivityIndicator = [indicator isKindOfClass:[<span class="built_in">UIActivityIndicatorView</span> <span class="keyword">class</span>]];</div><div class="line">	<span class="built_in">BOOL</span> isRoundIndicator = [indicator isKindOfClass:[MBRoundProgressView <span class="keyword">class</span>]];</div><div class="line">	</div><div class="line">	<span class="keyword">if</span> (mode == MBProgressHUDModeIndeterminate) &#123;</div><div class="line">		...</div><div class="line">	&#125;</div><div class="line">	<span class="keyword">else</span> <span class="keyword">if</span> (mode == MBProgressHUDModeDeterminateHorizontalBar) &#123;</div><div class="line">		<span class="comment">// Update to bar determinate indicator</span></div><div class="line">		[indicator removeFromSuperview];</div><div class="line">		<span class="keyword">self</span>.indicator = MB_AUTORELEASE([[MBBarProgressView alloc] init]);</div><div class="line">		[<span class="keyword">self</span> addSubview:indicator];</div><div class="line">	&#125;</div><div class="line">	<span class="keyword">else</span> <span class="keyword">if</span> (mode == MBProgressHUDModeDeterminate || mode == MBProgressHUDModeAnnularDeterminate) &#123;</div><div class="line">		<span class="keyword">if</span> (!isRoundIndicator) &#123;</div><div class="line">			...</div><div class="line">		&#125;</div><div class="line">		<span class="keyword">if</span> (mode == MBProgressHUDModeAnnularDeterminate) &#123;</div><div class="line">			[(MBRoundProgressView *)indicator setAnnular:<span class="literal">YES</span>];</div><div class="line">		&#125;</div><div class="line">	&#125; </div><div class="line">	<span class="keyword">else</span> <span class="keyword">if</span> (mode == MBProgressHUDModeCustomView &amp;&amp; customView != indicator) &#123;</div><div class="line">		...</div><div class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> (mode == MBProgressHUDModeText) &#123;</div><div class="line">		...</div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<h2 id="显示与隐藏"><a href="#显示与隐藏" class="headerlink" title="显示与隐藏"></a>显示与隐藏</h2><p><code>MBRoundProgressView</code>为我们提供了丰富的显示与隐藏<code>HUD</code>窗口的。在分析这些方法之前，我们先来看看<code>MBProgressHUD</code>为显示与隐藏提供的一些属性：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// HUD显示和隐藏的动画类型</span></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">assign</span>) MBProgressHUDAnimation animationType;</div><div class="line"></div><div class="line"><span class="comment">// HUD显示的最短时间。设置这个值是为了避免HUD显示后立即被隐藏。默认值为0</span></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">assign</span>) <span class="keyword">float</span> minShowTime;</div><div class="line"></div><div class="line"><span class="comment">// 这个属性设置了一个宽限期，它是在没有显示HUD窗口前被调用方法可能运行的时间。</span></div><div class="line"><span class="comment">// 如果被调用方法在宽限期内执行完，则HUD不会被显示。</span></div><div class="line"><span class="comment">// 这主要是为了避免在执行很短的任务时，去显示一个HUD窗口。</span></div><div class="line"><span class="comment">// 默认值是0。只有当任务状态是已知时，才支持宽限期。具体我们看实现代码。</span></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">assign</span>) <span class="keyword">float</span> graceTime;</div><div class="line"></div><div class="line"><span class="comment">// 这是一个标识位，标明执行的操作正在处理中。这个属性是配合graceTime使用的。</span></div><div class="line"><span class="comment">// 如果没有设置graceTime，则这个标识是没有太大意义的。在使用showWhileExecuting:onTarget:withObject:animated:方法时，</span></div><div class="line"><span class="comment">// 会自动去设置这个属性为YES，其它情况下都需要我们自己手动设置。</span></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">assign</span>) <span class="built_in">BOOL</span> taskInProgress;</div><div class="line"></div><div class="line"><span class="comment">// 隐藏时是否将HUD从父视图中移除，默认是NO。</span></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">assign</span>) <span class="built_in">BOOL</span> removeFromSuperViewOnHide;</div><div class="line"></div><div class="line"><span class="comment">// 进度指示器，从0.0到1.0，默认值为0.0</span></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">assign</span>) <span class="keyword">float</span> progress;</div><div class="line"></div><div class="line"><span class="comment">// 在HUD被隐藏后的回调</span></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">copy</span>) MBProgressHUDCompletionBlock completionBlock;</div></pre></td></tr></table></figure>
-<p>以上这些属性都还好理解，可能需要注意的就是<code>graceTime</code>和<code>taskInProgress</code>的配合使用。在下面我们将会看看这两个属性的用法。</p>
-<p>对于显示操作，最基本的就是<code>-show:</code>方法(其它几个显示方法都会调用该方法来显示HUD窗口)，我们先来看看它的实现，</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)show:(<span class="built_in">BOOL</span>)animated &#123;</div><div class="line">	useAnimation = animated;</div><div class="line">	<span class="comment">// If the grace time is set postpone the HUD display</span></div><div class="line">	<span class="keyword">if</span> (<span class="keyword">self</span>.graceTime &gt; <span class="number">0.0</span>) &#123;</div><div class="line">		<span class="keyword">self</span>.graceTimer = [<span class="built_in">NSTimer</span> scheduledTimerWithTimeInterval:<span class="keyword">self</span>.graceTime target:<span class="keyword">self</span> </div><div class="line">						   selector:<span class="keyword">@selector</span>(handleGraceTimer:) userInfo:<span class="literal">nil</span> repeats:<span class="literal">NO</span>];</div><div class="line">	&#125; </div><div class="line">	<span class="comment">// ... otherwise show the HUD imediately </span></div><div class="line">	<span class="keyword">else</span> &#123;</div><div class="line">		[<span class="keyword">self</span> showUsingAnimation:useAnimation];</div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>可以看到，如果我们没有设置<code>graceTime</code>属性，则会立即显示<code>HUD</code>；而如果设置了<code>graceTime</code>，则会创建一个定时器，并让显示操作延迟到<code>graceTime</code>所设定的时间再执行，而<code>-handleGraceTimer:</code>实现如下：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)handleGraceTimer:(<span class="built_in">NSTimer</span> *)theTimer &#123;</div><div class="line">	<span class="comment">// Show the HUD only if the task is still running</span></div><div class="line">	<span class="keyword">if</span> (taskInProgress) &#123;</div><div class="line">		[<span class="keyword">self</span> showUsingAnimation:useAnimation];</div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>可以看到，只有在设置了<code>taskInProgress</code>标识位为YES的情况下，才会去显示<code>HUD</code>窗口。所以，如果我们要自己调用<code>-show:</code>方法的话，需要酌情考虑设置<code>taskInProgress</code>标识位。</p>
-<p>除了<code>-show:</code>方法以外，<code>MBProgressHUD</code>还为我们提供了一组显示方法，可以让我们在显示<code>HUD</code>的同时，执行一些后台任务，我们在此主要介绍两个。其中一个是<code>-showWhileExecuting:onTarget:withObject:animated:</code>，它是基于<code>target-action</code>方式的调用，在执行一个后台任务时显示<code>HUD</code>，等后台任务执行完成后再隐藏<code>HUD</code>，具体实现如下所示：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)showWhileExecuting:(SEL)method onTarget:(<span class="keyword">id</span>)target withObject:(<span class="keyword">id</span>)object animated:(<span class="built_in">BOOL</span>)animated &#123;</div><div class="line">	methodForExecution = method;</div><div class="line">	targetForExecution = MB_RETAIN(target);</div><div class="line">	objectForExecution = MB_RETAIN(object);	</div><div class="line">	<span class="comment">// Launch execution in new thread</span></div><div class="line">	<span class="keyword">self</span>.taskInProgress = <span class="literal">YES</span>;</div><div class="line">	[<span class="built_in">NSThread</span> detachNewThreadSelector:<span class="keyword">@selector</span>(launchExecution) toTarget:<span class="keyword">self</span> withObject:<span class="literal">nil</span>];</div><div class="line">	<span class="comment">// Show HUD view</span></div><div class="line">	[<span class="keyword">self</span> show:animated];</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (<span class="keyword">void</span>)launchExecution &#123;</div><div class="line">	<span class="keyword">@autoreleasepool</span> &#123;</div><div class="line"><span class="meta">#pragma clang diagnostic push</span></div><div class="line"><span class="meta">#pragma clang diagnostic ignored <span class="meta-string">"-Warc-performSelector-leaks"</span></span></div><div class="line">		<span class="comment">// Start executing the requested task</span></div><div class="line">		[targetForExecution performSelector:methodForExecution withObject:objectForExecution];</div><div class="line"><span class="meta">#pragma clang diagnostic pop</span></div><div class="line">		<span class="comment">// Task completed, update view in main thread (note: view operations should</span></div><div class="line">		<span class="comment">// be done only in the main thread)</span></div><div class="line">		[<span class="keyword">self</span> performSelectorOnMainThread:<span class="keyword">@selector</span>(cleanUp) withObject:<span class="literal">nil</span> waitUntilDone:<span class="literal">NO</span>];</div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>可以看到，<code>-showWhileExecuting:onTarget:withObject:animated:</code>首先将<code>taskInProgress</code>属性设置为YES，这样在调用<code>-show:</code>方法时，即使设置了<code>graceTime</code>，也确保能在任务完成之前显示<code>HUD</code>。然后开启一个新线程，来异步执行我们的后台任务，最后去显示<code>HUD</code>。</p>
-<p>而在异步调用方法<code>-launchExecution</code>中，线程首先是维护了自己的一个<code>@autoreleasepool</code>，所以在我们自己的方法中，就不需要再去维护一个<code>@autoreleasepool</code>了。之后是去执行我们的任务，在任务完成之后，再回去主线程去执行清理操作，并隐藏<code>HUD</code>窗口。</p>
-<p>另一个显示方法是<code>-showAnimated:whileExecutingBlock:onQueue:completionBlock:</code>，它是基于GCD的调用，当<code>block</code>中的任务在指定的队列中执行时，显示<code>HUD</code>窗口，任务完成之后执行<code>completionBlock</code>操作，最后隐藏<code>HUD</code>窗口。我们来看看它的具体实现：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)showAnimated:(<span class="built_in">BOOL</span>)animated whileExecutingBlock:(dispatch_block_t)block onQueue:(<span class="built_in">dispatch_queue_t</span>)queue</div><div class="line">	 completionBlock:(MBProgressHUDCompletionBlock)completion &#123;</div><div class="line">	<span class="keyword">self</span>.taskInProgress = <span class="literal">YES</span>;</div><div class="line">	<span class="keyword">self</span>.completionBlock = completion;</div><div class="line">	<span class="built_in">dispatch_async</span>(queue, ^(<span class="keyword">void</span>) &#123;</div><div class="line">		block();</div><div class="line">		<span class="built_in">dispatch_async</span>(dispatch_get_main_queue(), ^(<span class="keyword">void</span>) &#123;</div><div class="line">			[<span class="keyword">self</span> cleanUp];</div><div class="line">		&#125;);</div><div class="line">	&#125;);</div><div class="line">	[<span class="keyword">self</span> show:animated];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>这个方法也是首先将<code>taskInProgress</code>属性设置为YES，然后开启一个线程去执行<code>block</code>任务，最后主线程去执行清理操作，并隐藏<code>HUD</code>窗口。</p>
-<p>对于<code>HUD</code>的隐藏，<code>MBProgressHUD</code>提供了两个方法，一个是<code>-hide:</code>，另一个是<code>-hide:afterDelay:</code>，后者基于前者，所以我们主要来看看<code>-hide:</code>的实现：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)hide:(<span class="built_in">BOOL</span>)animated &#123;</div><div class="line">	useAnimation = animated;</div><div class="line">	<span class="comment">// If the minShow time is set, calculate how long the hud was shown,</span></div><div class="line">	<span class="comment">// and pospone the hiding operation if necessary</span></div><div class="line">	<span class="keyword">if</span> (<span class="keyword">self</span>.minShowTime &gt; <span class="number">0.0</span> &amp;&amp; showStarted) &#123;</div><div class="line">		<span class="built_in">NSTimeInterval</span> interv = [[<span class="built_in">NSDate</span> date] timeIntervalSinceDate:showStarted];</div><div class="line">		<span class="keyword">if</span> (interv &lt; <span class="keyword">self</span>.minShowTime) &#123;</div><div class="line">			<span class="keyword">self</span>.minShowTimer = [<span class="built_in">NSTimer</span> scheduledTimerWithTimeInterval:(<span class="keyword">self</span>.minShowTime - interv) target:<span class="keyword">self</span> </div><div class="line">								selector:<span class="keyword">@selector</span>(handleMinShowTimer:) userInfo:<span class="literal">nil</span> repeats:<span class="literal">NO</span>];</div><div class="line">			<span class="keyword">return</span>;</div><div class="line">		&#125; </div><div class="line">	&#125;</div><div class="line">	<span class="comment">// ... otherwise hide the HUD immediately</span></div><div class="line">	[<span class="keyword">self</span> hideUsingAnimation:useAnimation];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>我们可以看到，在设置了<code>minShowTime</code>属性并且已经显示了<code>HUD</code>窗口的情况下，会去判断显示的时间是否小于<code>minShowTime</code>指定的时间，如果是，则会开启一个定时器，等到显示的时间到了<code>minShowTime</code>所指定的时间，才会去隐藏<code>HUD</code>窗口；否则会直接去隐藏<code>HUD</code>窗口。</p>
-<p>隐藏的实际操作主要是去做了些清理操作，包括根据设定的<code>removeFromSuperViewOnHide</code>值来执行是否从父视图移除<code>HUD</code>窗口，以及执行<code>completionBlock</code>操作，还有就是执行代理的<code>hudWasHidden:</code>方法。这些操作是在私有方法<code>-done</code>里面执行的，实现如下：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)done &#123;</div><div class="line">	[<span class="built_in">NSObject</span> cancelPreviousPerformRequestsWithTarget:<span class="keyword">self</span>];</div><div class="line">	isFinished = <span class="literal">YES</span>;</div><div class="line">	<span class="keyword">self</span>.alpha = <span class="number">0.0</span>f;</div><div class="line">	<span class="keyword">if</span> (removeFromSuperViewOnHide) &#123;</div><div class="line">		[<span class="keyword">self</span> removeFromSuperview];</div><div class="line">	&#125;</div><div class="line"><span class="meta">#if NS_BLOCKS_AVAILABLE</span></div><div class="line">	<span class="keyword">if</span> (<span class="keyword">self</span>.completionBlock) &#123;</div><div class="line">		<span class="keyword">self</span>.completionBlock();</div><div class="line">		<span class="keyword">self</span>.completionBlock = <span class="literal">NULL</span>;</div><div class="line">	&#125;</div><div class="line"><span class="meta">#endif</span></div><div class="line">	<span class="keyword">if</span> ([delegate respondsToSelector:<span class="keyword">@selector</span>(hudWasHidden:)]) &#123;</div><div class="line">		[delegate performSelector:<span class="keyword">@selector</span>(hudWasHidden:) withObject:<span class="keyword">self</span>];</div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<h2 id="其它"><a href="#其它" class="headerlink" title="其它"></a>其它</h2><p><code>MBProgressHUD</code>的一些主要的代码差不多已经分析完了，最后还有些边边角角的地方，一起来看看。</p>
-<h3 id="显示和隐藏的便捷方法"><a href="#显示和隐藏的便捷方法" class="headerlink" title="显示和隐藏的便捷方法"></a>显示和隐藏的便捷方法</h3><p>除了上面描述的实例方法之外，<code>MBProgressHUD</code>还为我们提供了几个便捷显示和隐藏<code>HUD</code>窗口的方法，如下所示：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">+ (MB_INSTANCETYPE)showHUDAddedTo:(<span class="built_in">UIView</span> *)view animated:(<span class="built_in">BOOL</span>)animated</div><div class="line">+ (<span class="built_in">BOOL</span>)hideHUDForView:(<span class="built_in">UIView</span> *)view animated:(<span class="built_in">BOOL</span>)animated</div><div class="line">+ (<span class="built_in">NSUInteger</span>)hideAllHUDsForView:(<span class="built_in">UIView</span> *)view animated:(<span class="built_in">BOOL</span>)animated</div></pre></td></tr></table></figure>
-<p>方法的签名已经很能说明问题了，在此不多描述。</p>
-<h3 id="部分属性值的设置"><a href="#部分属性值的设置" class="headerlink" title="部分属性值的设置"></a>部分属性值的设置</h3><p>对于部分属性(主要是”外观”一节中针对菊花、标题文本框和详情文本框的几个属性值)，为了在设置将这些属性时修改对应视图的属性，并没有直接为每个属性生成一个<code>setter</code>，而是通过KVO来监听这些属性值的变化，再将这些值赋值给视图的对应属性，如下所示：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 监听的属性数组</span></div><div class="line">- (<span class="built_in">NSArray</span> *)observableKeypaths &#123;</div><div class="line">	<span class="keyword">return</span> [<span class="built_in">NSArray</span> arrayWithObjects:<span class="string">@"mode"</span>, <span class="string">@"customView"</span>, <span class="string">@"labelText"</span>, <span class="string">@"labelFont"</span>, <span class="string">@"labelColor"</span>, ..., <span class="literal">nil</span>];</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// 注册KVO</span></div><div class="line">- (<span class="keyword">void</span>)registerForKVO &#123;</div><div class="line">	<span class="keyword">for</span> (<span class="built_in">NSString</span> *keyPath <span class="keyword">in</span> [<span class="keyword">self</span> observableKeypaths]) &#123;</div><div class="line">		[<span class="keyword">self</span> addObserver:<span class="keyword">self</span> forKeyPath:keyPath options:<span class="built_in">NSKeyValueObservingOptionNew</span> context:<span class="literal">NULL</span>];</div><div class="line">	&#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (<span class="keyword">void</span>)observeValueForKeyPath:(<span class="built_in">NSString</span> *)keyPath ofObject:(<span class="keyword">id</span>)object change:(<span class="built_in">NSDictionary</span> *)change context:(<span class="keyword">void</span> *)context &#123;</div><div class="line">	<span class="keyword">if</span> (![<span class="built_in">NSThread</span> isMainThread]) &#123;</div><div class="line">		[<span class="keyword">self</span> performSelectorOnMainThread:<span class="keyword">@selector</span>(updateUIForKeypath:) withObject:keyPath waitUntilDone:<span class="literal">NO</span>];</div><div class="line">	&#125; <span class="keyword">else</span> &#123;</div><div class="line">		[<span class="keyword">self</span> updateUIForKeypath:keyPath];</div><div class="line">	&#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (<span class="keyword">void</span>)updateUIForKeypath:(<span class="built_in">NSString</span> *)keyPath &#123;</div><div class="line">	<span class="keyword">if</span> ([keyPath isEqualToString:<span class="string">@"mode"</span>] || [keyPath isEqualToString:<span class="string">@"customView"</span>] ||</div><div class="line">		[keyPath isEqualToString:<span class="string">@"activityIndicatorColor"</span>]) &#123;</div><div class="line">		[<span class="keyword">self</span> updateIndicators];</div><div class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> ([keyPath isEqualToString:<span class="string">@"labelText"</span>]) &#123;</div><div class="line">		label.text = <span class="keyword">self</span>.labelText;</div><div class="line">	&#125; </div><div class="line">	</div><div class="line">	...</div><div class="line">	</div><div class="line">	[<span class="keyword">self</span> setNeedsLayout];</div><div class="line">	[<span class="keyword">self</span> setNeedsDisplay];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<h3 id="代理"><a href="#代理" class="headerlink" title="代理"></a>代理</h3><p><code>MBProgressHUD</code>还为我们提供了一个代理<code>MBProgressHUDDelegate</code>，这个代理中只提供了一个方法，即：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)hudWasHidden:(MBProgressHUD *)hud;</div></pre></td></tr></table></figure>
-<p>这个代理方法是在隐藏<code>HUD</code>窗口后调用，如果此时我们需要在我们自己的实现中执行某些操作，则可以实现这个方法。</p>
-<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><p><code>MBProgressHUD</code>为我们提供了一个<code>HUD</code>窗口的很好的实现，不过个人在使用过程中，觉得它给我们提供的交互功能太少。其代理只提供了一个<code>-hudWasHidden:</code>方法，而且我们也无法通过点击<code>HUD</code>来执行一些操作。在现实的需求中，可能存在这种情况：比如一个网络操作，在发送请求等待响应的过程中，我们会显示一个<code>HUD</code>窗口以显示一个<code>loading</code>框。但如果我们想在等待响应的过程中，在当前视图中取消这个网络请求，就没有相应的处理方式，<code>MBProgressHUD</code>没有为我们提供这样的交互操作。当然这时候，我们可以根据自己的需求来修改源码。</p>
-<h2 id="与SVProgressHUD的对比"><a href="#与SVProgressHUD的对比" class="headerlink" title="与SVProgressHUD的对比"></a>与SVProgressHUD的对比</h2><p>与<code>MBProgressHUD</code>类似，<code>SVProgressHUD</code>类库也为我们提供了在视图中显示一个<code>HUD</code>窗口的功能。两者的基本思路是差不多的，差别更多的是在实现细节上。相对于<code>MBProgressHUD</code>来说，<code>SVProgressHUD</code>的实现有以下几点不同：</p>
-<ol>
-<li><code>SVProgressHUD</code>类对外提供的都是类方法，包括显示、隐藏、和视图属性设置都是使用类方法来操作。其内部实现为一个单例对象，类方法实际是针对这个单例对象来操作的。</li>
-<li><code>SVProgressHUD</code>主要包含三部分：<code>loading</code>视图、提示文本框和背景框，没有详情文本框。</li>
-<li><code>SVProgressHUD</code>默认提供了正确、错误和信息三种状态视图(与<code>loading</code>视图同一位置，根据需要来设置)。当然<code>MBProgressHUD</code>中，也可以自定义视图(<code>customView</code>)来显示相应的状态视图。</li>
-<li><code>SVProgressHUD</code>为我们提供了更多的交互操作，包括点击事件、显示事件及隐藏事件。不过这些都是通过通知的形式向外发送，所以我们需要自己去监听这些事件。</li>
-<li><code>SVProgressHUD</code>中一些<code>loading</code>动画是以<code>Layer</code>动画的形式来实现的。</li>
-</ol>
-<p><code>SVProgressHUD</code>的实现细节还未详细去看，有兴趣的读者可以去研究一下。这两个<code>HUD</code>类库各有优点，大家在使用时，可根据自己的需要和喜好来选择。</p>
-<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>总体来说，<code>MBProgressHUD</code>的代码相对朴实，简单易懂，没有什么花哨难懂的东西。就技术点而言，也没有太多复杂的技术，都是我们常用的一些东西。就使用而言，也是挺方便的，参考一下<code>github</code>上的使用指南就能很快上手。</p>
-
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
   </section>
 
   
@@ -2602,7 +2647,7 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/archives">
-              <span class="site-state-item-count">83</span>
+              <span class="site-state-item-count">84</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>
