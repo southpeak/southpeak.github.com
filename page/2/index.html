@@ -310,6 +310,214 @@
             
               
                 
+                <a class="post-title-link" href="/2015/10/20/ios-techset-6/" itemprop="url">
+                  iOS知识小集 第6期(2015.10.20)
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-10-20T17:45:14+08:00" content="2015-10-20">
+              2015-10-20
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/techset/" itemprop="url" rel="index">
+                    <span itemprop="name">知识小集</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>天气有点冷啊，冬天快来了～～然后貌似互联网的冬天也来了啊。阿里缩减校招名额，美团融资失败，大众点评与美团报团，百度腾讯调整招聘，一丝丝的凉意啊～～再然后就是网易邮箱密码泄漏，这又是要搞哪样？不过话说我都不记得自己是不是有网易邮箱啊。额，不知道这个冬天的第一场雪什么时候会来。不管怎样，这个冬天还是窝一窝，等来年春暖花开之时再出去浪了。</p>
+<p>这一期的主要内容还是三点：</p>
+<ol>
+<li><code>Xcode 7</code>中<code>Playground</code>中导入并使用图片</li>
+<li><code>Playground</code>中的字面量(<code>Xcode 7.1</code>)</li>
+<li><code>CAEmitterLayer</code>实现粒子动画</li>
+</ol>
+<p>内容不是很多，都是些小东西，主要还是一些知识碎片，这也是知识小集的出发点。所以大家就当是饭后的小点心吧。以后争取勤快一点，至少每个月出个两篇吧（what?不是说过好多次了么？）。</p>
+<h2 id="Xcode-7中Playground中导入并使用图片"><a href="#Xcode-7中Playground中导入并使用图片" class="headerlink" title="Xcode 7中Playground中导入并使用图片"></a>Xcode 7中Playground中导入并使用图片</h2><p>在<code>Playground</code>中做测试时，可能需要显示图片，这时我们就需要导入一些图片资源。在<code>Playground</code>中，没有像普通工程那样有个单独的<code>Images.xcassets</code>文件夹来存储图片，不过添加图片也是件非常简单的事情。</p>
+<p>如果没有显示<code>project navigator</code>，则可以使用快捷键<code>cmd + 0</code>打开。默认情况下，我们可以在<code>project navigator</code>看到两个<code>group</code>。一个是<code>Source</code>，另一个是<code>Resources</code>。其中<code>Resources</code>这个<code>group</code>就是用来放置资源的(包括图片资源)，如下图所示：</p>
+<p><img src="https://raw.githubusercontent.com/southpeak/Blog-images/master/playground%20resource%201.png" alt="image"></p>
+<p>选中这个<code>group</code>，然后点击左下角的<code>+</code>按钮，在弹出的菜单中选择<code>Add Files to &#39;Resource&#39;</code>，然后选择要添加的文件，点确定。这样就把资源文件添加到我们的<code>Playground</code>了。</p>
+<p>添加完成后，我们就可以使用这些资源了。如要显示图片，则可以使用以下代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">let image: UIImage = UIImage(named: &quot;test.png&quot;)!</div></pre></td></tr></table></figure>
+<p>在<code>Playground</code>中显示如下：</p>
+<p><img src="https://raw.githubusercontent.com/southpeak/Blog-images/master/playground%20resource%203.png" alt="image"></p>
+<p>另外，初始情况下，<code>Playground</code>的包里面并没有<code>Resources</code>文件夹，在我们添加资源后，会自动创建这个文件夹。然后我们可以在<code>File Inspector</code>中查看文件夹的具体位置，如下所示：</p>
+<p><img src="https://raw.githubusercontent.com/southpeak/Blog-images/master/playground%20resource%202.png" alt="image"></p>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><ol>
+<li><a href="https://developer.apple.com/library/ios/recipes/Playground_Help/Chapters/AddResource.html#//apple_ref/doc/uid/TP40015166-CH29-SW1" target="_blank" rel="external">Playground Help - Adding Resources to a Playground</a></li>
+<li><a href="http://stackoverflow.com/questions/24069479/swift-playgrounds-with-uiimage" target="_blank" rel="external">Swift playgrounds with UIImage</a></li>
+<li><a href="http://natashatherobot.com/xcode-6-add-image-assets-to-playground/" target="_blank" rel="external">XCode 6: How To Add Image Assets To Your Playground</a></li>
+</ol>
+<h2 id="Playground中的字面量-Xcode-7-1"><a href="#Playground中的字面量-Xcode-7-1" class="headerlink" title="Playground中的字面量(Xcode 7.1)"></a>Playground中的字面量(Xcode 7.1)</h2><p><code>Xcode 7.1</code>新增了一项特性，让我们可以在<code>playground</code>代码中嵌入文件、图片和颜色的字面量。</p>
+<p>以图片字面量为例，以往如果需要在<code>playground</code>使用图片资源，我们总是需要通过文件名来指定图片，如下代码所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">let image = UIImage(named: &quot;swift.png&quot;)</div></pre></td></tr></table></figure>
+<p>其效果如下：</p>
+<p><img src="https://raw.githubusercontent.com/southpeak/Blog-images/master/Literals%20in%20playerground%20-%20image%20literal%201.png" alt="image"></p>
+<p>而在<code>Xcode 7.1</code>中，我们无需在编辑器中键入<code>&quot;swift.png&quot;</code>，而只需将图片从<code>Finder</code>或是资源中拖到我们的代码里面，就可以直接生成一个<code>UIImage</code>对象，如下所示：</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/Literals%20in%20playerground%20-%20image%20literal%202.png?raw=true" alt="image"></p>
+<p>可以看到，代码中<code>=</code>右侧的那个类似于小图标的东东就是一个图片字面量。是不是很酷来着？</p>
+<p>与图片字面量类似，我们同样可以添加颜色字面量和文件字面量，添加方法可以参考<a href="https://developer.apple.com/library/prerelease/ios/recipes/Playground_Help/Chapters/AddColorLiteral.html#//apple_ref/doc/uid/TP40015166-CH50-SW1" target="_blank" rel="external">Adding Color Literals</a>和<a href="https://developer.apple.com/library/prerelease/ios/recipes/Playground_Help/Chapters/AddFileLiteral.html#//apple_ref/doc/uid/TP40015166-CH51-SW1" target="_blank" rel="external">Adding File Literals</a>。</p>
+<p>当然，除了看上去很酷之外，这也让我们在<code>playground</code>中写代码时能够更快地去编辑这些资源。我们可以通过颜色选择器来插入我们想要的颜色，可以直接从<code>Finder</code>中将文件或图片拖到我们的代码中，而不再需要手动输入颜色值或文件名等。而如果我们想替换资源，只需要双击这些字面量就可以轻松地选择其它的资源。</p>
+<h3 id="字面量的表示"><a href="#字面量的表示" class="headerlink" title="字面量的表示"></a>字面量的表示</h3><p>这里有一个问题，在代码中，这些字面量是如何表示的呢？</p>
+<p>我们还是以图片字面量为例。选中一个图片字面量，<code>cmd+C</code>一下，然后找个文本编辑器，再<code>cmd+V</code>一下，发现拷贝出来的是如下信息：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">[#Image(imageLiteral: &quot;swift.png&quot;)#]</div></pre></td></tr></table></figure>
+<p>类似于一个构造器。我们再到<code>UIImage</code>中找找，可以看到<code>UIImage</code>有一个扩展，如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">extension UIImage : _ImageLiteralConvertible &#123;</div><div class="line">    required public convenience init(imageLiteral name: String)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这个扩展让<code>UIImage</code>类实现了<code>_ImageLiteralConvertible</code>协议，看这命名，貌似是一个私有的协议。我们来看看它的字义，如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">/// Conforming types can be initialized with image literals (e.g.</div><div class="line">/// `[#Image(imageLiteral: &quot;hi.png&quot;)#]`).</div><div class="line">public protocol _ImageLiteralConvertible &#123;</div><div class="line">    public init(imageLiteral: String)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>可以看到，实现这个协议的类型就可以使用图片字面量来初始化，即我们上面所看到。当然，我们没办法看到源码是怎么实现的，只能到此为止。</p>
+<p>实际上，这些字面量会被转换成平台指定的类型，在官方的<code>swift blog</code>中列出了一个清单，如下所示：</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/Literals%20in%20playerground%20-%20image%20literal%203.png?raw=true" alt="image"></p>
+<p>还有件看起来很酷但似乎并不太实用的事是：这些字面量不但可以用在<code>playground</code>中，而且还有可用在工程代码中。不过之所有不太实用，是因为在工程代码中只能以纯文本的形式来展现，而不是像在<code>playground</code>中那样能直观的显示。这种纯文本形式即我们上面拷贝出来的信息，我们再贴一次：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">[#Image(imageLiteral: &quot;swift.png&quot;)#]</div></pre></td></tr></table></figure>
+<p>我们码段代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">let image = [#Image(imageLiteral: &quot;swift.png&quot;)#]</div><div class="line"></div><div class="line">let imageView = UIImageView(image: image)</div><div class="line">imageView.frame = CGRect(x: 100, y: 100, width: 100, height: 100)</div><div class="line"></div><div class="line">self.view.addSubview(imageView)</div></pre></td></tr></table></figure>
+<p>其效果如下所示：</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/Literals%20in%20playerground%20-%20image%20literal%204.png?raw=true" alt="image"></p>
+<p>从代码实践的角度来看，这种写法看上去并不是那么美啊。不过由于这种写法是与平台相关的，所以如果工程需要同时支持<code>OSX</code>、<code>iOS</code>和<code>tvOS</code>，还是可以考虑用一下的。</p>
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p>总之，在<code>playground</code>中使用图片、颜色、文件字面量还是一件很酷的事，它大大提高了我们使用资源的效率，同时也更加直观，用起来还是满爽的。</p>
+<p>这里附上官方的实例:<a href="https://developer.apple.com/swift/blog/downloads/Literals.zip" target="_blank" rel="external">Literals.playground</a></p>
+<h3 id="参考-1"><a href="#参考-1" class="headerlink" title="参考"></a>参考</h3><ol>
+<li><a href="https://developer.apple.com/swift/blog/" target="_blank" rel="external">Literals in Playgrounds</a></li>
+<li><a href="https://developer.apple.com/library/prerelease/ios/recipes/Playground_Help/Chapters/AddImageLiteral.html#//apple_ref/doc/uid/TP40015166-CH49-SW1" target="_blank" rel="external">Adding Image Literals</a></li>
+<li><a href="https://developer.apple.com/library/prerelease/ios/recipes/Playground_Help/Chapters/AddColorLiteral.html#//apple_ref/doc/uid/TP40015166-CH50-SW1" target="_blank" rel="external">Adding Color Literals</a></li>
+<li><a href="https://developer.apple.com/library/prerelease/ios/recipes/Playground_Help/Chapters/AddFileLiteral.html#//apple_ref/doc/uid/TP40015166-CH51-SW1" target="_blank" rel="external">Adding File Literals</a></li>
+</ol>
+<h2 id="CAEmitterLayer实现粒子动画"><a href="#CAEmitterLayer实现粒子动画" class="headerlink" title="CAEmitterLayer实现粒子动画"></a>CAEmitterLayer实现粒子动画</h2><p>前段时间<a href="http://weibo.com/u/1956547962" target="_blank" rel="external">@MartinRGB</a>做了个带粒子效果的删除单元格动画，今天问他具体的实现方式，然后他把参考的原始工程发我看了一下。于是就找到了这个：<a href="https://github.com/icanzilb/UIEffectDesignerView" target="_blank" rel="external">UIEffectDesignerView</a>。是<code>github</code>上的一个粒子动画的开源代码。其效果如下图所示：</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/CAEmitterLayer%201.jpg?raw=true" alt="image"></p>
+<p>这个动画的实现基于<code>CAEmitterLayer</code>类，它继承自<code>CALayer</code>。这个类是<code>Core Animation</code>提供的用于实现一个粒子发射器系统的类。这个类主要提供了一些属性来设置粒子系统的几何特性。我们可以如下处理：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">let emitter = CAEmitterLayer()</div><div class="line"></div><div class="line">// setup the emitter metrics</div><div class="line">emitter.emitterPosition = CGPoint(x: self.bounds.size.width / 2, y: self.bounds.height / 2)</div><div class="line">emitter.emitterSize = self.bounds.size</div><div class="line"></div><div class="line">// setup the emitter type and mode</div><div class="line">let kEmitterModes = [ kCAEmitterLayerUnordered, kCAEmitterLayerAdditive, kCAEmitterLayerOldestLast, kCAEmitterLayerOldestFirst ]</div><div class="line">emitter.emitterMode = kEmitterModes[ Int(valueFromEffect(&quot;emitterMode&quot;)) ]</div></pre></td></tr></table></figure>
+<p><em>需要注意的就是粒子系统会被绘制到层的背影颜色及边框之上。</em></p>
+<p>当然，要想发射粒子，就需要有粒子源。一个粒子源定义了发射的粒子的方向及其它属性。在<code>Core Animation</code>中，使用<code>CAEmitterCell</code>对象来表示一个粒子源。<code>CAEmitterCell</code>定义了大量的属性来设置一个粒子源的特性，如粒子的显示特性(<code>color</code>, <code>scale</code>, <code>style</code>)、运动特性(如<code>spin</code>, <code>emissionLatitude</code>)、时间特性(如<code>lifetime</code>, <code>birthRate</code>, <code>velocity</code>)等。我们可以手动来设置这些值，也可以从文件中获取。在<code>UIEffectDesignerView</code>工程中，粒子发射器的信息是放在一个<code>ped</code>文件中，这个文件以<code>JSON</code>格式存储了粒子信息，如下所示：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line">&#123;</div><div class="line">    "latitude": 0, </div><div class="line">    "alphaSpeed": 0, </div><div class="line">    "scaleSpeed": 0, </div><div class="line">    "blueRange": 0.33, </div><div class="line">    "width": 120, </div><div class="line">    "texture": "....", </div><div class="line">    "spinRange": 0, </div><div class="line">    "lifetime": 5, </div><div class="line">    "greenSpeed": 0, </div><div class="line">    "aux3": null, </div><div class="line">    "emitterType": 0, </div><div class="line">    "version": 0.1, </div><div class="line">    "zAcceleration": 0, </div><div class="line">    "velocity": 100, </div><div class="line">    "velocityRange": 150, </div><div class="line">    ...</div><div class="line">    "y": 390, </div><div class="line">    "aux2": null</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>我们从文件中把粒子信息读取出来放到一个字典中，然后再将值赋给一个<code>CAEmitterCell</code>对象，如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">// create new emitter cell</div><div class="line">let emitterCell: CAEmitterCell = CAEmitterCell()</div><div class="line"></div><div class="line">let effect: [String: AnyObject] = loadFile(filename)</div><div class="line"></div><div class="line">...</div><div class="line">emitterCell.birthRate           = effect(&quot;birthRate&quot;)</div><div class="line">emitterCell.lifetime            = effect(&quot;lifetime&quot;)</div><div class="line">emitterCell.lifetimeRange       = effect(&quot;lifetimeRange&quot;)</div><div class="line">emitterCell.velocity            = effect(&quot;velocity&quot;)</div><div class="line">emitterCell.velocityRange       = effect(&quot;velocityRange&quot;)</div><div class="line">...</div></pre></td></tr></table></figure>
+<p>之后，我们便可以把这个粒子源添加到粒子系统中，如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">emitter.emitterCells = [ emitterCell ]</div></pre></td></tr></table></figure>
+<p>这样就可以发射粒子了。</p>
+<p>当然对于一个粒子的特性，除了受粒子源设置的属性影响外，同样也还受粒子系统的一些属性的影响，如下代码所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">emitter.scale = 0.5</div></pre></td></tr></table></figure>
+<p>其效果如下图所示：</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/CAEmitterLayer%202.jpg?raw=true" alt="image"></p>
+<p>另外，一个粒子源也可以包含一个子粒子源的数组，每个子源都可以作为一个独立的发射源。</p>
+<h3 id="参考-2"><a href="#参考-2" class="headerlink" title="参考"></a>参考</h3><ol>
+<li><a href="https://github.com/icanzilb/UIEffectDesignerView" target="_blank" rel="external">UIEffectDesignerView</a></li>
+<li><a href="https://developer.apple.com/library/prerelease/ios/documentation/GraphicsImaging/Reference/CAEmitterLayer_class/" target="_blank" rel="external">CAEmitterLayer Class Reference</a></li>
+<li><a href="https://developer.apple.com/library/prerelease/ios/documentation/GraphicsImaging/Reference/CAEmitterCell_class/index.html" target="_blank" rel="external">CAEmitterCell Class Reference</a></li>
+</ol>
+<h2 id="零碎"><a href="#零碎" class="headerlink" title="零碎"></a>零碎</h2><h3 id="C语言的int类型在Swift中的对应类型"><a href="#C语言的int类型在Swift中的对应类型" class="headerlink" title="C语言的int类型在Swift中的对应类型"></a>C语言的int类型在Swift中的对应类型</h3><p>一言以蔽之，<code>C</code>语言的<code>int</code>类型在<code>Swift</code>中的对应类型是<code>CInt</code>，它是<code>Int32</code>的一个别名。今天一哥们用<code>Swift</code>写了一段测试代码来调用<code>C</code>方法，方法中有个参数是<code>int</code>类型，类似于如下代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">let str = &quot;Hello, World!&quot;</div><div class="line">let a = str.characters.count</div><div class="line">Test.test(a)		// test方法接受一个int类型的参数</div><div class="line"></div><div class="line">// 编译器错误：Cannot convert value of type &apos;Distance&apos;(aka &apos;Int&apos;) to expected argument type Int32</div></pre></td></tr></table></figure>
+<p>可以看到我们需要传入一个<code>Int32</code>类型的参数。</p>
+<p>之所以使用<code>Int32</code>，是因为在<code>C</code>语言中，<code>int</code>是<code>4</code>个字节，而<code>Swift</code>中的<code>Int</code>则依赖于平台，可能是<code>4</code>个字节，也可能是<code>8</code>个字节。嗯，这个问题是凑数的，点到为止吧。</p>
+<h3 id="Swift中获取类型的大小"><a href="#Swift中获取类型的大小" class="headerlink" title="Swift中获取类型的大小"></a>Swift中获取类型的大小</h3><p>在<code>C</code>语言中，如果我们想获取一个变量或数据类型的大小，则可以使用<code>sizeof</code>函数。如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">int a = 10;</div><div class="line">printf(&quot;%lu, %lu&quot;, sizeof(int), sizeof(a));</div><div class="line"></div><div class="line">// 输出：4,4</div></pre></td></tr></table></figure>
+<p>在<code>Swift</code>中，也提供了相应的函数。我们可以使用<code>sizeof</code>来获取给定类型的大小，使用<code>sizeofValue</code>来获取给定值的类型的大小。如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">sizeof(Int)				// 8</div><div class="line"></div><div class="line">let c: Int = 10</div><div class="line">sizeofValue(c)			// 8</div></pre></td></tr></table></figure>
+<p>不过，与<code>C</code>语言中的<code>sizeof</code>不同的是，<code>Siwft</code>中的<code>sizeof</code>与<code>sizeofValue</code>不包含任何内存对齐的填充部分。如<code>timeval</code>结构体，在<code>C</code>语言中的大小是<code>16</code>，而在<code>Swift</code>中，则是<code>12</code>，并未包含<code>4</code>个填充字节。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">sizeof(timeval)			// 12</div></pre></td></tr></table></figure>
+<p>不过，<code>Swift</code>提供了两个对应的函数，来计算经过内存对齐的类型的大小，即<code>strideof</code>秘<code>strideofValue</code>，如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">let time = timeval(tv_sec: 10, tv_usec: 10)</div><div class="line"></div><div class="line">strideof(timeval)		// 16</div><div class="line">strideofValue(time)		// 16</div></pre></td></tr></table></figure>
+<h4 id="参考-3"><a href="#参考-3" class="headerlink" title="参考"></a>参考</h4><ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/Swift/Conceptual/BuildingCocoaApps/InteractingWithCAPIs.html" target="_blank" rel="external">Using Swift with Cocoa and Objective-C (Swift 2)</a></li>
+</ol>
+<h3 id="问题：纯Playground中使用Objective-C-C代码"><a href="#问题：纯Playground中使用Objective-C-C代码" class="headerlink" title="问题：纯Playground中使用Objective-C/C代码"></a>问题：纯Playground中使用Objective-C/C代码</h3><p>今天想在纯<code>Playground</code>中测试一下<code>CC_MD5</code>方法，发现没招。因为<code>CC_MD5</code>实际上是一个<code>C</code>方法，需要导入<code>&lt;CommonCrypto/CommonCrypto.h&gt;</code>头文件。这就涉及到<code>Swift</code>与<code>Objective-C</code>混编，需要创建一个桥接文件。但是纯<code>Playground</code>貌似并不支持这么做（搜了一下没搜着解决方法）。于是只能采取曲线救国策略，建立一个基于<code>Swift</code>的工程，在这里面创建桥接文件，导入头文件。然后在工程中创建一个<code>Playground</code>来做测试了。</p>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
                 <a class="post-title-link" href="/2015/09/26/ios-techset-5/" itemprop="url">
                   iOS知识小集 第5期(2015.09.26)
                 </a>
@@ -2317,291 +2525,6 @@
 
 
     
-      
-
-  
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/2015/04/23/cocoa-foundation-nskeyvalueobserving/" itemprop="url">
-                  Foundation: NSKeyValueObserving(KVO)
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            <span class="post-meta-item-icon">
-              <i class="fa fa-calendar-o"></i>
-            </span>
-            <span class="post-meta-item-text">发表于</span>
-            <time itemprop="dateCreated" datetime="2015-04-23T17:31:16+08:00" content="2015-04-23">
-              2015-04-23
-            </time>
-          </span>
-
-          
-            <span class="post-category" >
-              &nbsp; | &nbsp;
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-              
-                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
-                  <a href="/categories/cocoa/" itemprop="url" rel="index">
-                    <span itemprop="name">Cocoa</span>
-                  </a>
-                </span>
-
-                
-                
-
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-
-          
-          
-
-          
-        </div>
-      </header>
-    
-
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p><code>NSKeyValueObserving</code>非正式协议定义了一种机制，它允许对象去监听其它对象的某个属性的修改。</p>
-<p>我们可以监听一个对象的属性，包括简单属性，一对一的关系，和一对多的关系。一对多关系的监听者会被告知集合变更的类型，以及哪些对象参与了变化。</p>
-<p><code>NSObject</code>提供了一个<code>NSKeyValueObserving</code>协议的默认实现，它为所有对象提供了一种自动发送修改通知的能力。我们可以通过禁用自动发送通知并使用这个协议提供的方法来手动实现通知的发送，以便更精确地去处理通知。</p>
-<p>在这里，我们将通过具体的实例来看看<code>NSKeyValueObserving</code>提供了哪些方法。我们的基础代码如代码清单1所示：</p>
-<p><strong>代码清单1：示例基础代码</strong></p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#pragma mark - PersonObject</span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">PersonObject</span> : <span class="title">NSObject</span></span></div><div class="line"><span class="keyword">@end</span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">PersonObject</span></span></div><div class="line"></div><div class="line">- (<span class="keyword">void</span>)observeValueForKeyPath:(<span class="built_in">NSString</span> *)keyPath ofObject:(<span class="keyword">id</span>)object change:(<span class="built_in">NSDictionary</span> *)change context:(<span class="keyword">void</span> *)context &#123;</div><div class="line">    </div><div class="line">    <span class="built_in">NSLog</span>(<span class="string">@"keyPath = %@, change = %@, context = %s"</span>, keyPath, change, (<span class="keyword">char</span> *)context);</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div><div class="line"></div><div class="line"><span class="meta">#pragma mark - BankObject</span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">BankObject</span> : <span class="title">NSObject</span></span></div><div class="line"></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">assign</span>) <span class="keyword">int</span> accountBalance;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">copy</span>) <span class="built_in">NSString</span> *bankCodeEn;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) <span class="built_in">NSMutableArray</span> *departments;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
-<p>在这段代码中，我们定义一两个类，一个是<code>PersonObject</code>类，这个类的对象在下面将充当观察者的角色。另一个是<code>BankObject</code>类，我们在这个类中定义了三个属性，作为被监听的属性。由于<code>NSObject</code>类已经实现了<code>NSKeyValueObserving</code>协议，所以我们不需要再显式地去让我们的类实现这个协议。</p>
-<p>接下来，我们便来看看<code>NSKeyValueObserving</code>协议有哪些功能。</p>
-<h2 id="注册-移除观察者"><a href="#注册-移除观察者" class="headerlink" title="注册/移除观察者"></a>注册/移除观察者</h2><p>要让一个对象监听另一个对象的属性的变化，首先需要将这个对象注册为相关属性的观察者，我们可以使用以下方法来实现：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)addObserver:(<span class="built_in">NSObject</span> *)anObserver</div><div class="line">         forKeyPath:(<span class="built_in">NSString</span> *)keyPath</div><div class="line">            options:(<span class="built_in">NSKeyValueObservingOptions</span>)options</div><div class="line">            context:(<span class="keyword">void</span> *)context</div></pre></td></tr></table></figure>
-<p>这个方法带有四个参数，描述如下：</p>
-<ol>
-<li><code>anObserver</code>：观察者对象，这个对象必须实现<code>observeValueForKeyPath:ofObject:change:context:</code>方法，以响应属性的修改通知。</li>
-<li><code>keyPath</code>：被监听的属性。这个值不能为nil。</li>
-<li><code>options</code>：监听选项，这个值可以是<code>NSKeyValueObservingOptions</code>选项的组合。关于监听选项，我们会在下面介绍。</li>
-<li><code>context</code>：任意的额外数据，我们可以将这些数据作为上下文数据，它会传递给观察者对象的<code>observeValueForKeyPath:ofObject:change:context:</code>方法。这个参数的意义在于用于区分同一对象监听同一属性(从属于同一对象)的多个不同的监听。我们将在下面看到。</li>
-</ol>
-<p>监听选项是由枚举<code>NSKeyValueObservingOptions</code>定义的，是传入<code>-addObserver:forKeyPath:options:context:</code>方法中以确定哪些值将被传到-<code>observeValueForKeyPath:ofObject:change:context:</code>方法中。这个枚举的定义如下：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">enum</span> &#123;</div><div class="line">	<span class="comment">// 提供属性的新值</span></div><div class="line">   	<span class="built_in">NSKeyValueObservingOptionNew</span> = <span class="number">0x01</span>,</div><div class="line">   	</div><div class="line">   	<span class="comment">// 提供属性的旧值</span></div><div class="line">   	<span class="built_in">NSKeyValueObservingOptionOld</span> = <span class="number">0x02</span>,</div><div class="line">   	</div><div class="line">   	<span class="comment">// 如果指定，则在添加观察者的时候立即发送一个通知给观察者，</span></div><div class="line">   	<span class="comment">// 并且是在注册观察者方法返回之前</span></div><div class="line">   	<span class="built_in">NSKeyValueObservingOptionInitial</span> = <span class="number">0x04</span>,</div><div class="line">   	</div><div class="line">   	<span class="comment">// 如果指定，则在每次修改属性时，会在修改通知被发送之前预先发送一条通知给观察者，</span></div><div class="line">   	<span class="comment">// 这与-willChangeValueForKey:被触发的时间是相对应的。</span></div><div class="line">   	<span class="comment">// 这样，在每次修改属性时，实际上是会发送两条通知。</span></div><div class="line">   	<span class="built_in">NSKeyValueObservingOptionPrior</span> = <span class="number">0x08</span> </div><div class="line">&#125;;</div><div class="line"><span class="keyword">typedef</span> <span class="built_in">NSUInteger</span> <span class="built_in">NSKeyValueObservingOptions</span>;</div></pre></td></tr></table></figure>
-<p>需要注意的是，当设定了<code>NSKeyValueObservingOptionPrior</code>选项时，第一条通知不会包含<code>NSKeyValueChangeNewKey</code>。当观察者自身的KVO需要为自己的某个属性调用<code>-willChange...</code>方法，而这个属性的值又依赖于被观察对象的属性时，我们可以使用这个选项。</p>
-<p>另外，在添加观察者时还有两点需要注意的是：</p>
-<ol>
-<li>调用这个方法时，两个对象(即观察者对象及属性所属的对象)都不会被<code>retain</code>。</li>
-<li>可以多次调用这个方法，将同一个对象注册为同一属性的观察者(所有参数可以完全相同)。这时，即便在所有参数一致的情况下，新注册的观察者并不会替换原来观察者，而是会并存。这样，当属性被修改时，两次监听都会响应。</li>
-</ol>
-<p>对于第2点，我们在代码清单2中来验证一下：</p>
-<p><strong>代码清单2：验证多次使用相同参数来添加观察者的实际效果</strong></p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">PersonObject *personInstance = [[PersonObject alloc] init];</div><div class="line">BankObject *bankInstance = [[BankObject alloc] init];</div><div class="line"></div><div class="line">[bankInstance addObserver:personInstance forKeyPath:<span class="string">@"accountBalance"</span> options:<span class="built_in">NSKeyValueObservingOptionNew</span> | <span class="built_in">NSKeyValueObservingOptionOld</span> context:<span class="literal">NULL</span>];</div><div class="line">[bankInstance addObserver:personInstance forKeyPath:<span class="string">@"accountBalance"</span> options:<span class="built_in">NSKeyValueObservingOptionNew</span> | <span class="built_in">NSKeyValueObservingOptionOld</span> context:<span class="literal">NULL</span>];</div><div class="line"></div><div class="line">[bankInstance addObserver:personInstance forKeyPath:<span class="string">@"accountBalance"</span> options:<span class="built_in">NSKeyValueObservingOptionNew</span> context:<span class="string">"person instance"</span>];</div><div class="line">[bankInstance addObserver:personInstance forKeyPath:<span class="string">@"accountBalance"</span> options:<span class="built_in">NSKeyValueObservingOptionNew</span> context:<span class="string">"person instance 2"</span>];</div><div class="line"></div><div class="line">bankInstance.accountBalance = <span class="number">10</span>;</div></pre></td></tr></table></figure>
-<p>(注，以上代码为在MRC环境下调用，确保<code>personInstance</code>和<code>bankInstance</code>不会被释放。)</p>
-<p>这段代码的输出如下所示：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line">keyPath = accountBalance, change = &#123;</div><div class="line">    kind = <span class="number">1</span>;</div><div class="line">    new = <span class="number">10</span>;</div><div class="line">&#125;, context = person instance <span class="number">2</span></div><div class="line">keyPath = accountBalance, change = &#123;</div><div class="line">    kind = <span class="number">1</span>;</div><div class="line">    new = <span class="number">10</span>;</div><div class="line">&#125;, context = person instance</div><div class="line">keyPath = accountBalance, change = &#123;</div><div class="line">    kind = <span class="number">1</span>;</div><div class="line">    new = <span class="number">10</span>;</div><div class="line">    old = <span class="number">0</span>;</div><div class="line">&#125;, context = (null)</div><div class="line">keyPath = accountBalance, change = &#123;</div><div class="line">    kind = <span class="number">1</span>;</div><div class="line">    new = <span class="number">10</span>;</div><div class="line">    old = <span class="number">0</span>;</div><div class="line">&#125;, context = (null)</div></pre></td></tr></table></figure>
-<p>可以看到KVO为每次注册都调用了一次监听处理操作。所以多次调用同样的注册操作会产生多个观察者。另外，多个观察者之间的<code>observeValueForKeyPath:ofObject:change:context:</code>方法调用顺序是按照先进后出的顺序来的(所有的监听信息都是放在一个数组中的，我们将在下面了解到)。</p>
-<p>一个良好的实践是在观察者不再需要监听属性变化时，必须调用<code>removeObserver:forKeyPath:</code>或<code>removeObserver:forKeyPath:context:</code>方法来移除观察者，这两个方法的声明如下：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)removeObserver:(<span class="built_in">NSObject</span> *)anObserver</div><div class="line">            forKeyPath:(<span class="built_in">NSString</span> *)keyPath</div><div class="line">            </div><div class="line">- (<span class="keyword">void</span>)removeObserver:(<span class="built_in">NSObject</span> *)observer</div><div class="line">            forKeyPath:(<span class="built_in">NSString</span> *)keyPath</div><div class="line">               context:(<span class="keyword">void</span> *)context</div></pre></td></tr></table></figure>
-<p>这两个方法会根据传入的参数(主要是<code>keyPath</code>和<code>context</code>)来移除观察者。如果<code>observer</code>没有监听<code>keyPath</code>属性，则调用这两个方法会抛出异常。大家可以试一下，程序会果断的崩溃。并报类似于以下的错误：</p>
-<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">*** Terminating app due to uncaught exception 'NSRangeException', reason: 'Cannot remove an observer &lt;PersonObject 0x7ff541534e20&gt; for the key path "accountBalance" from &lt;BankObject 0x7ff541528430&gt; because it is not registered as an observer.'</div></pre></td></tr></table></figure>
-<p>所以，我们必须确保先注册了观察者，才能调用移除方法。</p>
-<p>那如果我们忘记调用移除观察者方法，会怎么样呢？我们来制造一个场景，看看会是什么结果。还是使用上面的代码，只不过这次我们在ARC下来测试：</p>
-<p><strong>代码清单3：未移除观察者的影响</strong></p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)testKVO &#123;</div><div class="line">    </div><div class="line">    PersonObject *personInstance = [[PersonObject alloc] init];</div><div class="line">    BankObject *bankInstance = [[BankObject alloc] init];</div><div class="line">    </div><div class="line">    [bankInstance addObserver:personInstance forKeyPath:<span class="string">@"accountBalance"</span> options:<span class="built_in">NSKeyValueObservingOptionNew</span> | <span class="built_in">NSKeyValueObservingOptionOld</span> context:<span class="literal">NULL</span>];</div><div class="line">    </div><div class="line">    bankInstance.accountBalance = <span class="number">20</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>其输出结果如下所示：</p>
-<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">keyPath = accountBalance, change = &#123;</div><div class="line">    kind = 1;</div><div class="line">    new = 20;</div><div class="line">    old = 0;</div><div class="line">&#125;, context = (null)</div><div class="line">*** Terminating app due to uncaught exception 'NSInternalInconsistencyException', reason: 'An instance 0x7fc88047e7e0 of class BankObject was deallocated while key value observers were still registered with it. Current observation info: &lt;NSKeyValueObservationInfo 0x7fc880770fa0&gt; (</div><div class="line">&lt;NSKeyValueObservance 0x7fc880771850: Observer: 0x7fc8804737a0, Key path: accountBalance, Options: &lt;New: YES, Old: YES, Prior: NO&gt; Context: 0x0, Property: 0x7fc88076edd0&gt;</div><div class="line">)'</div><div class="line">......</div></pre></td></tr></table></figure>
-<p>程序在调用一次KVO后，很爽快地崩溃了。给我们的解释是<code>bankInstance</code>被释放了，但KVO中仍然还有关于它的注册信息。实际上，我们上面说过，在添加观察者的时候，观察者对象与被观察属性所属的对象都不会被<code>retain</code>，然而在这些对象被释放后，相关的监听信息却还存在，KVO做的处理是直接让程序崩溃。</p>
-<h2 id="处理属性修改通知"><a href="#处理属性修改通知" class="headerlink" title="处理属性修改通知"></a>处理属性修改通知</h2><p>当被监听的属性修改时，KVO会发出一个通知以告知所有监听这个属性的观察者对象。而观察者对象必须实现</p>
-<p><code>-observeValueForKeyPath:ofObject:change:context:</code>方法，来对属性修改通知做相应的处理。这个方法的声明如下：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)observeValueForKeyPath:(<span class="built_in">NSString</span> *)keyPath</div><div class="line">                      ofObject:(<span class="keyword">id</span>)object</div><div class="line">                        change:(<span class="built_in">NSDictionary</span> *)change</div><div class="line">                       context:(<span class="keyword">void</span> *)context</div></pre></td></tr></table></figure>
-<p>这个方法有四个参数，描述如下：</p>
-<ol>
-<li><code>keyPath</code>：即被观察的属性，与参数<code>object</code>相关。</li>
-<li><code>object</code>：<code>keyPath</code>所属的对象。</li>
-<li><code>change</code>：这是一个字典，它包含了属性被修改的一些信息。这个字典中包含的值会根据我们在添加观察者时设置的<code>options</code>参数的不同而有所不同。</li>
-<li><code>context</code>：这个值即是添加观察者时提供的上下文信息。</li>
-</ol>
-<p>在我们的示例中，这个方法的实现是打印一些基本的信息。如代码清单1所示。</p>
-<p>对于第三个参数，我们通常称之为<strong>变化字典(Change Dictionary)</strong>，它记录了被监听属性的变化情况。我们可以通过以下key来获取我们想要的信息：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 属性变化的类型，是一个NSNumber对象，包含NSKeyValueChange枚举相关的值</span></div><div class="line"><span class="built_in">NSString</span> *<span class="keyword">const</span> <span class="built_in">NSKeyValueChangeKindKey</span>;</div><div class="line"></div><div class="line"><span class="comment">// 属性的新值。当NSKeyValueChangeKindKey是 NSKeyValueChangeSetting，</span></div><div class="line"><span class="comment">// 且添加观察的方法设置了NSKeyValueObservingOptionNew时，我们能获取到属性的新值。</span></div><div class="line"><span class="comment">// 如果NSKeyValueChangeKindKey是NSKeyValueChangeInsertion或者NSKeyValueChangeReplacement，</span></div><div class="line"><span class="comment">// 且指定了NSKeyValueObservingOptionNew时，则我们能获取到一个NSArray对象，包含被插入的对象或</span></div><div class="line"><span class="comment">// 用于替换其它对象的对象。</span></div><div class="line"><span class="built_in">NSString</span> *<span class="keyword">const</span> <span class="built_in">NSKeyValueChangeNewKey</span>;</div><div class="line"></div><div class="line"><span class="comment">// 属性的旧值。当NSKeyValueChangeKindKey是 NSKeyValueChangeSetting，</span></div><div class="line"><span class="comment">// 且添加观察的方法设置了NSKeyValueObservingOptionOld时，我们能获取到属性的旧值。</span></div><div class="line"><span class="comment">// 如果NSKeyValueChangeKindKey是NSKeyValueChangeRemoval或者NSKeyValueChangeReplacement，</span></div><div class="line"><span class="comment">// 且指定了NSKeyValueObservingOptionOld时，则我们能获取到一个NSArray对象，包含被移除的对象或</span></div><div class="line"><span class="comment">// 被替换的对象。</span></div><div class="line"><span class="built_in">NSString</span> *<span class="keyword">const</span> <span class="built_in">NSKeyValueChangeOldKey</span>;</div><div class="line"></div><div class="line"><span class="comment">// 如果NSKeyValueChangeKindKey的值是NSKeyValueChangeInsertion、NSKeyValueChangeRemoval</span></div><div class="line"><span class="comment">// 或者NSKeyValueChangeReplacement，则这个key对应的值是一个NSIndexSet对象，</span></div><div class="line"><span class="comment">// 包含了被插入、移除或替换的对象的索引</span></div><div class="line"><span class="built_in">NSString</span> *<span class="keyword">const</span> <span class="built_in">NSKeyValueChangeIndexesKey</span>;</div><div class="line"></div><div class="line"><span class="comment">// 当指定了NSKeyValueObservingOptionPrior选项时，在属性被修改的通知发送前，</span></div><div class="line"><span class="comment">// 会先发送一条通知给观察者。我们可以使用NSKeyValueChangeNotificationIsPriorKey</span></div><div class="line"><span class="comment">// 来获取到通知是否是预先发送的，如果是，获取到的值总是@(YES)</span></div><div class="line"><span class="built_in">NSString</span> *<span class="keyword">const</span> <span class="built_in">NSKeyValueChangeNotificationIsPriorKey</span>;</div></pre></td></tr></table></figure>
-<p>其中，<code>NSKeyValueChangeKindKey</code>的值取自于<code>NSKeyValueChange</code>，它的值是由以下枚举定义的：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">enum</span> &#123;</div><div class="line"></div><div class="line">	<span class="comment">// 设置一个新值。被监听的属性可以是一个对象，也可以是一对一关系的属性或一对多关系的属性。</span></div><div class="line">   	<span class="built_in">NSKeyValueChangeSetting</span> = <span class="number">1</span>,</div><div class="line">   	</div><div class="line">   	<span class="comment">// 表示一个对象被插入到一对多关系的属性。</span></div><div class="line">   	<span class="built_in">NSKeyValueChangeInsertion</span> = <span class="number">2</span>,</div><div class="line">   	</div><div class="line">   	<span class="comment">// 表示一个对象被从一对多关系的属性中移除。</span></div><div class="line">   	<span class="built_in">NSKeyValueChangeRemoval</span> = <span class="number">3</span>,</div><div class="line">   	</div><div class="line">   	<span class="comment">// 表示一个对象在一对多的关系的属性中被替换</span></div><div class="line">   	<span class="built_in">NSKeyValueChangeReplacement</span> = <span class="number">4</span></div><div class="line">&#125;;</div><div class="line"><span class="keyword">typedef</span> <span class="built_in">NSUInteger</span> <span class="built_in">NSKeyValueChange</span>;</div></pre></td></tr></table></figure>
-<h2 id="通知观察者属性的变化"><a href="#通知观察者属性的变化" class="headerlink" title="通知观察者属性的变化"></a>通知观察者属性的变化</h2><p>通知观察者的方式有自动与手动两种方式。</p>
-<p>默认情况下是自动发送通知，在这种模式下，当我们修改属性的值时，KVO会自动调用以下两个方法：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)willChangeValueForKey:(<span class="built_in">NSString</span> *)key</div><div class="line">- (<span class="keyword">void</span>)didChangeValueForKey:(<span class="built_in">NSString</span> *)key</div></pre></td></tr></table></figure>
-<p>这两个方法的任务是告诉接收者给定的属性将要或已经被修改。需要注意的是不应该在子类中去重写这两个方法。</p>
-<p>但如果我们希望自己控制通知发送的一些细节，则可以启用手动控制模式。手动控制通知提供了对KVO更精确控制，它可以控制通知如何以及何时被发送给观察者。采用这种方式可以减少不必要的通知，或者可以将多个修改组合到一个修改中。</p>
-<p>实现手动通知的类必须重写<code>NSObject</code>中对<code>automaticallyNotifiesObserversForKey:</code>方法的实现。这个方法是在<code>NSKeyValueObserving</code>协议中声明的，其声明如下：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">+ (<span class="built_in">BOOL</span>)automaticallyNotifiesObserversForKey:(<span class="built_in">NSString</span> *)key</div></pre></td></tr></table></figure>
-<p>这个方法返回一个布尔值(默认是返回YES)，以标识参数key指定的属性是否支持自动KVO。如果我们希望手动去发送通知，则针对指定的属性返回NO。</p>
-<p>假设我们希望<code>PersonObject</code>对象去监听<code>BankObject</code>对象的<code>bankCodeEn</code>属性，并希望执行手动通知，则可以如下处理：</p>
-<p><strong>代码清单4：关闭属性的自动通知发送</strong></p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">BankObject</span></span></div><div class="line"></div><div class="line">+ (<span class="built_in">BOOL</span>)automaticallyNotifiesObserversForKey:(<span class="built_in">NSString</span> *)key &#123;</div><div class="line">    </div><div class="line">    <span class="built_in">BOOL</span> automatic = <span class="literal">YES</span>;</div><div class="line">    <span class="keyword">if</span> ([key isEqualToString:<span class="string">@"bankCodeEn"</span>]) &#123;</div><div class="line">        automatic = <span class="literal">NO</span>;</div><div class="line">    &#125; <span class="keyword">else</span> &#123;</div><div class="line">        automatic = [<span class="keyword">super</span> automaticallyNotifiesObserversForKey:key];</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">return</span> automatic;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
-<p>这样我们便可以手动去发送属性修改通知了。需要注意的是，对于对象中其它没有处理的属性，我们需要调用<code>[super automaticallyNotifiesObserversForKey:key]</code>，以避免无意中修改了父类的属性的处理方式。</p>
-<p>现在我们已经通过<code>+automaticallyNotifiesObserversForKey:</code>方法设置了对象中哪些属性需要手动处理。接下来就是实际操作了。为了实现手动发送通知，我们需要在修改属性值前调用<code>willChangeValueForKey:</code>，然后在修改属性值之后调用<code>didChangeValueForKey:</code>方法。继续上面的示例，我们需要对<code>bankCodeEn</code>属性做如下处理：</p>
-<p><strong>代码清单5：手动控制通知发送</strong></p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">BankObject</span></span></div><div class="line"></div><div class="line">- (<span class="keyword">void</span>)setBankCodeEn:(<span class="built_in">NSString</span> *)bankCodeEn &#123;</div><div class="line">    </div><div class="line">    [<span class="keyword">self</span> willChangeValueForKey:<span class="string">@"bankCodeEn"</span>];</div><div class="line">    _bankCodeEn = bankCodeEn;</div><div class="line">    [<span class="keyword">self</span> didChangeValueForKey:<span class="string">@"bankCodeEn"</span>];</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
-<p>如果我们希望只有当<code>bankCodeEn</code>实际被修改时发送通知，以尽量减少不必要的通知，则可以如下实现：</p>
-<p><strong>代码清单6：在发送通知前测试值是否修改</strong></p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)setBankCodeEn:(<span class="built_in">NSString</span> *)bankCodeEn &#123;</div><div class="line">    </div><div class="line">    <span class="keyword">if</span> (bankCodeEn != _bankCodeEn) &#123;</div><div class="line">        [<span class="keyword">self</span> willChangeValueForKey:<span class="string">@"bankCodeEn"</span>];</div><div class="line">        _bankCodeEn = bankCodeEn;</div><div class="line">        [<span class="keyword">self</span> didChangeValueForKey:<span class="string">@"bankCodeEn"</span>];</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>我们来测试一下上面这段代码的实际效果：</p>
-<p><strong>代码清单7：测试避免属性未实际修改下不发送通知</strong></p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">PersonObject    *personInstance = [[PersonObject alloc] init];</div><div class="line">BankObject      *bankInstance = [[BankObject alloc] init];</div><div class="line"></div><div class="line">[bankInstance addObserver:personInstance forKeyPath:<span class="string">@"bankCodeEn"</span> options:<span class="built_in">NSKeyValueObservingOptionNew</span> context:<span class="literal">NULL</span>];</div><div class="line"></div><div class="line"><span class="built_in">NSString</span> *bankCodeEn = <span class="string">@"CCB"</span>;</div><div class="line">bankInstance.bankCodeEn = bankCodeEn;</div><div class="line">bankInstance.bankCodeEn = bankCodeEn;</div></pre></td></tr></table></figure>
-<p>这段代码的输出结果如下所示：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">keyPath = bankCodeEn, change = &#123;</div><div class="line">    kind = <span class="number">1</span>;</div><div class="line">    new = CCB;</div><div class="line">&#125;, context = (null)</div></pre></td></tr></table></figure>
-<p>我们可以看到只输出了一次，而不是两次。</p>
-<p>如果我们在<code>setter</code>方法之外改变了实例变量(如<code>_bankCodeEn</code>)，且希望这种修改被观察者监听到，则需要像在<code>setter</code>方法里面做一样的处理。这也涉及到我们通常会遇到的一个问题，在类的内部，对于一个属性值，何时用属性(<code>self.bankCodeEn</code>)访问而何时用实例变量(<code>_bankCodeEn</code>)访问。一般的建议是，在获取属性值时，可以用实例变量，在设置属性值时，尽量用<code>setter</code>方法，以保证属性的<code>KVO</code>特性。当然，性能也是一个考量，在设置值时，使用实例变量比使用属性设置值的性能高不少。</p>
-<p>另外，对于一对多关系的属性，如果想手动处理通知，则可以使用以下几个方法：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 有序的一对多关系</span></div><div class="line">- (<span class="keyword">void</span>)willChange:(<span class="built_in">NSKeyValueChange</span>)change valuesAtIndexes:(<span class="built_in">NSIndexSet</span> *)indexes forKey:(<span class="built_in">NSString</span> *)key</div><div class="line">- (<span class="keyword">void</span>)didChange:(<span class="built_in">NSKeyValueChange</span>)change valuesAtIndexes:(<span class="built_in">NSIndexSet</span> *)indexes forKey:(<span class="built_in">NSString</span> *)key</div><div class="line">  </div><div class="line"><span class="comment">// 无序的一对多关系</span></div><div class="line">- (<span class="keyword">void</span>)willChangeValueForKey:(<span class="built_in">NSString</span> *)key withSetMutation:(<span class="built_in">NSKeyValueSetMutationKind</span>)mutationKind usingObjects:(<span class="built_in">NSSet</span> *)objects</div><div class="line">- (<span class="keyword">void</span>)didChangeValueForKey:(<span class="built_in">NSString</span> *)key withSetMutation:(<span class="built_in">NSKeyValueSetMutationKind</span>)mutationKind usingObjects:(<span class="built_in">NSSet</span> *)objects</div></pre></td></tr></table></figure>
-<p>同样，在子类中也不应该去重写这几个方法。</p>
-<h2 id="计算属性-注册依赖键"><a href="#计算属性-注册依赖键" class="headerlink" title="计算属性(注册依赖键)"></a>计算属性(注册依赖键)</h2><p>有时候，我们的监听的某个属性可能会依赖于其它多个属性的变化(类似于<code>swift</code>，可以称之为计算属性)，不管所依赖的哪个属性发生了变化，都会导致计算属性的变化。对于这种一对一(<code>To-one</code>)的关系，我们需要做两步操作，首先是确定计算属性与所依赖属性的关系。如我们在<code>BankObject</code>类中定义一个<code>accountForBank</code>属性，其<code>get</code>方法定义如下：</p>
-<p><strong>代码清单8：计算属性</strong></p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">BankObject</span></span></div><div class="line"></div><div class="line">- (<span class="built_in">NSString</span> *)accountForBank &#123;</div><div class="line">    </div><div class="line">    <span class="keyword">return</span> [<span class="built_in">NSString</span> stringWithFormat:<span class="string">@"account for %@ is %d"</span>, <span class="keyword">self</span>.bankCodeEn, <span class="keyword">self</span>.accountBalance];</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
-<p>定义了这种依赖关系后，我们就需要以某种方式告诉<code>KVO</code>，当我们的被依赖属性修改时，会发送<code>accountForBank</code>属性被修改的通知。此时，我们需要重写<code>NSKeyValueObserving</code>协议的<code>keyPathsForValuesAffectingValueForKey:</code>方法，该方法声明如下：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">+ (<span class="built_in">NSSet</span> *)keyPathsForValuesAffectingValueForKey:(<span class="built_in">NSString</span> *)key</div></pre></td></tr></table></figure>
-<p>这个方法返回的是一个集合对象，包含了那些影响key指定的属性依赖的属性所对应的字符串。所以对于<code>accountForBank</code>属性，该方法的实现如下：</p>
-<p><strong>代码清单9：accountForBank属性的keyPathsForValuesAffectingValueForKey方法的实现</strong></p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">BankObject</span></span></div><div class="line"></div><div class="line">+ (<span class="built_in">NSSet</span> *)keyPathsForValuesAffectingValueForKey:(<span class="built_in">NSString</span> *)key &#123;</div><div class="line">    </div><div class="line">    <span class="built_in">NSSet</span> *keyPaths = [<span class="keyword">super</span> keyPathsForValuesAffectingValueForKey:key];</div><div class="line">    </div><div class="line">    <span class="keyword">if</span> ([key isEqualToString:<span class="string">@"accountForBank"</span>]) &#123;</div><div class="line">        </div><div class="line">        keyPaths = [keyPaths setByAddingObjectsFromArray:@[<span class="string">@"accountBalance"</span>, <span class="string">@"bankCodeEn"</span>]];</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">return</span> keyPaths;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
-<p>我们来再来看看监听<code>accountForBank</code>属性是什么效果：</p>
-<p><strong>代码清单10：监听accountForBank属性</strong></p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">PersonObject    *personInstance = [[PersonObject alloc] init];</div><div class="line">BankObject      *bankInstance = [[BankObject alloc] init];</div><div class="line"></div><div class="line">[bankInstance addObserver:personInstance forKeyPath:<span class="string">@"accountForBank"</span> options:<span class="built_in">NSKeyValueObservingOptionNew</span> context:<span class="literal">NULL</span>];</div><div class="line"></div><div class="line">bankInstance.accountBalance = <span class="number">10</span>;</div><div class="line">bankInstance.bankCodeEn = <span class="string">@"CCB"</span>;</div></pre></td></tr></table></figure>
-<p>其输出结果为：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">keyPath = accountForBank, change = &#123;</div><div class="line">    kind = <span class="number">1</span>;</div><div class="line">    new = <span class="string">"account for (null) is 10"</span>;</div><div class="line">&#125;, context = (null)</div><div class="line">keyPath = accountForBank, change = &#123;</div><div class="line">    kind = <span class="number">1</span>;</div><div class="line">    new = <span class="string">"account for CCB is 10"</span>;</div><div class="line">&#125;, context = (null)</div></pre></td></tr></table></figure>
-<p>可以看到，不管是<code>accountBalance</code>还是<code>bankCodeEn</code>被修改了，都会发送<code>accountForBank</code>属性被修改的通知。</p>
-<p>需要注意的就是当我们重写<code>+keyPathsForValuesAffectingValueForKey:</code>时，需要去调用<code>super</code>的对应方法，并返回一个包含父类中可能会对<code>key</code>指定属性产生影响的属性集合。</p>
-<p>另外，我们还可以实现一个命名为<code>keyPathsForValuesAffecting\&lt;Key\&gt;</code>的类方法来达到同样的目的，其中<code>&lt;Key&gt;</code>是我们计算属性的名称。所以对于<code>accountForBank</code>属性，还可以如下实现：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">+ (<span class="built_in">NSSet</span> *)keyPathsForValuesAffectingAccountForBank &#123;</div><div class="line">    </div><div class="line">    <span class="keyword">return</span> [<span class="built_in">NSSet</span> setWithObjects:<span class="string">@"accountBalance"</span>, <span class="string">@"bankCodeEn"</span>, <span class="literal">nil</span>];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>两种方法的实现效果是一样的。不过更建议使用后面一种方法，这种方法让依赖关系更加清晰明了。</p>
-<h2 id="集合属性的监听"><a href="#集合属性的监听" class="headerlink" title="集合属性的监听"></a>集合属性的监听</h2><p><code>keyPathsForValuesAffectingValueForKey:</code>只支持一对一的关系，而不支持一对多的关系，即不支持对集合的处理。</p>
-<p>对于集合的<code>KVO</code>，我们需要了解的一点是，<code>KVO</code>旨在观察关系(<code>relationship</code>)而不是集合。对于不可变集合属性，我们更多的是把它当成一个整体来监听，而无法去监听集合中的某个元素的变化；对于可变集合属性，实际上也是当成一个整体，去监听它整体的变化，如添加、删除和替换元素。</p>
-<p>在KVC中，我们可以使用<strong>集合代理对象(collection proxy object)</strong>来处理集合相关的操作。我们以数组为例，在我们的<code>BankObject</code>类中有一个<code>departments</code>数组属性，如果我们希望通过集合代理对象来负责响应<code>departments</code>所有的方法，则需要实现以下方法：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">-countOf&lt;Key&gt;</div><div class="line"></div><div class="line"><span class="comment">// 以下两者二选一</span></div><div class="line">-objectIn&lt;Key&gt;AtIndex:</div><div class="line">-&lt;key&gt;AtIndexes:</div><div class="line"></div><div class="line"><span class="comment">// 可选（增强性能）</span></div><div class="line">-get&lt;Key&gt;:range:</div></pre></td></tr></table></figure>
-<p>因此，我们的实现以下几个方法：</p>
-<p><strong>代码清单11：集合代码对象的实现</strong></p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">BankObject</span></span></div><div class="line"></div><div class="line"><span class="meta">#pragma mark - 集合代理对象</span></div><div class="line"></div><div class="line">- (<span class="built_in">NSUInteger</span>)countOfDepartments &#123;</div><div class="line"></div><div class="line">    <span class="keyword">return</span> [_departments count];</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (<span class="keyword">id</span>)objectInDepartmentsAtIndex:(<span class="built_in">NSUInteger</span>)index &#123;</div><div class="line"></div><div class="line">    <span class="keyword">return</span> [_departments objectAtIndex:index];</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
-<p>实现以上方法之后，对于不可变数组，当我们调用<code>[bankInstance valueForKey:@&quot;departments&quot;]</code>的时候，便会返回一个由以上方法来代理所有调用方法的~对象。这个代理数组对象支持所有正常的<code>NSArray</code>调用。换句话说，调用者并不知道返回的是一个真正的<code>NSArray</code>，还是一个代理的数组。</p>
-<p>另外，对于可变数组的代理对象，我们需要实现以下几个方法：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 至少实现一个插入方法和一个删除方法</span></div><div class="line">-insertObject:<span class="keyword">in</span>&lt;Key&gt;AtIndex:</div><div class="line">-removeObjectFrom&lt;Key&gt;AtIndex:</div><div class="line">-insert&lt;Key&gt;:atIndexes:</div><div class="line">-remove&lt;Key&gt;AtIndexes:</div><div class="line"></div><div class="line"><span class="comment">// 可选（增强性能）以下方法二选一</span></div><div class="line">-replaceObjectIn&lt;Key&gt;AtIndex:withObject:</div><div class="line">-replace&lt;Key&gt;AtIndexes:with&lt;Key&gt;:</div></pre></td></tr></table></figure>
-<p>这些方法分别对应插入、删除和替换，有批量操作的，也有只改变一个对象的方法。可以根据实际需要来实现。</p>
-<p>另外，对于可变集合，我们通常不使用<code>valueForKey:</code>来获取代理对象，而是使用以下方法：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">- (<span class="built_in">NSMutableArray</span> *)mutableArrayValueForKey:(<span class="built_in">NSString</span> *)key;</div></pre></td></tr></table></figure>
-<p>通过这个方法，我们便可以将可变数组与强大的<code>KVO</code>结合在一起。<code>KVO</code>机制能在集合改变的时候把详细的变化放进<code>change</code>字典中。</p>
-<p>我们先来看看下面的代码：</p>
-<p><strong>代码清单12：使用真正的数组对象监听可变数组属性</strong></p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">BankObject *bankInstance = [[BankObject alloc] init];</div><div class="line"></div><div class="line">PersonObject    *personInstance = [[PersonObject alloc] init];</div><div class="line">[bankInstance addObserver:personInstance forKeyPath:<span class="string">@"departments"</span> options:<span class="built_in">NSKeyValueObservingOptionNew</span> | <span class="built_in">NSKeyValueObservingOptionOld</span> context:<span class="literal">NULL</span>];</div><div class="line"></div><div class="line">bankInstance.departments = [[<span class="built_in">NSMutableArray</span> alloc] init];</div><div class="line"></div><div class="line">[bankInstance.departments addObject:<span class="string">@"departments"</span>];</div></pre></td></tr></table></figure>
-<p>其输出为：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">keyPath = departments, change = &#123;</div><div class="line">    kind = <span class="number">1</span>;</div><div class="line">    new =     (</div><div class="line">    );</div><div class="line">    old =     (</div><div class="line">    );</div><div class="line">&#125;, context = (null)</div></pre></td></tr></table></figure>
-<p>可以看到通过这种方法，我们获取的是真正的数组，只在<code>departments</code>属性整体被修改时，才会触发<code>KVO</code>，而在添加元素时，并没有触发<code>KVO</code>。</p>
-<p>现在我们通过代理集合对象来看看：</p>
-<p><strong>代码清单13：使用代理集合对象监听可变数组属性</strong></p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">BankObject *bankInstance = [[BankObject alloc] init];</div><div class="line"></div><div class="line">PersonObject    *personInstance = [[PersonObject alloc] init];</div><div class="line">[bankInstance addObserver:personInstance forKeyPath:<span class="string">@"departments"</span> options:<span class="built_in">NSKeyValueObservingOptionNew</span> | <span class="built_in">NSKeyValueObservingOptionOld</span> context:<span class="literal">NULL</span>];</div><div class="line"></div><div class="line">bankInstance.departments = [[<span class="built_in">NSMutableArray</span> alloc] init];</div><div class="line"></div><div class="line"><span class="built_in">NSMutableArray</span> *departments = [bankInstance mutableArrayValueForKey:<span class="string">@"departments"</span>];</div><div class="line">[departments insertObject:<span class="string">@"departments 0"</span> atIndex:<span class="number">0</span>];</div></pre></td></tr></table></figure>
-<p>其输出是：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">keyPath = departments, change = &#123;</div><div class="line">    kind = <span class="number">1</span>;</div><div class="line">    new =     (</div><div class="line">    );</div><div class="line">    old =     (</div><div class="line">    );</div><div class="line">&#125;, context = (null)</div><div class="line">keyPath = departments, change = &#123;</div><div class="line">    indexes = <span class="string">"&lt;NSIndexSet: 0x7fcd18673150&gt;[number of indexes: 1 (in 1 ranges), indexes: (0)]"</span>;</div><div class="line">    kind = <span class="number">2</span>;</div><div class="line">    new =     (</div><div class="line">        <span class="string">"departments 0"</span></div><div class="line">    );</div><div class="line">&#125;, context = (null)</div></pre></td></tr></table></figure>
-<p>可以看到，在往数组中添加对象时，也触发了KVO，并将改变的详细信息也写进了<code>change</code>字典。在第二个消息中，<code>kind</code>的值为2，即表示这是一次插入操作。同样，可变数组的删除，替换操作也是一样的。</p>
-<p>集合(<code>Set</code>)也有一套对应的方法来实现集合代理对象，包括无序集合与有序集合；而字典则没有，对于字典属性的监听，还是只能作为一个整理来处理。</p>
-<p>如果我们想到手动控制集合属性消息的发送，则可以使用上面提到的几个方法，即：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">-willChange:valuesAtIndexes:forKey:</div><div class="line">-didChange:valuesAtIndexes:forKey:</div><div class="line"></div><div class="line">或</div><div class="line"></div><div class="line">-willChangeValueForKey:withSetMutation:usingObjects:</div><div class="line">-didChangeValueForKey:withSetMutation:usingObjects:</div></pre></td></tr></table></figure>
-<p>不过得先保证把自动通知关闭，否则每次改变<code>KVO</code>都会被发送两次。</p>
-<h2 id="监听信息"><a href="#监听信息" class="headerlink" title="监听信息"></a>监听信息</h2><p>如果我们想获取一个对象上有哪些观察者正在监听其属性的修改，则可以查看对象的<code>observationInfo</code>属性，其声明如下：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">@property</span> <span class="keyword">void</span> *observationInfo</div></pre></td></tr></table></figure>
-<p>可以看到它是一个<code>void</code>指针，指向一个包含所有观察者的一个标识信息对象，这些信息包含了每个监听的观察者，注册时设定的选项等等。我们还是用示例来看看。</p>
-<p><strong>代码清单14：observationInfo的使用</strong></p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">PersonObject    *personInstance = [[PersonObject alloc] init];</div><div class="line">BankObject      *bankInstance = [[BankObject alloc] init];</div><div class="line"></div><div class="line">[bankInstance addObserver:personInstance forKeyPath:<span class="string">@"bankCodeEn"</span> options:<span class="built_in">NSKeyValueObservingOptionNew</span> context:<span class="literal">NULL</span>];</div><div class="line">[bankInstance addObserver:personInstance forKeyPath:<span class="string">@"accountBalance"</span> options:<span class="built_in">NSKeyValueObservingOptionOld</span> context:<span class="literal">NULL</span>];</div><div class="line"></div><div class="line"><span class="built_in">NSLog</span>(<span class="string">@"%p"</span>, personInstance);</div><div class="line"><span class="built_in">NSLog</span>(<span class="string">@"%p"</span>, bankInstance);</div><div class="line"></div><div class="line"><span class="keyword">id</span> info = bankInstance.observationInfo;</div><div class="line"><span class="built_in">NSLog</span>(<span class="string">@"%@"</span>, [info description]);</div></pre></td></tr></table></figure>
-<p>其输出结果如下：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">personInstance = <span class="number">0x7fdc2369e5e0</span></div><div class="line">bankInstance = <span class="number">0x7fdc2369d8f0</span></div><div class="line">&lt;<span class="built_in">NSKeyValueObservationInfo</span> <span class="number">0x7fdc236a19d0</span>&gt; (</div><div class="line">&lt;<span class="built_in">NSKeyValueObservance</span> <span class="number">0x7fdc236a17a0</span>: Observer: <span class="number">0x7fdc2369e5e0</span>, Key path: bankCodeEn, Options: &lt;New: <span class="literal">YES</span>, Old: <span class="literal">NO</span>, Prior: <span class="literal">NO</span>&gt; Context: <span class="number">0x0</span>, Property: <span class="number">0x7fdc236a15c0</span>&gt;</div><div class="line">&lt;<span class="built_in">NSKeyValueObservance</span> <span class="number">0x7fdc236a1960</span>: Observer: <span class="number">0x7fdc2369e5e0</span>, Key path: accountBalance, Options: &lt;New: <span class="literal">NO</span>, Old: <span class="literal">YES</span>, Prior: <span class="literal">NO</span>&gt; Context: <span class="number">0x0</span>, Property: <span class="number">0x7fdc236a1880</span>&gt;</div><div class="line">)</div></pre></td></tr></table></figure>
-<p>我们可以看到<code>observationInfo</code>指针实际上是指向一个<code>NSKeyValueObservationInfo</code>对象，它包含了指定对象上的所有的监听信息。而每条监听信息而是封装在一个<code>NSKeyValueObservance</code>对象中，从上面可以看到，这个对象中包含消息的观察者、被监听的属性、添加观察者时所设置的一些选项、上下文信息等。</p>
-<p><code>NSKeyValueObservationInfo</code>类及<code>NSKeyValueObservance</code>类都是私有类，我们无法在官方文档中找到这两个类的实现。不过从一些对系统库<code>dump</code>出来的头文件，我们可以对这两个类有一些初步的了解。<a href="https://github.com/a1anyip/iOS-SDK-4.3-Framework-Header-Dump/tree/master/Frameworks/Foundation.framework" target="_blank" rel="external">这里</a>有一个对<code>iOS SKD 4.3</code>的<code>Foundation.framework</code>的<code>dump</code>头文件，可以找到这两个类的头文件，其中<code>NSKeyValueObservationInfo</code>的头文件信息如下所示：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">&lt;XXUnknownSuperclass.h&gt;</span> // Unknown library</span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@class</span> <span class="title">NSArray</span>, <span class="title">NSHashTable</span>;</span></div><div class="line"></div><div class="line">__attribute__((visibility(<span class="string">"hidden"</span>)))</div><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">NSKeyValueObservationInfo</span> : <span class="title">XXUnknownSuperclass</span> </span>&#123;</div><div class="line"><span class="keyword">@private</span></div><div class="line">	<span class="keyword">int</span> _retainCountMinusOne;</div><div class="line">	<span class="built_in">NSArray</span>* _observances;</div><div class="line">	<span class="keyword">unsigned</span> _cachedHash;</div><div class="line">	<span class="built_in">BOOL</span> _cachedIsShareable;</div><div class="line">	<span class="built_in">NSHashTable</span>* _observables;</div><div class="line">&#125;</div><div class="line">-(<span class="keyword">id</span>)_initWithObservances:(<span class="keyword">id</span>*)observances count:(<span class="keyword">unsigned</span>)count;</div><div class="line">-(<span class="keyword">id</span>)<span class="keyword">retain</span>;</div><div class="line">-(<span class="keyword">oneway</span> <span class="keyword">void</span>)release;</div><div class="line">-(<span class="keyword">unsigned</span>)retainCount;</div><div class="line">-(<span class="keyword">void</span>)dealloc;</div><div class="line">-(<span class="keyword">unsigned</span>)hash;</div><div class="line">-(<span class="built_in">BOOL</span>)isEqual:(<span class="keyword">id</span>)equal;</div><div class="line">-(<span class="keyword">id</span>)description;</div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
-<p>可以看到其中有一个数组来存储<code>NSKeyValueObservance</code>对象。</p>
-<p><code>NSKeyValueObservance</code>类的头文件信息如下：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">"Foundation-Structs.h"</span></span></div><div class="line"><span class="meta">#import <span class="meta-string">&lt;XXUnknownSuperclass.h&gt;</span> // Unknown library</span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@class</span> <span class="title">NSPointerArray</span>, <span class="title">NSKeyValueProperty</span>, <span class="title">NSObject</span>;</span></div><div class="line"></div><div class="line">__attribute__((visibility(<span class="string">"hidden"</span>)))</div><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">NSKeyValueObservance</span> : <span class="title">XXUnknownSuperclass</span> </span>&#123;</div><div class="line"><span class="keyword">@private</span></div><div class="line">	<span class="keyword">int</span> _retainCountMinusOne;</div><div class="line">	<span class="built_in">NSObject</span>* _observer;</div><div class="line">	<span class="built_in">NSKeyValueProperty</span>* _property;</div><div class="line">	<span class="keyword">unsigned</span> _options;</div><div class="line">	<span class="keyword">void</span>* _context;</div><div class="line">	<span class="built_in">NSObject</span>* _originalObservable;</div><div class="line">	<span class="keyword">unsigned</span> _cachedUnrotatedHashComponent;</div><div class="line">	<span class="built_in">BOOL</span> _cachedIsShareable;</div><div class="line">	<span class="built_in">NSPointerArray</span>* _observationInfos;</div><div class="line">	auto_weak_callback_block _observerWentAwayCallback;</div><div class="line">&#125;</div><div class="line">-(<span class="keyword">id</span>)_initWithObserver:(<span class="keyword">id</span>)observer property:(<span class="keyword">id</span>)property options:(<span class="keyword">unsigned</span>)options context:(<span class="keyword">void</span>*)context originalObservable:(<span class="keyword">id</span>)observable;</div><div class="line">-(<span class="keyword">id</span>)<span class="keyword">retain</span>;</div><div class="line">-(<span class="keyword">oneway</span> <span class="keyword">void</span>)release;</div><div class="line">-(<span class="keyword">unsigned</span>)retainCount;</div><div class="line">-(<span class="keyword">void</span>)dealloc;</div><div class="line">-(<span class="keyword">unsigned</span>)hash;</div><div class="line">-(<span class="built_in">BOOL</span>)isEqual:(<span class="keyword">id</span>)equal;</div><div class="line">-(<span class="keyword">id</span>)description;</div><div class="line">-(<span class="keyword">void</span>)observeValueForKeyPath:(<span class="keyword">id</span>)keyPath ofObject:(<span class="keyword">id</span>)object change:(<span class="keyword">id</span>)change context:(<span class="keyword">void</span>*)context;</div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
-<p>可以看到其中包含了一个监听的基本要素。在此不再做深入分析(没有源代码，深入不下去了啊)。</p>
-<p>我们再回到<code>observationInfo</code>属性本身来。在文档中，对这个属性的描述有这样一段话：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">The <span class="keyword">default</span> implementation of <span class="keyword">this</span> method retrieves the information from a global</div><div class="line">dictionary keyed by the receiver’s pointers.</div></pre></td></tr></table></figure>
-<p>即这个方法的默认实现是以对象的指针作为key，从一个全局的字典中获取信息。由此，我们可以理解为，KVO的信息是存储在一个全局字典中，而不是存储在对象本身。这类似于<code>Notification</code>，所有关于通知的信息都是放在<code>NSNotificationCenter</code>中。</p>
-<p>不过，为了提高效率，我们可以重写<code>observationInfo</code>属性的set和get方法，以将这个不透明的数据指针存储到一个实例变量中。但是，在重写时，我们不应该尝试去向这些数据发送一个<code>Objective-C</code>消息，包括<code>retain</code>和<code>release</code>。</p>
-<h2 id="KVO的实现机制"><a href="#KVO的实现机制" class="headerlink" title="KVO的实现机制"></a>KVO的实现机制</h2><p>【本来这一小节是想放在另一篇总结中来写的，但后来觉得还是放在这里比较合适，所以就此添加上】</p>
-<p>了解了<code>NSKeyValueObserving</code>所提供的功能后，我们再来看看KVO的实现机制，以便更深入地的理解KVO。</p>
-<p>KVO据我所查还没有开源(若哪位大大有查到源代码，还烦请告知)，所以我们无法从源代码的层面来分析它的实现。不过<a href="https://www.mikeash.com/pyblog/friday-qa-2009-01-23.html" target="_blank" rel="external">Mike Ash</a>的博文(译文见参考文献4)为我们解开了一些谜团。</p>
-<p>基本的思路是：<code>Objective-C</code>依托于强大的<code>runtime</code>机制来实现KVO。当我们第一次观察某个对象的属性时，<code>runtime</code>会创建一个新的继承自这个对象的<code>class</code>的<code>subclass</code>。在这个新的<code>subclass</code>中，它会重写所有被观察的<code>key</code>的<code>setter</code>，然后将<code>object</code>的<code>isa</code>指针指向新创建的<code>class</code>(这个指针告诉<code>Objective-C</code>运行时某个<code>object</code>到底是什么类型的)。所以<code>object</code>神奇地变成了新的子类的实例。</p>
-<p>嗯，让我们通过代码来看看实际的实现：</p>
-<p><strong>代码清单15：探究KVO的实现机制</strong></p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 辅助方法</span></div><div class="line"><span class="keyword">static</span> <span class="built_in">NSArray</span> *ClassMethodNames(Class c) &#123;</div><div class="line"></div><div class="line">    <span class="built_in">NSMutableArray</span> *array = [<span class="built_in">NSMutableArray</span> array];</div><div class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> methodCount = <span class="number">0</span>;</div><div class="line">    Method *methodList = class_copyMethodList(c, &amp;methodCount);</div><div class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> i;</div><div class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; methodCount; i++) &#123;</div><div class="line">        [array addObject:<span class="built_in">NSStringFromSelector</span>(method_getName(methodList[i]))];</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    free(methodList);</div><div class="line">    </div><div class="line">    <span class="keyword">return</span> array;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">static</span> <span class="keyword">void</span> PrintDescription(<span class="built_in">NSString</span> *name, <span class="keyword">id</span> obj) &#123;</div><div class="line"></div><div class="line">    <span class="keyword">struct</span> objc_object *objcet = (__bridge <span class="keyword">struct</span> objc_object *)obj;</div><div class="line">    </div><div class="line">    Class cls = objcet-&gt;isa;</div><div class="line">    </div><div class="line">    <span class="built_in">NSString</span> *str = [<span class="built_in">NSString</span> stringWithFormat:<span class="string">@"%@: %@\n\tNSObject class %s\n\tlibobjc class %s : super class %s\n\timplements methods &lt;%@&gt;"</span>,</div><div class="line">                     name,</div><div class="line">                     obj,</div><div class="line">                     class_getName([obj <span class="keyword">class</span>]),</div><div class="line">                     class_getName(cls),</div><div class="line">                     class_getName(class_getSuperclass(cls)),</div><div class="line">                     [ClassMethodNames(cls) componentsJoinedByString:<span class="string">@", "</span>]];</div><div class="line">    printf(<span class="string">"%s\n"</span>, [str UTF8String]);</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// 测试代码</span></div><div class="line">BankObject *bankInstance1 = [[BankObject alloc] init];</div><div class="line">BankObject *bankInstance2 = [[BankObject alloc] init];</div><div class="line"></div><div class="line">PersonObject *personInstance = [[PersonObject alloc] init];</div><div class="line"></div><div class="line">[bankInstance2 addObserver:personInstance forKeyPath:<span class="string">@"accountBalance"</span> options:<span class="built_in">NSKeyValueObservingOptionNew</span> context:<span class="literal">NULL</span>];</div><div class="line"></div><div class="line">PrintDescription(<span class="string">@"bankInstance1"</span>, bankInstance1);</div><div class="line">PrintDescription(<span class="string">@"bankInstance2"</span>, bankInstance2);</div><div class="line"></div><div class="line">printf(<span class="string">"Using libobjc functions, normal setAccountBalance: is %p, overridden setAccountBalance: is %p"</span>, method_getImplementation(class_getInstanceMethod(object_getClass(bankInstance2), <span class="keyword">@selector</span>(setAccountBalance:))),</div><div class="line">       method_getImplementation(class_getInstanceMethod(object_getClass(bankInstance1), <span class="keyword">@selector</span>(setAccountBalance:))));</div></pre></td></tr></table></figure>
-<p>这段代码的输出如下：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">bankInstance1: &lt;BankObject: <span class="number">0x7f9e8ae3cf60</span>&gt;</div><div class="line">	<span class="built_in">NSObject</span> <span class="keyword">class</span> BankObject</div><div class="line">	libobjc <span class="keyword">class</span> BankObject : <span class="keyword">super</span> <span class="keyword">class</span> <span class="built_in">NSObject</span></div><div class="line">	implements methods &lt;accountBalance, setAccountBalance:, bankCodeEn, setBankCodeEn:, departments, setDepartments:&gt;</div><div class="line">	</div><div class="line">bankInstance2: &lt;BankObject: <span class="number">0x7f9e8ae3cfc0</span>&gt;</div><div class="line">	<span class="built_in">NSObject</span> <span class="keyword">class</span> BankObject</div><div class="line">	libobjc <span class="keyword">class</span> <span class="built_in">NSKVONotifying_BankObject</span> : <span class="keyword">super</span> <span class="keyword">class</span> BankObject</div><div class="line">	implements methods &lt;setAccountBalance:, <span class="keyword">class</span>, dealloc, _isKVOA&gt;</div><div class="line">	</div><div class="line">Using libobjc functions, normal setAccountBalance: is <span class="number">0x1013cec17</span>, overridden setAccountBalance: is <span class="number">0x10129fe50</span></div></pre></td></tr></table></figure>
-<p>从输出中可以看到，<code>bankInstance2</code>监听<code>accountBalance</code>属性后，其实际上所属的类已经不是<code>BankObject</code>了，而是继承自<code>BankObject</code>的<code>NSKVONotifying_BankObject</code>类。同时，<code>NSKVONotifying_BankObject</code>类重写了<code>setAccountBalance</code>方法，这个方法将实现如何通知观察者们的操作。当改变<code>accountBalance</code>属性时，就会调用被重写的<code>setAccountBalance</code>方法，并通过这个方法来发送通知。</p>
-<p>另外我们也可以看到<code>bankInstance2</code>对象的打印<code>[bankInstance2 class]</code>时，返回的仍然是<code>BankObject</code>。这是苹果故意而为之，他们不希望这个机制暴露在外面。所以除了重写相应的<code>setter</code>，所以动态生成的<code>NSKVONotifying_BankObject</code>类还重写了<code>class</code>方法，让它返回原先的类。</p>
-<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>KVO作为<code>Objective-C</code>中两个对象间通信机制中的一种，提供了一种非常强大的机制。在经典的MVC架构中，控制器需要确保视图与模型的同步，当<code>model</code>对象改变时，视图应该随之改变以反映模型的变化；当用户和控制器交互的时候，模型也应该做出相应的改变。而KVO便为我们提供了这样一种同步机制：我们让控制器去监听一个<code>model</code>对象属性的改变，并根据这种改变来更新我们的视图。所有，有效地使用KVO，对我们应用的开发意义重大。</p>
-<p>别话：对KVO的总结感觉还是意犹未尽，总感觉缺少点什么，特别是在对集合这一块的处理。还请大家多多提供指点。</p>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ol>
-<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/Foundation/Protocols/NSKeyValueObserving_Protocol/#//apple_ref/occ/instm/NSObject/observationInfo" target="_blank" rel="external">NSKeyValueObserving Protocol Reference</a></li>
-<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/KeyValueObserving/KeyValueObserving.html" target="_blank" rel="external">Key-Value Observing Programming Guide</a></li>
-<li><a href="https://github.com/a1anyip/iOS-SDK-4.3-Framework-Header-Dump" target="_blank" rel="external">iOS-SDK-4.3-Framework-Header-Dump</a></li>
-<li><a href="http://objccn.io/issue-7-3/" target="_blank" rel="external">KVC 和 KVO</a></li>
-<li><a href="http://www.appcoda.com/understanding-key-value-observing-coding/" target="_blank" rel="external">Understanding Key-Value Observing and Coding</a></li>
-<li><a href="http://www.cocoachina.com/ios/20140107/7667.html" target="_blank" rel="external">KVO的内部实现</a></li>
-</ol>
-
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
   </section>
 
   
@@ -2647,7 +2570,7 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/archives">
-              <span class="site-state-item-count">84</span>
+              <span class="site-state-item-count">85</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>

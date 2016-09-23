@@ -1,0 +1,748 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="还有一个星期，一个星期……就是十一长假了，想想还是很激动的。可是我的iPhone 7还是没有着落，哎，想想还是很桑梓啊。什么时候能把这事给办了？
+这期换个法吧，无规则有主题，发个关于Instruments的合集。Instruments是我们查找问题和调做强不可缺少的工具，也很强大。所有抽时间把文档撸了一遍，写了几条知识小集，不过还有些没发出来。这期先把之前发的整理整理吧，主要有以下5个问题：
+
+使">
+<meta property="og:type" content="article">
+<meta property="og:title" content="iOS知识小集 第9期(2016.09.23)">
+<meta property="og:url" content="http://southpeak.github.io/2016/09/23/ios-techset-9/index.html">
+<meta property="og:site_name" content="南峰子的技术博客">
+<meta property="og:description" content="还有一个星期，一个星期……就是十一长假了，想想还是很激动的。可是我的iPhone 7还是没有着落，哎，想想还是很桑梓啊。什么时候能把这事给办了？
+这期换个法吧，无规则有主题，发个关于Instruments的合集。Instruments是我们查找问题和调做强不可缺少的工具，也很强大。所有抽时间把文档撸了一遍，写了几条知识小集，不过还有些没发出来。这期先把之前发的整理整理吧，主要有以下5个问题：
+
+使">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/Zombies%20profiling%201.png?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/Zombies%20profiling%202.png?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/Zombies%20profiling%203.png?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/Zombies%20profiling%204.png?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/Zombies%20profiling%205.png?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/Zombies%20profiling%206.png?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/debug%20navigator%20to%20instruments%201.png?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/debug%20navigator%20to%20instruments%202.png?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/debug%20navigator%20to%20instruments%203.png?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/debug%20navigator%20to%20instruments%204.png?raw=true">
+<meta property="og:image" content="https://developer.apple.com/library/prerelease/content/documentation/DeveloperTools/Conceptual/InstrumentsUserGuide/Art/instruments_targets_enablewireless_2x.png">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/Access%20Trace%20Data%20for%20Multiple%20Runs.png?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/Abandoned%20Memory%201.png?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/Abandoned%20Memory%202.png?raw=true">
+<meta property="og:image" content="https://github.com/southpeak/Blog-images/blob/master/Abandoned%20Memory%203.png?raw=true">
+<meta property="og:updated_time" content="2016-09-23T11:10:34.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="iOS知识小集 第9期(2016.09.23)">
+<meta name="twitter:description" content="还有一个星期，一个星期……就是十一长假了，想想还是很激动的。可是我的iPhone 7还是没有着落，哎，想想还是很桑梓啊。什么时候能把这事给办了？
+这期换个法吧，无规则有主题，发个关于Instruments的合集。Instruments是我们查找问题和调做强不可缺少的工具，也很强大。所有抽时间把文档撸了一遍，写了几条知识小集，不过还有些没发出来。这期先把之前发的整理整理吧，主要有以下5个问题：
+
+使">
+<meta name="twitter:image" content="https://github.com/southpeak/Blog-images/blob/master/Zombies%20profiling%201.png?raw=true">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://southpeak.github.io/2016/09/23/ios-techset-9/"/>
+
+  <title> iOS知识小集 第9期(2016.09.23) | 南峰子的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-68856508-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">南峰子的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">攀登，一步一个脚印，方能知其乐</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-techset">
+          <a href="/categories/techset" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fighter-jet"></i> <br />
+            
+            知识小集
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-swift">
+          <a href="/categories/swift" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-space-shuttle"></i> <br />
+            
+            Swift
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-objectivec">
+          <a href="/categories/objectivec" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-taxi"></i> <br />
+            
+            Objective-C
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-cocoa">
+          <a href="/categories/cocoa" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-subway"></i> <br />
+            
+            Cocoa
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-translate">
+          <a href="/categories/translate" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-rocket"></i> <br />
+            
+            翻译
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sourcecode">
+          <a href="/categories/sourcecode" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-train"></i> <br />
+            
+            源码分析
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-something">
+          <a href="/categories/something" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-bicycle"></i> <br />
+            
+            杂项
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                iOS知识小集 第9期(2016.09.23)
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-09-23T19:06:37+08:00" content="2016-09-23">
+              2016-09-23
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/techset/" itemprop="url" rel="index">
+                    <span itemprop="name">知识小集</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>还有一个星期，一个星期……就是十一长假了，想想还是很激动的。可是我的iPhone 7还是没有着落，哎，想想还是很桑梓啊。什么时候能把这事给办了？</p>
+<p>这期换个法吧，无规则有主题，发个关于Instruments的合集。Instruments是我们查找问题和调做强不可缺少的工具，也很强大。所有抽时间把文档撸了一遍，写了几条知识小集，不过还有些没发出来。这期先把之前发的整理整理吧，主要有以下5个问题：</p>
+<ol>
+<li>使用Instruments检测僵尸对象；</li>
+<li>Xcode的Debug navigator中打开Instruments；</li>
+<li>Instruments无线Profile；</li>
+<li>Instruments访问多次运行的跟踪数据</li>
+<li>Abandoned Memory和Generational Analysis</li>
+</ol>
+<h2 id="使用Instruments检测僵尸对象"><a href="#使用Instruments检测僵尸对象" class="headerlink" title="使用Instruments检测僵尸对象"></a>使用Instruments检测僵尸对象</h2><p>Instruments为我们提供了一个检测僵尸对象的工具：Zombies。使用这个工具时，将会自动开启Enable Zombie Objects模式，而不需要我们自己手动去设置。</p>
+<p>我们以下图这段简单的代码为例，点击Product-&gt;Profile，启动Instrument。</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/Zombies%20profiling%201.png?raw=true" alt=""></p>
+<p>如下图所示，我们可以看到”Zombies”这个工具。基本操作和其它工具一样，启动后点击工具栏上的红色按钮来启动程序。</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/Zombies%20profiling%202.png?raw=true" alt=""></p>
+<p>在程序运行期间，如果定位到僵尸对象，则会弹出一个提示对话框，如下图所示。</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/Zombies%20profiling%203.png?raw=true" alt=""></p>
+<p>我们可以点击对话框右侧的箭头来定位到具体的代码及调用栈，如下图所示。</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/Zombies%20profiling%204.png?raw=true" alt=""></p>
+<p>双击调用栈对应的方法后，还可以查看具体的代码，如下图所示。</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/Zombies%20profiling%205.png?raw=true" alt=""></p>
+<p>实际上，我们用Allocations工具也可以检测僵尸对象，如下图所示。</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/Zombies%20profiling%206.png?raw=true" alt=""></p>
+<p>我们在属性面板中勾选”Enable NSZombie detection”，其效果和单独使用Zombies工具是一样的。</p>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><ol>
+<li><a href="https://developer.apple.com/library/prerelease/content/documentation/DeveloperTools/Conceptual/InstrumentsUserGuide/EradicatingZombies.html" target="_blank" rel="external">Find Zombies</a></li>
+</ol>
+<h2 id="Xcode的Debug-navigator中打开Instruments"><a href="#Xcode的Debug-navigator中打开Instruments" class="headerlink" title="Xcode的Debug navigator中打开Instruments"></a>Xcode的Debug navigator中打开Instruments</h2><p>Xcode的Debug navigator中提供了几个计量器来帮助我们跟踪程序的性能，包括CPU、内存、电量等。如图1和2所示。</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/debug%20navigator%20to%20instruments%201.png?raw=true" alt=""></p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/debug%20navigator%20to%20instruments%202.png?raw=true" alt=""></p>
+<p>在每个计量器的详情面板中的右上角，都提供了一个Profile in Instruments按钮，如图2所示(Energy Impact除外，其在面板详情中有几个按钮直接打开Instruments指定的模板，如下图所示)，这些按钮可以让我们直接跳转到Instruments中。</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/debug%20navigator%20to%20instruments%203.png?raw=true" alt=""></p>
+<p>在点击这些按钮时，会弹出一个提示框，提示“Transfer current debug session?”，下面三个按钮，如下图所示。</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/debug%20navigator%20to%20instruments%204.png?raw=true" alt=""></p>
+<p>Transfer会在程序当前的运行状态中直接切换到Instruments，然后继续跟踪程序的运行状态；而Restart则是关闭当前运行的程序，重新开始一次新的Profile。</p>
+<p>不过，这两种情况都会关闭当前的性能分析(profiling)，启动Instruments，初始一个新的性能分析。</p>
+<h3 id="参考-1"><a href="#参考-1" class="headerlink" title="参考"></a>参考</h3><ol>
+<li><a href="https://developer.apple.com/library/tvos/documentation/DeveloperTools/Conceptual/InstrumentsUserGuide/Recording,Pausing,andStoppingTraces.html#//apple_ref/doc/uid/TP40004652-CH12-SW1" target="_blank" rel="external">Instruments User Guide</a></li>
+</ol>
+<h2 id="Instruments无线Profile"><a href="#Instruments无线Profile" class="headerlink" title="Instruments无线Profile"></a>Instruments无线Profile</h2><p>Instruments支持无线的Profile，即设备不需要通过Lighting线连接到Mac电脑，即可进行性能分析。这对于需要使用加速器或者外接配件的应用来说非常有用。如下图所示。</p>
+<p><img src="https://developer.apple.com/library/prerelease/content/documentation/DeveloperTools/Conceptual/InstrumentsUserGuide/Art/instruments_targets_enablewireless_2x.png" alt=""></p>
+<p>不过要使用此功能，需要满足两个条件：设备必须是注册过的开发设备；无线网络必须支持Bonjour和多路广播(multicast)。</p>
+<p>当然，还需要做一些基本配置，可参考<a href="https://developer.apple.com/library/prerelease/content/documentation/DeveloperTools/Conceptual/InstrumentsUserGuide/WorkingwithTargets.html#//apple_ref/doc/uid/TP40004652-CH10-SW1" target="_blank" rel="external">Instruments User Guide：Target Devices and Processes</a>。</p>
+<p>上周五捣鼓了一会，木有成功，后来发现是网络不支持。</p>
+<h2 id="Instruments访问多次运行的跟踪数据"><a href="#Instruments访问多次运行的跟踪数据" class="headerlink" title="Instruments访问多次运行的跟踪数据"></a>Instruments访问多次运行的跟踪数据</h2><p>Instruments在一次运行期间可以记录App的多次运行记录。以Allocations为例，开启Instruments后，每结束一次Allocations分析，这条分析就会被记录下来，下次再开启分析时，我们仍然可以看到前一次分析的信息，如下图所示。</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/Access%20Trace%20Data%20for%20Multiple%20Runs.png?raw=true" alt=""></p>
+<p>通过这些记录，我们可以对比每次分析的差别。这样我们就可以边修改程序，边用Instruments来对其进行分析，并通过这种对比来观察修改的效果。</p>
+<p>当然，关闭Instruments时，如果不保存信息，这些记录会被清理掉。</p>
+<h3 id="参考-2"><a href="#参考-2" class="headerlink" title="参考"></a>参考</h3><ol>
+<li><a href="https://developer.apple.com/library/prerelease/content/documentation/DeveloperTools/Conceptual/InstrumentsUserGuide/NavigatingtheTimelinePane.html#//apple_ref/doc/uid/TP40004652-CH85-SW1" target="_blank" rel="external">Instruments User Guide：Navigate the Timeline Pane</a></li>
+</ol>
+<h2 id="Abandoned-Memory和Generational-Analysis"><a href="#Abandoned-Memory和Generational-Analysis" class="headerlink" title="Abandoned Memory和Generational Analysis"></a>Abandoned Memory和Generational Analysis</h2><p>说到内存问题，我们更多的会想到内存泄露和野指针，而实际上还有一类看似不是问题的内存问题：Abandoned Memory(被遗弃的内存)。这类内存可能由于某些原因被分配，但并非一直需要，只是可能在程序运行期的某个时间需要，如内存缓存的图片，还有一个比较普遍的东西–单例。</p>
+<p>我们可能会为某个模块创建一个单例对象来维护这个模块所需要的数据，但在退出模块后，这个单例对象依然存在。与内存泄露不同，这些对象从技术上讲依然是有效的。但实际上可能在程序后续的运行中不会再被使用。</p>
+<p>使用Instruments定位内存问题，内存泄露和野指针的定位相对来说容易些，内存泄露使用Leaks，野指针则可以使用僵尸对象。而Abandoned Memory则相对不那么明显。Abandoned Memory可以采用所谓的Generational Analysis方法来分析，即反复进入退出某一场景，查看内存的分配与释放情况，以定位哪些对象是属于Abandoned Memory的范畴。</p>
+<p>在Allocations工具中，有专门的Generational Analysis设置，如下图所示。</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/Abandoned%20Memory%201.png?raw=true" alt=""></p>
+<p>我们可以在程序运行时，在进入某个模块前标记一个Generation，这样会生成一个快照。然后进入、退出，再标记一个Generation，如下图所示。</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/Abandoned%20Memory%202.png?raw=true" alt=""></p>
+<p>在详情面板中我们可以看到两个Generation间内存的增长情况，其中就可能存在潜在的被遗弃的对象，如下图所示。定位到问题，即可做相应的优化。</p>
+<p><img src="https://github.com/southpeak/Blog-images/blob/master/Abandoned%20Memory%203.png?raw=true" alt=""></p>
+<h3 id="参考-3"><a href="#参考-3" class="headerlink" title="参考"></a>参考</h3><ol>
+<li><a href="https://developer.apple.com/library/prerelease/content/documentation/DeveloperTools/Conceptual/InstrumentsUserGuide/FindingAbandonedMemory.html#//apple_ref/doc/uid/TP40004652-CH80-SW1" target="_blank" rel="external">Find Abandoned Memory</a></li>
+<li><a href="https://developer.apple.com/library/prerelease/content/documentation/DeveloperTools/Conceptual/InstrumentsUserGuide/CommonMemoryProblems.html#//apple_ref/doc/uid/TP40004652-CH91-SW1" target="_blank" rel="external">About Memory Analysis</a></li>
+</ol>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>Instruments是一个强大的分析工具，其基于DTrace，为我们提供了丰富的功能。在实际开发中，采用正确的姿式来使用Instruments，可以帮我们提高程序的性能、稳定性等。相信大家都经常用三件套：Time Profile、Allocations、Leaks。当然，其它还有很多模板，也可以多去试试。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/09/20/ios-techset-8/" rel="next" title="iOS知识小集 第8期(2016.09.20)">
+                <i class="fa fa-chevron-left"></i> iOS知识小集 第8期(2016.09.20)
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="南峰子" />
+          <p class="site-author-name" itemprop="name">南峰子</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">85</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#使用Instruments检测僵尸对象"><span class="nav-number">1.</span> <span class="nav-text">使用Instruments检测僵尸对象</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#参考"><span class="nav-number">1.1.</span> <span class="nav-text">参考</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Xcode的Debug-navigator中打开Instruments"><span class="nav-number">2.</span> <span class="nav-text">Xcode的Debug navigator中打开Instruments</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#参考-1"><span class="nav-number">2.1.</span> <span class="nav-text">参考</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Instruments无线Profile"><span class="nav-number">3.</span> <span class="nav-text">Instruments无线Profile</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Instruments访问多次运行的跟踪数据"><span class="nav-number">4.</span> <span class="nav-text">Instruments访问多次运行的跟踪数据</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#参考-2"><span class="nav-number">4.1.</span> <span class="nav-text">参考</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Abandoned-Memory和Generational-Analysis"><span class="nav-number">5.</span> <span class="nav-text">Abandoned Memory和Generational Analysis</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#参考-3"><span class="nav-number">5.1.</span> <span class="nav-text">参考</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">6.</span> <span class="nav-text">小结</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">南峰子</span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+  
+
+  <div style="display: none;">
+    <script src="http://s95.cnzz.com/z_stat.php?id=1000523916&web_id=1000523916" language="JavaScript"></script>
+  </div>
+
+
+
+
+</body>
+</html>

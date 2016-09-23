@@ -310,6 +310,285 @@
             
               
                 
+                <a class="post-title-link" href="/2015/01/25/tool-lldb/" itemprop="url">
+                  LLDB调试器使用简介
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-01-25T21:33:25+08:00" content="2015-01-25">
+              2015-01-25
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/something/" itemprop="url" rel="index">
+                    <span itemprop="name">杂项</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>随着<code>Xcode 5</code>的发布，<code>LLDB</code>调试器已经取代了<code>GDB</code>，成为了<code>Xcode</code>工程中默认的调试器。它与<code>LLVM</code>编译器一起，带给我们更丰富的流程控制和数据检测的调试功能。<code>LLDB</code>为<code>Xcode</code>提供了底层调试环境，其中包括内嵌在Xcode IDE中的位于调试区域的控制面板，在这里我们可以直接调用<code>LLDB</code>命令。如图1所示：</p>
+<p>图1：位于<code>Xcode</code>调试区域的控制台</p>
+<p><img src="https://developer.apple.com/library/mac/documentation/IDEs/Conceptual/gdb_to_lldb_transition_guide/art/lldb_in_xc5_command_window_2x.png" alt="image"></p>
+<p>在本文中，我们主要整理一下<code>LLDB</code>调试器提供给我们的调试命令，更详细的内容可以查看<a href="http://lldb.llvm.org/tutorial.html" target="_blank" rel="external">The LLDB Debugger</a>。</p>
+<h2 id="LLDB命令结构"><a href="#LLDB命令结构" class="headerlink" title="LLDB命令结构"></a>LLDB命令结构</h2><p>在使用<code>LLDB</code>前，我们需要了解一下<code>LLDB</code>的命令结构及语法，这样可以尽可能地挖掘<code>LLDB</code>的潜能，以帮助我们更充分地利用它。</p>
+<p>LLDB命令的语法有其通用结构，通常是以下形式的：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">&lt;command&gt; [&lt;subcommand&gt; [&lt;subcommand&gt;...]] &lt;action&gt; [-options [option-value]] [argument [argument...]]</div></pre></td></tr></table></figure>
+<p>其中：</p>
+<ol>
+<li><code>&lt;command&gt;</code>(命令)和<code>&lt;subcommand&gt;</code>(子命令)：<code>LLDB</code>调试命令的名称。命令和子命令按层级结构来排列：一个命令对象为跟随其的子命令对象创建一个上下文，子命令又为其子命令创建一个上下文，依此类推。</li>
+<li><code>&lt;action&gt;</code>：我们想在前面的命令序列的上下文中执行的一些操作。</li>
+<li><code>&lt;options&gt;</code>：行为修改器(<code>action modifiers</code>)。通常带有一些值。</li>
+<li><code>&lt;argument&gt;</code>：根据使用的命令的上下文来表示各种不同的东西。</li>
+</ol>
+<p><code>LLBD</code>命令行的解析操作在执行命令之前完成。上面的这些元素之间通过空格来分割，如果某一元素自身含有空格，则可以使用双引用。而如果元素中又包含双引号，则可以使用反斜杠；或者元素使用单引号。如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">(lldb) command [subcommand] -option &quot;some \&quot;quoted\&quot; string&quot;</div><div class="line">(lldb) command [subcommand] -option &apos;some &quot;quoted&quot; string&apos;</div></pre></td></tr></table></figure>
+<p>这种命令解析设计规范了<code>LLDB</code>命令语法，并对所有命令做了个统一。</p>
+<h3 id="命令选项"><a href="#命令选项" class="headerlink" title="命令选项"></a>命令选项</h3><p><code>LLDB</code>中的命令选项有规范形式和缩写形式两种格式。以设置断点的命令<code>breakpoint set</code>为例，以下列表了其部分选项的格式，其中括号中的是规范形式：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">breakpoint set</div><div class="line">   -M &lt;method&gt; ( --method &lt;method&gt; )</div><div class="line">   -S &lt;selector&gt; ( --selector &lt;selector&gt; )</div><div class="line">   -b &lt;function-name&gt; ( --basename &lt;function-name&gt; )</div><div class="line">   -f &lt;filename&gt; ( --file &lt;filename&gt; )</div><div class="line">   -l &lt;linenum&gt; ( --line &lt;linenum&gt; )</div><div class="line">   -n &lt;function-name&gt; ( --name &lt;function-name&gt; )</div><div class="line">…</div></pre></td></tr></table></figure>
+<p>各选项的顺序是任意的。如果后面的参数是以”-“开头的，则在选项后面添加”–”作为选项的终止信号，以告诉LLDB我们处理的选项的正确位置。如下命令所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">(lldb) process launch --stop-at-entry -- -program_arg_1 value -program_arg_2 value</div></pre></td></tr></table></figure>
+<p>如上所示，命令的选项是<code>--stop-at-entry</code>，参数是<code>-program_arg_1</code>和<code>-program_arg_2</code>，我们使用”–”将选项与参数作一下区分。</p>
+<h3 id="原始命令"><a href="#原始命令" class="headerlink" title="原始命令"></a>原始命令</h3><p><code>LLDB</code>命令解析器支持”原始(raw)”命令，即没有命令选项，命令字符串的剩余部分未经解析就传递给命令。例如，<code>expression</code>就是一个原始命令。</p>
+<p>不过原始命令也可以有选项，如果命令字符串中有虚线，则在命令名与命令字符串之间放置一个选项结束符(–)来表明没有命令标记。</p>
+<p>我们可以通过help命令的输出来查看一个命令是否是原始命令。</p>
+<h3 id="命令补全-Command-Completion"><a href="#命令补全-Command-Completion" class="headerlink" title="命令补全(Command Completion)"></a>命令补全(Command Completion)</h3><p><code>LLDB</code>支持源文件名，符号名，文件名，等等的命令补全(<code>Commmand Completion</code>)。终端窗口中的补全是通过在命令行中输入一个制表符来初始化的。<code>Xcode</code>控制台中的补全与在源码编辑器中的补全方式是一样的：补全会在第三个字符被键入时自动弹出，或者通过<code>Esc</code>键手动弹出。</p>
+<p>一个命令中的私有选项可以有不同的完成者(<code>completers</code>)。如<code>breakpoint</code>中的<code>--file &lt;path&gt;</code>选项作为源文件的完成者，<code>--shlib &lt;path&gt;</code>选项作为当前加载的库的完成者，等等。这些行为是特定的，例如，如果指定<code>--shlib &lt;path&gt;</code>，且以<code>--file &lt;path&gt;</code>结尾，则<code>LLDB</code>只会列出由<code>--shlib &lt;path&gt;</code>指定的共享类库。</p>
+<h3 id="Python脚本"><a href="#Python脚本" class="headerlink" title="Python脚本"></a>Python脚本</h3><p>对于高级用户来说，<code>LLDB</code>有一个内置的<code>Python</code>解析器，可以通过脚本命令来访问。调试器中的所有特性在<code>Python</code>解析器中都可以作为类来访问。这样，我们就可以使用<code>LLDB-Python</code>库来写<code>Python</code>函数，并通过脚本将其加载到运行会话中，以执行一些更复杂的调试操作。</p>
+<h2 id="在命令行中调试程序"><a href="#在命令行中调试程序" class="headerlink" title="在命令行中调试程序"></a>在命令行中调试程序</h2><p>通常我们都是在<code>Xcode</code>中直接使用<code>LLDB</code>调试器，<code>Xcode</code>会帮我们完成很多操作。当然，如果我们想让自己看着更<code>Bigger</code>，或者想了解下调试器具体的一些流程，就可以试试直接在终端使用<code>LLDB</code>命令来调试程序。在终端中使用<code>LLDB</code>调试器，我们需要了解以下内容：</p>
+<ol>
+<li>加载程序以备调试</li>
+<li>将一个运行的程序绑定到<code>LLDB</code></li>
+<li>设置断点和观察点</li>
+<li>控制程序的执行</li>
+<li>在调试的程序中导航</li>
+<li>检查状态和值的变量</li>
+<li>执行替代代码</li>
+</ol>
+<p>了解在终端中这些操作是如何进行的，可以帮助我们更深入的了解调试器在<code>Xcode</code>中是如何运作的。下面我们分步来介绍一下。</p>
+<h3 id="指定需要调试的程序"><a href="#指定需要调试的程序" class="headerlink" title="指定需要调试的程序"></a>指定需要调试的程序</h3><p>首先我们需要设置需要调试的程序。我们可以使用如下命令做到这一点：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">$ lldb /Projects/Sketch/build/Debug/Sketch.app </div><div class="line">Current executable set to '/Projects/Sketch/build/Debug/Sketch.app' (x86_64).</div></pre></td></tr></table></figure>
+<p>或者在运行<code>lldb</code>后，使用<code>file</code>命令来处理，如下所示：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">$ lldb </div><div class="line">(lldb) file /Projects/Sketch/build/Debug/Sketch.app </div><div class="line">Current executable set to '/Projects/Sketch/build/Debug/Sketch.app' (x86_64).</div></pre></td></tr></table></figure>
+<h3 id="设置断点"><a href="#设置断点" class="headerlink" title="设置断点"></a>设置断点</h3><p>在设置完程序后，我们可能想设置一点断点来调试程序。此时我们可以使用<code>breakpoint set</code>命令来设置断点，这个命令简单、直观，且有智能补全，接下来我们看看它的具体操作。</p>
+<p>如果想在某个文件中的某行设置一个断点，可使用以下命令：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">(lldb) breakpoint set --file foo.c --line <span class="number">12</span></div></pre></td></tr></table></figure>
+<p>如果想给某个函数设置断点，可使用以下命令：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">(lldb) breakpoint set --name foo</div></pre></td></tr></table></figure>
+<p>如果想给C++中所有命名为<code>foo</code>的方法设置断点，可以使用以下命令：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">(lldb) breakpoint set --method foo</div></pre></td></tr></table></figure>
+<p>如果想给<code>Objective-C</code>中所有命名为<code>alignLeftEdges:</code>的选择器设置断点，则可以使用以下命令：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">(lldb) breakpoint set --selector alignLeftEdges:</div></pre></td></tr></table></figure>
+<p>我们可以使用<code>--shlib &lt;path&gt;</code>来将断点限定在一个特定的可执行库中：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">(lldb) breakpoint set --shlib foo.dylib --name foo</div></pre></td></tr></table></figure>
+<p>看吧，断点设置命令还是很强大的。</p>
+<p>如果我们想查看程序中所有的断点，则可以使用<code>breakpoint list</code>命令，如下所示：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">(lldb) breakpoint list</div><div class="line">Current breakpoints:</div><div class="line">1: name = 'alignLeftEdges:', locations = 1, resolved = 1</div><div class="line">  1.1: where = Sketch`-[SKTGraphicView alignLeftEdges:] + 33 at /Projects/Sketch/SKTGraphicView.m:1405, address = 0x0000000100010d5b, resolved, hit count = 0</div></pre></td></tr></table></figure>
+<p>从上面的输出结果可以看出，一个断点一般有两部分：</p>
+<ol>
+<li>断点的逻辑规范，这一部分是用户提供给<code>breakpoint set</code>命令的。</li>
+<li>与规范匹配的断点的位置。</li>
+</ol>
+<p>如上所示，通过<code>&quot;breakpoint set --selector alignLeftEdges:&quot;</code>设置的断点，其信息中会显示出所有<code>alignLeftEdges:</code>方法的位置。</p>
+<p><code>breakpoint list</code>命令输出列表显示每个逻辑断点都有一个整数标识，如上所示断点标识为1。而每个位置也会有一个标识，如上所示的1.1。</p>
+<p>输出列表中另一个信息是断点位置是否是已解析的(<code>resolved</code>)。这个标识表示当与之相关的文件地址被加载到程序进行调试时，其位置是已解析的。例如，如果在共享库中设置的断点之后被卸载了，则断点的位置还会保留，但其不能再被解析。</p>
+<p>不管是逻辑断点产生的所有位置，还是逻辑断点解析的任何特定位置，我们都可以使用断点触发命令来对其进行删除、禁用、设置条件或忽略计数操作。例如，如果我们想添加一个命令，以在LLDB命中断点1.1时打印跟踪栈，则可以执行以下命令</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">(lldb) breakpoint command add 1.1</div><div class="line">Enter your debugger command(s). Type 'DONE' to end.</div><div class="line">&gt; bt</div><div class="line">&gt; DONE</div></pre></td></tr></table></figure>
+<p>如果想更详细地了解<code>&quot;breakpoint command add&quot;</code>命令的使用，可以使用<code>help</code>帮助系统来查看。</p>
+<h3 id="设置观察点"><a href="#设置观察点" class="headerlink" title="设置观察点"></a>设置观察点</h3><p>作为断点的补充，<code>LLDB</code>支持观察点以在不中断程序运行的情况下监测一些变量。例如，我们可以使用以下命令来监测名为<code>global</code>的变量的写操作，并在(<code>global==5</code>)为真时停止监测：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div></pre></td><td class="code"><pre><div class="line">(lldb) watch set var global</div><div class="line">Watchpoint created: Watchpoint 1: addr = 0x100001018 size = 4 state = enabled type = w</div><div class="line">   declare @ '/Volumes/data/lldb/svn/ToT/test/functionalities/watchpoint/watchpoint_commands/condition/main.cpp:12'</div><div class="line">(lldb) watch modify -c '(global==5)'</div><div class="line">(lldb) watch list</div><div class="line">Current watchpoints:</div><div class="line">Watchpoint 1: addr = 0x100001018 size = 4 state = enabled type = w</div><div class="line">    declare @ '/Volumes/data/lldb/svn/ToT/test/functionalities/watchpoint/watchpoint_commands/condition/main.cpp:12'</div><div class="line">    condition = '(global==5)'</div><div class="line">(lldb) c</div><div class="line">Process 15562 resuming</div><div class="line">(lldb) about to write to 'global'...</div><div class="line">Process 15562 stopped and was programmatically restarted.</div><div class="line">Process 15562 stopped and was programmatically restarted.</div><div class="line">Process 15562 stopped and was programmatically restarted.</div><div class="line">Process 15562 stopped and was programmatically restarted.</div><div class="line">Process 15562 stopped</div><div class="line">* thread #1: tid = 0x1c03, 0x0000000100000ef5 a.out`modify + 21 at main.cpp:16, stop reason = watchpoint 1</div><div class="line">    frame #0: 0x0000000100000ef5 a.out`modify + 21 at main.cpp:16</div><div class="line">   13</div><div class="line">   14      static void modify(int32_t &amp;var) &#123;</div><div class="line">   15          ++var;</div><div class="line">-&gt; 16      &#125;</div><div class="line">   17</div><div class="line">   18      int main(int argc, char** argv) &#123;</div><div class="line">   19          int local = 0;</div><div class="line">(lldb) bt</div><div class="line">* thread #1: tid = 0x1c03, 0x0000000100000ef5 a.out`modify + 21 at main.cpp:16, stop reason = watchpoint 1</div><div class="line">    frame #0: 0x0000000100000ef5 a.out`modify + 21 at main.cpp:16</div><div class="line">    frame #1: 0x0000000100000eac a.out`main + 108 at main.cpp:25</div><div class="line">    frame #2: 0x00007fff8ac9c7e1 libdyld.dylib`start + 1</div><div class="line">(lldb) frame var global</div><div class="line">(int32_t) global = 5</div><div class="line">(lldb) watch list -v</div><div class="line">Current watchpoints:</div><div class="line">Watchpoint 1: addr = 0x100001018 size = 4 state = enabled type = w</div><div class="line">    declare @ '/Volumes/data/lldb/svn/ToT/test/functionalities/watchpoint/watchpoint_commands/condition/main.cpp:12'</div><div class="line">    condition = '(global==5)'</div><div class="line">    hw_index = 0  hit_count = 5     ignore_count = 0</div><div class="line">(lldb)</div></pre></td></tr></table></figure>
+<p>可以使用<code>help watchpoint</code>来查看该命令的使用。</p>
+<h3 id="使用LLDB来启动程序"><a href="#使用LLDB来启动程序" class="headerlink" title="使用LLDB来启动程序"></a>使用LLDB来启动程序</h3><p>一旦指定了调试哪个程序，并为其设置了一些断点后，就可以开始运行程序了。我们可以使用以下命令来启动程序：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">(lldb) process launch</div><div class="line">(lldb) run</div><div class="line">(lldb) r</div></pre></td></tr></table></figure>
+<p>我们同样可以使用进程ID或进程名来连接一个已经运行的程序。当使用名称来连接一个程序时，<code>LLDB</code>支持<code>--waitfor</code>选项。这个选项告诉<code>LLDB</code>等待下一个名称为指定名称的程序出现，然后连接它。例如，下面3个命令都是用于连接<code>Sketch</code>程序(假定其进程ID为123)：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">(lldb) process attach --pid 123</div><div class="line">(lldb) process attach --name Sketch</div><div class="line">(lldb) process attach --name Sketch --waitfor</div></pre></td></tr></table></figure>
+<p>启动或连接程序后，进程可能由于某些原因而停止，如：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">(lldb) process attach -p <span class="number">12345</span></div><div class="line">Process <span class="number">46915</span> Attaching</div><div class="line">Process <span class="number">46915</span> Stopped</div><div class="line"><span class="number">1</span> of <span class="number">3</span> threads stopped with reasons:</div><div class="line">* thread <span class="meta">#1: tid = 0x2c03, 0x00007fff85cac76a, where = libSystem.B.dylib`__getdirentries64 + 10,</span></div><div class="line">stop reason = signal = SIGSTOP, queue = com.apple.main-thread</div></pre></td></tr></table></figure>
+<p>注意<code>“1 of 3 threads stopped with reasons:”</code>及其下面一行。在多线程环境下，在内核实际返回控制权给调试器前，可能会有多个线程命中同一个断点。在这种情况下，我们可以在停止信息中看到所有因此而停止的线程。</p>
+<h3 id="控制程序"><a href="#控制程序" class="headerlink" title="控制程序"></a>控制程序</h3><p>启动程序后，<code>LLDB</code>允许程序在到达断点前继续运行。<code>LLDB</code>中流程控制的命令都在<code>thread</code>命令层级中。如下所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">(lldb) thread <span class="keyword">continue</span></div><div class="line">Resuming thread <span class="number">0x2c03</span> <span class="keyword">in</span> process <span class="number">46915</span></div><div class="line">Resuming process <span class="number">46915</span></div></pre></td></tr></table></figure>
+<p>另外，还有以下命令：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">(lldb) thread step-<span class="keyword">in</span> <span class="comment">// The same as "step" or "s" in GDB.</span></div><div class="line">(lldb) thread step-over <span class="comment">// The same as "next" or "n" in GDB.</span></div><div class="line">(lldb) thread step-<span class="keyword">out</span> <span class="comment">// The same as "finish" or "f" in GDB.</span></div><div class="line">(lldb) thread step-inst <span class="comment">// The same as "stepi" / "si" in GDB.</span></div><div class="line">(lldb) thread step-over-inst <span class="comment">// The same as "nexti" / "ni" in GDB.</span></div></pre></td></tr></table></figure>
+<p><code>LLDB</code>还提供了<code>run until line</code>按步调度模式，如：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">lldb) thread until <span class="number">100</span></div></pre></td></tr></table></figure>
+<p>这条命令会运行线程，直到当前<code>frame</code>到达<code>100</code>行。如果代码在运行的过程中跳过了<code>100</code>行，则当<code>frame</code>被弹出栈后终止执行。</p>
+<h3 id="查看线程状态"><a href="#查看线程状态" class="headerlink" title="查看线程状态"></a>查看线程状态</h3><p>在进程停止后，LLDB会选择一个当前线程和线程中当前帧(frame)。很多检测状态的命令可以用于这个线程或帧。</p>
+<p>为了检测进程的当前状态，可以从以下命令开始：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">(lldb) thread list</div><div class="line">Process <span class="number">46915</span> state is Stopped</div><div class="line">* thread <span class="meta">#1: tid = 0x2c03, 0x00007fff85cac76a, where = libSystem.B.dylib`__getdirentries64 + 10, stop reason = signal = SIGSTOP, queue = com.apple.main-thread</span></div><div class="line">  thread <span class="meta">#2: tid = 0x2e03, 0x00007fff85cbb08a, where = libSystem.B.dylib`kevent + 10, queue = com.apple.libdispatch-manager</span></div><div class="line">  thread <span class="meta">#3: tid = 0x2f03, 0x00007fff85cbbeaa, where = libSystem.B.dylib`__workq_kernreturn + 10</span></div></pre></td></tr></table></figure>
+<p>星号(*)表示<code>thread #1</code>为当前线程。为了获取线程的跟踪栈，可以使用以下命令：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">(lldb) thread backtrace</div><div class="line"> </div><div class="line">thread <span class="meta">#1: tid = 0x2c03, stop reason = breakpoint 1.1, queue = com.apple.main-thread</span></div><div class="line"> frame <span class="meta">#0: 0x0000000100010d5b, where = Sketch`-[SKTGraphicView alignLeftEdges:] + 33 at /Projects/Sketch/SKTGraphicView.m:1405</span></div><div class="line"> frame <span class="meta">#1: 0x00007fff8602d152, where = AppKit`-[NSApplication sendAction:to:from:] + 95</span></div><div class="line"> frame <span class="meta">#2: 0x00007fff860516be, where = AppKit`-[NSMenuItem _corePerformAction] + 365</span></div><div class="line"> frame <span class="meta">#3: 0x00007fff86051428, where = AppKit`-[NSCarbonMenuImpl performActionWithHighlightingForItemAtIndex:] + 121</span></div><div class="line"> frame <span class="meta">#4: 0x00007fff860370c1, where = AppKit`-[NSMenu performKeyEquivalent:] + 272</span></div><div class="line"> frame <span class="meta">#5: 0x00007fff86035e69, where = AppKit`-[NSApplication _handleKeyEquivalent:] + 559</span></div><div class="line"> frame <span class="meta">#6: 0x00007fff85f06aa1, where = AppKit`-[NSApplication sendEvent:] + 3630</span></div><div class="line"> frame <span class="meta">#7: 0x00007fff85e9d922, where = AppKit`-[NSApplication run] + 474</span></div><div class="line"> frame <span class="meta">#8: 0x00007fff85e965f8, where = AppKit`NSApplicationMain + 364</span></div><div class="line"> frame <span class="meta">#9: 0x0000000100015ae3, where = Sketch`main + 33 at /Projects/Sketch/SKTMain.m:11</span></div><div class="line"> frame <span class="meta">#10: 0x0000000100000f20, where = Sketch`start + 52</span></div></pre></td></tr></table></figure>
+<p>如果想查看所有线程的调用栈，则可以使用以下命令：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">(lldb) thread backtrace all</div></pre></td></tr></table></figure>
+<h3 id="查看调用栈状态"><a href="#查看调用栈状态" class="headerlink" title="查看调用栈状态"></a>查看调用栈状态</h3><p>检查帧参数和本地变量的最简便的方式是使用<code>frame variable</code>命令：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">(lldb) frame variable</div><div class="line"><span class="keyword">self</span> = (<span class="built_in">SKTGraphicView</span> *) <span class="number">0x0000000100208b40</span></div><div class="line">_cmd = (<span class="keyword">struct</span> objc_selector *) <span class="number">0x000000010001bae1</span></div><div class="line">sender = (<span class="keyword">id</span>) <span class="number">0x00000001001264e0</span></div><div class="line">selection = (<span class="built_in">NSArray</span> *) <span class="number">0x00000001001264e0</span></div><div class="line">i = (<span class="built_in">NSUInteger</span>) <span class="number">0x00000001001264e0</span></div><div class="line">c = (<span class="built_in">NSUInteger</span>) <span class="number">0x00000001001253b0</span></div></pre></td></tr></table></figure>
+<p>如果没有指定任何变量名，则会显示所有参数和本地变量。如果指定参数名或变量名，则只打印指定的值。如：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">(lldb) frame variable <span class="keyword">self</span></div><div class="line">(<span class="built_in">SKTGraphicView</span> *) <span class="keyword">self</span> = <span class="number">0x0000000100208b40</span></div></pre></td></tr></table></figure>
+<p><code>frame variable</code>命令不是一个完全的表达式解析器，但它支持一些简单的操作符，如<code>&amp;,*,-&gt;,[]</code>。这个数组括号可用于指针，以将指针作为数组处理。如下所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">(lldb) frame variable *<span class="keyword">self</span></div><div class="line">(<span class="built_in">SKTGraphicView</span> *) <span class="keyword">self</span> = <span class="number">0x0000000100208b40</span></div><div class="line">(<span class="built_in">NSView</span>) <span class="built_in">NSView</span> = &#123;</div><div class="line">(<span class="built_in">NSResponder</span>) <span class="built_in">NSResponder</span> = &#123;</div><div class="line">...</div><div class="line"> </div><div class="line">(lldb) frame variable &amp;<span class="keyword">self</span></div><div class="line">(<span class="built_in">SKTGraphicView</span> **) &amp;<span class="keyword">self</span> = <span class="number">0x0000000100304ab</span></div><div class="line"> </div><div class="line">(lldb) frame variable argv[<span class="number">0</span>]</div><div class="line">(<span class="keyword">char</span> <span class="keyword">const</span> *) argv[<span class="number">0</span>] = <span class="number">0x00007fff5fbffaf8</span> <span class="string">"/Projects/Sketch/build/Debug/Sketch.app/Contents/MacOS/Sketch"</span></div></pre></td></tr></table></figure>
+<p><code>frame variable</code>命令会在变量上执行”对象打印”操作。目前，<code>LLDB</code>只支持<code>Objective-C</code>打印，使用的是对象的<code>description</code>方法。</p>
+<p>如果想查看另外一帧，可以使用<code>frame select</code>命令，如下所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">(lldb) frame select <span class="number">9</span></div><div class="line">frame <span class="meta">#9: 0x0000000100015ae3, where = Sketch`function1 + 33 at /Projects/Sketch/SKTFunctions.m:11</span></div></pre></td></tr></table></figure>
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p>以上所介绍的命令可以让我们在终端中直接调试程序。当然，很多命令也可以在<code>Xcode</code>中直接使用。这些命令可以让我们了解程序运行的状态，当然有些状态可以在<code>Xcode</code>中了解到。建议在调试过程中，可以多使用这些命令。</p>
+<p>如果想了解这一过程中使用的各种命令，可以查看<a href="https://developer.apple.com/library/mac/documentation/IDEs/Conceptual/gdb_to_lldb_transition_guide/document/lldb-command-examples.html#//apple_ref/doc/uid/TP40012917-CH3-SW5" target="_blank" rel="external">苹果的官方文档</a>。</p>
+<h2 id="在Xcode中调试程序"><a href="#在Xcode中调试程序" class="headerlink" title="在Xcode中调试程序"></a>在Xcode中调试程序</h2><p>对于我们日常的开发工作来说，更多的时候是在<code>Xcode</code>中进行调试工作。因此上面所描述的流程，其实<code>Xcode</code>已经帮我们完成了大部分的工作，而且很多东西也可以在<code>Xcode</code>里面看到。因此，我们可以把精力都集中在代码层面上。</p>
+<p>在<a href="https://developer.apple.com/library/mac/documentation/IDEs/Conceptual/gdb_to_lldb_transition_guide/document/lldb-command-examples.html#//apple_ref/doc/uid/TP40012917-CH3-SW5" target="_blank" rel="external">苹果的官方文档</a>中列出了我们在调试中能用到的一些命令，我们在这重点讲一些常用的命令。</p>
+<h3 id="打印"><a href="#打印" class="headerlink" title="打印"></a>打印</h3><p>打印变量的值可以使用<code>print</code>命令，该命令如果打印的是简单类型，则会列出简单类型的类型和值。如果是对象，还会打印出对象指针地址，如下所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">(lldb) print a</div><div class="line">(<span class="built_in">NSInteger</span>) $<span class="number">0</span> = <span class="number">0</span></div><div class="line">(lldb) print b</div><div class="line">(<span class="built_in">NSInteger</span>) $<span class="number">1</span> = <span class="number">0</span></div><div class="line">(lldb) print str</div><div class="line">(<span class="built_in">NSString</span> *) $<span class="number">2</span> = <span class="number">0x0000000100001048</span> <span class="string">@"abc"</span></div><div class="line">(lldb) print url</div><div class="line">(<span class="built_in">NSURL</span> *) $<span class="number">3</span> = <span class="number">0x0000000100206cc0</span> <span class="string">@"abc"</span></div></pre></td></tr></table></figure>
+<p>在输出结果中我们还能看到类似于$0,$1这样的符号，我们可以将其看作是指向对象的一个引用，我们在控制面板中可以直接使用这个符号来操作对应的对象，这些东西存在于<code>LLDB</code>的全名空间中，目的是为了辅助调试。如下所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">(lldb) exp $<span class="number">0</span> = <span class="number">100</span></div><div class="line">(<span class="built_in">NSInteger</span>) $<span class="number">9</span> = <span class="number">100</span></div><div class="line">(lldb) p a</div><div class="line">(<span class="built_in">NSInteger</span>) $<span class="number">10</span> = <span class="number">100</span></div></pre></td></tr></table></figure>
+<p>另外$后面的数值是递增的，每打印一个与对象相关的命令，这个值都会加1。</p>
+<p>上面的<code>print</code>命令会打印出对象的很多信息，如果我们只想查看对象的值的信息，则可以使用<code>po</code>(<code>print object</code>的缩写)命令，如下所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">(lldb) po str</div><div class="line">abc</div></pre></td></tr></table></figure>
+<p>当然，<code>po</code>命令是<code>&quot;exp -O --&quot;</code>命令的别名，使用<code>&quot;exp -O --&quot;</code>能达到同样的效果。</p>
+<p>对于简单类型，我们还可以为其指定不同的打印格式，其命令格式是<code>print/</code>，如下所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">(lldb) p/x a</div><div class="line">(<span class="built_in">NSInteger</span>) $<span class="number">13</span> = <span class="number">0x0000000000000064</span></div></pre></td></tr></table></figure>
+<p>格式的完整清单可以参考<a href="https://sourceware.org/gdb/onlinedocs/gdb/Output-Formats.html" target="_blank" rel="external">Output Formats</a>。</p>
+<h3 id="expression"><a href="#expression" class="headerlink" title="expression"></a>expression</h3><p>在开发中，我们经常会遇到这样一种情况：我们设置一个视图的背景颜色，运行后发现颜色不好看。嗯，好吧，在代码里面修改一下，再编译运行一下，嗯，还是不好看，然后再修改吧～～这样无形中浪费了我们大把的时间。在这种情况下，<code>expression</code>命令强大的功能就能体现出来了，它不仅会改变调试器中的值，还改变了程序中的实际值。我们先来看看实际效果，如下所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">(lldb) exp a = <span class="number">10</span></div><div class="line">(<span class="built_in">NSInteger</span>) $<span class="number">0</span> = <span class="number">10</span></div><div class="line">(lldb) exp b = <span class="number">100</span></div><div class="line">(<span class="built_in">NSInteger</span>) $<span class="number">1</span> = <span class="number">100</span></div><div class="line"><span class="number">2015</span><span class="number">-01</span><span class="number">-25</span> <span class="number">14</span>:<span class="number">00</span>:<span class="number">41.313</span> test[<span class="number">18064</span>:<span class="number">71466</span>] a + b = <span class="number">110</span>, abc</div></pre></td></tr></table></figure>
+<p><code>expression</code>命令的功能不仅于此，正如上面的<code>po</code>命令，其实际也是<code>&quot;expression -O --&quot;</code>命令的别名。更详细使用可以参考<a href="https://developer.apple.com/library/mac/documentation/IDEs/Conceptual/gdb_to_lldb_transition_guide/document/lldb-command-examples.html#//apple_ref/doc/uid/TP40012917-CH3-SW5" target="_blank" rel="external">Evaluating Expressions</a>。</p>
+<h3 id="image"><a href="#image" class="headerlink" title="image"></a>image</h3><p><code>image</code>命令的用法也挺多，首先可以用它来查看工程中使用的库，如下所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">(lldb) image list</div><div class="line">[  <span class="number">0</span>] <span class="number">432</span>A6EBF-B9D2<span class="number">-3850</span>-BCB2<span class="number">-821</span>B9E62B1E0 <span class="number">0x0000000100000000</span> /Users<span class="comment">/**/</span>Library/Developer/Xcode/DerivedData/test-byjqwkhxixddxudlnvqhrfughkra/Build/Products/Debug/test </div><div class="line">[  <span class="number">1</span>] <span class="number">65</span>DCCB06<span class="number">-339</span>C<span class="number">-3E25</span><span class="number">-9702</span><span class="number">-600</span>A28291D0E <span class="number">0x00007fff5fc00000</span> /usr/lib/dyld </div><div class="line">[  <span class="number">2</span>] E3746EDD-DFB1<span class="number">-3</span>ECB<span class="number">-88</span>ED-A91AC0EF3AAA <span class="number">0x00007fff8d324000</span> /System/Library/Frameworks/Foundation.framework/Versions/C/Foundation </div><div class="line">[  <span class="number">3</span>] <span class="number">759E155</span>D-BC42<span class="number">-3</span>D4E<span class="number">-869</span>B<span class="number">-6</span>F57D477177C <span class="number">0x00007fff8869f000</span> /usr/lib/libobjc.A.dylib </div><div class="line">[  <span class="number">4</span>] <span class="number">5</span>C161F1A<span class="number">-93</span>BA<span class="number">-3221</span>-A31D-F86222005B1B <span class="number">0x00007fff8c75c000</span> /usr/lib/libSystem.B.dylib </div><div class="line">[  <span class="number">5</span>] CBD1591C<span class="number">-405E-376</span>E<span class="number">-87E9</span>-B264610EBF49 <span class="number">0x00007fff8df0d000</span> /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation </div><div class="line">[  <span class="number">6</span>] A260789B-D4D8<span class="number">-316</span>A<span class="number">-9490</span><span class="number">-254767</span>B8A5F1 <span class="number">0x00007fff8de36000</span> /usr/lib/libauto.dylib </div><div class="line">......</div></pre></td></tr></table></figure>
+<p>我们还可以用它来查找可执行文件或共享库的原始地址，这一点还是很有用的，当我们的程序崩溃时，我们可以使用这条命令来查找崩溃所在的具体位置，如下所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">NSArray</span> *array = @[@<span class="number">1</span>, @<span class="number">2</span>];</div><div class="line"><span class="built_in">NSLog</span>(<span class="string">@"item 3: %@"</span>, array[<span class="number">2</span>]);</div></pre></td></tr></table></figure>
+<p>这段代码在运行后会抛出如下异常：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">2015-01-25 14:12:01.007 test[18122:76474] *** Terminating app due to uncaught exception 'NSRangeException', reason: '*** -[__NSArrayI objectAtIndex:]: index 2 beyond bounds [0 .. 1]'</div><div class="line">*** First throw call stack:</div><div class="line">(</div><div class="line">	0   CoreFoundation                      0x00007fff8e06f66c __exceptionPreprocess + 172</div><div class="line">	1   libobjc.A.dylib                     0x00007fff886ad76e objc_exception_throw + 43</div><div class="line">	2   CoreFoundation                      0x00007fff8df487de -[__NSArrayI objectAtIndex:] + 190</div><div class="line">	3   test                                0x0000000100000de0 main + 384</div><div class="line">	4   libdyld.dylib                       0x00007fff8f1b65c9 start + 1</div><div class="line">)</div><div class="line">libc++abi.dylib: terminating with uncaught exception of type NSException</div></pre></td></tr></table></figure>
+<p>根据以上信息，我们可以判断崩溃位置是在<code>main.m</code>文件中，要想知道具体在哪一行，可以使用以下命令：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">(lldb) image lookup --address <span class="number">0x0000000100000de0</span></div><div class="line">      Address: test[<span class="number">0x0000000100000de0</span>] (test.__TEXT.__text + <span class="number">384</span>)</div><div class="line">      Summary: test`main + <span class="number">384</span> at main.m:<span class="number">23</span></div></pre></td></tr></table></figure>
+<p>可以看到，最后定位到了<code>main.m</code>文件的第<code>23</code>行，正是我们代码所在的位置。</p>
+<p>我们还可以使用<code>image lookup</code>命令来查看具体的类型，如下所示：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div></pre></td><td class="code"><pre><div class="line">(lldb) image lookup --type NSURL</div><div class="line">Best match found in /Users/**/Library/Developer/Xcode/DerivedData/test-byjqwkhxixddxudlnvqhrfughkra/Build/Products/Debug/test:</div><div class="line">id = &#123;0x100000157&#125;, name = "NSURL", byte-size = 40, decl = NSURL.h:17, clang_type = "@interface NSURL : NSObject&#123;</div><div class="line">    NSString * _urlString;</div><div class="line">    NSURL * _baseURL;</div><div class="line">    void * _clients;</div><div class="line">    void * _reserved;</div><div class="line">&#125;</div><div class="line">@property ( readonly,getter = absoluteString,setter = &lt;null selector&gt;,nonatomic ) NSString * absoluteString;</div><div class="line">@property ( readonly,getter = relativeString,setter = &lt;null selector&gt;,nonatomic ) NSString * relativeString;</div><div class="line">@property ( readonly,getter = baseURL,setter = &lt;null selector&gt;,nonatomic ) NSURL * baseURL;</div><div class="line">@property ( readonly,getter = absoluteURL,setter = &lt;null selector&gt;,nonatomic ) NSURL * absoluteURL;</div><div class="line">@property ( readonly,getter = scheme,setter = &lt;null selector&gt;,nonatomic ) NSString * scheme;</div><div class="line">@property ( readonly,getter = resourceSpecifier,setter = &lt;null selector&gt;,nonatomic ) NSString * resourceSpecifier;</div><div class="line">@property ( readonly,getter = host,setter = &lt;null selector&gt;,nonatomic ) NSString * host;</div><div class="line">@property ( readonly,getter = port,setter = &lt;null selector&gt;,nonatomic ) NSNumber * port;</div><div class="line">@property ( readonly,getter = user,setter = &lt;null selector&gt;,nonatomic ) NSString * user;</div><div class="line">@property ( readonly,getter = password,setter = &lt;null selector&gt;,nonatomic ) NSString * password;</div><div class="line">@property ( readonly,getter = path,setter = &lt;null selector&gt;,nonatomic ) NSString * path;</div><div class="line">@property ( readonly,getter = fragment,setter = &lt;null selector&gt;,nonatomic ) NSString * fragment;</div><div class="line">@property ( readonly,getter = parameterString,setter = &lt;null selector&gt;,nonatomic ) NSString * parameterString;</div><div class="line">@property ( readonly,getter = query,setter = &lt;null selector&gt;,nonatomic ) NSString * query;</div><div class="line">@property ( readonly,getter = relativePath,setter = &lt;null selector&gt;,nonatomic ) NSString * relativePath;</div><div class="line">@property ( readonly,getter = fileSystemRepresentation,setter = &lt;null selector&gt; ) const char * fileSystemRepresentation;</div><div class="line">@property ( readonly,getter = isFileURL,setter = &lt;null selector&gt;,readwrite ) BOOL fileURL;</div><div class="line">@property ( readonly,getter = standardizedURL,setter = &lt;null selector&gt;,nonatomic ) NSURL * standardizedURL;</div><div class="line">@property ( readonly,getter = filePathURL,setter = &lt;null selector&gt;,nonatomic ) NSURL * filePathURL;</div><div class="line">@end"</div></pre></td></tr></table></figure>
+<p>可以看到，输出结果中列出了<code>NSURL</code>的一些成员变量及属性信息。</p>
+<p><code>image</code>命令还有许多其它功能，具体可以参考<a href="https://developer.apple.com/library/mac/documentation/IDEs/Conceptual/gdb_to_lldb_transition_guide/document/lldb-command-examples.html#//apple_ref/doc/uid/TP40012917-CH3-SW5" target="_blank" rel="external">Executable and Shared Library Query Commands</a>。</p>
+<h3 id="流程控制"><a href="#流程控制" class="headerlink" title="流程控制"></a>流程控制</h3><p>流程控制的命令实际上我们在上一小节已经讲过了，在<code>Xcode</code>的控制面板中同样可以使用这些命令，在此不在重复。</p>
+<h2 id="命令别名及帮助系统"><a href="#命令别名及帮助系统" class="headerlink" title="命令别名及帮助系统"></a>命令别名及帮助系统</h2><p><code>LLDB</code>有两个非常有用的特性，即命令别名及帮助。</p>
+<h3 id="命令别名"><a href="#命令别名" class="headerlink" title="命令别名"></a>命令别名</h3><p>我们可以使用LLDB的别名机制来为常用的命令创建一个别名，以方便我们的使用，如下命令：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">(lldb) breakpoint set --file foo.c --line <span class="number">12</span></div></pre></td></tr></table></figure>
+<p>如果在我们的调试中需要经常用到这条命令，则每次输入这么一长串的字符一定会很让人抓狂。此时，我们就可以为这条命令创建一个别名，如下所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">(lldb) command alias bfl breakpoint set -f %<span class="number">1</span> -l %<span class="number">2</span></div></pre></td></tr></table></figure>
+<p>这样，我们只需要按如下方式来使用它即可：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">(lldb) bfl foo.c <span class="number">12</span></div></pre></td></tr></table></figure>
+<p>是不是简单多了？</p>
+<p>我们可以自由地创建<code>LLDB</code>命令的别名集合。<code>LLDB</code>在启动时会读取<code>~/.lldbinit</code>文件。这个文件中存储了command alias命令创建的别名。<code>LLDB</code>帮助系统会读取这个初始化文件并会列出这些别名，以让我们了解自己所设置的别名。我们可以使用<code>&quot;help -a&quot;</code>命令并在输出的后面来查看这边别名，其以下面这行开始：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">...</div><div class="line">The following is a list of your current command abbreviations (see 'help command alias' for more info): ...</div></pre></td></tr></table></figure>
+<p>如果我们不喜欢已有命令的别名，则可以使用以下命令来取消这个别名：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">(lldb) command unalias b</div></pre></td></tr></table></figure>
+<h3 id="帮助系统"><a href="#帮助系统" class="headerlink" title="帮助系统"></a>帮助系统</h3><p><code>LLDB</code>帮助系统让我们可以了解<code>LLDB</code>提供了哪些功能，并可以查看<code>LLDB</code>命令结构的详细信息。熟悉帮助系统可以让我们访问帮助系统中中命令文档。</p>
+<p>我们可以简单地调用<code>help</code>命令来列出<code>LLDB</code>所有的顶层命令。如下所示：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">(lldb) help</div><div class="line">The following is a list of built-in, permanent debugger commands:</div><div class="line"> </div><div class="line">_regexp-attach    -- Attach to a process id if in decimal, otherwise treat the</div><div class="line">                     argument as a process name to attach to.</div><div class="line">_regexp-break     -- Set a breakpoint using a regular expression to specify the</div><div class="line">                     location, where &lt;linenum&gt; is in decimal and &lt;address&gt; is</div><div class="line">                     in hex.</div><div class="line">_regexp-bt        -- Show a backtrace.  An optional argument is accepted; if</div><div class="line">                     that argument is a number, it specifies the number of</div><div class="line">                     frames to display.  If that argument is 'all', full</div><div class="line">                     backtraces of all threads are displayed.</div><div class="line"> … and so forth …</div></pre></td></tr></table></figure>
+<p>如果<code>help</code>后面跟着某个特定的命令，则会列出该命令相关的所有信息，我们以<code>breakpoint set</code>为例，输出信息如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">(lldb) help breakpoint set</div><div class="line">     Sets a breakpoint or set of breakpoints <span class="keyword">in</span> the executable.</div><div class="line">     </div><div class="line">Syntax: breakpoint set &lt;cmd-options&gt;</div><div class="line"></div><div class="line">Command Options Usage:</div><div class="line">  breakpoint set [-Ho] -l &lt;linenum&gt; [-s &lt;shlib-name&gt;] [-i &lt;count&gt;] [-c &lt;expr&gt;] [-x &lt;thread-index&gt;] [-t &lt;thread-<span class="keyword">id</span>&gt;] [-T &lt;thread-name&gt;] [-q &lt;queue-name&gt;] [-f &lt;filename&gt;] [-K &lt;boolean&gt;]</div><div class="line">  breakpoint set [-Ho] -a &lt;address-expression&gt; [-s &lt;shlib-name&gt;] [-i &lt;count&gt;] [-c &lt;expr&gt;] [-x &lt;thread-index&gt;] [-t &lt;thread-<span class="keyword">id</span>&gt;] [-T &lt;thread-name&gt;] [-q &lt;queue-name&gt;]</div><div class="line">  breakpoint set [-Ho] -n &lt;function-name&gt; [-s &lt;shlib-name&gt;] [-i &lt;count&gt;] [-c &lt;expr&gt;] [-x &lt;thread-index&gt;] [-t &lt;thread-<span class="keyword">id</span>&gt;] [-T &lt;thread-name&gt;] [-q &lt;queue-name&gt;] [-f &lt;filename&gt;] [-K &lt;boolean&gt;] [-L &lt;language&gt;]</div><div class="line">  breakpoint set [-Ho] -F &lt;fullname&gt; [-s &lt;shlib-name&gt;] [-i &lt;count&gt;] [-c &lt;expr&gt;] [-x &lt;thread-index&gt;] [-t &lt;thread-<span class="keyword">id</span>&gt;] [-T &lt;thread-name&gt;] [-q &lt;queue-name&gt;] [-f &lt;filename&gt;] [-K &lt;boolean&gt;]</div><div class="line">  </div><div class="line"> … and so forth …</div></pre></td></tr></table></figure>
+<p>还有一种更直接的方式来查看<code>LLDB</code>有哪些功能，即使用<code>apropos</code>命令：它会根据关键字来搜索<code>LLDB</code>帮助文档，并为每个命令选取一个帮助字符串，我们以<code>apropos file</code>为例，其输出如下：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">(lldb) apropos file</div><div class="line">The following commands may relate to 'file':</div><div class="line">…</div><div class="line">log enable                     -- Enable logging for a single log channel.</div><div class="line">memory read                    -- Read from the memory of the process being</div><div class="line">                                  debugged.</div><div class="line">memory write                   -- Write to the memory of the process being</div><div class="line">                                  debugged.</div><div class="line">platform process launch        -- Launch a new process on a remote platform.</div><div class="line">platform select                -- Create a platform if needed and select it as</div><div class="line">                                  the current platform.</div><div class="line">plugin load                    -- Import a dylib that implements an LLDB</div><div class="line">                                  plugin.</div><div class="line">process launch                 -- Launch the executable in the debugger.</div><div class="line">process load                   -- Load a shared library into the current</div><div class="line">                                  process.</div><div class="line">source                         -- A set of commands for accessing source file</div><div class="line">                                  information</div><div class="line">… and so forth …</div></pre></td></tr></table></figure>
+<p>我们还可以使用<code>help</code>来了解一个命令别名的构成。如：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">(lldb) help b</div><div class="line">…</div><div class="line">'b' is an abbreviation for '_regexp-break'</div></pre></td></tr></table></figure>
+<p><code>help</code>命令的另一个特性是可以查看某个具体参数的使用，我们以<code>&quot;break command add&quot;</code>命令为例：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">(lldb) help break command add</div><div class="line">Add a set of commands to a breakpoint, to be executed whenever the breakpoint is hit.</div><div class="line"> </div><div class="line">Syntax: breakpoint command add &lt;cmd-options&gt; &lt;breakpt-id&gt;</div><div class="line">etc...</div></pre></td></tr></table></figure>
+<p>如果想了解以上输出的参数<code>&lt;breakpt-id&gt;</code>的作用，我们可以在<code>help</code>后面直接指定这个参数(将其放在尖括号内)来查询它的详细信息，如下所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">(lldb) help &lt;breakpt-<span class="keyword">id</span>&gt;</div><div class="line"> </div><div class="line">&lt;breakpt-<span class="keyword">id</span>&gt; -- Breakpoint IDs consist major and minor numbers; the major</div><div class="line">etc...</div></pre></td></tr></table></figure>
+<p>帮助系统能让我们快速地了解一个<code>LLDB</code>命令的使用方法。经常使用它，可以让我们更快地熟悉<code>LLDB</code>的各项功能，所以建议多使用它。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p><code>LLDB</code>带给我们强大的调试功能，在调试过程中充分地利用它可以帮助我们极大地提高调试效率。我们可以不用写那么多的<code>NSLog</code>来打印一大堆的日志。所以建议在日常工作中多去使用它。当然，上面的命令只是<code>LLDB</code>的冰山一角，更多的使用还需要大家自己去发掘，在此只是抛砖引玉，做了一些整理。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ol>
+<li><a href="http://lldb.llvm.org/tutorial.html" target="_blank" rel="external">The LLDB Debugger</a></li>
+<li><a href="https://developer.apple.com/library/mac/documentation/IDEs/Conceptual/gdb_to_lldb_transition_guide/document/Introduction.html" target="_blank" rel="external">LLDB Quick Start Guide</a></li>
+<li><a href="http://www.cocoachina.com/ios/20141219/10709.html" target="_blank" rel="external">与调试器共舞 - LLDB 的华尔兹</a></li>
+<li><a href="http://www.starfelix.com/blog/2014/03/17/lldbdiao-shi-ming-ling-chu-tan/" target="_blank" rel="external">LLDB调试命令初探</a></li>
+<li><a href="http://www.cocoachina.com/ios/20140530/8619.html" target="_blank" rel="external">NSLog效率低下的原因及尝试lldb断点打印Log</a></li>
+</ol>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
                 <a class="post-title-link" href="/2015/01/11/sourcecode-mantle/" itemprop="url">
                   Mantle实现分析
                 </a>
@@ -1977,254 +2256,6 @@
 
 
     
-      
-
-  
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/2014/12/05/quartz2d-6/" itemprop="url">
-                  Quartz 2D编程指南之六：模式(Pattern)
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            <span class="post-meta-item-icon">
-              <i class="fa fa-calendar-o"></i>
-            </span>
-            <span class="post-meta-item-text">发表于</span>
-            <time itemprop="dateCreated" datetime="2014-12-05T16:35:04+08:00" content="2014-12-05">
-              2014-12-05
-            </time>
-          </span>
-
-          
-            <span class="post-category" >
-              &nbsp; | &nbsp;
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-              
-                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
-                  <a href="/categories/translate/" itemprop="url" rel="index">
-                    <span itemprop="name">翻译</span>
-                  </a>
-                </span>
-
-                
-                
-
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-
-          
-          
-
-          
-        </div>
-      </header>
-    
-
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>模式(Pattern)是绘制操作的一个序列，这些绘制操作可以重复地绘制到一个图形上下文上。我们可以像使用颜色一样使用这些模式。当我们使用pattern来绘制时，Quartz将Page分割成模式单元格的集合，其中每个单元格的大小不是模式图片的大小，并使用我们提供的回调函数来绘制这些单元格。图6-1演示了一个绘制到window图形上下文的模式。</p>
-<p><strong>Figure 6-1  A pattern drawn to a window</strong></p>
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/patterned_window.gif" alt="image"></p>
-<h2 id="模式的骨架-Anatomy"><a href="#模式的骨架-Anatomy" class="headerlink" title="模式的骨架(Anatomy)"></a>模式的骨架(Anatomy)</h2><p>模式单元格是模式的基础组件。图6-1中的模式的单元格如图6-2所示。其中黑色边框不是模式单元格的一部分；之所以画出来是为了显示模式单元格的边界。</p>
-<p><strong>Figure 6-2  A pattern cell</strong></p>
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_cell_wborder.gif" alt="image"></p>
-<p>该模式单元格的大小包含四个带颜色的矩形以及这些矩形上部及右侧的白色区域，如图6-3所示。每个模式单元格的黑色边框不是单元格的一部分；画出来只是为是标明单元格的边界。当我们创建一个模式单元格时，我们需要定义单元格的边界并在这个范围内进行绘制。</p>
-<p><strong>Figure 6-3  Pattern cells with black rectangles drawn to show the bounds of each cell</strong></p>
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_parts_1.gif" alt="image"></p>
-<p>我们可以指定水平和竖直方向上两个单元格之间的间距。图6-3所绘制的单元格是相互紧挨着的。而图6-4在两个方向上都指定了单元格之间的间距。我们可以为两个方向指定不同的间距。我们亦可以指定间距为负数，这样单元格便会重叠。</p>
-<p><strong>Figure 6-4  Spacing between pattern cells</strong></p>
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_part_2.gif" alt="image"></p>
-<p>当我们绘制一个模式单元格时，Quartz使用<strong>模式空间(pattern space)</strong>作为坐标系统。模式空间是一个抽象空间，它会使用我们创建模式时指定的变换矩阵(pattern matrix)来映射到默认用户空间。</p>
-<blockquote>
-<p>注意：模式空间与用户空间是分开的。未转换的模式空间映射到基础的用户空间(未转换的)，而不管当前转换矩阵(CTM)。当我们在模式空间上应用转换时，Quartz只将转换应用于模式空间。</p>
-</blockquote>
-<p>如果我们不想要Quartz来转换模式单元格，我们可以指定单位矩阵。然而，我们可以使用转换矩阵来达到有趣的效果。图6-5显示了缩放6-2中的模式单元格的效果。图6-6旋转了这些单元格。图6-7则平移了这些单元格。    </p>
-<p><strong>Figure 6-5  A scaled pattern cell</strong></p>
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_halfbyonehalf.gif" alt="image"></p>
-<p><strong>Figure 6-6  A rotated pattern cell</strong></p>
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_2PIdiv6.gif" alt="image"><br><strong>Figure 6-7  A translated pattern cell</strong></p>
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_5_5_translate.gif" alt="image"></p>
-<h2 id="着色模式-Colored-Patterns-和模板模式-Stencil-Patterns"><a href="#着色模式-Colored-Patterns-和模板模式-Stencil-Patterns" class="headerlink" title="着色模式(Colored Patterns)和模板模式(Stencil Patterns)"></a>着色模式(Colored Patterns)和模板模式(Stencil Patterns)</h2><p>着色模式有与其相关的固有颜色。如果修改了创建模式单元格的颜色，则模式也便失去了意义。图6-8中显示的苏格兰格子就是着色模式的一个例子。着色模式中的颜色是模式单元格创建流程的一部分，而不是绘制流程的一部分。</p>
-<p><strong>Figure 6-8  A colored pattern has inherent color</strong></p>
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/tartan.gif" alt="image"></p>
-<p>而其它模式只限定了形状，因此可以认为是模板模式(或者是非着色模式、甚至可以作为图像蒙板)。图6-9中展示的红色和黑色星星就是使用相同的模式单元格。单元格由一个五角星组成。当定义模式单元格时，没有与之相关的颜色。颜色值是在绘制过程中指定的，而不是创建过程的一部分。</p>
-<p><strong>Figure 6-9  A stencil pattern does not have inherent color</strong></p>
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/star_patterns.gif" alt="image"></p>
-<p>在Quartz 2D中，我们可以创建这两种模式。</p>
-<h2 id="平铺-Tiling"><a href="#平铺-Tiling" class="headerlink" title="平铺(Tiling)"></a>平铺(Tiling)</h2><p>平铺(Tiling)是将模式单元格绘制到页面(Page)的某个部分的过程。当Quartz将模式渲染到一个设备时，Quartz可能需要调整模式以适应设备空间。即，在用户空间定义的模式单元格在渲染到设备时可能无法精确匹配，这是由用户空间单元和设备像素之间的差异导致的。</p>
-<p>Quartz有三个平铺选项，以在必要时调整模式：</p>
-<ol>
-<li>没有失真(no distortion): 以细微调整模式单元格之间的间距为代价，但通常不超过一个设备像素。</li>
-<li>最小的失真的恒定间距：设定单元格之间的间距，以细微调整单元大小为代价，但通常不超过一个设备像素。</li>
-<li>恒定间距：设定单元格之间间距，以调整单元格大小为代价，以求尽快的平铺</li>
-</ol>
-<h2 id="模式如何工作"><a href="#模式如何工作" class="headerlink" title="模式如何工作"></a>模式如何工作</h2><p>模式操作类似于颜色，我们设置一个填充或描边(stroke)模式，然后调用绘制函数。Quartz使用我们设置的模式作为“涂料”。例如，如果我们要使用纯色绘制一个填充的的矩形，我们首先调用函数(如CGContextSetFillColor)来设置填充颜色。然后调用函数CGContextFillRect以使用我们指定的颜色来填充矩形。为了绘制一个模式，颜色调用函数CGContextSetFillPattern来设置指定的模式。绘制颜色和绘制模式的不同之处在于我们必须先定义一个模式。我们为函数CGContextSetFillPattern提供模式和颜色信息。我们将在下面的绘制着色模式和绘制模板模式章节看到如何创建、设置和绘制模式。</p>
-<p>这里有个例子说明Quartz在幕后是如何绘制一个模式的。当我们填充或描边一个模式时，Quartz会按照以下指令来绘制每一个模式单元格：</p>
-<ol>
-<li>保存图形状态</li>
-<li>将当前转换矩阵应用到原始的模式单元格上</li>
-<li>连接CTM与模式矩阵</li>
-<li>裁剪模式单元格的边界矩形</li>
-<li>调用绘制回调函数来绘制单元格</li>
-<li>恢复图形状态</li>
-</ol>
-<p>Quartz会执行所有平铺操作，重复绘制模式单元格到绘制空间，直到渲染满整个空间。我们可以填充和描边一个模式。模式单元格可以是指定的任何大小。如果我们想要看到模式，我们需要确保模式单元格与绘制空间匹配。例如，如果我们的模式单元格是8*10个单位的，而我们用这个模式来描边一个只有2个单位的直线，则这个模式单元格将会被裁剪。这种情况下，我们可能无法辨认出我们的模式。</p>
-<h2 id="绘制着色模式"><a href="#绘制着色模式" class="headerlink" title="绘制着色模式"></a>绘制着色模式</h2><p>绘制着色模式需要执行以下五步操作：</p>
-<ol>
-<li>写一个绘制着色模式单元格的回调函数</li>
-<li>设置着色模式的颜色空间</li>
-<li>设置着色模式的骨架(Anatomy)</li>
-<li>指定着色模式作为填充或描边模式</li>
-<li>使用着色模式绘制</li>
-</ol>
-<p>绘制模板模式也是类似这几步。两者之间的区别在于如何设置颜色信息。</p>
-<h3 id="写一个绘制着色模式单元格的回调函数"><a href="#写一个绘制着色模式单元格的回调函数" class="headerlink" title="写一个绘制着色模式单元格的回调函数"></a>写一个绘制着色模式单元格的回调函数</h3><p>一个模式单元格看起来是什么样的完全取决于我们。在这个例子中，代码清单6-1绘制了图6-2所示的模式单元格。</p>
-<p><strong>Listing 6-1  A drawing callback that draws a colored pattern cell</strong></p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">define</span> H_PATTERN_SIZE 16</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> V_PATTERN_SIZE 18</span></div><div class="line"> </div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">MyDrawColoredPattern</span> <span class="params">(<span class="keyword">void</span> *info, CGContextRef myContext)</span></span></div><div class="line">&#123;</div><div class="line">    CGFloat subunit = <span class="number">5</span>; </div><div class="line"> </div><div class="line"> 	CGSize size = &#123;subunit, subunit&#125;;</div><div class="line"> 	CGPoint point1 = &#123;<span class="number">0</span>,<span class="number">0</span>&#125;, point2 = &#123;subunit, subunit&#125;, point3 = &#123;<span class="number">0</span>,subunit&#125;, point4 = &#123;subunit,<span class="number">0</span>&#125;;</div><div class="line">    CGRect myRect1 = &#123;point1, size&#125;, myRect2 = &#123;point2, size&#125;, myRect3 = &#123;point3, size&#125;, myRect4 = &#123;point4, size&#125;;</div><div class="line">    </div><div class="line">    CGContextSetRGBFillColor (myContext, <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0.5</span>);</div><div class="line">    CGContextFillRect (myContext, myRect1);</div><div class="line">    CGContextSetRGBFillColor (myContext, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0.5</span>);</div><div class="line">    CGContextFillRect (myContext, myRect2);</div><div class="line">    CGContextSetRGBFillColor (myContext, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0.5</span>);</div><div class="line">    CGContextFillRect (myContext, myRect3);</div><div class="line">    CGContextSetRGBFillColor (myContext, <span class="number">.5</span>, <span class="number">0</span>, <span class="number">.5</span>, <span class="number">0.5</span>);</div><div class="line">    CGContextFillRect (myContext, myRect4);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>模式单元格绘制函数是类似于下面这种格式的一个回调函数</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">typedef</span> <span class="title">void</span> <span class="params">(*CGPatternDrawPatternCallback)</span> <span class="params">(</span></span></div><div class="line">                        <span class="keyword">void</span> *info,</div><div class="line">                        CGContextRef context</div><div class="line">);</div></pre></td></tr></table></figure>
-<p>我们可以随意命名我们的回调函数。代码清单6-1中命名为MyDrawColoredPattern。这个回调函数带有两个参数：</p>
-<ol>
-<li>info: 一个指向模式相关数据的指针。这个参数是可选的，可以传递NULL。传递给回调的数据与后面创建模式的数据是一样的。</li>
-<li>context: 绘制模式单元格的图形上下文</li>
-</ol>
-<p>代码清单6-1中绘制的模式单元格是随意的。以下是一些关于绘制代码的重要信息：</p>
-<ol>
-<li>需要声明模式大小。在绘制时我们需要记住模式大小。在这个例子中，大小是全局声明的，绘制函数没有具体提到大小，除了在注释中。然后，我们将模式大小指定给Quartz 2D。</li>
-<li>绘制函数后面是由CGPatternDrawPatternCallback回调函数类型定义定义的原型</li>
-<li>代码中执行的绘制设置了颜色，让其成为一个着色模式。</li>
-</ol>
-<h3 id="设置着色模式的颜色空间"><a href="#设置着色模式的颜色空间" class="headerlink" title="设置着色模式的颜色空间"></a>设置着色模式的颜色空间</h3><p>代码清单6-1中的代码使用颜色来绘制模式单元格。我们必须设置基本的模式颜色空间为NULL，以确保Quartz使用绘制路径指定的颜色来绘制，如代码清单6-2所示。</p>
-<p><strong>Listing 6-2  Creating a base pattern color space</strong></p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">CGColorSpaceRef patternSpace;</div><div class="line"> </div><div class="line"><span class="comment">// 创建模式颜色空间，并传递NULL作为参数</span></div><div class="line">patternSpace = CGColorSpaceCreatePattern (<span class="literal">NULL</span>);</div><div class="line">	</div><div class="line"><span class="comment">// 在模式颜色空间中设置填充颜色</span></div><div class="line">CGContextSetFillColorSpace (myContext, patternSpace);</div><div class="line">	</div><div class="line"><span class="comment">// 释放模式颜色空间</span></div><div class="line">CGColorSpaceRelease (patternSpace);</div></pre></td></tr></table></figure>
-<h3 id="设置着色模式的骨架"><a href="#设置着色模式的骨架" class="headerlink" title="设置着色模式的骨架"></a>设置着色模式的骨架</h3><p>一个模式的骨架基本信息保存在CGPattern对象中。我们调用CGPatternCreate函数来创建一个CGPattern对象，其原型如代码清单6-3所示：</p>
-<p><strong>Listing 6-3  The CGPatternCreate function prototype</strong></p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">CGPatternRef CGPatternCreate (  void *info,</div><div class="line">                                CGRect bounds,</div><div class="line">                                CGAffineTransform matrix,</div><div class="line">                                CGFloat xStep,</div><div class="line">                                CGFloat yStep,</div><div class="line">                                CGPatternTiling tiling,</div><div class="line">                                bool isColored,</div><div class="line">                                const CGPatternCallbacks *callbacks );</div></pre></td></tr></table></figure>
-<p>其中，</p>
-<ol>
-<li>info：是一个指针，指向我们要传递给绘制回调函数的数据</li>
-<li>bound：指定模式单元格的大小</li>
-<li>matrix：指定模式矩阵，它将模式坐标系统映射到图形上下文的默认坐标系统。如果希望两个坐标系统是一样的，则可以使用单位矩阵。</li>
-<li>xStep, yStep：指定单元格之间的水平和竖直间距。</li>
-<li>tiling：平铺模式，可以是kCGPatternTilingNoDistortion、kCGPatternTilingConstantSpacingMinimalDistortion、kCGPatternTilingConstantSpacing</li>
-<li>isColored：指定模式单元格是着色模式(true)还是模板模式(false)</li>
-<li>callbacks：是一个指向CGPatternCallbacks结构体的指针，则定义如下：</li>
-</ol>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">struct</span> CGPatternCallbacks</div><div class="line">&#123;</div><div class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> version;</div><div class="line">    CGPatternDrawPatternCallback drawPattern;</div><div class="line">    CGPatternReleaseInfoCallback releaseInfo;</div><div class="line">&#125;;</div></pre></td></tr></table></figure>
-<p>我们可以设置version为0。drawPattern是指向绘制回调的指针。releaseInfo是指向一个回调函数，该回调在释放CGPattern对象时被调用，以释放存储在我们传递给绘制回调的info参数中的数据。如果在这个参数中没有传递任何数据，则设置该域为NULL。</p>
-<h3 id="指定着色模式作为填充或描边模式"><a href="#指定着色模式作为填充或描边模式" class="headerlink" title="指定着色模式作为填充或描边模式"></a>指定着色模式作为填充或描边模式</h3><p>我们可以调用CGContextSetFillPattern或者CGContextSetStrokePattern函数来使用模式进行填充或描边。Quartz可以将模式用于任何填充或描边流程。</p>
-<p>这两个函数包含以下几个参数：</p>
-<ol>
-<li>图形上下文</li>
-<li>先前创建的CGPattern对象</li>
-<li>颜色组件的数组</li>
-</ol>
-<p>虽然着色模式提供了自己的颜色，我们仍然需要传递一个单一的alpha值来告诉Quartz在绘制时着色模式的透明度。alpha值的范围在0到1中。可以如以下代码来设置着色模式的透明度：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">CGFloat alpha = <span class="number">1</span>;</div><div class="line"> </div><div class="line">CGContextSetFillPattern (myContext, myPattern, &amp;alpha);</div></pre></td></tr></table></figure>
-<h3 id="使用颜色模式绘制"><a href="#使用颜色模式绘制" class="headerlink" title="使用颜色模式绘制"></a>使用颜色模式绘制</h3><p>在完成前面的步骤之后，我们就可以调用Quartz 2D函数来绘制了。我们的模式被当作“涂料”。例如，可以调用CGContextStrokePath, CGContextFillPath, CGContextFillRect或其它函数来绘制。</p>
-<h3 id="完整示例"><a href="#完整示例" class="headerlink" title="完整示例"></a>完整示例</h3><p>代码清单6-4包含一个绘制着色模式的函数。这个函数包含了前面讨论的所有步骤。</p>
-<p><strong>Listing 6-4  A function that paints a colored pattern</strong></p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">MyColoredPatternPainting</span> <span class="params">(CGContextRef myContext,</span></span></div><div class="line">                 CGRect rect)</div><div class="line">&#123;</div><div class="line">    CGPatternRef    pattern;</div><div class="line">    CGColorSpaceRef patternSpace;</div><div class="line">    CGFloat         alpha = <span class="number">1</span>,</div><div class="line">                    width, height;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">const</span>    CGPatternCallbacks callbacks = &#123;<span class="number">0</span>, </div><div class="line">                                        &amp;MyDrawPattern,</div><div class="line">                                        <span class="literal">NULL</span>&#125;;</div><div class="line"> </div><div class="line">    CGContextSaveGState (myContext);</div><div class="line">    patternSpace = CGColorSpaceCreatePattern (<span class="literal">NULL</span>);</div><div class="line">    CGContextSetFillColorSpace (myContext, patternSpace);</div><div class="line">    CGColorSpaceRelease (patternSpace);</div><div class="line"> </div><div class="line">    pattern = CGPatternCreate (<span class="literal">NULL</span>, </div><div class="line">                    CGRectMake (<span class="number">0</span>, <span class="number">0</span>, H_PSIZE, V_PSIZE),</div><div class="line">                    CGAffineTransformMake (<span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>),</div><div class="line">                    H_PATTERN_SIZE, </div><div class="line">                    V_PATTERN_SIZE, </div><div class="line">                    kCGPatternTilingConstantSpacing,</div><div class="line">                    <span class="literal">true</span>, </div><div class="line">                    &amp;callbacks);</div><div class="line"> </div><div class="line">    CGContextSetFillPattern (myContext, pattern, &amp;alpha);</div><div class="line">    CGPatternRelease (pattern);</div><div class="line">    CGContextFillRect (myContext, rect);</div><div class="line">    CGContextRestoreGState (myContext);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<h2 id="绘制模板模式"><a href="#绘制模板模式" class="headerlink" title="绘制模板模式"></a>绘制模板模式</h2><p>与绘制着色模式类似，绘制模板模式也有5个步骤：</p>
-<ol>
-<li>写一个绘制模板模式单元格的回调函数</li>
-<li>设置模板模式的颜色空间</li>
-<li>设置模板模式的骨架(Anatomy)</li>
-<li>指定模板模式作为填充或描边模式</li>
-<li>使用模板模式绘制</li>
-</ol>
-<p>绘制模板模式与绘制着色模式的区别在于设置颜色信息。</p>
-<h3 id="写一个绘制模板模式单元格的回调函数"><a href="#写一个绘制模板模式单元格的回调函数" class="headerlink" title="写一个绘制模板模式单元格的回调函数"></a>写一个绘制模板模式单元格的回调函数</h3><p>绘制模板模式单元格的回调与前面描述的绘制颜色模式单元格类似。不同的是绘制模式单元格回调不需要指定颜色值。图6-10中显示的模式单元格即没有从绘制回调中获取颜色。</p>
-<p><strong>Figure 6-10  A stencil pattern cell</strong></p>
-<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/star_stencil.gif" alt="image"></p>
-<p>代码清单6-5绘制了图6-10中的模式单元格。可以看到代码只是简单地创建并填充了一个路径，而没有设置颜色。</p>
-<p><strong>Listing 6-5  A drawing callback that draws a stencil pattern cell</strong></p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">define</span> PSIZE 16    <span class="comment">// size of the pattern cell</span></span></div><div class="line"> </div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">MyDrawStencilStar</span> <span class="params">(<span class="keyword">void</span> *info, CGContextRef myContext)</span></span></div><div class="line">&#123;</div><div class="line">    <span class="keyword">int</span> k;</div><div class="line">    <span class="keyword">double</span> r, theta;</div><div class="line"> </div><div class="line">    r = <span class="number">0.8</span> * PSIZE / <span class="number">2</span>;</div><div class="line">    theta = <span class="number">2</span> * M_PI * (<span class="number">2.0</span> / <span class="number">5.0</span>); <span class="comment">// 144 degrees</span></div><div class="line"> </div><div class="line">    CGContextTranslateCTM (myContext, PSIZE/<span class="number">2</span>, PSIZE/<span class="number">2</span>);</div><div class="line"> </div><div class="line">    CGContextMoveToPoint(myContext, <span class="number">0</span>, r);</div><div class="line">    <span class="keyword">for</span> (k = <span class="number">1</span>; k &lt; <span class="number">5</span>; k++) &#123;</div><div class="line">        CGContextAddLineToPoint (myContext,</div><div class="line">                    r * <span class="built_in">sin</span>(k * theta),</div><div class="line">                    r * <span class="built_in">cos</span>(k * theta));</div><div class="line">    &#125;</div><div class="line">    CGContextClosePath(myContext);</div><div class="line">    CGContextFillPath(myContext);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<h3 id="设置模板模式的颜色空间"><a href="#设置模板模式的颜色空间" class="headerlink" title="设置模板模式的颜色空间"></a>设置模板模式的颜色空间</h3><p>模板模式要求我们设置一个模式颜色空间用于Quartz的绘制，如代码清单6-6所示。</p>
-<p><strong>Listing 6-6  Code that creates a pattern color space for a stencil pattern</strong></p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line">CGPatternRef pattern;</div><div class="line">CGColorSpaceRef baseSpace;</div><div class="line">CGColorSpaceRef patternSpace;</div><div class="line"></div><div class="line"><span class="comment">// 创建一个通用RGB颜色空间。 </span></div><div class="line">baseSpace = CGColorSpaceCreateWithName (kCGColorSpaceGenericRGB);</div><div class="line">	</div><div class="line"><span class="comment">// 创建一个模式颜色空间。该颜色空间指定如何表示模式的颜色。后面要设置模式的颜色时，必须使用这个颜色空间来进行设置</span></div><div class="line">patternSpace = CGColorSpaceCreatePattern (baseSpace);</div><div class="line">	</div><div class="line"><span class="comment">// 设置颜色空间来在填充模式时使用</span></div><div class="line">CGContextSetFillColorSpace (myContext, patternSpace);</div><div class="line">	</div><div class="line"><span class="comment">// 释放模式颜色空间</span></div><div class="line">CGColorSpaceRelease(patternSpace);</div><div class="line">	</div><div class="line"><span class="comment">// 释放基础颜色空间</span></div><div class="line">CGColorSpaceRelease(baseSpace);</div></pre></td></tr></table></figure>
-<h3 id="设置模板模式的骨架-Anatomy"><a href="#设置模板模式的骨架-Anatomy" class="headerlink" title="设置模板模式的骨架(Anatomy)"></a>设置模板模式的骨架(Anatomy)</h3><p>这一步与上面设置着色模式是一样的，不同的是isColored参数需要传递false。</p>
-<h3 id="指定模板模式作为填充或描边模式"><a href="#指定模板模式作为填充或描边模式" class="headerlink" title="指定模板模式作为填充或描边模式"></a>指定模板模式作为填充或描边模式</h3><p>我们可以调用CGContextSetFillPattern或者CGContextSetStrokePattern函数来使用模式进行填充或描边。Quartz可以将模式用于任何填充或描边流程。</p>
-<p>这两个函数包含以下几个参数：</p>
-<ol>
-<li>图形上下文</li>
-<li>先前创建的CGPattern对象</li>
-<li>颜色组件的数组</li>
-</ol>
-<p>由于模板模式在绘制回调中不提供颜色值，所以我们必须传递一个颜色给填充或描边函数来告诉Quartz使用什么颜色。代码清单6-7显示了为模板模式设置颜色的例子。</p>
-<p><strong>Listing 6-7  Code that sets opacity for a colored pattern</strong></p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">static</span> <span class="keyword">const</span> CGFloat color[<span class="number">4</span>] = &#123; <span class="number">0</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">0.5</span> &#125;; <span class="comment">//cyan, 50% transparent</span></div><div class="line">CGContextSetFillPattern (myContext, myPattern, color);</div></pre></td></tr></table></figure>
-<h3 id="使用模板模式绘制"><a href="#使用模板模式绘制" class="headerlink" title="使用模板模式绘制"></a>使用模板模式绘制</h3><p>在完成前面的步骤之后，我们就可以调用Quartz 2D函数来绘制了。我们的模式被当作“涂料”。例如，可以调用CGContextStrokePath, CGContextFillPath, CGContextFillRect或其它函数来绘制。</p>
-<h3 id="完整示例-1"><a href="#完整示例-1" class="headerlink" title="完整示例"></a>完整示例</h3><p>代码清单6-8包含一个绘制模板模式的函数。这个函数包含了前面讨论的所有步骤。</p>
-<p><strong>Listing 6-8  A function that paints a stencil pattern</strong></p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">define</span> PSIZE 16</span></div><div class="line"> </div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">MyStencilPatternPainting</span> <span class="params">(CGContextRef myContext,</span></span></div><div class="line">                                <span class="keyword">const</span> Rect *windowRect)</div><div class="line">&#123;</div><div class="line">    CGPatternRef pattern;</div><div class="line">    CGColorSpaceRef baseSpace;</div><div class="line">    CGColorSpaceRef patternSpace;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">const</span> CGFloat color[<span class="number">4</span>] = &#123; <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">1</span> &#125;;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">const</span> CGPatternCallbacks callbacks = &#123;<span class="number">0</span>, &amp;drawStar, <span class="literal">NULL</span>&#125;;</div><div class="line"> </div><div class="line">    baseSpace = CGColorSpaceCreateDeviceRGB ();</div><div class="line">    patternSpace = CGColorSpaceCreatePattern (baseSpace);</div><div class="line">    CGContextSetFillColorSpace (myContext, patternSpace);</div><div class="line">    CGColorSpaceRelease (patternSpace);</div><div class="line">    CGColorSpaceRelease (baseSpace);</div><div class="line">    pattern = CGPatternCreate(<span class="literal">NULL</span>, CGRectMake(<span class="number">0</span>, <span class="number">0</span>, PSIZE, PSIZE),</div><div class="line">                  CGAffineTransformIdentity, PSIZE, PSIZE,</div><div class="line">                  kCGPatternTilingConstantSpacing,</div><div class="line">                  <span class="literal">false</span>, &amp;callbacks);</div><div class="line">    CGContextSetFillPattern (myContext, pattern, color);</div><div class="line">    CGPatternRelease (pattern);</div><div class="line">    CGContextFillRect (myContext,CGRectMake (<span class="number">0</span>,<span class="number">0</span>,PSIZE*<span class="number">20</span>,PSIZE*<span class="number">20</span>));</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
   </section>
 
   
@@ -2270,7 +2301,7 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/archives">
-              <span class="site-state-item-count">84</span>
+              <span class="site-state-item-count">85</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>

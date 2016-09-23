@@ -310,6 +310,164 @@
             
               
                 
+                <a class="post-title-link" href="/2014/06/27/ios-swift-extension/" itemprop="url">
+                  Swift扩展(Extension)基础
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-06-27T20:54:59+08:00" content="2014-06-27">
+              2014-06-27
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/swift/" itemprop="url" rel="index">
+                    <span itemprop="name">Swift</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>扩展(Extension)用于为已存在的类、结构体或枚举添加新的功能。它类似于Objecitve-C中的分类，不同的是Swift的扩展没有名字</p>
+<p>Swift的扩展可以做以下事情：</p>
+<ul>
+<li>添加计算属性和静态计算属性</li>
+<li>定义实例方法和类型方法</li>
+<li>提供新的初始化方法</li>
+<li>定义下标操作符</li>
+<li>定义并使用新的嵌套类型</li>
+<li>让已存在类型实现一个协议</li>
+</ul>
+<p>在定义类型的扩展后，访扩展中的功能可以用于类型所有已存在的实例中，即使这些实例在扩展之前定义。</p>
+<p>我们使用关键字extension来声明一个扩展，一个扩展可以让类型实现一个或多个协议，如代码清单1所示：</p>
+<p><strong>代码清单1</strong></p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">extension</span> <span class="title">SomeType</span>: <span class="title">SomeProtocol</span>, <span class="title">AnotherProtocol</span> </span>&#123;</div><div class="line">    <span class="comment">// implementation of protocol requirement goes here</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>下面我们分别介绍如何去扩展一个已有类型的各种功能</p>
+<h2 id="计算属性"><a href="#计算属性" class="headerlink" title="计算属性"></a>计算属性</h2><p>扩展可以添加实例计算属性和类型计算属性。如代码清单2所示：</p>
+<p><strong>代码清单2</strong></p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">extension</span> <span class="title">Double</span> </span>&#123;</div><div class="line">    <span class="keyword">var</span> km: <span class="type">Double</span> &#123;<span class="keyword">return</span> <span class="keyword">self</span> * <span class="number">1_000.0</span>&#125;</div><div class="line">    <span class="keyword">var</span> m: <span class="type">Double</span> &#123; <span class="keyword">return</span> <span class="keyword">self</span> &#125;</div><div class="line">    <span class="keyword">var</span> cm: <span class="type">Double</span> &#123; <span class="keyword">return</span> <span class="keyword">self</span> / <span class="number">100.0</span> &#125;</div><div class="line">    <span class="keyword">var</span> mm: <span class="type">Double</span> &#123; <span class="keyword">return</span> <span class="keyword">self</span> / <span class="number">1_000.0</span> &#125;</div><div class="line">    <span class="keyword">var</span> ft: <span class="type">Double</span> &#123; <span class="keyword">return</span> <span class="keyword">self</span> / <span class="number">3.28084</span> &#125;</div><div class="line">&#125;</div><div class="line">	</div><div class="line"><span class="keyword">let</span> onInch = <span class="number">25.4</span>.mm        <span class="comment">// 0.0254</span></div><div class="line"><span class="keyword">let</span> threeFeet = <span class="number">3</span>.ft        <span class="comment">// 0.914399970739201</span></div></pre></td></tr></table></figure>
+<p>上例扩展了Double，并定义了一些实例计算属性。我们可以将其用于Double的实例，也可以用于Double类型的字面值。</p>
+<p>需要注意的是，扩展可以添加新的计算属性，但不能添加存储属性，也不能给已存在的属性添加观察者</p>
+<h2 id="初始化方法"><a href="#初始化方法" class="headerlink" title="初始化方法"></a>初始化方法</h2><p>扩展可以为已存在类型添加新的初始化方法。这可以让我们扩展某一类型以接受我们自定义的类型作为它的初始化方法，或者为现有类型提供额外的初始化方法。</p>
+<p>扩展可以为类添加新的便捷初始化方法，但不能添加命名初始化方法(designated initializers)和析构方法，这两者必须由类型的原始实现来提供。</p>
+<p>代码清单3定义了Rect类型，并通过扩展为其定义了一个新的初始化方法</p>
+<p><strong>代码清单3</strong></p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Size</span> </span>&#123;</div><div class="line">    <span class="keyword">var</span> width = <span class="number">0.0</span>, height = <span class="number">0.0</span></div><div class="line">&#125;</div><div class="line">	</div><div class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Point</span> </span>&#123;</div><div class="line">    <span class="keyword">var</span> x = <span class="number">0.0</span>, y = <span class="number">0.0</span></div><div class="line">&#125;</div><div class="line">	</div><div class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Rect</span> </span>&#123;</div><div class="line">    <span class="keyword">var</span> origin = <span class="type">Point</span>()</div><div class="line">    <span class="keyword">var</span> size = <span class="type">Size</span>()</div><div class="line">&#125;</div><div class="line">	</div><div class="line"><span class="keyword">let</span> defaultRect = <span class="type">Rect</span>()</div><div class="line"><span class="keyword">let</span> memeberwiseRect = <span class="type">Rect</span>(origin: <span class="type">Point</span>(x: <span class="number">1.0</span>, y: <span class="number">2.0</span>), size: <span class="type">Size</span>(width: <span class="number">5.0</span>, height: <span class="number">10.0</span>))</div><div class="line">	</div><div class="line"><span class="class"><span class="keyword">extension</span> <span class="title">Rect</span> </span>&#123;</div><div class="line">    <span class="keyword">init</span> (center: <span class="type">Point</span>, size: <span class="type">Size</span>) &#123;</div><div class="line">        <span class="keyword">let</span> originX = center.x - (size.width / <span class="number">2</span>)</div><div class="line">        <span class="keyword">let</span> originY = center.y - size.height / <span class="number">2</span></div><div class="line">        <span class="keyword">self</span>.<span class="keyword">init</span>(origin: <span class="type">Point</span>(x: originX, y: originY), size:size)</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line">	</div><div class="line"><span class="keyword">let</span> centerRect = <span class="type">Rect</span>(center: <span class="type">Point</span>(x: <span class="number">20.0</span>, y: <span class="number">3.0</span>), size: <span class="type">Size</span>(width: <span class="number">10.0</span>, height: <span class="number">40.0</span>))</div></pre></td></tr></table></figure>
+<p>需要注意的是，如果我们提供新的初始化方法，仍然需要确保在初始化方法结束前初始化实例的所有常量和变量。</p>
+<p>另外，如果我们扩展的类型的所有存储属性都有默认值，而没有定义初始化方法时，我们可以在扩展的初始化方法中调用默认的初始化方法和</p>
+<h2 id="方法"><a href="#方法" class="headerlink" title="方法"></a>方法</h2><p>扩展可以为已存在类型添加新的实例方法和类型方法。对于结构体和枚举类型而言，如果扩展的方法需要修改self或者它的属性的话，需要将实例方法标记为mutating(与结构体和枚举的原始实现相同)。</p>
+<p><strong>代码清单4：演示了扩展方法的定义</strong></p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">extension</span> <span class="title">Int</span> </span>&#123;</div><div class="line">    <span class="function"><span class="keyword">func</span> <span class="title">repetitions</span><span class="params">(task: <span class="params">()</span></span></span> -&gt; ()) &#123;</div><div class="line">        <span class="keyword">for</span> i <span class="keyword">in</span>  <span class="number">0</span>..<span class="keyword">self</span> &#123;</div><div class="line">            task()</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">mutating</span> <span class="function"><span class="keyword">func</span> <span class="title">square</span><span class="params">()</span></span> &#123;        <span class="comment">// mutating</span></div><div class="line">        <span class="keyword">self</span> = <span class="keyword">self</span> * <span class="keyword">self</span></div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line">	</div><div class="line"><span class="keyword">var</span> someInt = <span class="number">3</span></div><div class="line">someInt.square()</div></pre></td></tr></table></figure>
+<h2 id="下标"><a href="#下标" class="headerlink" title="下标"></a>下标</h2><p>扩展可以为已存在类型添加新的下标。例如我们想为Int类型添加一个下标操作，指定下标为n时，返回数字从右侧起第n个数字，即</p>
+<ul>
+<li><p>123456789[0] = 9</p>
+</li>
+<li><p>123456789[1] = 8</p>
+</li>
+<li><p>…</p>
+</li>
+</ul>
+<p>代码清单5给出了相应的实现</p>
+<p><strong>代码清单5</strong></p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">extension</span> <span class="title">Int</span> </span>&#123;</div><div class="line">    <span class="keyword">subscript</span>(digitIndex: <span class="type">Int</span>) -&gt; <span class="type">Int</span> &#123;</div><div class="line">        <span class="keyword">var</span> decimalBase = <span class="number">1</span></div><div class="line">            <span class="keyword">for</span> <span class="number">_</span> <span class="keyword">in</span> <span class="number">1</span>...digitIndex &#123;</div><div class="line">                decimalBase * <span class="number">10</span></div><div class="line">            &#125;</div><div class="line">            <span class="keyword">return</span> (<span class="keyword">self</span> / decimalBase) % <span class="number">10</span></div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line">	</div><div class="line"><span class="number">8738793219</span>[<span class="number">0</span>]   <span class="comment">// 9</span></div><div class="line"><span class="number">8738793219</span>[<span class="number">1</span>]   <span class="comment">// 1</span></div><div class="line"><span class="number">8738793219</span>[<span class="number">2</span>]   <span class="comment">// 2</span></div><div class="line"><span class="number">8738793219</span>[<span class="number">8</span>]   <span class="comment">// 7</span></div></pre></td></tr></table></figure>
+<h2 id="嵌套类型"><a href="#嵌套类型" class="headerlink" title="嵌套类型"></a>嵌套类型</h2><p>扩展可以为已存在类型添加新的嵌套类型，如代码清单6所示</p>
+<p><strong>代码清单6：</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line">extension Character &#123;</div><div class="line">    enum Kind &#123;</div><div class="line">        case Vowel, Consonant, Other</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    var kind:Kind &#123;</div><div class="line">	    switch String(self).lowercaseString &#123;</div><div class="line">	        case &quot;a&quot;, &quot;e&quot;, &quot;i&quot;, &quot;o&quot;, &quot;u&quot;:</div><div class="line">	            return .Vowel</div><div class="line">	        case &quot;b&quot;, &quot;c&quot;, &quot;d&quot;, &quot;f&quot;, &quot;g&quot;, &quot;h&quot;, &quot;j&quot;, &quot;k&quot;, &quot;l&quot;, &quot;m&quot;, &quot;n&quot;,</div><div class="line">	             &quot;p&quot;, &quot;q&quot;, &quot;r&quot;, &quot;s&quot;, &quot;t&quot;, &quot;v&quot;, &quot;w&quot;, &quot;x&quot;, &quot;y&quot;, &quot;z&quot;:</div><div class="line">	            return .Consonant</div><div class="line">	        default:</div><div class="line">	            return .Other</div><div class="line">	    &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>上面为Character类型添加了一个嵌套枚举，以表示字符的类型。定义之后，嵌套类型就可以用于Character的值了。</p>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
                 <a class="post-title-link" href="/2014/06/27/ios-swift-property/" itemprop="url">
                   Swift属性Property
                 </a>
@@ -878,7 +1036,7 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/archives">
-              <span class="site-state-item-count">84</span>
+              <span class="site-state-item-count">85</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>
