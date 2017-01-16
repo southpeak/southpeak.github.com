@@ -310,6 +310,326 @@
             
               
                 
+                <a class="post-title-link" href="/2017/01/16/Getting-Started-With-RxSwift-and-RxCocoa/" itemprop="url">
+                  Getting Started With RxSwift and RxCocoa
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2017-01-16T08:13:39+08:00" content="2017-01-16">
+              2017-01-16
+            </time>
+          </span>
+
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <blockquote>
+<p>本文由Ellen Shapiro发表于raywenderlich，原文地址是<a href="https://www.raywenderlich.com/138547/getting-started-with-rxswift-and-rxcocoa" target="_blank" rel="external">https://www.raywenderlich.com/138547/getting-started-with-rxswift-and-rxcocoa</a></p>
+</blockquote>
+<hr>
+<p>代码能按你的意愿执行总是件很棒的事。在程序中改变一些东西，告诉代码，然后它就照做了。嗯，这是坨好代码！</p>
+<p>在面向对象时代，大多数程序都像这样运行：你的代码告诉你的程序需要做什么，并且有很多方法来监听变化–但同时你又必须主动告诉系统什么时候发生的变化。</p>
+<p>目前为止还是很不错，不过如果变化发生时，代码能自动响应更新，生活是不是会更美好呢？这就是响应式编程的基本思想：你的程序可以对底层数据的变化做出响应，而不需要你直接告诉它。这样，你可以更专注于所需要处理的业务逻辑，而不需要去维护特定的状态。</p>
+<p>在Objective-C和Swift都可以实现这种操作，主要是通过<code>Key-value Observation</code>，在Swift中还可以使用<code>setter</code>或<code>didSet</code>方法。不过，有时这些方法并不那么好使。为了避免这些问题，现在市面上已经有一些Objective-C和Swift的框架，来实现响应式编程。</p>
+<blockquote>
+<p>如果你想了解更多的信息，可以看看 ‘<a href="https://www.raywenderlich.com/126522/reactivecocoa-vs-rxswift" target="_blank" rel="external">ReactiveCocoa vs RxSwift</a>‘ 这篇文章。</p>
+</blockquote>
+<p>今天我们将使用一个很棒的框架，RxSwift和它的小伙伴RxCocoa，来实现一个购买巧克力的App，并从那令人恼火的命令式编程过渡到相当awesome的响应式编程。</p>
+<h2 id="RxSwift和RxCocoa是什么？"><a href="#RxSwift和RxCocoa是什么？" class="headerlink" title="RxSwift和RxCocoa是什么？"></a>RxSwift和RxCocoa是什么？</h2><p>RxSwift和RxCocoa是ReactiveX工具套件的一部分，这个套件包含了多种编程语言和平台。ReactiveX起源于.Net/C#生态体系，不过现在已经非常受Rubyists、JavaScripers、尤其是Java和Android开发人员的欢迎了。</p>
+<p>RxSwift是一个用于与Swift语言交互的框架，而RxCocoa是在响应式编程中让Cocoa APIs更容易使用的一个框架。</p>
+<p>ReactiveX框架相当于提供了一个词汇表，以方便在不同的语言中描述相同的任务。这让你可以在多语言切换中，专注于语言本身的语法，而不是把时间浪费在将一个普通任务从一种语言转换为另一种新语言。</p>
+<h3 id="Observables和Observers"><a href="#Observables和Observers" class="headerlink" title="Observables和Observers"></a>Observables和Observers</h3><p>这里有两个基本的概念：<code>Observable</code>和<code>Observer</code>。</p>
+<ul>
+<li><code>Observable</code>是发出变化通知的对象；</li>
+<li><code>Observer</code>是订阅<code>Observable</code>的对象，以便在<code>Observable</code>变化时接收通知</li>
+</ul>
+<p>可以有多个<code>Observer</code>监听同一个<code>Observable</code>。这意味着当<code>Observable</code>发生变化时，会通知所有相关的<code>Observer</code>。</p>
+<h3 id="DisposeBag"><a href="#DisposeBag" class="headerlink" title="DisposeBag"></a>DisposeBag</h3><p>RxSwift和RxCocoa还有一个额外的工具来辅助处理ARC和内存管理：即<code>DisposeBag</code>。这是<code>Observer</code>对象的一个虚拟”包”，当它们的父对象被释放时，这个虚拟包会被丢弃。</p>
+<p>当带有<code>DisposeBag</code>属性的对象调用<code>deinit()</code>时，虚拟包将被清空，且每一个一次性(disposable)<code>Observer</code>会自动取消订阅它所观察的内容。这允许ARC像通常一样回收内存。</p>
+<p>如果没有<code>DisposeBag</code>，会有两种结果：或者<code>Observer</code>会产生一个<code>retain cycle</code>，被无限期的绑定到被观察对象上；或者意外地被释放，导致程序崩溃。</p>
+<p>所以要成为一个ARC的良民，记得设置<code>Observable</code>对象时，将它们添加到<code>DisposeBag</code>中。这样，它们才能被很好地清理掉。</p>
+<h2 id="开始"><a href="#开始" class="headerlink" title="开始"></a>开始</h2><p>让我们去买巧克力吧！本教程的初始工程<strong>Chocotastic</strong>可以在<a href="https://koenig-media.raywenderlich.com/uploads/2016/10/Chocotastic-starter-s3-rxs-3b1.zip" target="_blank" rel="external">这里</a>获取。下载zip文件并在Xcode中打开工程。</p>
+<blockquote>
+<p>该项目使用CocoaPods，因此需要打开Chocotastic.xcworkspace文件。</p>
+</blockquote>
+<p>构建并运行程序。你会看到以下效果，其中列出了你可以从欧洲购买的几种巧克力，以及各自的价格：</p>
+<p><img src="https://koenig-media.raywenderlich.com/uploads/2016/07/initial_landing.png" width="300" align="center"></p>
+<p>点击单元格，可以将对应的巧克力添加到你的购物车中：</p>
+<p><img src="https://koenig-media.raywenderlich.com/uploads/2016/07/added_chocolate.png" width="300" align="center"></p>
+<p>点击右上角的购物车就可以进入付款或重置购物车的界面：</p>
+<p><img src="https://koenig-media.raywenderlich.com/uploads/2016/07/checkout.png" width="300" align="center"></p>
+<p>如果点击<code>Checkout</code>，将显示一个信用卡输入页面：</p>
+<p><img src="https://koenig-media.raywenderlich.com/uploads/2016/07/cc_form.png" width="300" align="center"></p>
+<p>在本教程的后面，你将使用纯响应式来解决问题。点击<code>Cart</code>按钮将返回购物车清单，点击<code>Reset</code>按钮将返回主界面，并显示空购物车。</p>
+<h3 id="起点：非响应式"><a href="#起点：非响应式" class="headerlink" title="起点：非响应式"></a>起点：非响应式</h3><p>你现在已经知道了程序将做什么，现在该来看看是怎么做的了。打开<code>ChocolatesOfTheWorldViewController.swift</code>文件，在这里你可以看到一些标准的<code>UITableViewDelegate</code>和<code>UITableViewDataSource</code>方法。</p>
+<p>还有一个<code>updateCartButton()</code>方法，它用购物车中现有的巧克力数量来更新购物车按钮。这个方法在两个地方被调用：</p>
+<ul>
+<li>在<code>viewWillAppear(_:)</code>中，即视图控制器即将被显示时；</li>
+<li>在<code>tableView(_:didSelectRowAt:)</code>中，即新添加一个巧克力到购物车后。</li>
+</ul>
+<p>这些都是以命令式方法来修改计数：你必须显示调用方法来更新计数。</p>
+<p>目前为止，你必须跟踪你要改变值的位置，不过我们要使用响应式技术来重写这些代码。这样，购物车按钮将自已更新，而不关心计数器在哪和怎样被更新。</p>
+<h2 id="RxSwift：让购物车按钮响应"><a href="#RxSwift：让购物车按钮响应" class="headerlink" title="RxSwift：让购物车按钮响应"></a>RxSwift：让购物车按钮响应</h2><p>所有引用购物车中的项目的方法都使用<code>ShoppingCart.sharedCart</code>单例。打开<code>ShoppingCart.swift</code>文件，你将看到单例实例上一个变量的标准设置方式：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">var</span> chocolates = [<span class="type">Chocolate</span>]()</div></pre></td></tr></table></figure>
+<p>现在，巧克力内容的变更不会被观察到。你可以在它的定义中添加一个<code>didSet</code>闭包，但它只有在整个数组被更新才会被调用，而不是它的元素被更新时。</p>
+<p>幸运的是，RxSwift有一个解决方案。使用下面这行代码来替代变量的创建：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> chocolates: <span class="type">Variable</span>&lt;[<span class="type">Chocolate</span>]&gt; = <span class="type">Variable</span>([])</div></pre></td></tr></table></figure>
+<blockquote>
+<p>这个更改暂时会导致一系列编译错误，不过很快会在下面解决这些问题。</p>
+</blockquote>
+<p>这种语法可能稍微有点难理解，所以下面我们来慢慢了解到底发生了什么。</p>
+<p>在这里我们不是将<code>chocolates</code>设置为<code>Chocolate</code>对象的数组，而将其定义为一个RxSwift的<code>Variable</code>对象，其中泛型类型指定为<code>Chocolate</code>数组。</p>
+<p><code>Variable</code>是一个类，所以它使用引用语义–即<code>chocolates</code>引用了一个<code>Variable</code>实例。</p>
+<p><code>Variable</code>对象有一个<code>value</code>属性。这是你的<code>Chocolate</code>对象数组的存储位置。</p>
+<p><code>Variable</code>的魔力来自于它的<code>asObservable()</code>方法。你可以添加一个<code>Observer</code>来观察这个值，而不是每次手动去确认这个值。当值发生变化时，<code>Observer</code>会通知你，以便你对任何更新做出响应。</p>
+<p>这个设置有一个缺点，即当你需要访问或更新<code>Chocolates</code>数组中的元素时，你必须使用<code>value</code>属性，而不能直接使用它；这就是编译器提示错误的原因。是时候来解决它们了。</p>
+<p>在<code>ShoppingCart.swift</code>中，找到<code>totalCost()</code>并修改下面这行：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">return</span> chocolates.<span class="built_in">reduce</span>(<span class="number">0</span>) &#123;</div></pre></td></tr></table></figure>
+<p>为：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">return</span> chocolates.value.<span class="built_in">reduce</span>(<span class="number">0</span>) &#123;</div></pre></td></tr></table></figure>
+<p>在<code>itemCountString()</code>，修改：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">guard</span> chocolates.<span class="built_in">count</span> &gt; <span class="number">0</span> <span class="keyword">else</span> &#123;</div></pre></td></tr></table></figure>
+<p>为：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">guard</span> chocolates.value.<span class="built_in">count</span> &gt; <span class="number">0</span> <span class="keyword">else</span> &#123;</div></pre></td></tr></table></figure>
+<p>并修改：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> setOfChocolates = <span class="type">Set</span>&lt;<span class="type">Chocolate</span>&gt;(chocolates)</div></pre></td></tr></table></figure>
+<p>为：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> setOfChocolates = <span class="type">Set</span>&lt;<span class="type">Chocolate</span>&gt;(chocolates.value)</div></pre></td></tr></table></figure>
+<p>最后，修改：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> <span class="built_in">count</span>: <span class="type">Int</span> = chocolates.<span class="built_in">reduce</span>(<span class="number">0</span>) &#123;</div></pre></td></tr></table></figure>
+<p>为：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> <span class="built_in">count</span>: <span class="type">Int</span> = chocolates.value.<span class="built_in">reduce</span>(<span class="number">0</span>) &#123;</div></pre></td></tr></table></figure>
+<p>在<code>CartViewController.swift</code>中，找到<code>reset()</code>并修改：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="type">ShoppingCart</span>.sharedCart.chocolates = []</div></pre></td></tr></table></figure>
+<p>为：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="type">ShoppingCart</span>.sharedCart.chocolates.value = []</div></pre></td></tr></table></figure>
+<p>回到<code>ChocolatesOfTheWorldViewController.swift</code>中，修改<code>updateCartButton()</code>的实现：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">cartButton.title = <span class="string">"<span class="subst">\(ShoppingCart.sharedCart.chocolates.value.<span class="built_in">count</span>)</span> \u&#123;1f36b&#125;"</span></div></pre></td></tr></table></figure>
+<p>及在<code>tableView(_:didSelectRowAt:)</code>中，修改下面这行：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="type">ShoppingCart</span>.sharedCart.chocolates.append(chocolate)</div></pre></td></tr></table></figure>
+<p>为：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="type">ShoppingCart</span>.sharedCart.chocolates.value.append(chocolate)</div></pre></td></tr></table></figure>
+<p>哇！这回Xcode高兴了，不再报错了。同时<code>chocolates</code>也可以被监听了。</p>
+<p>打开<code>ChocolatesOfTheWorldViewController.swift</code>文件并添加以下属性：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> disposeBag = <span class="type">DisposeBag</span>()</div></pre></td></tr></table></figure>
+<p>这里创建了一个<code>DisposeBag</code>对象，用于确保设置的<code>Observer</code>在<code>deinit()</code>中被清理掉。</p>
+<p>在 <strong>//MARK: Rx Setup</strong> 注释下面添加以下代码：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="comment">//MARK: Rx Setup</span></div><div class="line"> </div><div class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">func</span> <span class="title">setupCartObserver</span><span class="params">()</span></span> &#123;</div><div class="line">  <span class="comment">//1</span></div><div class="line">  <span class="type">ShoppingCart</span>.sharedCart.chocolates.asObservable()</div><div class="line">    .subscribe(onNext: &#123; <span class="comment">//2</span></div><div class="line">      chocolates <span class="keyword">in</span></div><div class="line">      <span class="keyword">self</span>.cartButton.title = <span class="string">"<span class="subst">\(chocolates.<span class="built_in">count</span>)</span> \u&#123;1f36b&#125;"</span></div><div class="line">    &#125;)</div><div class="line">    .addDisposableTo(disposeBag) <span class="comment">//3</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这将设置一个响应式的<code>Observer</code>来自动更新购物车。如你所见，RxSwift大量使用链式函数，这意味着每一个函数都接受前一个函数的结果。</p>
+<p>来解释一下发生的事情：</p>
+<ol>
+<li>首先，把购物车的<code>chocolates</code>变量作为一个<code>Observable</code>；</li>
+<li>在这个<code>Observable</code>上调用<code>subscribe(onNext:)</code>方法，以了解<code>Observable</code>的值的变化。<code>subscribe(onNext:)</code>接受一个闭包作为参数，在每次值改变时，会执行这个闭包。闭包的传入参数是<code>Observable</code>的新值。你将会接受到变更通知，直到你取消订阅或者你的订阅被丢弃。从这个方法得到的是一个实现了<code>Disposable</code>的<code>Observer</code>对象；</li>
+<li>将上一步得到的<code>Observer</code>对象添加到<code>disposeBag</code>中，以确保在订阅对象被释放时你的订阅被丢弃。</li>
+</ol>
+<p>最后，删除命令式的<code>updateCartButton()</code>方法。这将导致在<code>viewWillAppear(_:)</code>和<code>tableView(_:didSelectRowAt:)</code>中报错。</p>
+<p>要修复它们，可以删除整个<code>viewWillAppear(_:)</code>方法(因为这里除了调用super外，调用<code>updateCartButton()</code>方法是它唯一做的事情)，并删除<code>tableView(_:didSelectRowAt:)</code>中<code>updateCartButton()</code>方法的调用。</p>
+<p>构建并运行。你将看到下面的列表：</p>
+<p><img src="https://koenig-media.raywenderlich.com/uploads/2016/07/Simulator-Screen-Shot-Jul-4-2016-9.26.45-PM.png" width="300" align="center"></p>
+<p>但是注意，购物车的按钮只显示了<code>&#39;Item&#39;</code>。当你开始点击列表时，什么都没有发生。这是咋回事？</p>
+<p>你创建了一个函数来设置你的<code>Rx Observers</code>，但是现在并没有实际调用它，所以也并没有设置<code>Observers</code>。要解决这个问题，可以在<code>viewDidLoad()</code>里面添加如下代码：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">setupCartObserver()</div></pre></td></tr></table></figure>
+<p>编译并运行程序，可以看到下面的列表：</p>
+<p><img src="https://koenig-media.raywenderlich.com/uploads/2016/07/initial_landing.png" width="300" align="center"></p>
+<p>点击单元格，购物车中的数量现在可以自动更新了！</p>
+<p><img src="https://koenig-media.raywenderlich.com/uploads/2016/07/added_chocolate.png" width="300" align="center"></p>
+<p>哈哈，现在所有的巧克力都可以添加到购物车了。</p>
+<p><img src="https://koenig-media.raywenderlich.com/uploads/2016/07/rage_chocolate1-1.png" width="300" align="center"></p>
+<h2 id="RxCocoa-让TableView响应"><a href="#RxCocoa-让TableView响应" class="headerlink" title="RxCocoa: 让TableView响应"></a>RxCocoa: 让TableView响应</h2><p>现在，你已经使用RxSwift让购物车能响应了，现在将使用RxCocoa让<code>UITableView</code>也能响应。</p>
+<p>RxCocoa扩展了UI元素以支持响应式API。这让你可以设置<code>UITableView</code>等视图，而不需要直接重写<code>delegate</code>或<code>data source</code>的方法。</p>
+<p>为了演示如何工作，可以删除代码中所有的<code>UITableViewDataSource</code>和<code>UITableViewDelegate</code>协议及所有它们的方法。然后，在<code>viewDidLoad()</code>中删除对<code>tableView.dataSource</code>和<code>tableView.delegate</code>的设置。</p>
+<p>编译并运行程序，你可以看到原本让人快乐的小列表没有了，巧克力也没有了：</p>
+<p><img src="https://koenig-media.raywenderlich.com/uploads/2016/07/no_chocolate_for_you.png" width="300" align="center"></p>
+<p>一点都不好玩。现在来把巧克力找回来吧！</p>
+<p>首先，为了获得一个响应式的<code>table view</code>，你需要一些让<code>table view</code>响应的东西。在<code>ChocolatesOfTheWorldViewController.swift</code>文件中，更新<code>europeanChocolates</code>属性，让其作为一个<code>Observable</code>对象：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> europeanChocolates = <span class="type">Observable</span>.just(<span class="type">Chocolate</span>.ofEurope)</div></pre></td></tr></table></figure>
+<p><code>just(_:)</code>方法表示不会对<code>Observable</code>对象的底层值做任何修改，但你仍然需要以<code>Observable</code>值的方式来访问它。</p>
+<blockquote>
+<p>有时，调用<code>just(_:)</code>可能是过度地使用响应式编程了 – 毕竟，如果一个值从不改变，为什么要使用响应式技术呢？在这个例子中，你将使用它来设置将要改变的单元格的响应，不过经常思考如何使用Rx总是件好事。因为虽然你有一个锤子，但不意味着每一个问题都是一个钉子。</p>
+</blockquote>
+<p>现在你已经让<code>europeanChocolates</code>成为一个<code>Observable</code>，然后添加以下代码：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">func</span> <span class="title">setupCellConfiguration</span><span class="params">()</span></span> &#123;</div><div class="line">  <span class="comment">//1</span></div><div class="line">  europeanChocolates</div><div class="line">    .bindTo(tableView</div><div class="line">      .rx <span class="comment">//2</span></div><div class="line">      .items(cellIdentifier: <span class="type">ChocolateCell</span>.<span class="type">Identifier</span>,</div><div class="line">             cellType: <span class="type">ChocolateCell</span>.<span class="keyword">self</span>)) &#123; <span class="comment">// 3</span></div><div class="line">        row, chocolate, cell <span class="keyword">in</span></div><div class="line">        cell.configureWithChocolate(chocolate: chocolate) <span class="comment">//4</span></div><div class="line">      &#125;</div><div class="line">      .addDisposableTo(disposeBag) <span class="comment">//5</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>解释一下：</p>
+<ol>
+<li>调用<code>bindTo(_:)</code>将<code>europeanChocolates</code> <code>observable</code>关联到应该为<code>table view</code>每一行执行的代码；</li>
+<li>调用<code>rx</code>，你可以访问任何类的RxCocoa扩展 – 在这里是UITableView；</li>
+<li>调用Rx的<code>items(cellIdentifier:cellType:)</code>方法，传入单元格标识符及要使用的单元格类型。这让Rx框架可以调用出列方法(<code>dequeuing methods</code>)，如果你的<code>table view</code>仍然有原始的代理，这些方法也会被正常调用；</li>
+<li>传入一个为每个单元格执行的闭包。闭包的参数包括行信息、行对应的<code>chocolate</code>及单元格对象，这样配置单元格就非常容易了；</li>
+<li>获取到<code>bindTo(_:)</code>返回的<code>Disposable</code>，然后添加到<code>disposeBag</code>。</li>
+</ol>
+<p>通常由<code>tableView(_:numberOfRowsInSection:)</code>和<code>numberOfSections(in:)</code>生成的值，现在基于被观察的数据自动计算。<code>tableView(_:cellForRowAt:)</code>方法被闭包所取代。在<code>viewDidLoad()</code>方法中添加一行来调用新设置的方法：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">setupCellConfiguration()</div></pre></td></tr></table></figure>
+<p>编译并运行程序，瞧，巧克力又回来了。</p>
+<p><img src="https://koenig-media.raywenderlich.com/uploads/2016/07/no_chocolate_for_you.png" width="300" align="center"></p>
+<p>但是，当点击每一个巧克力时，他们并没有被添加到购物车。又是哪不对了？</p>
+<p>也木有，之前只是删除了<code>tableView(_:didSelectRowAt:)</code>，这样就没办法识别单元格点击操作了。</p>
+<p>为了解决这个问题，需要使用RxCocoa提供的另一个<code>UITableView</code>的扩展方法：<code>modelSelected(_:)</code>，它返回一个<code>Observable</code>，可以观察模型对象什么时候被选中了。</p>
+<p>添加以下代码：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">func</span> <span class="title">setupCellTapHandling</span><span class="params">()</span></span> &#123;</div><div class="line">  tableView</div><div class="line">    .rx</div><div class="line">    .modelSelected(<span class="type">Chocolate</span>.<span class="keyword">self</span>) <span class="comment">//1</span></div><div class="line">    .subscribe(onNext: &#123; <span class="comment">//2</span></div><div class="line">      chocolate <span class="keyword">in</span></div><div class="line">      <span class="type">ShoppingCart</span>.sharedCart.chocolates.value.append(chocolate) <span class="comment">//3</span></div><div class="line"> </div><div class="line">      <span class="keyword">if</span> <span class="keyword">let</span> selectedRowIndexPath = <span class="keyword">self</span>.tableView.indexPathForSelectedRow &#123;</div><div class="line">        <span class="keyword">self</span>.tableView.deselectRow(at: selectedRowIndexPath, animated: <span class="literal">true</span>)</div><div class="line">      &#125; <span class="comment">//4</span></div><div class="line">    &#125;)</div><div class="line">    .addDisposableTo(disposeBag) <span class="comment">//5</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>再来解释一下：</p>
+<ol>
+<li>调用<code>table view</code>的响应式方法<code>modelSelected(_:)</code>，传入<code>Chocolate</code>模型以获取项目的正确类型。这个方法返回一个<code>Observable</code>；</li>
+<li>获取到<code>Observable</code>后，调用<code>subscribe(onNext:)</code>方法，传入一个尾随闭包，在模型被选中时会调用这个闭包；</li>
+<li>在尾随闭包中，将选中的巧克力添加到购物车中；</li>
+<li>同样在闭包中，确保当前被点击的单元格选中状态被取消；</li>
+<li><code>subscribe(onNext:)</code>返回一个<code>Disposable</code>，添加这个<code>Disposable</code>到<code>disposeBag</code>中。</li>
+</ol>
+<p>最后，在<code>viewDidLoad()</code>中添加下面这行代码：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">setupCellTapHandling()</div></pre></td></tr></table></figure>
+<p>编译并运行，可以看到熟悉的场景：</p>
+<p><img src="https://koenig-media.raywenderlich.com/uploads/2016/07/initial_landing.png" width="300" align="center"></p>
+<p>不过现在你可以往购物车添加巧克力了！</p>
+<p><img src="https://koenig-media.raywenderlich.com/uploads/2016/07/added_chocolate.png" width="300" align="center"></p>
+<h2 id="RxSwift和Direct-Text-Input"><a href="#RxSwift和Direct-Text-Input" class="headerlink" title="RxSwift和Direct Text Input"></a>RxSwift和Direct Text Input</h2><p>RxSwift另一个功能是能够获取并响应用户的直接文本输入(<code>Direct Text Input</code>)。</p>
+<p>为了尝试一下响应式处理文本输入，你将在信用卡输入表单中添加一些简单的验证和卡类型检测。</p>
+<p>非响应式的信用卡处理是由一串<code>UITextFieldDelegate</code>方法来实现的，通常每个方法包含一串的<code>if/else</code>语句，用于区分哪个<code>text field</code>正在被编辑，应该执行什么操作和逻辑处理。</p>
+<p>响应式编程将处理操作和逻辑操作直接连接到每个<code>text field</code>。</p>
+<p>在<code>BillingInfoViewController.swift</code>，在类的顶部添加以下代码：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">private</span> <span class="keyword">let</span> disposeBag = <span class="type">DisposeBag</span>()</div></pre></td></tr></table></figure>
+<p>和前面一样，这里定义了一个<code>DisposeBag</code>以确保在类的实例被释放时，你的<code>Observables</code>能被正确处理。</p>
+<p>对于信用卡号的输入，一个体验比较好的方式是给用户显示信用卡的类型。</p>
+<p>为了实现这一操作，可以在<strong>//MARK: - Rx Setup</strong>下面添加以下代码：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="comment">//MARK: - Rx Setup</span></div><div class="line"> </div><div class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">func</span> <span class="title">setupCardImageDisplay</span><span class="params">()</span></span> &#123;</div><div class="line">  cardType</div><div class="line">    .asObservable()</div><div class="line">    .subscribe(onNext: &#123;</div><div class="line">      cardType <span class="keyword">in</span></div><div class="line">      <span class="keyword">self</span>.creditCardImageView.image = cardType.image</div><div class="line">    &#125;)</div><div class="line">    .addDisposableTo(disposeBag)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>稍后，你将依此根据卡类型的更改来更新卡图片。它为变量的值添加了一个<code>Observer</code>，并附加一个闭包在值改变时执行，同时确保<code>Observer</code>添加到<code>disposeBag</code>中以被正确处理。</p>
+<p>现在到了最有趣的部分：文本变更处理。</p>
+<p>由于用户可能会快速键入，因此你可能不希望每次按键都去验证。这样会导致昂贵的计算和UI卡顿。</p>
+<p>一种更好的方式是限制验证的幅度，即只有一定的时间间隔后再去验证用户的输入，而不是每次改变时都去处理。这样，再快的打字速度也不会阻塞整个程序的运行。</p>
+<p><code>Throttling</code>是RxSwift的一个特性。因为在一些东西改变时，通常有大量的逻辑操作。而使用<code>Throttling</code>特性，不会产生大量的逻辑操作，而是以一个小的合理的幅度去执行。</p>
+<p>首先，在<code>BillingInfoViewController</code>中的其它属性声明下面添加以下内容：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">private</span> <span class="keyword">let</span> throttleInterval = <span class="number">0.1</span></div></pre></td></tr></table></figure>
+<p>这里以秒为单位为抖动(<code>throttle</code>)幅度定义了一个常量。</p>
+<p>然后添加以下代码：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">func</span> <span class="title">setupTextChangeHandling</span><span class="params">()</span></span> &#123;</div><div class="line">  <span class="keyword">let</span> creditCardValid = creditCardNumberTextField</div><div class="line">    .rx</div><div class="line">    .text <span class="comment">//1</span></div><div class="line">    .throttle(throttleInterval, scheduler: <span class="type">MainScheduler</span>.instance) <span class="comment">//2</span></div><div class="line">    .<span class="built_in">map</span> &#123; <span class="keyword">self</span>.validate(cardText: $<span class="number">0</span>) &#125; <span class="comment">//3</span></div><div class="line"> </div><div class="line">  creditCardValid</div><div class="line">    .subscribe(onNext: &#123; <span class="keyword">self</span>.creditCardNumberTextField.valid = $<span class="number">0</span> &#125;) <span class="comment">//4</span></div><div class="line">    .addDisposableTo(disposeBag) <span class="comment">//5</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<blockquote>
+<p>如果在设置<code>creditCardValid</code>时得到一个”<code>Generic parameter R could not be inferred</code>“编译错误，通常可以显式的声明它的类型来解决问题，如<code>let creditCardValid: Observable</code>。理论上，编译器能推导出它的类型，但有时候还是需要一些帮助。</p>
+</blockquote>
+<p>代码的描述如下：</p>
+<ol>
+<li><code>text</code>是另一个RxCocoa扩展(在使用之前必须先调用<code>rx</code>)，这一次是<code>UITextField</code>的扩展。它将<code>text field</code>的内容作为<code>Observable</code>值返回；</li>
+<li>限制输入，以便设置的验证基于设置的时间间隔才运行。<code>scheduler</code>参数是一个更高级的概念，它绑定到一个线程。因为你需要在主线程上执行，所以使用<code>MainScheduler</code>；</li>
+<li>将被限制的输入应用于<code>validate(cardText:)</code>来转换它，<code>validate(cardText:)</code>由当前类提供。如果输入的卡有效，则观察到的布尔值的最终值为true；</li>
+<li>接受所创建的<code>Observable</code>值并订阅它，根据传入的值来更新<code>text field</code>的验证；</li>
+<li>将生成的<code>Disposable</code>添加到<code>disposeBag</code>。</li>
+</ol>
+<p>将以下代码添加到<code>setupTextChangeHandling()</code>方法下面，以创建有效期和卡安全代码(CVV)的<code>Observable</code>变量：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> expirationValid = expirationDateTextField</div><div class="line">  .rx</div><div class="line">  .text</div><div class="line">  .throttle(throttleInterval, scheduler: <span class="type">MainScheduler</span>.instance)</div><div class="line">  .<span class="built_in">map</span> &#123; <span class="keyword">self</span>.validate(expirationDateText: $<span class="number">0</span>) &#125;</div><div class="line"> </div><div class="line">expirationValid</div><div class="line">  .subscribe(onNext: &#123; <span class="keyword">self</span>.expirationDateTextField.valid = $<span class="number">0</span> &#125;)</div><div class="line">  .addDisposableTo(disposeBag)</div><div class="line"> </div><div class="line"><span class="keyword">let</span> cvvValid = cvvTextField</div><div class="line">  .rx</div><div class="line">  .text</div><div class="line">  .<span class="built_in">map</span> &#123; <span class="keyword">self</span>.validate(cvvText: $<span class="number">0</span>) &#125;</div><div class="line"> </div><div class="line">cvvValid</div><div class="line">  .subscribe(onNext: &#123; <span class="keyword">self</span>.cvvTextField.valid = $<span class="number">0</span> &#125;)</div><div class="line">  .addDisposableTo(disposeBag)</div></pre></td></tr></table></figure>
+<p>现在你已经为三个<code>text field</code>的有效性设置了<code>Observable</code>值，接下来添加以下代码：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> everythingValid = <span class="type">Observable</span></div><div class="line">  .combineLatest(creditCardValid, expirationValid, cvvValid) &#123;</div><div class="line">    $<span class="number">0</span> &amp;&amp; $<span class="number">1</span> &amp;&amp; $<span class="number">2</span> <span class="comment">//All must be true</span></div><div class="line">  &#125;</div><div class="line"> </div><div class="line">everythingValid</div><div class="line">  .bindTo(purchaseButton.rx.enabled)</div><div class="line">  .addDisposableTo(disposeBag)</div></pre></td></tr></table></figure>
+<p>这里使用了<code>Observable</code>的<code>combineLatest(_:)</code>方法将前面创建的三个<code>Observable</code>组合成第四个变量，即<code>everythingValid</code>，其值是否为<code>true</code>取决于前面三个输入是否有效。</p>
+<p>然后将<code>everythingValid</code>绑定到<code>UIButton</code>的响应扩展的<code>enabled</code>属性上，这样购买按钮的状态就由<code>everythingValid</code>的值来控制了。</p>
+<p>如果所有的输入都有效，那么<code>everythingValid</code>的基础值就为<code>true</code>。如果不是，<code>rx.enabled</code>将会导致基础值被应用于购买按钮，该功能仅在信用卡详细信息有效时启用。</p>
+<p>现在你已经创建了<code>setup</code>方法，在<code>viewDidLoad()</code>方法中添加以下代码来调用它：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">setupCardImageDisplay()</div><div class="line">setupTextChangeHandling()</div></pre></td></tr></table></figure>
+<p>编译并运行程序。要进入信用卡输入页面，需要选择一个巧克力将其添加到购物车，然后点击购物车按钮以进入购物车界面。只要购物车中至少有一个巧克力，<code>checkout</code>按钮就是可用的：</p>
+<p><img src="https://koenig-media.raywenderlich.com/uploads/2016/07/checkout.png" width="300" align="center"></p>
+<p>点击<code>Checkout</code>按钮，将进入信用卡输入页面：</p>
+<p><img src="https://koenig-media.raywenderlich.com/uploads/2016/07/cc_form.png" width="300" align="center"></p>
+<p>在卡号<code>text field</code>中输入<code>4</code>–你将看到卡图片显示了<code>Visa</code>的图标：</p>
+<p><img src="https://koenig-media.raywenderlich.com/uploads/2016/07/Simulator-Screen-Shot-Jul-4-2016-7.47.40-PM.png" width="300" align="center"></p>
+<p>删除<code>4</code>，卡图片将恢复未知状态。输入<code>55</code>，图片将变成<code>MasterCard</code>：</p>
+<p><img src="https://koenig-media.raywenderlich.com/uploads/2016/07/Simulator-Screen-Shot-Jul-4-2016-7.47.36-PM.png" width="300" align="center"></p>
+<p>这个应用涵盖了美国的四种主要信用卡(Visa, MasterCard, American Express, Discover)。如果有有其中一种卡，你可以输入卡号来看看图片是否正确以及卡号是否有效。</p>
+<blockquote>
+<p>如果你没有这些信用卡，你可以使用Paypal用于测试其沙盒的测试卡卡号，这些应该可以通过程序的所有本地验证，即使卡号实际上是不可用的。</p>
+</blockquote>
+<p>一旦输入有效的信用卡卡号，同时有效期和cvv也是有效的，那么<code>Buy Chocolate!</code>按钮将被启用：</p>
+<p><img src="https://koenig-media.raywenderlich.com/uploads/2016/07/enabled_checkout.png" width="300" align="center"></p>
+<p>点击按钮查看购买的内容及如何付款的摘要：</p>
+<p><img src="https://koenig-media.raywenderlich.com/uploads/2016/07/success.png" width="300" align="center"></p>
+<p>恭喜你！感谢RxSwift和RxCocoa，你可以买到你的巧克力，想要多少要多少，等你的牙医让你离开为止。</p>
+<h2 id="下一步做什么"><a href="#下一步做什么" class="headerlink" title="下一步做什么"></a>下一步做什么</h2><p>最终的代码可以在<a href="https://koenig-media.raywenderlich.com/uploads/2016/10/Chocotastic-finished-s3-rxs-3b1.zip" target="_blank" rel="external">这里</a>找到。</p>
+<p>如果你想挑战一下，可以尝试添加一些东西，使这个程序更具响应式：</p>
+<ul>
+<li>更改<code>CartViewController</code>，以使用响应式<code>table view</code>来显示购物车的内容；</li>
+<li>允许用户直接从购物车添加或删除巧克力，并自动更新价格。</li>
+</ul>
+<p>现在你已经尝试了Rx编程，以下是一些资源，以帮助你继续你的旅程：</p>
+<ol>
+<li><a href="http://slack.rxswift.org/" target="_blank" rel="external">RxSwift Slack</a></li>
+<li><a href="https://github.com/ReactiveX/RxSwift/blob/master/Documentation/GettingStarted.md" target="_blank" rel="external">RxSwift’s Getting Started guide</a></li>
+<li><a href="https://www.raywenderlich.com/138547/getting-started-with-rxswift-and-rxcocoa" target="_blank" rel="external">Max Alexander’s talk on Rx at Realm</a></li>
+</ol>
+<p>最后，我们的<a href="https://www.raywenderlich.com/u/icanzilb" target="_blank" rel="external">Marin Todorov</a>有一个不错的博客，里面有他的<a href="http://rx-marin.com/" target="_blank" rel="external">rx_marin</a>响应式编程。</p>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
                 <a class="post-title-link" href="/2016/09/23/ios-techset-9/" itemprop="url">
                   iOS知识小集 第9期(2016.09.23)
                 </a>
@@ -931,11 +1251,11 @@
 </ul>
 <p>第一步是获取电影列表。如果你熟悉JavaScript开发，你会知道一般是使用XMLHttpRequest对象来访问网络。这个对象并不是语言本身的一部分，所以你不能将它用于一个iOS App的上下文中。相反，你应该使用本地网络代码。</p>
 <p>在MovieService类中，找到<code>loadMoviesWithLimit(_:onComplete:)</code>方法并按以下代码来修改：</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">loadMoviesWithLimit</span><span class="params">(limit: Double, onComplete complete: [Movie] -&gt; <span class="params">()</span></span></span>) &#123;</div><div class="line">  <span class="keyword">guard</span> <span class="keyword">let</span> url = <span class="type">NSURL</span>(string: movieUrl) <span class="keyword">else</span> &#123;</div><div class="line">    <span class="built_in">print</span>(<span class="string">"Invalid url format: \(movieUrl)"</span>)</div><div class="line">    <span class="keyword">return</span></div><div class="line">  &#125;</div><div class="line"> </div><div class="line">  <span class="type">NSURLSession</span>.sharedSession().dataTaskWithURL(url) &#123; data, <span class="number">_</span>, <span class="number">_</span> <span class="keyword">in</span></div><div class="line">    <span class="keyword">guard</span> <span class="keyword">let</span> data = data,</div><div class="line">        jsonString = <span class="type">String</span>(data: data, encoding: <span class="type">NSUTF8StringEncoding</span>) <span class="keyword">else</span> &#123;</div><div class="line">      <span class="built_in">print</span>(<span class="string">"Error while parsing the response data."</span>)</div><div class="line">      <span class="keyword">return</span></div><div class="line">    &#125;</div><div class="line"> </div><div class="line">    <span class="keyword">let</span> movies = <span class="keyword">self</span>.parseResponse(jsonString, withLimit:limit)</div><div class="line">    complete(movies)</div><div class="line"> </div><div class="line">  &#125;.resume()</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">loadMoviesWithLimit</span><span class="params">(limit: Double, onComplete complete: [Movie] -&gt; <span class="params">()</span></span></span>) &#123;</div><div class="line">  <span class="keyword">guard</span> <span class="keyword">let</span> url = <span class="type">NSURL</span>(string: movieUrl) <span class="keyword">else</span> &#123;</div><div class="line">    <span class="built_in">print</span>(<span class="string">"Invalid url format: <span class="subst">\(movieUrl)</span>"</span>)</div><div class="line">    <span class="keyword">return</span></div><div class="line">  &#125;</div><div class="line"> </div><div class="line">  <span class="type">NSURLSession</span>.sharedSession().dataTaskWithURL(url) &#123; data, <span class="number">_</span>, <span class="number">_</span> <span class="keyword">in</span></div><div class="line">    <span class="keyword">guard</span> <span class="keyword">let</span> data = data,</div><div class="line">        jsonString = <span class="type">String</span>(data: data, encoding: <span class="type">NSUTF8StringEncoding</span>) <span class="keyword">else</span> &#123;</div><div class="line">      <span class="built_in">print</span>(<span class="string">"Error while parsing the response data."</span>)</div><div class="line">      <span class="keyword">return</span></div><div class="line">    &#125;</div><div class="line"> </div><div class="line">    <span class="keyword">let</span> movies = <span class="keyword">self</span>.parseResponse(jsonString, withLimit:limit)</div><div class="line">    complete(movies)</div><div class="line"> </div><div class="line">  &#125;.resume()</div><div class="line">&#125;</div></pre></td></tr></table></figure>
 <p>上面的代码片断使用默认的NSURLSession单例来获取电影列表。在你将响应数据传递给JavaScript代码之前，你需要提供一个执行上下文给响应数据。首先，在MovieService.swift文件顶部，在<code>import UIKit</code>下方添加下面这行代码来导入JavaScriptCore：</p>
 <figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> JavaScriptCore</div></pre></td></tr></table></figure>
 <p>然后在MovieService中定义如下属性：</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">lazy</span> <span class="keyword">var</span> context: <span class="type">JSContext</span>? = &#123;</div><div class="line">  <span class="keyword">let</span> context = <span class="type">JSContext</span>()</div><div class="line"> </div><div class="line">  <span class="comment">// 1</span></div><div class="line">  <span class="keyword">guard</span> <span class="keyword">let</span></div><div class="line">      commonJSPath = <span class="type">NSBundle</span>.mainBundle().pathForResource(<span class="string">"common"</span>, ofType: <span class="string">"js"</span>) <span class="keyword">else</span> &#123;</div><div class="line">    <span class="built_in">print</span>(<span class="string">"Unable to read resource files."</span>)</div><div class="line">    <span class="keyword">return</span> <span class="literal">nil</span></div><div class="line">  &#125;</div><div class="line"> </div><div class="line">  <span class="comment">// 2</span></div><div class="line">  <span class="keyword">do</span> &#123;</div><div class="line">    <span class="keyword">let</span> common = <span class="keyword">try</span> <span class="type">String</span>(contentsOfFile: commonJSPath, encoding: <span class="type">NSUTF8StringEncoding</span>)</div><div class="line">    context.evaluateScript(common)</div><div class="line">  &#125; <span class="keyword">catch</span> (<span class="keyword">let</span> error) &#123;</div><div class="line">    <span class="built_in">print</span>(<span class="string">"Error while processing script file: \(error)"</span>)</div><div class="line">  &#125;</div><div class="line"> </div><div class="line">  <span class="keyword">return</span> context</div><div class="line">&#125;()</div></pre></td></tr></table></figure>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">lazy</span> <span class="keyword">var</span> context: <span class="type">JSContext</span>? = &#123;</div><div class="line">  <span class="keyword">let</span> context = <span class="type">JSContext</span>()</div><div class="line"> </div><div class="line">  <span class="comment">// 1</span></div><div class="line">  <span class="keyword">guard</span> <span class="keyword">let</span></div><div class="line">      commonJSPath = <span class="type">NSBundle</span>.mainBundle().pathForResource(<span class="string">"common"</span>, ofType: <span class="string">"js"</span>) <span class="keyword">else</span> &#123;</div><div class="line">    <span class="built_in">print</span>(<span class="string">"Unable to read resource files."</span>)</div><div class="line">    <span class="keyword">return</span> <span class="literal">nil</span></div><div class="line">  &#125;</div><div class="line"> </div><div class="line">  <span class="comment">// 2</span></div><div class="line">  <span class="keyword">do</span> &#123;</div><div class="line">    <span class="keyword">let</span> common = <span class="keyword">try</span> <span class="type">String</span>(contentsOfFile: commonJSPath, encoding: <span class="type">NSUTF8StringEncoding</span>)</div><div class="line">    context.evaluateScript(common)</div><div class="line">  &#125; <span class="keyword">catch</span> (<span class="keyword">let</span> error) &#123;</div><div class="line">    <span class="built_in">print</span>(<span class="string">"Error while processing script file: <span class="subst">\(error)</span>"</span>)</div><div class="line">  &#125;</div><div class="line"> </div><div class="line">  <span class="keyword">return</span> context</div><div class="line">&#125;()</div></pre></td></tr></table></figure>
 <p>这段代码将上下文定义为一个懒加载的JSContext属性：</p>
 <ol>
 <li>首先，你从应用的bundle中加载common.js文件，这个文件中包含你要访问的JavaScript代码。</li>
@@ -988,7 +1308,7 @@
 <figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">var</span> mapToNative = function(movies) &#123;</div><div class="line">  <span class="keyword">return</span> movies.<span class="built_in">map</span>(function (movie) &#123;</div><div class="line">    <span class="keyword">return</span> <span class="type">Movie</span>.movieWithTitlePriceImageUrl(movie.title, movie.price, movie.imageUrl);</div><div class="line">  &#125;);</div><div class="line">&#125;;</div></pre></td></tr></table></figure>
 <p>上面的方法从输入数组中获取每一个元素，并使用它来构造一个Movie实例。唯一值得指出的是方法签名是如何改变的：因为JavaScript没有命名参数，所以使用驼峰命名法将额外的参数附加到方法名后面。</p>
 <p>打开MovieService.swift，使用以下代码替换懒加载上下文属性的闭包实现。</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">lazy</span> <span class="keyword">var</span> context: <span class="type">JSContext</span>? = &#123;</div><div class="line"> </div><div class="line">  <span class="keyword">let</span> context = <span class="type">JSContext</span>()</div><div class="line"> </div><div class="line">  <span class="keyword">guard</span> <span class="keyword">let</span></div><div class="line">      commonJSPath = <span class="type">NSBundle</span>.mainBundle().pathForResource(<span class="string">"common"</span>, ofType: <span class="string">"js"</span>),</div><div class="line">      additionsJSPath = <span class="type">NSBundle</span>.mainBundle().pathForResource(<span class="string">"additions"</span>, ofType: <span class="string">"js"</span>) <span class="keyword">else</span> &#123;</div><div class="line">    <span class="built_in">print</span>(<span class="string">"Unable to read resource files."</span>)</div><div class="line">    <span class="keyword">return</span> <span class="literal">nil</span></div><div class="line">  &#125;</div><div class="line"> </div><div class="line">  <span class="keyword">do</span> &#123;</div><div class="line">    <span class="keyword">let</span> common = <span class="keyword">try</span> <span class="type">String</span>(contentsOfFile: commonJSPath, encoding: <span class="type">NSUTF8StringEncoding</span>)</div><div class="line">    <span class="keyword">let</span> additions = <span class="keyword">try</span> <span class="type">String</span>(contentsOfFile: additionsJSPath, encoding: <span class="type">NSUTF8StringEncoding</span>)</div><div class="line"> </div><div class="line">    context.setObject(<span class="type">Movie</span>.<span class="keyword">self</span>, forKeyedSubscript: <span class="string">"Movie"</span>)</div><div class="line">    context.evaluateScript(common)</div><div class="line">    context.evaluateScript(additions)</div><div class="line">  &#125; <span class="keyword">catch</span> (<span class="keyword">let</span> error) &#123;</div><div class="line">    <span class="built_in">print</span>(<span class="string">"Error while processing script file: \(error)"</span>)</div><div class="line">  &#125;</div><div class="line"> </div><div class="line">  <span class="keyword">return</span> context</div><div class="line">&#125;()</div></pre></td></tr></table></figure>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">lazy</span> <span class="keyword">var</span> context: <span class="type">JSContext</span>? = &#123;</div><div class="line"> </div><div class="line">  <span class="keyword">let</span> context = <span class="type">JSContext</span>()</div><div class="line"> </div><div class="line">  <span class="keyword">guard</span> <span class="keyword">let</span></div><div class="line">      commonJSPath = <span class="type">NSBundle</span>.mainBundle().pathForResource(<span class="string">"common"</span>, ofType: <span class="string">"js"</span>),</div><div class="line">      additionsJSPath = <span class="type">NSBundle</span>.mainBundle().pathForResource(<span class="string">"additions"</span>, ofType: <span class="string">"js"</span>) <span class="keyword">else</span> &#123;</div><div class="line">    <span class="built_in">print</span>(<span class="string">"Unable to read resource files."</span>)</div><div class="line">    <span class="keyword">return</span> <span class="literal">nil</span></div><div class="line">  &#125;</div><div class="line"> </div><div class="line">  <span class="keyword">do</span> &#123;</div><div class="line">    <span class="keyword">let</span> common = <span class="keyword">try</span> <span class="type">String</span>(contentsOfFile: commonJSPath, encoding: <span class="type">NSUTF8StringEncoding</span>)</div><div class="line">    <span class="keyword">let</span> additions = <span class="keyword">try</span> <span class="type">String</span>(contentsOfFile: additionsJSPath, encoding: <span class="type">NSUTF8StringEncoding</span>)</div><div class="line"> </div><div class="line">    context.setObject(<span class="type">Movie</span>.<span class="keyword">self</span>, forKeyedSubscript: <span class="string">"Movie"</span>)</div><div class="line">    context.evaluateScript(common)</div><div class="line">    context.evaluateScript(additions)</div><div class="line">  &#125; <span class="keyword">catch</span> (<span class="keyword">let</span> error) &#123;</div><div class="line">    <span class="built_in">print</span>(<span class="string">"Error while processing script file: <span class="subst">\(error)</span>"</span>)</div><div class="line">  &#125;</div><div class="line"> </div><div class="line">  <span class="keyword">return</span> context</div><div class="line">&#125;()</div></pre></td></tr></table></figure>
 <p>没有太大的改变。加载additions.js的内容到上下文。使用JSContext的<code>setObject(_:forKeyedSubscript:)</code>方法，你同样可以让Movie原型在上下文中可用。</p>
 <p>还剩下最后一件事：在MovieService.swift中，使用以下代码来替换<code>parseResponse(_:withLimit:)</code>的实现。</p>
 <figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">parseResponse</span><span class="params">(response: String, withLimit limit: Double)</span></span> -&gt; [<span class="type">Movie</span>] &#123;</div><div class="line">  <span class="keyword">guard</span> <span class="keyword">let</span> context = context <span class="keyword">else</span> &#123;</div><div class="line">    <span class="built_in">print</span>(<span class="string">"JSContext not found."</span>)</div><div class="line">    <span class="keyword">return</span> []</div><div class="line">  &#125;</div><div class="line"> </div><div class="line">  <span class="keyword">let</span> parseFunction = context.objectForKeyedSubscript(<span class="string">"parseJson"</span>)</div><div class="line">  <span class="keyword">let</span> parsed = parseFunction.callWithArguments([response]).toArray()</div><div class="line"> </div><div class="line">  <span class="keyword">let</span> filterFunction = context.objectForKeyedSubscript(<span class="string">"filterByLimit"</span>)</div><div class="line">  <span class="keyword">let</span> filtered = filterFunction.callWithArguments([parsed, limit]).toArray()</div><div class="line"> </div><div class="line">  <span class="keyword">let</span> mapFunction = context.objectForKeyedSubscript(<span class="string">"mapToNative"</span>)</div><div class="line">  <span class="keyword">guard</span> <span class="keyword">let</span> unwrappedFiltered = filtered,</div><div class="line">    movies = mapFunction.callWithArguments([unwrappedFiltered]).toArray() <span class="keyword">as</span>? [<span class="type">Movie</span>] <span class="keyword">else</span> &#123;</div><div class="line">    <span class="keyword">return</span> []</div><div class="line">  &#125;</div><div class="line"> </div><div class="line">  <span class="keyword">return</span> movies</div><div class="line">&#125;</div></pre></td></tr></table></figure>
@@ -1899,178 +2219,16 @@
 <p>但是作为一个<code>App</code>开发者，我们需要知道如何以更简单的方式让我们的<code>App</code>更快。那加速<code>App</code>的银弹又是什么呢？</p>
 <h2 id="找出性能瓶颈"><a href="#找出性能瓶颈" class="headerlink" title="找出性能瓶颈"></a>找出性能瓶颈</h2><p>找出<code>App</code>的性能瓶颈是很重要的。按照<code>80/20</code>的原则来说，“大约<code>20%</code>的代码占用了<code>80%</code>的运行速度”，这意味着我们需要找出这<code>20%</code>的代码并优化它，而不用关心剩余的<code>80%</code>。</p>
 <p>我写了个简单的带有一个闭包参数的测试函数，它的主要功能是测试闭包代码的运行速度。让我们来分析一下这段代码。</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">measure</span><span class="params">(title: String!, call: <span class="params">()</span></span></span> -&gt; <span class="type">Void</span>) &#123;</div><div class="line">    <span class="keyword">let</span> startTime = <span class="type">CACurrentMediaTime</span>()</div><div class="line">    call()</div><div class="line">    <span class="keyword">let</span> endTime = <span class="type">CACurrentMediaTime</span>()</div><div class="line">    <span class="keyword">if</span> <span class="keyword">let</span> title = title &#123;</div><div class="line">        <span class="built_in">print</span>(<span class="string">"\(title): "</span>)</div><div class="line">    &#125;</div><div class="line">    <span class="built_in">println</span>(<span class="string">"Time - \(endTime - startTime)"</span>)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">measure</span><span class="params">(title: String!, call: <span class="params">()</span></span></span> -&gt; <span class="type">Void</span>) &#123;</div><div class="line">    <span class="keyword">let</span> startTime = <span class="type">CACurrentMediaTime</span>()</div><div class="line">    call()</div><div class="line">    <span class="keyword">let</span> endTime = <span class="type">CACurrentMediaTime</span>()</div><div class="line">    <span class="keyword">if</span> <span class="keyword">let</span> title = title &#123;</div><div class="line">        <span class="built_in">print</span>(<span class="string">"<span class="subst">\(title)</span>: "</span>)</div><div class="line">    &#125;</div><div class="line">    <span class="built_in">println</span>(<span class="string">"Time - <span class="subst">\(endTime - startTime)</span>"</span>)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
 <p>这个测试函数的参数有两个：辅助分析的可选名称(<code>title</code>)和类型为<code>()-&gt;()</code>的闭包函数。相当简单吧。它在调用<code>call()</code>的前后分别获取了当前时间，并打印出<code>call()</code>执行所花费的时间。</p>
 <p>让我们来试一下吧。我有一个函数，它的职责是迭代一个数组，并加载图片。我想看看它需要花费多少时间。我们简单地包装一下这个代码块以方便测试函数调用。在这里我们使用了尾随闭包语义，看上去非常棒。</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">doSomeWork</span><span class="params">()</span></span> &#123;</div><div class="line"></div><div class="line">    measure(<span class="string">"Array"</span>) &#123;</div><div class="line">        <span class="keyword">var</span> ar = [<span class="type">String</span>]()</div><div class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="number">0</span>...<span class="number">10000</span> &#123;</div><div class="line">            ar.append(<span class="string">"New elem \(i)"</span>)</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    measure(<span class="string">"Image"</span>) &#123;</div><div class="line">        <span class="keyword">let</span> url = <span class="type">NSURL</span>(string: <span class="string">"http://lorempixel.com/1920/1920/"</span>)</div><div class="line">        <span class="keyword">let</span> image = <span class="type">UIImage</span>(data:<span class="type">NSData</span>(contentsOfURL:url!)!)</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">doSomeWork</span><span class="params">()</span></span> &#123;</div><div class="line"></div><div class="line">    measure(<span class="string">"Array"</span>) &#123;</div><div class="line">        <span class="keyword">var</span> ar = [<span class="type">String</span>]()</div><div class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="number">0</span>...<span class="number">10000</span> &#123;</div><div class="line">            ar.append(<span class="string">"New elem <span class="subst">\(i)</span>"</span>)</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    measure(<span class="string">"Image"</span>) &#123;</div><div class="line">        <span class="keyword">let</span> url = <span class="type">NSURL</span>(string: <span class="string">"http://lorempixel.com/1920/1920/"</span>)</div><div class="line">        <span class="keyword">let</span> image = <span class="type">UIImage</span>(data:<span class="type">NSData</span>(contentsOfURL:url!)!)</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
 <p>测试结果是</p>
 <figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="type">Array</span>: <span class="type">Time</span> — <span class="number">0.0845723639995413</span></div><div class="line"><span class="type">Image</span>: <span class="type">Time</span> — <span class="number">1.77442857499955</span></div></pre></td></tr></table></figure>
 <p><img src="https://d262ilb51hltx0.cloudfront.net/max/600/1*zCF2DX5VqNOmxgg8qs7z2w.png" alt="image"></p>
 <p>现在你知道了哪块代码占用了更多时间，然后就需要去优化它或者将其移到二级线程中处理。</p>
 <h2 id="提醒"><a href="#提醒" class="headerlink" title="提醒"></a>提醒</h2><p>应该总是在<code>Release</code>模式且<code>Optimization Level</code>设置为<code>[-Os]</code>或<code>[-Ofast]</code>的情况下去测试运行速度。</p>
 <p><img src="https://d262ilb51hltx0.cloudfront.net/max/800/1*Ea6yWoxe99jG_-kSAVd8eA.png" alt="image"></p>
-
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
-      
-
-  
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/2015/10/26/objectivecbridgeable-protocol-for-objectivec-class-and-swift-struct/" itemprop="url">
-                  使用_ObjectiveCBridgeable协议实现Objective-C类与Swift结构体的无缝互转
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            <span class="post-meta-item-icon">
-              <i class="fa fa-calendar-o"></i>
-            </span>
-            <span class="post-meta-item-text">发表于</span>
-            <time itemprop="dateCreated" datetime="2015-10-26T10:33:22+08:00" content="2015-10-26">
-              2015-10-26
-            </time>
-          </span>
-
-          
-            <span class="post-category" >
-              &nbsp; | &nbsp;
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-              
-                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
-                  <a href="/categories/swift/" itemprop="url" rel="index">
-                    <span itemprop="name">Swift</span>
-                  </a>
-                </span>
-
-                
-                
-
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-
-          
-          
-
-          
-        </div>
-      </header>
-    
-
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>我们知道在<code>Swift</code>中，可以在<code>NSArray</code>与<code>Array</code>之间做无缝的转换，如下所示：</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> mobile = [<span class="string">"iPhone"</span>, <span class="string">"Nokia"</span>, <span class="string">"小米Note"</span>]</div><div class="line"><span class="keyword">let</span> mobile1 = (mobile <span class="keyword">as</span> <span class="type">NSArray</span>).objectAtIndex(<span class="number">1</span>)</div><div class="line"><span class="built_in">print</span>(mobile1)</div><div class="line"></div><div class="line"><span class="keyword">let</span> animalArray = <span class="type">NSArray</span>(objects: <span class="string">"lion"</span>, <span class="string">"tiger"</span>, <span class="string">"monkey"</span>)</div><div class="line"><span class="keyword">var</span> animalCount = (animalArray <span class="keyword">as</span> <span class="type">Array</span>).<span class="built_in">count</span></div><div class="line"><span class="built_in">print</span>(animalCount)</div><div class="line"></div><div class="line"><span class="comment">// 输出</span></div><div class="line"><span class="comment">// "Nokia"</span></div><div class="line"><span class="comment">// ["lion", "tiger", "monkey"]</span></div></pre></td></tr></table></figure>
-<p>编译器会为了我们完成所有转换，我们只需要拿来即用就行。当然，除了数组外，还有字典(<code>Dictionary</code>)、集合(<code>Set</code>)、字符串(<code>String</code>)也是一样。</p>
-<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><p>不过仔细一想，会发现，<code>NSArray</code>是类类型，而<code>Array</code>是结构体类型。一个是引用类型，一个是值类型，它们是怎样实现无缝转换的呢？这让我们想到了<code>Cocoa Foundation</code>与<code>Core Foundation</code>之间转换的<code>toll-free bridging</code>技术。那<code>NSArray</code>与<code>Array</code>之间是不是也应该有类似的桥接实现呢？</p>
-<h2 id="Objective-C-Bridge"><a href="#Objective-C-Bridge" class="headerlink" title="Objective-C Bridge"></a>Objective-C Bridge</h2><p>我们将鼠标移动到<code>Array</code>上，然后<code>&quot;cmd+鼠标点击&quot;</code>，进入到<code>Swift</code>的声明文件中，在<code>Array</code>的注释中，可以看到下面这段：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/// Objective-C Bridge</span></div><div class="line"><span class="comment">/// ==================</span></div><div class="line"><span class="comment">/// The main distinction between Array and the other array types is that it interoperates seamlessly and efficiently with Objective-C.</span></div><div class="line"><span class="comment">/// Array&lt;Element&gt; is considered bridged to Objective-C iff Element is bridged to Objective-C.</span></div><div class="line"></div><div class="line"><span class="comment">// ......</span></div></pre></td></tr></table></figure>
-<p>可以看到<code>Array</code>与<code>Objective-C</code>的数组之间确实存在某种桥接技术，我们暂且称之为<code>&quot;Objective-C Bridge&quot;</code>桥接。那这又是如何实现的呢？</p>
-<p>我们在当前文件中搜索<code>bridge</code>，会发现有这样一个协议：<code>_ObjectiveCBridgeable</code>。我们先来看看它的声明：</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/// A Swift Array or Dictionary of types conforming to `_ObjectiveCBridgeable` can be passed to Objective-C as an NSArray or NSDictionary, respectively. The elements of the resulting NSArray or NSDictionary will be the result of calling `_bridgeToObjectiveC` on each element of the source container.</span></div><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">protocol</span> <span class="title">_ObjectiveCBridgeable</span> </span>&#123;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>即一个<code>Swift</code>数组或字典，如果其元素类型实现了<code>_ObjectiveCBridgeable</code>协议，则该数组或字典可以被转换成<code>Objective-C</code>的数组或字典。对于<code>_ObjectiveCBridgeable</code>协议，我们目前所能得到的文档就只有这些，也看不到它里面声明了什么属性方法。不过，可以看到这个协议是访问控制权限是<code>public</code>，也就意味着可以定义类来实现这个接口。这就好办了，下面就来尝试实现这样一个转换。</p>
-<h2 id="Objective-C类与Swift结构体的互转示例"><a href="#Objective-C类与Swift结构体的互转示例" class="headerlink" title="Objective-C类与Swift结构体的互转示例"></a>Objective-C类与Swift结构体的互转示例</h2><p>在此先定义一个<code>Objective-C</code>类，如下所示：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// Mobile.h</span></div><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">Mobile</span> : <span class="title">NSObject</span></span></div><div class="line"></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) <span class="built_in">NSString</span> *brand;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) <span class="built_in">NSString</span> *system;</div><div class="line"></div><div class="line">- (<span class="keyword">instancetype</span>)initWithBrand:(<span class="built_in">NSString</span> *)brand system:(<span class="built_in">NSString</span> *)system;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div><div class="line"></div><div class="line"><span class="comment">// Mobole.m</span></div><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">Mobile</span></span></div><div class="line"></div><div class="line">- (<span class="keyword">instancetype</span>)initWithBrand:(<span class="built_in">NSString</span> *)brand system:(<span class="built_in">NSString</span> *)system &#123;</div><div class="line"></div><div class="line">    <span class="keyword">self</span> = [<span class="keyword">super</span> init];</div><div class="line"></div><div class="line">    <span class="keyword">if</span> (<span class="keyword">self</span>) &#123;</div><div class="line">        _brand = brand;</div><div class="line">        _system = system;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
-<p>同样，我定义一个<code>Swift</code>结构体，如下所示：</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">struct</span> <span class="title">SwiftMobile</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="keyword">let</span> brand: <span class="type">String</span></div><div class="line">    <span class="keyword">let</span> system: <span class="type">String</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>要想实现<code>Mobile</code>类与<code>SwiftMobile</code>结构体之间的互转，则<code>SwiftMobile</code>结构体需要实现<code>_ObjectiveCBridgeable</code>协议，如下所示：</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">extension</span> <span class="title">SwiftMobile</span>: <span class="title">_ObjectiveCBridgeable</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="keyword">typealias</span> _ObjectiveCType = <span class="type">Mobile</span></div><div class="line"></div><div class="line">    <span class="comment">// 判断是否能转换成Objective-C对象</span></div><div class="line">    <span class="keyword">static</span> <span class="function"><span class="keyword">func</span> <span class="title">_isBridgedToObjectiveC</span><span class="params">()</span></span> -&gt; <span class="type">Bool</span> &#123;</div><div class="line">        <span class="keyword">return</span> <span class="literal">true</span></div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="comment">// 获取转换的目标类型</span></div><div class="line">    <span class="keyword">static</span> <span class="function"><span class="keyword">func</span> <span class="title">_getObjectiveCType</span><span class="params">()</span></span> -&gt; <span class="type">Any</span>.<span class="type">Type</span> &#123;</div><div class="line">        <span class="keyword">return</span> _ObjectiveCType.<span class="keyword">self</span></div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="comment">// 转换成Objective-C对象</span></div><div class="line">    <span class="function"><span class="keyword">func</span> <span class="title">_bridgeToObjectiveC</span><span class="params">()</span></span> -&gt; _ObjectiveCType &#123;</div><div class="line">        <span class="keyword">return</span> <span class="type">Mobile</span>(brand: brand, system: system)</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="comment">// 强制将Objective-C对象转换成Swift结构体类型</span></div><div class="line">    <span class="keyword">static</span> <span class="function"><span class="keyword">func</span> <span class="title">_forceBridgeFromObjectiveC</span><span class="params">(source: _ObjectiveCType, <span class="keyword">inout</span> result: SwiftMobile?)</span></span> &#123;</div><div class="line">        result = <span class="type">SwiftMobile</span>(brand: source.brand, system: source.system)</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="comment">// 有条件地将Objective-C对象转换成Swift结构体类型</span></div><div class="line">    <span class="keyword">static</span> <span class="function"><span class="keyword">func</span> <span class="title">_conditionallyBridgeFromObjectiveC</span><span class="params">(source: _ObjectiveCType, <span class="keyword">inout</span> result: SwiftMobile?)</span></span> -&gt; <span class="type">Bool</span> &#123;</div><div class="line"></div><div class="line">        _forceBridgeFromObjectiveC(source, result: &amp;result)</div><div class="line"></div><div class="line">        <span class="keyword">return</span> <span class="literal">true</span></div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>可以看到<code>SwiftMobile</code>结构体主要实现了<code>_ObjectiveCBridgeable</code>接口的<code>5</code>个方法，从方法名基本上就能知道每个方法的用途。这里需要注意的是在本例中的<code>_conditionallyBridgeFromObjectiveC</code>只是简单地调用了<code>_forceBridgeFromObjectiveC</code>，如果需要指定条件，则需要更详细的实现。</p>
-<p>让我们来测试一下：</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> mobile = <span class="type">Mobile</span>(brand: <span class="string">"iPhone"</span>, system: <span class="string">"iOS 9.0"</span>)</div><div class="line"></div><div class="line"><span class="keyword">let</span> swiftMobile = mobile <span class="keyword">as</span> <span class="type">SwiftMobile</span></div><div class="line"><span class="built_in">print</span>(<span class="string">"\(swiftMobile.brand): \(swiftMobile.system)"</span>)</div><div class="line"></div><div class="line"><span class="keyword">let</span> swiftMobile2 = <span class="type">SwiftMobile</span>(brand: <span class="string">"Galaxy Note 3 Lite"</span>, system: <span class="string">"Android 5.0"</span>)</div><div class="line"><span class="keyword">let</span> mobile2 = swiftMobile2 <span class="keyword">as</span> <span class="type">Mobile</span></div><div class="line"><span class="built_in">print</span>(<span class="string">"\(mobile2.brand): \(mobile2.system)"</span>)</div><div class="line"></div><div class="line"><span class="comment">// 输出:</span></div><div class="line"><span class="comment">// iPhone: iOS 9.0</span></div><div class="line"><span class="comment">// Galaxy Note 3 Lite: Android 5.0</span></div></pre></td></tr></table></figure>
-<p>可以看到只需要使用<code>as</code>，就能实现<code>Mobile</code>类与<code>SwiftMobile</code>结构体的无缝转换。是不是很简单？</p>
-<h2 id="集合类型的无缝互换"><a href="#集合类型的无缝互换" class="headerlink" title="集合类型的无缝互换"></a>集合类型的无缝互换</h2><p>回到数组的议题上来。</p>
-<p>我们知道<code>NSArray</code>的元素类型必须是类类型的，它不支持存储结构体、数值等类型。因此，<code>Array</code>转换成<code>NSArray</code>的前提是<code>Array</code>的元素类型能被<code>NSArray</code>所接受。如果存储在<code>Array</code>中的元素的类型是结构体，且该结构体实现了<code>_ObjectiveCBridgeable</code>接口，则转换成<code>NSArray</code>时，编译器会自动将所有的元素转换成对应的类类型对象。以上面的<code>SwiftMobile</code>为例，看如下代码：</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> sm1 = <span class="type">SwiftMobile</span>(brand: <span class="string">"iPhone"</span>, system: <span class="string">"iOS 9.0"</span>)</div><div class="line"><span class="keyword">let</span> sm2 = <span class="type">SwiftMobile</span>(brand: <span class="string">"Galaxy Note 3"</span>, system: <span class="string">"Android 5.0"</span>)</div><div class="line"><span class="keyword">let</span> sm3 = <span class="type">SwiftMobile</span>(brand: <span class="string">"小米"</span>, system: <span class="string">"Android 4.0"</span>)</div><div class="line"></div><div class="line"><span class="keyword">let</span> mobiles = [sm1, sm2, sm3]</div><div class="line"></div><div class="line"><span class="keyword">let</span> mobileArray = mobiles <span class="keyword">as</span> <span class="type">NSArray</span></div><div class="line"><span class="built_in">print</span>(mobileArray)</div><div class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="number">0</span>..&lt;mobiles.<span class="built_in">count</span> &#123;</div><div class="line">    <span class="built_in">print</span>(<span class="string">"\(mobileArray.objectAtIndex(i).brand): \(mobileArray.objectAtIndex(i).system)"</span>)</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// 输出：</span></div><div class="line"><span class="comment">// (</span></div><div class="line"><span class="comment">//    "&lt;Mobile: 0x100c03f30&gt;",</span></div><div class="line"><span class="comment">//    "&lt;Mobile: 0x100c03940&gt;",</span></div><div class="line"><span class="comment">//    "&lt;Mobile: 0x100c039c0&gt;"</span></div><div class="line"><span class="comment">// )</span></div><div class="line"><span class="comment">// iPhone: iOS 9.0</span></div><div class="line"><span class="comment">// Galaxy Note 3: Android 5.0</span></div><div class="line"><span class="comment">// 小米: Android 4.0</span></div></pre></td></tr></table></figure>
-<p>可以看到打印<code>mobileArray</code>数组时，其元素已经转换成了类<code>Mobile</code>的对象。一切都是那么的自然。而如果我们的<code>SwiftMobile</code>并没有实现<code>_ObjectiveCBridgeable</code>接口，则会报编译器错误：</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">'[<span class="type">SwiftMobile</span>]' <span class="keyword">is</span> not convertible to '<span class="type">NSArray'</span></div></pre></td></tr></table></figure>
-<p>实际上，像<code>Bool</code>，<code>Int</code>， <code>UInt</code>，<code>Float</code>，<code>Double</code>，<code>CGFloat</code>这些数值类型也实现了<code>_ObjectiveCBridgeable</code>接口。我们可以从文档<a href="https://developer.apple.com/library/prerelease/mac/releasenotes/General/APIDiffsMacOSX10_11/Swift/Swift.html" target="_blank" rel="external">OS X v10.11 API Diffs - Swift Changes for Swift</a>中找到一些线索：</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">extension</span> <span class="title">Bool</span> : <span class="title">_ObjectiveCBridgeable</span> </span>&#123;</div><div class="line">    <span class="keyword">init</span>(<span class="number">_</span> number: <span class="type">NSNumber</span>)</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">extension</span> <span class="title">Int</span> : <span class="title">_ObjectiveCBridgeable</span> </span>&#123;</div><div class="line">    <span class="keyword">init</span>(<span class="number">_</span> number: <span class="type">NSNumber</span>)</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">extension</span> <span class="title">Float</span> : <span class="title">_ObjectiveCBridgeable</span> </span>&#123;</div><div class="line">    <span class="keyword">init</span>(<span class="number">_</span> number: <span class="type">NSNumber</span>)</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// ... Double, UInt ...</span></div></pre></td></tr></table></figure>
-<p><em>(注意：整型类型只有<code>Int</code>与<code>UInt</code>实现了接口，而其它诸如<code>Int16</code>，<code>Uint32</code>，<code>Int8</code>等则没有）</em></p>
-<p>它们的目标类型都是<code>NSNumber</code>类型，如下代码所示：</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> numbers = [<span class="number">1</span>, <span class="number">29</span>, <span class="number">40</span>]</div><div class="line"><span class="keyword">let</span> numberArray = (numbers <span class="keyword">as</span> <span class="type">NSArray</span>).objectAtIndex(<span class="number">2</span>)</div><div class="line"></div><div class="line"><span class="built_in">print</span>(numberArray.<span class="keyword">dynamicType</span>)</div><div class="line"></div><div class="line"><span class="comment">// 输出:</span></div><div class="line"><span class="comment">// __NSCFNumber</span></div></pre></td></tr></table></figure>
-<p>当然，要想实现<code>Array</code>与<code>NSArray</code>无缝切换，除了元素类型需要支持这种操作外，<code>Array</code>本身也需要能支持<code>Objective-C Bridge</code>，即它也需要实现<code>_ObjectiveCBridgeable</code>接口。在<code>Swift</code>文件的<code>Array</code>声明中并没有找到相关的线索：</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">struct</span> <span class="title">Array</span>&lt;<span class="title">Element</span>&gt; : <span class="title">CollectionType</span>, <span class="title">Indexable</span>, <span class="title">SequenceType</span>, <span class="title">MutableCollectionType</span>, <span class="title">MutableIndexable</span>, <span class="title">_DestructorSafeContainer</span></span></div></pre></td></tr></table></figure>
-<p>线索依然在<a href="https://developer.apple.com/library/prerelease/mac/releasenotes/General/APIDiffsMacOSX10_11/Swift/Swift.html" target="_blank" rel="external">OS X v10.11 API Diffs - Swift Changes for Swift</a>中，有如下声明：</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">extension</span> <span class="title">Array</span> : <span class="title">_ObjectiveCBridgeable</span> </span>&#123;</div><div class="line">    <span class="keyword">init</span>(_fromNSArray source: <span class="type">NSArray</span>, noCopy noCopy: <span class="type">Bool</span> = <span class="keyword">default</span>)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>因此，<code>Array</code>与<code>NSArray</code>相互转换需要两个条件：</p>
-<ol>
-<li><code>Array</code>自身实现<code>Objective-C Bridge</code>桥接，这个<code>Swift</code>已经帮我们实现了。</li>
-<li><code>Array</code>中的元素如果是数值类型或结构类型，必须实现<code>Objective-C Bridge</code>桥接。而如果是类类型或者是<code>@objc protocol</code>类型，则不管这个类型是<code>Objective-C</code>体系中的，还是纯<code>Swift</code>类型(不继承自<code>NSObject</code>)，都可以直接转换。</li>
-</ol>
-<p>另外，<code>Array</code>只能转换成<code>NSArray</code>，而不能转换成<code>NSArray</code>的子类，如<code>NSMutableArray</code>或<code>NSOrderedArray</code>。如下所示：</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">var</span> objects = [<span class="type">NSObject</span>(), <span class="type">NSObject</span>(), <span class="type">NSObject</span>()]</div><div class="line"><span class="keyword">var</span> objectArray = objects <span class="keyword">as</span> <span class="type">NSMutableArray</span></div><div class="line"></div><div class="line"><span class="comment">// 编译器错误：</span></div><div class="line"><span class="comment">// '[NSObject]' is not convertible to 'NSMutableArray'</span></div></pre></td></tr></table></figure>
-<p>当然，反过来却是可以的。这个应该不需要太多的讨论。</p>
-<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>在<code>Swift</code>中，我们更多的会使用<code>Array</code>，<code>Dictionary</code>，<code>Set</code>这几个集合类型来存储数据，当然也会遇到需要将它们与<code>Objective-C</code>中对应的集合类型做转换的情况，特别是在混合编程的时候。另外，<code>String</code>也是可能经常切换的一个地方。不过，<code>Apple</code>已经帮我们完成了大部分的工作。如果需要实现自定义的结构体类型与<code>Objective-C</code>类的切换，则可以让结构体实现<code>_ObjectiveCBridgeable</code>接口。</p>
-<p>这里还有个小问题，在<code>Objective-C</code>中实际上是有两个类可以用来包装数值类型的值：<code>NSNumber</code>与<code>NSValue</code>。<code>NSNumber</code>我们就不说了，<code>NSValue</code>用于包装诸如<code>CGPoint</code>，<code>CGSize</code>等，不过<code>Swift</code>并没有实现<code>CGPoint</code>类的值到<code>NSValue</code>的转换，所以这个需要我们自己去处理。</p>
-<p>在<code>Swift</code>与<code>Objective-C</code>的集合类型相互转换过程中，还涉及到一些性能问题，大家可以看看对应的注释说明。在后续的文章中，会涉及到这一主题。</p>
-<p>本文的部分实例代码已上传至<code>github</code>，可以在<a href="https://github.com/southpeak/Swift/tree/master/Basic/ObjectiveCBridgeable" target="_blank" rel="external">这里</a>下载。</p>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ol>
-<li><a href="http://nshint.io/blog/2015/10/07/easy-cast-with-_ObjectiveCBridgeable/?utm_campaign=Swift%2BSandbox&amp;utm_medium=web&amp;utm_source=Swift_Sandbox_11" target="_blank" rel="external">Easy Cast With _ObjectiveCBridgeable</a></li>
-<li><a href="https://developer.apple.com/library/prerelease/mac/releasenotes/General/APIDiffsMacOSX10_11/Swift/Swift.html" target="_blank" rel="external">OS X v10.11 API Diffs - Swift Changes for Swift</a></li>
-</ol>
 
           
         
@@ -2144,7 +2302,7 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/archives">
-              <span class="site-state-item-count">85</span>
+              <span class="site-state-item-count">86</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>
@@ -2158,6 +2316,13 @@
             </div>
           
 
+          
+            <div class="site-state-item site-state-tags">
+              
+                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-name">标签</span>
+              
+            </div>
           
 
         </nav>
@@ -2191,7 +2356,7 @@
         <div class="copyright" >
   
   &copy; 
-  <span itemprop="copyrightYear">2016</span>
+  <span itemprop="copyrightYear">2017</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

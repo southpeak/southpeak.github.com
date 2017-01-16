@@ -458,7 +458,7 @@ Handoff是iOS 8和OS X Yosemite中的一个新特性。它让我们在不同的�
 <p>注意，我们只需要调用上面的起始方法。在<code>viewDidLoad()</code>起始行下面添加以下代码</p>
 <figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">startUserActivity()</div></pre></td></tr></table></figure>
 <p>开始广播至少需要以上步骤。现在来看看接收者。打开AppDelegate.swift并添加以下代码：</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">application</span><span class="params">(application: UIApplication!, </span></span></div><div class="line">                 continueUserActivity userActivity: NSUserActivity!, </div><div class="line">                 restorationHandler: <span class="params">(<span class="params">([AnyObject]!)</span></span> -&gt; <span class="type">Void</span>)!) </div><div class="line">                 -&gt; <span class="type">Bool</span> &#123;</div><div class="line"> </div><div class="line">    <span class="keyword">let</span> userInfo = userActivity.userInfo <span class="keyword">as</span> <span class="type">NSDictionary</span></div><div class="line">    <span class="built_in">println</span>(<span class="string">"Received a payload via handoff: \(userInfo)"</span>)</div><div class="line">    <span class="keyword">return</span> <span class="literal">true</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">application</span><span class="params">(application: UIApplication!, </span></span></div><div class="line">                 continueUserActivity userActivity: NSUserActivity!, </div><div class="line">                 restorationHandler: <span class="params">(<span class="params">([AnyObject]!)</span></span> -&gt; <span class="type">Void</span>)!) </div><div class="line">                 -&gt; <span class="type">Bool</span> &#123;</div><div class="line"> </div><div class="line">    <span class="keyword">let</span> userInfo = userActivity.userInfo <span class="keyword">as</span> <span class="type">NSDictionary</span></div><div class="line">    <span class="built_in">println</span>(<span class="string">"Received a payload via handoff: <span class="subst">\(userInfo)</span>"</span>)</div><div class="line">    <span class="keyword">return</span> <span class="literal">true</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
 <p><code>AppDelegate</code>中的这个方法在所有事情都准备好，且一个<code>userActivity</code>被成功传送后调用。在这里我们简单打印<code>userActivity</code>中的<code>userInfo</code>字典。我们返回<code>true</code>来标识我们处理了<code>user activity</code>。</p>
 <p>让我们来试试！要想在两台设备中正常工作，还需要做一些协调工作，所以还得仔细跟着。</p>
 <ol>
@@ -549,7 +549,7 @@ Handoff是iOS 8和OS X Yosemite中的一个新特性。它让我们在不同的�
 <p>到这里，我们的程序已经下载了<code>NSUserActivity</code>实例及其<code>userInfo</code>有效载荷。现在我们只是简单返回<code>true</code>。这强制程序在每次用户初始<code>Handoff</code>进程时接收<code>activity</code>。如果想要通知用户<code>activity</code>正在处理，则这是个好地方。</p>
 <p>到这里，系统开始将数据从一台设备同步到另一台设备上。我们已经覆盖了任务正常运行的所有情况。但是可以想象<code>Handoff</code>的<code>activity</code>在某些情况下会失败。</p>
 <p>将以下方法添加到<code>AppDelegate.swift</code>中来处理这种情况：</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">application</span><span class="params">(application: UIApplication!, </span></span></div><div class="line">                 didFailToContinueUserActivityWithType userActivityType: String!,</div><div class="line">                 error: NSError!) &#123;</div><div class="line"> </div><div class="line">    <span class="keyword">if</span> error.code != <span class="type">NSUserCancelledError</span> &#123;</div><div class="line">        <span class="keyword">let</span> message = <span class="string">"The connection to your other device may have been interrupted. Please try again. \(error.localizedDescription)"</span></div><div class="line">        <span class="keyword">let</span> alertView = <span class="type">UIAlertView</span>(title: <span class="string">"Handoff Error"</span>, message: message, delegate: <span class="literal">nil</span>, cancelButtonTitle: <span class="string">"Dismiss"</span>)</div><div class="line">        alertView.show()</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">application</span><span class="params">(application: UIApplication!, </span></span></div><div class="line">                 didFailToContinueUserActivityWithType userActivityType: String!,</div><div class="line">                 error: NSError!) &#123;</div><div class="line"> </div><div class="line">    <span class="keyword">if</span> error.code != <span class="type">NSUserCancelledError</span> &#123;</div><div class="line">        <span class="keyword">let</span> message = <span class="string">"The connection to your other device may have been interrupted. Please try again. <span class="subst">\(error.localizedDescription)</span>"</span></div><div class="line">        <span class="keyword">let</span> alertView = <span class="type">UIAlertView</span>(title: <span class="string">"Handoff Error"</span>, message: message, delegate: <span class="literal">nil</span>, cancelButtonTitle: <span class="string">"Dismiss"</span>)</div><div class="line">        alertView.show()</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
 <p>如果我们接收到除了<code>NSUserCancelledError</code>之外的任何信息，则发生了某些错误，且我们不能恢复<code>activity</code>。在这种情况下，我们显示一个适当的消息给用户。然而，如果用户显示取消<code>Handoff</code>行为，则在这里我们不需要做任何事情，只需要放弃操作。</p>
 <h2 id="版本支持"><a href="#版本支持" class="headerlink" title="版本支持"></a>版本支持</h2><p>使用<code>Handoff</code>的最佳实践之一是版本化。处理这的一个策略是为每个发送的<code>Handoff</code>添加一个版本号，并且只接收来自这个版本号(或者更早的)<code>handoff</code>。让我们来试试。</p>
 <p>打开<code>Constants.swift</code>并添加以下常量：</p>
@@ -677,7 +677,7 @@ Handoff是iOS 8和OS X Yosemite中的一个新特性。它让我们在不同的�
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/archives">
-              <span class="site-state-item-count">85</span>
+              <span class="site-state-item-count">86</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>
@@ -691,6 +691,13 @@ Handoff是iOS 8和OS X Yosemite中的一个新特性。它让我们在不同的�
             </div>
           
 
+          
+            <div class="site-state-item site-state-tags">
+              
+                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-name">标签</span>
+              
+            </div>
           
 
         </nav>
@@ -735,7 +742,7 @@ Handoff是iOS 8和OS X Yosemite中的一个新特性。它让我们在不同的�
         <div class="copyright" >
   
   &copy; 
-  <span itemprop="copyrightYear">2016</span>
+  <span itemprop="copyrightYear">2017</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

@@ -310,6 +310,187 @@
             
               
                 
+                <a class="post-title-link" href="/2014/07/17/ioszhong-liu-stream-de-shi-yong/" itemprop="url">
+                  iOS中流(Stream)的使用
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-07-17T23:30:26+08:00" content="2014-07-17">
+              2014-07-17
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/cocoa/" itemprop="url" rel="index">
+                    <span itemprop="name">Cocoa</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>流提供了一种简单的方式在不同和介质中交换数据，这种交换方式是与设备无关的。流是在通信路径中串行传输的连续的比特位序列。从编码的角度来看，流是单向的，因此流可以是输入流或输出流。除了基于文件的流外，其它形式的流都是不可查找的，这些流的数据一旦消耗完后，就无法从流对象中再次获取。</p>
+<p>在Cocoa中包含三个与流相关的类：NSStream、NSInputStream和NSOutputStream。NSStream是一个抽象基类，定义了所有流对象的基础接口和属性。NSInputStream和NSOutputStream继承自NSStream，实现了输入流和输出流的默认行为。下图描述了流的应用场景：</p>
+<p><img src="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/Streams/Articles/Art/stream_src_dest.gif" alt="image"></p>
+<p>从图中看，NSInputStream可以从文件、socket和NSData对象中获取数据；NSOutputStream可以将数据写入文件、socket、内存缓存和NSData对象中。这三处类主要处理一些比较底层的任务。</p>
+<p>流对象有一些相关的属性。大部分属性是用于处理网络安全和配置的，这些属性统称为SSL和SOCKS代理信息。两个比较重要的属性是：</p>
+<ol>
+<li>NSStreamDataWrittenToMemoryStreamKey：允许输出流查询写入到内存的数据</li>
+<li>NSStreamFileCurrentOffsetKey：允许操作基于文件的流的读写位置</li>
+</ol>
+<p>可以给流对象指定一个代理对象。如果没有指定，则流对象作为自己的代理。流对象调用唯一的代理方法stream:handleEvent:来处理流相关的事件：</p>
+<ol>
+<li>对于输入流来说，是有可用的数据可读取事件。我们可以使用read:maxLength:方法从流中获取数据</li>
+<li>对于输出流来说，是准备好写入的数据事件。我们可以使用write:maxLength:方法将数据写入流</li>
+</ol>
+<p>Cocoa中的流对象与Core Foundation中的流对象是对应的。我们可以通过toll-free桥接方法来进行相互转换。NSStream、NSInputStream和NSOutputStream分别对应CFStream、CFReadStream和CFWriteStream。但这两者间不是完全一样的。Core Foundation一般使用回调函数来处理数据。另外我们可以子类化NSStream、NSInputStream和NSOutputStream，来自定义一些属性和行为，而Core Foundation中的流对象则无法进行扩展。</p>
+<p>上面主要介绍了iOS中流的一些基本概念，我们下面将介绍流的具体使用，首先看看如何从流中读取数据。</p>
+<h2 id="从输入流中读取数据"><a href="#从输入流中读取数据" class="headerlink" title="从输入流中读取数据"></a>从输入流中读取数据</h2><p>从一个NSInputStream流中读取数据主要包括以下几个步骤：</p>
+<ol>
+<li>从数据源中创建和初始化一个NSInputStream实例</li>
+<li>将流对象放入一个run loop中并打开流</li>
+<li>处理流对象发送到其代理的事件</li>
+<li>当没有更多数据可读取时，关闭并销毁流对象。</li>
+</ol>
+<h3 id="准备流对象"><a href="#准备流对象" class="headerlink" title="准备流对象"></a>准备流对象</h3><p>要使用一个NSInputStream，必须要有数据源。数据源可以是文件、NSData对象和网络socket。创建好后，我们设置其代理对象，并将其放入到run loop中，然后打开流。代码清单1展示了这个准备过程.</p>
+<p><strong>代理清单1</strong></p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)setUpStreamForFile:(<span class="built_in">NSString</span> *)path</div><div class="line">&#123;</div><div class="line">    <span class="built_in">NSInputStream</span> *inputStream = [[<span class="built_in">NSInputStream</span> alloc] initWithFileAtPath:path];</div><div class="line">    inputStream.delegate = <span class="keyword">self</span>;</div><div class="line">    [inputStream scheduleInRunLoop:[<span class="built_in">NSRunLoop</span> currentRunLoop] forMode:<span class="built_in">NSDefaultRunLoopMode</span>];</div><div class="line">    </div><div class="line">    [inputStream open];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>在流对象放入run loop且有流事件(有可读数据)发生时，流对象会向代理对象发送stream:handleEvent:消息。在打开流之前，我们需要调用流对象的scheduleInRunLoop:forMode:方法，这样做可以避免在没有数据可读时阻塞代理对象的操作。我们需要确保的是流对象被放入正确的run loop中，即放入流事件发生的那个线程的run loop中。</p>
+<h3 id="处理流事件"><a href="#处理流事件" class="headerlink" title="处理流事件"></a>处理流事件</h3><p>打开流后，我们可以使用streamStatus属性查看流的状态，用hasBytesAvailable属性检测是否有可读的数据，用streamError来查看流处理过程中产生的错误。</p>
+<p>流一旦打开后，将会持续发送stream:handleEvent:消息给代理对象，直到流结束为止。这个消息接收一个NSStreamEvent常量作为参数，以标识事件的类型。对于NSInputStream对象，主要的事件类型包括NSStreamEventOpenCompleted、NSStreamEventHasBytesAvailable和NSStreamEventEndEncountered。通常我们会对NSStreamEventHasBytesAvailable更感兴趣。代理清单2演示了从流中获取数据的过程</p>
+<p><strong>代理清单2</strong></p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)stream:(<span class="built_in">NSStream</span> *)aStream handleEvent:(<span class="built_in">NSStreamEvent</span>)eventCode</div><div class="line">&#123;</div><div class="line">    <span class="keyword">switch</span> (eventCode) &#123;</div><div class="line">        <span class="keyword">case</span> <span class="built_in">NSStreamEventHasBytesAvailable</span>:</div><div class="line">        &#123;</div><div class="line">            <span class="keyword">if</span> (!data) &#123;</div><div class="line">                data = [<span class="built_in">NSMutableData</span> data];</div><div class="line">            &#125;</div><div class="line">            </div><div class="line">            uint8_t buf[<span class="number">1024</span>];</div><div class="line">            <span class="keyword">unsigned</span> <span class="keyword">int</span> len = <span class="number">0</span>;</div><div class="line">            len = [(<span class="built_in">NSInputStream</span> *)aStream read:buf maxLength:<span class="number">1024</span>];  <span class="comment">// 读取数据</span></div><div class="line">            <span class="keyword">if</span> (len) &#123;</div><div class="line">                [data appendBytes:(<span class="keyword">const</span> <span class="keyword">void</span> *)buf length:len];</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">            <span class="keyword">break</span>;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>当NSInputStream在处理流的过程中出现错误时，它将停止流处理并产生一个NSStreamEventErrorOccurred事件给代理。我们同样的上面的代理方法中来处理这个事件。</p>
+<h3 id="清理流对象"><a href="#清理流对象" class="headerlink" title="清理流对象"></a>清理流对象</h3><p>当NSInputStream读取到流的结尾时，会发送一个NSStreamEventEndEncountered事件给代理，代理对象应该销毁流对象，此过程应该与创建时相对应，代码清单3演示了关闭和释放流对象的过程。</p>
+<p><strong>代理清单3</strong></p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)stream:(<span class="built_in">NSStream</span> *)aStream handleEvent:(<span class="built_in">NSStreamEvent</span>)eventCode</div><div class="line">&#123;</div><div class="line">    <span class="keyword">switch</span> (eventCode) &#123;</div><div class="line">        <span class="keyword">case</span> <span class="built_in">NSStreamEventEndEncountered</span>:</div><div class="line">        &#123;</div><div class="line">            [aStream close];</div><div class="line">            [aStream removeFromRunLoop:[<span class="built_in">NSRunLoop</span> currentRunLoop] forMode:<span class="built_in">NSDefaultRunLoopMode</span>];</div><div class="line">            aStream = <span class="literal">nil</span>;</div><div class="line">        &#125;</div><div class="line">            <span class="keyword">break</span>;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="写入数据到输出流"><a href="#写入数据到输出流" class="headerlink" title="写入数据到输出流"></a>写入数据到输出流</h2><p>类似于从输入流读取数据，写入数据到输出流时，需要下面几个步骤：</p>
+<ol>
+<li>使用要写入的数据创建和初始化一个NSOutputStream实例，并设置代理对象</li>
+<li>将流对象放到run loop中并打开流</li>
+<li>处理流对象发送到代理对象中的事件</li>
+<li>如果流对象写入数据到内存，则通过请求NSStreamDataWrittenToMemoryStreamKey属性来获取数据</li>
+<li>当没有更多数据可供写入时，处理流对象</li>
+</ol>
+<p>基本流程与输入流的读取差不多，我们主要介绍不同的地方</p>
+<ol>
+<li>数据可写入的位置包括文件、C缓存、程序内存和网络socket。</li>
+<li>hasSpaceAvailable属性表示是否有空间来写入数据</li>
+<li>在stream:handleEvent:中主要处理NSStreamEventHasSpaceAvailable事件，并调用流的write:maxLength方法写数据。代码清单4演示了这一过程。</li>
+<li>如果NSOutputStream对象的目标是应用的内存时，在NSStreamEventEndEncountered事件中可能需要从内存中获取流中的数据。我们将调用NSOutputStream对象的propertyForKey:的属性，并指定key为NSStreamDataWrittenToMemoryStreamKey来获取这些数据。</li>
+</ol>
+<p><strong>代理清单4</strong></p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)stream:(<span class="built_in">NSStream</span> *)aStream handleEvent:(<span class="built_in">NSStreamEvent</span>)eventCode</div><div class="line">&#123;</div><div class="line">    <span class="keyword">switch</span> (eventCode) &#123;</div><div class="line">        <span class="keyword">case</span> <span class="built_in">NSStreamEventHasSpaceAvailable</span>:</div><div class="line">        &#123;</div><div class="line">            uint8_t *readBytes = (uint8_t *)[data mutableBytes];</div><div class="line">            readBytes += byteIndex;</div><div class="line">            <span class="keyword">int</span> data_len = [data length];</div><div class="line">            <span class="keyword">unsigned</span> <span class="keyword">int</span> len = (data_len - byteIndex &gt;= <span class="number">1024</span>) ? <span class="number">1024</span> : (data_len - byteIndex);</div><div class="line">            uint8_t buf[len];</div><div class="line">            </div><div class="line">            (<span class="keyword">void</span>)memcpy(buf, readBytes, len);</div><div class="line">            </div><div class="line">            len = [aStream write:(<span class="keyword">const</span> uint_8 *)buf maxLength:len];</div><div class="line">            byteIndex += len;</div><div class="line">            <span class="keyword">break</span>;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这里需要注意的是：当代理接收到NSStreamEventHasSpaceAvailable事件而没有写入任何数据到流时，代理将不再从run loop中接收该事件，直到NSOutputStream对象接收到更多数据，这时run loop会重启NSStreamEventHasSpaceAvailable事件。</p>
+<h2 id="流的轮循处理"><a href="#流的轮循处理" class="headerlink" title="流的轮循处理"></a>流的轮循处理</h2><p>在流的处理过程中，除了将流放入run loop来处理流事件外，还可以对流进行轮循处理。我们将流处理数据的过程放到一个循环中，并在循环中不断地去询问流是否有可用的数据供读取(hasBytesAvailable)或可用的空间供写入(hasSpaceAvailable)。当处理到流的结尾时，我们跳出循环结束流的操作。</p>
+<p>具体的过程如代码清单5所示</p>
+<p><strong>代码清单5</strong></p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)createNewFile &#123;</div><div class="line">    <span class="built_in">NSOutputStream</span> *oStream = [[<span class="built_in">NSOutputStream</span> alloc] initToMemory];</div><div class="line">    [oStream open];</div><div class="line">   </div><div class="line">    uint8_t *readBytes = (uint8_t *)[data mutableBytes];</div><div class="line">    uint8_t buf[<span class="number">1024</span>];</div><div class="line">    <span class="keyword">int</span> len = <span class="number">1024</span>;</div><div class="line">    </div><div class="line">    <span class="keyword">while</span> (<span class="number">1</span>) &#123;</div><div class="line">        <span class="keyword">if</span> (len == <span class="number">0</span>) <span class="keyword">break</span>;</div><div class="line">        </div><div class="line">        <span class="keyword">if</span> ([oStream hasSpaceAvailable])</div><div class="line">        &#123;</div><div class="line">            (<span class="keyword">void</span>)strncpy(buf, readBytes, len);</div><div class="line">            readBytes += len;</div><div class="line">            <span class="keyword">if</span> ([oStream write:(<span class="keyword">const</span> uint8_t *)buf maxLength:len] == <span class="number">-1</span>)</div><div class="line">            &#123;</div><div class="line">                [<span class="keyword">self</span> handleError:[oStream streamError]];</div><div class="line">                <span class="keyword">break</span>;</div><div class="line">            &#125;</div><div class="line">            [bytesWritten setIntValue:[bytesWritten intValue]+len];</div><div class="line">            len = (([data length] - [bytesWritten intValue] &gt;= <span class="number">1024</span>) ? <span class="number">1024</span> : [data length] - [bytesWritten intValue]);</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="built_in">NSData</span> *newData = [oStream propertyForKey:<span class="built_in">NSStreamDataWrittenToMemoryStreamKey</span>];</div><div class="line">    </div><div class="line">    <span class="keyword">if</span> (!newData) &#123;</div><div class="line">        <span class="built_in">NSLog</span>(<span class="string">@"No data written to memory!"</span>);</div><div class="line">    &#125; <span class="keyword">else</span> &#123;</div><div class="line">        [<span class="keyword">self</span> processData:newData];</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    [oStream close];</div><div class="line">    [oStream release];</div><div class="line">    oStream = <span class="literal">nil</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这种处理方法的问题在于它会阻塞当前线程，直到流处理结束为止，才继续进行后面的操作。而这种问题在处理网络socket流时尤为严重，我们必须等待服务端数据回来后才能继续操作。因此，通常情况下，建议使用run loop方式来处理流事件。</p>
+<h2 id="错误处理"><a href="#错误处理" class="headerlink" title="错误处理"></a>错误处理</h2><p>当流出现错误时，会停止对流数据的处理。一个流对象在出现错误时，不能再用于读或写操作，虽然在关闭前可以查询它的状态。</p>
+<p>NSStream和NSOutputStream类会以几种方式来告知错误的发生：</p>
+<ol>
+<li>如果流被放到run loop中，对象会发送一个NSStreamEventErrorOccurred事件到代理对象的stream:handleEvent:方法中</li>
+<li>任何时候，可以调用streamStatus属性来查看是否发生错误(返回NSStreamStatusError)</li>
+<li>如果在通过调用write:maxLength:写入数据到NSOutputStream对象时返回-1，则发生一个写错误。</li>
+</ol>
+<p>一旦确定产生错误时，我们可以调用流对象的streamError属性来查看错误的详细信息。在此我们不再举例。</p>
+<h2 id="设置Socket流"><a href="#设置Socket流" class="headerlink" title="设置Socket流"></a>设置Socket流</h2><p>在iOS中，NSStream类不支持连接到远程主机，幸运的是CFStream支持。前面已经说过这两者可以通过toll-free桥接来相互转换。使用CFStream时，我们可以调用CFStreamCreatePairWithSocketToHost函数并传递主机名和端口号，来获取一个CFReadStreamRef和一个CFWriteStreamRef来进行通信，然后我们可以将它们转换为NSInputStream和NSOutputStream对象来处理。</p>
+<p>具体的处理流程我们会在后期详细讨论。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/Streams/Streams.html" target="_blank" rel="external">Stream Programming Guide</a></p>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
                 <a class="post-title-link" href="/2014/07/16/url-load-system-5/" itemprop="url">
                   URL加载系统之五：缓存、Cookies与协议
                 </a>
@@ -1773,171 +1954,6 @@
 
 
     
-      
-
-  
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/2014/07/02/ios-swift-protocol/" itemprop="url">
-                  Swift协议基础
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            <span class="post-meta-item-icon">
-              <i class="fa fa-calendar-o"></i>
-            </span>
-            <span class="post-meta-item-text">发表于</span>
-            <time itemprop="dateCreated" datetime="2014-07-02T14:09:11+08:00" content="2014-07-02">
-              2014-07-02
-            </time>
-          </span>
-
-          
-            <span class="post-category" >
-              &nbsp; | &nbsp;
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-              
-                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
-                  <a href="/categories/swift/" itemprop="url" rel="index">
-                    <span itemprop="name">Swift</span>
-                  </a>
-                </span>
-
-                
-                
-
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-
-          
-          
-
-          
-        </div>
-      </header>
-    
-
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>Swift的Protocol(协议)与Objective-C的协议一样，用于定义一系列的特定任务和功能的集合。Protocol自身并不提供这些任务的实现，只是描述实现看起来应该是什么样的。类、结构体或枚举可以实现一个Protocol，并提供Protocol中任务和功能的具体实现。Protocol可以要求这些实现类型有指定的实例属性、实例方法、类型方法、操作符和下标等。</p>
-<p>Protocol的语法如下所示:</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">protocol</span> <span class="title">SomeProtocol</span> </span>&#123;</div><div class="line">    <span class="comment">// 协议定义</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>类、结构体、枚举可以同时实现多个Protocol，如下所示:</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">struct</span> <span class="title">SomeStructure</span>: <span class="title">SomeProtocol</span>, <span class="title">AnotherProcotol</span> </span>&#123;</div><div class="line">    <span class="comment">// 协议定义</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>需要注意的是，子类在实现Protocol时，需要把父类写在前面，后面再跟上Protocol列表。</p>
-<p>我们下面介绍Protocol可以定义的一些功能需求</p>
-<h2 id="属性"><a href="#属性" class="headerlink" title="属性"></a>属性</h2><p>Protocol可以要求实现类型提供指定名称和类型的实例属性或类型属性。Protocol不指定属性是存储属性还是计算属性，它只定义属性名和类型。Protocol也可以指定每个属性是只读的还是可读写的。</p>
-<p>如果Protocol要求属性是可读写的，那么这个属性不能是常量存储属性或者只读的计算属性；如果Protocol只是要求属性是可读的，则这个属性可以是任何类型的属性，这种情况下我们的实现代码同样可以指定属性为可写的。通常情况下，在Protocol中属性一般定义为变量，具体语法如下所示：</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">protocol</span> <span class="title">SomeProtocol</span> </span>&#123;</div><div class="line">    <span class="keyword">var</span> mustBeSettable: <span class="type">Int</span> &#123; <span class="keyword">get</span> <span class="keyword">set</span> &#125;</div><div class="line">    <span class="keyword">var</span> doesNotNeedToBeSettable: <span class="type">Int</span> &#123; <span class="keyword">get</span> &#125;</div><div class="line">    <span class="class"><span class="keyword">class</span> <span class="title">var</span> <span class="title">someTypeProperty</span>: <span class="title">Int</span> </span>&#123; <span class="keyword">get</span> <span class="keyword">set</span> &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>如果是类型属性，我们需要在前面加上class，即便是结构体可枚举来实现这个Protocol，也是一样。如上面代码所示。</p>
-<p>代码清单1是一个详细的例子，定义了一个协议FullyNamed，其中声明了fullName属性，而在其两个个体的实现类型中，将fullName实现为不同的属性类型</p>
-<p><strong>代码清单1</strong></p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">protocol</span> <span class="title">FullyNamed</span> </span>&#123;</div><div class="line">    <span class="keyword">var</span> fullName: <span class="type">String</span> &#123; <span class="keyword">get</span> &#125;</div><div class="line">&#125;</div><div class="line">	</div><div class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Person</span>: <span class="title">FullyNamed</span> </span>&#123;</div><div class="line">    <span class="keyword">var</span> fullName: <span class="type">String</span>        <span class="comment">// 可读写存储属性</span></div><div class="line">&#125;</div><div class="line">	</div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Sharship</span>: <span class="title">FullyNamed</span> </span>&#123;</div><div class="line">    </div><div class="line">    <span class="keyword">var</span> <span class="keyword">prefix</span>: <span class="type">String</span>?</div><div class="line">    <span class="keyword">var</span> name: <span class="type">String</span>?</div><div class="line">    </div><div class="line">    <span class="keyword">var</span> fullName: <span class="type">String</span> &#123;      <span class="comment">// 只读的计算属性</span></div><div class="line">    <span class="keyword">return</span> (<span class="keyword">prefix</span> ? <span class="keyword">prefix</span>! + <span class="string">" "</span> : <span class="string">""</span>) + name</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<h2 id="方法"><a href="#方法" class="headerlink" title="方法"></a>方法</h2><p>在Protocol中声明方法与在类中定义类似，只是没有实现体。另外声明方法是使用可变参数也是可以的，唯一的不同是在Protocol的方法声明中不能指定默认值。</p>
-<p>与属性声明一样，如果是类型方法，需要加上class前缀。方法的声明及实现类型的实现如代码清单2所示：</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">protocol</span> <span class="title">RandomNumberGenerator</span> </span>&#123;</div><div class="line">    <span class="function"><span class="keyword">func</span> <span class="title">random</span><span class="params">()</span></span> -&gt; <span class="type">Double</span></div><div class="line">&#125;</div><div class="line">	</div><div class="line">	</div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">LinearCongruentialGenerator</span>: <span class="title">RandomNumberGenerator</span> </span>&#123;</div><div class="line">    <span class="keyword">var</span> lastRandom = <span class="number">42.0</span></div><div class="line">    <span class="keyword">let</span> m = <span class="number">139968.0</span></div><div class="line">    <span class="keyword">let</span> a = <span class="number">3877.0</span></div><div class="line">    <span class="keyword">let</span> <span class="built_in">c</span> = <span class="number">29573.0</span></div><div class="line">    <span class="function"><span class="keyword">func</span> <span class="title">random</span><span class="params">()</span></span> -&gt; <span class="type">Double</span> &#123;</div><div class="line">        lastRandom = ((lastRandom * a + <span class="built_in">c</span>) % m)</div><div class="line">        <span class="keyword">return</span> lastRandom / m</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"><span class="keyword">let</span> generator = <span class="type">LinearCongruentialGenerator</span>()</div><div class="line">	</div><div class="line">generator.random()      <span class="comment">// 0.37464991998171</span></div></pre></td></tr></table></figure>
-<p>另外，如果我们需要在方法中修改实例，则在方法前添加mutating关键字，与结构体中方法的定义是一样的。需要注意的是，只有在结构体和枚举的实现中才需要加mutating，类的实现是不需要的。</p>
-<h2 id="该Protocol做为类型"><a href="#该Protocol做为类型" class="headerlink" title="该Protocol做为类型"></a>该Protocol做为类型</h2><p>Protocol可以作为一种类型在代码中使用。因为它是一种类型，所以在很多情况下都可以使用，包括</p>
-<ol>
-<li>作为函数、方法、初始化方法的参数或返回值</li>
-<li>作为常量、变量或属性的类型</li>
-<li>作为数组、字典或其它容器的元素</li>
-</ol>
-<p>基于此，Protocol也可以放入集合中，如数组、字典等。</p>
-<p>下面是将Protocol作为类型的例子</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Dice</span> </span>&#123;</div><div class="line">    <span class="keyword">let</span> sides: <span class="type">Int</span></div><div class="line">    <span class="keyword">let</span> generator: <span class="type">RandomNumberGenerator</span></div><div class="line">    <span class="keyword">init</span> (sides: <span class="type">Int</span>, generator: <span class="type">RandomNumberGenerator</span>) &#123;</div><div class="line">        <span class="keyword">self</span>.sides = sides</div><div class="line">        <span class="keyword">self</span>.generator = generator</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="function"><span class="keyword">func</span> <span class="title">roll</span><span class="params">()</span></span> -&gt; <span class="type">Int</span> &#123;</div><div class="line">        <span class="keyword">return</span> <span class="type">Int</span>(generator.random() * <span class="type">Double</span>(sides)) + <span class="number">1</span></div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line">	</div><div class="line"><span class="comment">// 具体使用</span></div><div class="line"><span class="keyword">var</span> dice = <span class="type">Dice</span>(sides: <span class="number">6</span>, generator: <span class="type">LinearCongruentialGenerator</span>())</div></pre></td></tr></table></figure>
-<h2 id="代理-Delegation"><a href="#代理-Delegation" class="headerlink" title="代理(Delegation)"></a>代理(Delegation)</h2><p>Swift与Objective-C的代理一样，允许将一个类或结构体的一些处理放到另外一个类型中(代理类)。Swift中代理模式的实现就是通过定义一个Protocol来封装代理方法，然后具体的实现类来实现这些代理方法。代理可以用于响应特定的行为，或者从外部资源获取数据，而不需要知道这些资源的类型。</p>
-<p>如下是一个实现UITableView代理的简单例子</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">ViewController</span>: <span class="title">UIViewController</span>, <span class="title">UITableViewDelegate</span>, <span class="title">UITableViewDataSource</span> </span>&#123;</div><div class="line">    </div><div class="line">    <span class="keyword">var</span> tableView: <span class="type">UITableView</span>?</div><div class="line">                            </div><div class="line">    <span class="keyword">override</span> <span class="function"><span class="keyword">func</span> <span class="title">viewDidLoad</span><span class="params">()</span></span> &#123;</div><div class="line">        <span class="keyword">super</span>.viewDidLoad()</div><div class="line">        <span class="comment">// Do any additional setup after loading the view, typically from a nib.</span></div><div class="line">        </div><div class="line">        tableView = <span class="type">UITableView</span>(frame: <span class="keyword">self</span>.view.bounds, style: <span class="type">UITableViewStyle</span>.<span class="type">Plain</span>)</div><div class="line">        tableView!.delegate = <span class="keyword">self</span></div><div class="line">        tableView!.dataSource = <span class="keyword">self</span></div><div class="line">    &#125;</div><div class="line">	</div><div class="line">	<span class="comment">// 实现UITableViewDataSource</span></div><div class="line">	</div><div class="line">    <span class="function"><span class="keyword">func</span> <span class="title">tableView</span><span class="params">(tableView: UITableView!, numberOfRowsInSection section: Int)</span></span> -&gt; <span class="type">Int</span> &#123;</div><div class="line">        <span class="keyword">return</span> <span class="number">20</span></div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="function"><span class="keyword">func</span> <span class="title">tableView</span><span class="params">(tableView: UITableView!, cellForRowAtIndexPath indexPath: NSIndexPath!)</span></span> -&gt; <span class="type">UITableViewCell</span>! &#123;</div><div class="line">        <span class="keyword">return</span> <span class="literal">nil</span></div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<h2 id="在扩展中实现Protocol"><a href="#在扩展中实现Protocol" class="headerlink" title="在扩展中实现Protocol"></a>在扩展中实现Protocol</h2><p>如果我们想让某个已存在的类型(我们没有源码的情况下)实现某个Protocol，则可以借助扩展。当类型的扩展实现了Protocol时，该类会自动实现Protocol(听着有点绕口)。但如果类型已经实现了Protocol的所有必须的方法(类型未采用Protocol)，这种情况下，若想让类型采用Protocol，则可以使用一个空的扩展来声明类型采用Protocol。如下代码所示：</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">protocol</span> <span class="title">TextRepresentable</span> </span>&#123;</div><div class="line">    <span class="function"><span class="keyword">func</span> <span class="title">asText</span><span class="params">()</span></span> -&gt; <span class="type">String</span></div><div class="line">&#125;</div><div class="line">	</div><div class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Hamster</span> </span>&#123;</div><div class="line">    <span class="keyword">var</span> name: <span class="type">String</span></div><div class="line">    <span class="function"><span class="keyword">func</span> <span class="title">asText</span><span class="params">()</span></span> -&gt; <span class="type">String</span> &#123;</div><div class="line">        <span class="keyword">return</span> <span class="string">"A Hamster"</span></div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line">	</div><div class="line"><span class="class"><span class="keyword">extension</span> <span class="title">Hamster</span> : <span class="title">TextRepresentable</span> </span>&#123;&#125;</div></pre></td></tr></table></figure>
-<h2 id="Protocol继承"><a href="#Protocol继承" class="headerlink" title="Protocol继承"></a>Protocol继承</h2><p>一个Protocol可以继承自一个或多个Protocol，并在自己的实现中添加更多的功能需求。Protocol继承的语法与类型继承是一样的，其语法如下所示：</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">protocol</span> <span class="title">InheritingProtocol</span> : <span class="title">SomeProtocol</span>, <span class="title">AnotherProtocol</span> </span>&#123;</div><div class="line">    </div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>在上面的例子中，所有实现子InheritingProtocol的类型都必须实现InheritingProtocol、SomeProtocol、AnotherProtocol三者中所有的必要功能。</p>
-<h2 id="Protocol组合"><a href="#Protocol组合" class="headerlink" title="Protocol组合"></a>Protocol组合</h2><p>让一个类型同时实现多个Protocol是很有用的。这种情况下，我们可以使用Protocol组合来将多个Protocol组合成一个整体。其语法如下所示：</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">protocol</span>&lt;<span class="title">SomeProtocol</span>, <span class="title">AnotherProtocol</span>&gt;</span></div></pre></td></tr></table></figure>
-<p>我们可以将多个Protocol放在&lt;&gt;中，在使用时，我们将其当成一个整体来处理，这种组合的实际含义是：任何同时实现&lt;&gt;所有Protocol的类型。让我们看看下面的例子：</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">protocol</span> <span class="title">P1</span> </span>&#123;</div><div class="line">    <span class="keyword">var</span> variable1 : <span class="type">String</span> &#123; <span class="keyword">get</span> &#125;</div><div class="line">&#125;</div><div class="line">	</div><div class="line"><span class="class"><span class="keyword">protocol</span> <span class="title">P2</span> </span>&#123;</div><div class="line">    <span class="keyword">var</span> variable2 : <span class="type">Int</span> &#123; <span class="keyword">get</span> &#125;</div><div class="line">&#125;</div><div class="line">	</div><div class="line"><span class="class"><span class="keyword">struct</span> <span class="title">MyStruct</span> : <span class="title">P1</span>, <span class="title">P2</span> </span>&#123;</div><div class="line">    <span class="keyword">var</span> variable1: <span class="type">String</span></div><div class="line">    <span class="keyword">var</span> variable2: <span class="type">Int</span></div><div class="line">&#125;</div><div class="line">	</div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">funcWithProtocols</span><span class="params">(protocols: <span class="keyword">protocol</span>&lt;P1, P2&gt;)</span></span> &#123;</div><div class="line">    </div><div class="line">&#125;</div><div class="line">	</div><div class="line"><span class="keyword">let</span> st = <span class="type">MyStruct</span>(variable1: <span class="string">"v"</span>, variable2: <span class="number">2</span>)</div><div class="line">	</div><div class="line">funcWithProtocols(st)</div></pre></td></tr></table></figure>
-<p>需要注意的是，Protocol组合并没有定义一个新的永久的Protocol类型，它仅仅是定义了一个临时的本地Protocol，该Protocol包含了组合中所有的功能。</p>
-<h2 id="检查Protocol的一致性"><a href="#检查Protocol的一致性" class="headerlink" title="检查Protocol的一致性"></a>检查Protocol的一致性</h2><p>我们可以使用is操作符来检查Protocol的一致性，用as操作符来作Protocol转换。</p>
-<ol>
-<li>如果is操作符返回true，则一个实例实现了protocol，否则没有</li>
-<li>as?操作符返回protocol类型的可选值，如果实例没有实现protocol，则返回nil</li>
-<li>as操作符强制作类型转换，如果实例没有实现protocol，则引发一个错误</li>
-</ol>
-<p>需要注意的是，只有当protocol使用@objc属性标记时，才可以检查其一致性。@objc属性表明protocol应该暴露给Objective-C代码。但即使我们的代码不与Objective-C交互，如果需要对protocol进行一致性检测，也需要使用这个属性。另外@objc标明的protocol只能被类实现，而不能被结构体或枚举实现。</p>
-<p>我们举个具体的例子：</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div></pre></td><td class="code"><pre><div class="line"><span class="meta">@objc</span> <span class="class"><span class="keyword">protocol</span> <span class="title">HasArea</span> </span>&#123;</div><div class="line">    <span class="keyword">var</span> area: <span class="type">Double</span> &#123; <span class="keyword">get</span> &#125;</div><div class="line">&#125;</div><div class="line">	</div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Circle</span>: <span class="title">HasArea</span> </span>&#123;</div><div class="line">    <span class="keyword">let</span> pi = <span class="number">3.1415927</span></div><div class="line">    <span class="keyword">var</span> radius: <span class="type">Double</span></div><div class="line">    <span class="keyword">var</span> area: <span class="type">Double</span> &#123; <span class="keyword">return</span> pi * radius * radius &#125;</div><div class="line">    <span class="keyword">init</span>(radius: <span class="type">Double</span>) &#123; <span class="keyword">self</span>.radius = radius &#125;</div><div class="line">&#125;</div><div class="line">	</div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Country</span>: <span class="title">HasArea</span> </span>&#123;</div><div class="line">    <span class="keyword">var</span> area: <span class="type">Double</span></div><div class="line">    <span class="keyword">init</span>(area: <span class="type">Double</span>) &#123; <span class="keyword">self</span>.area = area &#125;</div><div class="line">&#125;</div><div class="line">	</div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Animal</span> </span>&#123;</div><div class="line">    <span class="keyword">var</span> legs: <span class="type">Int</span></div><div class="line">    <span class="keyword">init</span>(legs: <span class="type">Int</span>) &#123; <span class="keyword">self</span>.legs = legs &#125;</div><div class="line">&#125;</div><div class="line">	</div><div class="line"><span class="keyword">let</span> objects: <span class="type">AnyObject</span>[] = [</div><div class="line">    <span class="type">Circle</span>(radius: <span class="number">2.0</span>),</div><div class="line">    <span class="type">Country</span>(area: <span class="number">243_610</span>),</div><div class="line">    <span class="type">Animal</span>(legs: <span class="number">4</span>)</div><div class="line">]</div><div class="line">	</div><div class="line"><span class="keyword">for</span> object : <span class="type">AnyObject</span> <span class="keyword">in</span> objects &#123;</div><div class="line">    <span class="keyword">if</span> <span class="keyword">let</span> objectWithArea = object <span class="keyword">as</span>? <span class="type">HasArea</span> &#123;</div><div class="line">        <span class="built_in">println</span>(<span class="string">"Area is \(objectWithArea.area)"</span>)</div><div class="line">    &#125; <span class="keyword">else</span> &#123;</div><div class="line">        <span class="built_in">println</span>(<span class="string">"Something that doesn't have an area"</span>)</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line">	</div><div class="line"><span class="comment">// Area is 12.5663708</span></div><div class="line"><span class="comment">// Area is 243610.0</span></div><div class="line"><span class="comment">// Something that doesn't have an area</span></div></pre></td></tr></table></figure>
-<h2 id="可选需求"><a href="#可选需求" class="headerlink" title="可选需求"></a>可选需求</h2><p>与Objective-C类似，Swift的Protocol可以定义一些可选的需求，这些需求在实现类型中可以选择性的实现。我们使用@optional修饰符来定义这些需求。</p>
-<p>一个可选的需求可以通过可选链来实现，这个可选链可以满足当某个类型没有实现所采用的Protocol的可选需求。这种调用的基本语法如下：</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">someOptionalMethod?(someArgument)</div></pre></td></tr></table></figure>
-<p>另外，可选的方法如果有返回值，总是返回一个可选值，以满足可能未被实现的需求。</p>
-
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
   </section>
 
   
@@ -1983,7 +1999,7 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/archives">
-              <span class="site-state-item-count">85</span>
+              <span class="site-state-item-count">86</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>
@@ -1997,6 +2013,13 @@
             </div>
           
 
+          
+            <div class="site-state-item site-state-tags">
+              
+                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-name">标签</span>
+              
+            </div>
           
 
         </nav>
@@ -2030,7 +2053,7 @@
         <div class="copyright" >
   
   &copy; 
-  <span itemprop="copyrightYear">2016</span>
+  <span itemprop="copyrightYear">2017</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

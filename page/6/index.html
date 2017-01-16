@@ -310,6 +310,247 @@
             
               
                 
+                <a class="post-title-link" href="/2014/11/03/objective-c-runtime-3/" itemprop="url">
+                  Objective-C Runtime 运行时之三：方法与消息
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-11-03T18:11:02+08:00" content="2014-11-03">
+              2014-11-03
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/objectivec/" itemprop="url" rel="index">
+                    <span itemprop="name">Objective-C</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>前面我们讨论了Runtime中对类和对象的处理，及对成员变量与属性的处理。这一章，我们就要开始讨论Runtime中最有意思的一部分：消息处理机制。我们将详细讨论消息的发送及消息的转发。不过在讨论消息之前，我们先来了解一下与方法相关的一些内容。</p>
+<h2 id="基础数据类型"><a href="#基础数据类型" class="headerlink" title="基础数据类型"></a>基础数据类型</h2><h3 id="SEL"><a href="#SEL" class="headerlink" title="SEL"></a>SEL</h3><p>SEL又叫选择器，是表示一个方法的<code>selector</code>的指针，其定义如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">typedef</span> <span class="keyword">struct</span> objc_selector *SEL;</div></pre></td></tr></table></figure>
+<p><code>objc_selector</code>结构体的详细定义没有在<code>&lt;objc/runtime.h&gt;</code>头文件中找到。方法的<code>selector</code>用于表示运行时方法的名字。Objective-C在编译时，会依据每一个方法的名字、参数序列，生成一个唯一的整型标识(<code>Int</code>类型的地址)，这个标识就是<code>SEL</code>。如下代码所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">SEL sel1 = <span class="keyword">@selector</span>(method1);</div><div class="line"><span class="built_in">NSLog</span>(<span class="string">@"sel : %p"</span>, sel1);</div></pre></td></tr></table></figure>
+<p>上面的输出为：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="number">2014</span><span class="number">-10</span><span class="number">-30</span> <span class="number">18</span>:<span class="number">40</span>:<span class="number">07.518</span> RuntimeTest[<span class="number">52734</span>:<span class="number">466626</span>] sel : <span class="number">0x100002d72</span></div></pre></td></tr></table></figure>
+<p>两个类之间，不管它们是父类与子类的关系，还是之间没有这种关系，只要方法名相同，那么方法的SEL就是一样的。每一个方法都对应着一个<code>SEL</code>。所以在Objective-C同一个类(及类的继承体系)中，不能存在2个同名的方法，即使参数类型不同也不行。相同的方法只能对应一个<code>SEL</code>。这也就导致Objective-C在处理相同方法名且参数个数相同但类型不同的方法方面的能力很差。如在某个类中定义以下两个方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)setWidth:(<span class="keyword">int</span>)width;</div><div class="line">- (<span class="keyword">void</span>)setWidth:(<span class="keyword">double</span>)width;</div></pre></td></tr></table></figure>
+<p>这样的定义被认为是一种编译错误，所以我们不能像C++, C#那样。而是需要像下面这样来声明：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">-(<span class="keyword">void</span>)setWidthIntValue:(<span class="keyword">int</span>)width;</div><div class="line">-(<span class="keyword">void</span>)setWidthDoubleValue:(<span class="keyword">double</span>)width;</div></pre></td></tr></table></figure>
+<p>当然，不同的类可以拥有相同的<code>selector</code>，这个没有问题。不同类的实例对象执行相同的<code>selector</code>时，会在各自的方法列表中去根据<code>selector</code>去寻找自己对应的<code>IMP</code>。</p>
+<p>工程中的所有的<code>SEL</code>组成一个<code>Set</code>集合，Set的特点就是唯一，因此SEL是唯一的。因此，如果我们想到这个方法集合中查找某个方法时，只需要去找到这个方法对应的SEL就行了，SEL实际上就是根据方法名<code>hash</code>化了的一个字符串，而对于字符串的比较仅仅需要比较他们的地址就可以了，可以说速度上无语伦比！！但是，有一个问题，就是数量增多会增大hash冲突而导致的性能下降（或是没有冲突，因为也可能用的是<code>perfect hash</code>）。但是不管使用什么样的方法加速，如果能够将总量减少（多个方法可能对应同一个<code>SEL</code>），那将是最犀利的方法。那么，我们就不难理解，为什么<code>SEL</code>仅仅是函数名了。</p>
+<p>本质上，<code>SEL</code>只是一个指向方法的指针（准确的说，只是一个根据方法名<code>hash</code>化了的<code>KEY</code>值，能唯一代表一个方法），它的存在只是为了加快方法的查询速度。这个查找过程我们将在下面讨论。</p>
+<p>我们可以在运行时添加新的<code>selector</code>，也可以在运行时获取已存在的<code>selector</code>，我们可以通过下面三种方法来获取SEL:</p>
+<ol>
+<li><code>sel_registerName</code>函数</li>
+<li>Objective-C编译器提供的<code>@selector()</code></li>
+<li><code>NSSelectorFromString()</code>方法</li>
+</ol>
+<h3 id="IMP"><a href="#IMP" class="headerlink" title="IMP"></a>IMP</h3><p><code>IMP</code>实际上是一个函数指针，指向方法实现的首地址。其定义如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">id</span> (*IMP)(<span class="keyword">id</span>, SEL, ...)</div></pre></td></tr></table></figure>
+<p>这个函数使用当前<code>CPU</code>架构实现的标准的C调用约定。第一个参数是指向<code>self</code>的指针(如果是实例方法，则是类实例的内存地址；如果是类方法，则是指向元类的指针)，第二个参数是方法选择器(<code>selector</code>)，接下来是方法的实际参数列表。</p>
+<p>前面介绍过的<code>SEL</code>就是为了查找方法的最终实现<code>IMP</code>的。由于每个方法对应唯一的<code>SEL</code>，因此我们可以通过<code>SEL</code>方便快速准确地获得它所对应的<code>IMP</code>，查找过程将在下面讨论。取得<code>IMP</code>后，我们就获得了执行这个方法代码的入口点，此时，我们就可以像调用普通的C语言函数一样来使用这个函数指针了。</p>
+<p>通过取得<code>IMP</code>，我们可以跳过Runtime的消息传递机制，直接执行<code>IMP</code>指向的函数实现，这样省去了Runtime消息传递过程中所做的一系列查找操作，会比直接向对象发送消息高效一些。</p>
+<h3 id="Method"><a href="#Method" class="headerlink" title="Method"></a>Method</h3><p>介绍完<code>SEL</code>和<code>IMP</code>，我们就可以来讲讲<code>Method</code>了。<code>Method</code>用于表示类定义中的方法，则定义如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">typedef</span> <span class="keyword">struct</span> objc_method *Method;</div><div class="line"></div><div class="line"><span class="keyword">struct</span> objc_method &#123;</div><div class="line">    SEL method_name                	OBJC2_UNAVAILABLE;	<span class="comment">// 方法名</span></div><div class="line">    <span class="keyword">char</span> *method_types                	OBJC2_UNAVAILABLE;</div><div class="line">    IMP method_imp             			OBJC2_UNAVAILABLE;	<span class="comment">// 方法实现</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>我们可以看到该结构体中包含一个<code>SEL</code>和<code>IMP</code>，实际上相当于在<code>SEL</code>和<code>IMP</code>之间作了一个映射。有了SEL，我们便可以找到对应的<code>IMP</code>，从而调用方法的实现代码。具体操作流程我们将在下面讨论。</p>
+<h4 id="objc-method-description"><a href="#objc-method-description" class="headerlink" title="objc_method_description"></a>objc_method_description</h4><p><code>objc_method_description</code>定义了一个Objective-C方法，其定义如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">struct</span> objc_method_description &#123; SEL name; <span class="keyword">char</span> *types; &#125;;</div></pre></td></tr></table></figure>
+<h2 id="方法相关操作函数"><a href="#方法相关操作函数" class="headerlink" title="方法相关操作函数"></a>方法相关操作函数</h2><p>Runtime提供了一系列的方法来处理与方法相关的操作。包括方法本身及SEL。本节我们介绍一下这些函数。</p>
+<h3 id="方法"><a href="#方法" class="headerlink" title="方法"></a>方法</h3><p>方法操作相关函数包括下以：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 调用指定方法的实现</span></div><div class="line"><span class="keyword">id</span> method_invoke ( <span class="keyword">id</span> receiver, Method m, ... );</div><div class="line"></div><div class="line"><span class="comment">// 调用返回一个数据结构的方法的实现</span></div><div class="line"><span class="keyword">void</span> method_invoke_stret ( <span class="keyword">id</span> receiver, Method m, ... );</div><div class="line"></div><div class="line"><span class="comment">// 获取方法名</span></div><div class="line">SEL method_getName ( Method m );</div><div class="line"></div><div class="line"><span class="comment">// 返回方法的实现</span></div><div class="line">IMP method_getImplementation ( Method m );</div><div class="line"></div><div class="line"><span class="comment">// 获取描述方法参数和返回值类型的字符串</span></div><div class="line"><span class="keyword">const</span> <span class="keyword">char</span> * method_getTypeEncoding ( Method m );</div><div class="line"></div><div class="line"><span class="comment">// 获取方法的返回值类型的字符串</span></div><div class="line"><span class="keyword">char</span> * method_copyReturnType ( Method m );</div><div class="line"></div><div class="line"><span class="comment">// 获取方法的指定位置参数的类型字符串</span></div><div class="line"><span class="keyword">char</span> * method_copyArgumentType ( Method m, <span class="keyword">unsigned</span> <span class="keyword">int</span> index );</div><div class="line"></div><div class="line"><span class="comment">// 通过引用返回方法的返回值类型字符串</span></div><div class="line"><span class="keyword">void</span> method_getReturnType ( Method m, <span class="keyword">char</span> *dst, size_t dst_len );</div><div class="line"></div><div class="line"><span class="comment">// 返回方法的参数的个数</span></div><div class="line"><span class="keyword">unsigned</span> <span class="keyword">int</span> method_getNumberOfArguments ( Method m );</div><div class="line"></div><div class="line"><span class="comment">// 通过引用返回方法指定位置参数的类型字符串</span></div><div class="line"><span class="keyword">void</span> method_getArgumentType ( Method m, <span class="keyword">unsigned</span> <span class="keyword">int</span> index, <span class="keyword">char</span> *dst, size_t dst_len );</div><div class="line"></div><div class="line"><span class="comment">// 返回指定方法的方法描述结构体</span></div><div class="line"><span class="keyword">struct</span> objc_method_description * method_getDescription ( Method m );</div><div class="line"></div><div class="line"><span class="comment">// 设置方法的实现</span></div><div class="line">IMP method_setImplementation ( Method m, IMP imp );</div><div class="line"></div><div class="line"><span class="comment">// 交换两个方法的实现</span></div><div class="line"><span class="keyword">void</span> method_exchangeImplementations ( Method m1, Method m2 );</div></pre></td></tr></table></figure>
+<ul>
+<li><code>method_invoke</code>函数，返回的是实际实现的返回值。参数<code>receiver</code>不能为空。这个方法的效率会比<code>method_getImplementation</code>和<code>method_getName</code>更快。</li>
+<li><code>method_getName</code>函数，返回的是一个<code>SEL</code>。如果想获取方法名的C字符串，可以使用<code>sel_getName(method_getName(method))</code>。</li>
+<li><code>method_getReturnType</code>函数，类型字符串会被拷贝到<code>dst</code>中。</li>
+<li><code>method_setImplementation</code>函数，注意该函数返回值是方法之前的实现。</li>
+</ul>
+<h3 id="方法选择器"><a href="#方法选择器" class="headerlink" title="方法选择器"></a>方法选择器</h3><p>选择器相关的操作函数包括：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 返回给定选择器指定的方法的名称</span></div><div class="line"><span class="keyword">const</span> <span class="keyword">char</span> * sel_getName ( SEL sel );</div><div class="line"></div><div class="line"><span class="comment">// 在Objective-C Runtime系统中注册一个方法，将方法名映射到一个选择器，并返回这个选择器</span></div><div class="line">SEL sel_registerName ( <span class="keyword">const</span> <span class="keyword">char</span> *str );</div><div class="line"></div><div class="line"><span class="comment">// 在Objective-C Runtime系统中注册一个方法</span></div><div class="line">SEL sel_getUid ( <span class="keyword">const</span> <span class="keyword">char</span> *str );</div><div class="line"></div><div class="line"><span class="comment">// 比较两个选择器</span></div><div class="line"><span class="built_in">BOOL</span> sel_isEqual ( SEL lhs, SEL rhs );</div></pre></td></tr></table></figure>
+<ul>
+<li><code>sel_registerName</code>函数：在我们将一个方法添加到类定义时，我们必须在<code>Objective-C Runtime</code>系统中注册一个方法名以获取方法的选择器。</li>
+</ul>
+<h2 id="方法调用流程"><a href="#方法调用流程" class="headerlink" title="方法调用流程"></a>方法调用流程</h2><p>在Objective-C中，消息直到运行时才绑定到方法实现上。编译器会将消息表达式<code>[receiver message]</code>转化为一个消息函数的调用，即<code>objc_msgSend</code>。这个函数将消息接收者和方法名作为其基础参数，如以下所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">objc_msgSend(receiver, selector)</div></pre></td></tr></table></figure>
+<p>如果消息中还有其它参数，则该方法的形式如下所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">objc_msgSend(receiver, selector, arg1, arg2, ...)</div></pre></td></tr></table></figure>
+<p>这个函数完成了动态绑定的所有事情：</p>
+<ol>
+<li>首先它找到<code>selector</code>对应的方法实现。因为同一个方法可能在不同的类中有不同的实现，所以我们需要依赖于接收者的类来找到的确切的实现。</li>
+<li>它调用方法实现，并将接收者对象及方法的所有参数传给它。</li>
+<li>最后，它将实现返回的值作为它自己的返回值。</li>
+</ol>
+<p>消息的关键在于我们前面章节讨论过的结构体<code>objc_class</code>，这个结构体有两个字段是我们在分发消息的关注的：</p>
+<ol>
+<li>指向父类的指针</li>
+<li>一个类的方法分发表，即<code>methodLists</code>。</li>
+</ol>
+<p>当我们创建一个新对象时，先为其分配内存，并初始化其成员变量。其中isa指针也会被初始化，让对象可以访问类及类的继承体系。</p>
+<p>下图演示了这样一个消息的基本框架：</p>
+<p><img src="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Art/messaging1.gif" alt="image"></p>
+<p>当消息发送给一个对象时，<code>objc_msgSend</code>通过对象的<code>isa</code>指针获取到类的结构体，然后在方法分发表里面查找方法的<code>selector</code>。如果没有找到<code>selector</code>，则通过<code>objc_msgSend</code>结构体中的指向父类的指针找到其父类，并在父类的分发表里面查找方法的<code>selector</code>。依此，会一直沿着类的继承体系到达NSObject类。一旦定位到<code>selector</code>，函数会就获取到了实现的入口点，并传入相应的参数来执行方法的具体实现。如果最后没有定位到<code>selector</code>，则会走消息转发流程，这个我们在后面讨论。</p>
+<p>为了加速消息的处理，运行时系统缓存使用过的<code>selector</code>及对应的方法的地址。这点我们在<a href="http://southpeak.github.io/blog/2014/10/25/objective-c-runtime-yun-xing-shi-zhi-lei-yu-dui-xiang/">前面</a>讨论过，不再重复。</p>
+<h3 id="隐藏参数"><a href="#隐藏参数" class="headerlink" title="隐藏参数"></a>隐藏参数</h3><p><code>objc_msgSend</code>有两个隐藏参数：</p>
+<ol>
+<li>消息接收对象</li>
+<li>方法的selector</li>
+</ol>
+<p>这两个参数为方法的实现提供了调用者的信息。之所以说是隐藏的，是因为它们在定义方法的源代码中没有声明。它们是在编译期被插入实现代码的。</p>
+<p>虽然这些参数没有显示声明，但在代码中仍然可以引用它们。我们可以使用<code>self</code>来引用接收者对象，使用<code>_cmd</code>来引用选择器。如下代码所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">- strange</div><div class="line">&#123;</div><div class="line">    <span class="keyword">id</span>  target = getTheReceiver();</div><div class="line">    SEL method = getTheMethod();</div><div class="line"></div><div class="line">    <span class="keyword">if</span> ( target == <span class="keyword">self</span> || method == _cmd )</div><div class="line">        <span class="keyword">return</span> <span class="literal">nil</span>;</div><div class="line"></div><div class="line">    <span class="keyword">return</span> [target performSelector:method];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>当然，这两个参数我们用得比较多的是<code>self</code>，<code>_cmd</code>在实际中用得比较少。</p>
+<h3 id="获取方法地址"><a href="#获取方法地址" class="headerlink" title="获取方法地址"></a>获取方法地址</h3><p>Runtime中方法的动态绑定让我们写代码时更具灵活性，如我们可以把消息转发给我们想要的对象，或者随意交换一个方法的实现等。不过灵活性的提升也带来了性能上的一些损耗。毕竟我们需要去查找方法的实现，而不像函数调用来得那么直接。当然，方法的缓存一定程度上解决了这一问题。</p>
+<p>我们上面提到过，如果想要避开这种动态绑定方式，我们可以获取方法实现的地址，然后像调用函数一样来直接调用它。特别是当我们需要在一个循环内频繁地调用一个特定的方法时，通过这种方式可以提高程序的性能。</p>
+<p>NSObject类提供了<code>methodForSelector:</code>方法，让我们可以获取到方法的指针，然后通过这个指针来调用实现代码。我们需要将<code>methodForSelector:</code>返回的指针转换为合适的函数类型，函数参数和返回值都需要匹配上。</p>
+<p>我们通过以下代码来看看<code>methodForSelector:</code>的使用：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">void</span> (*<span class="keyword">setter</span>)(<span class="keyword">id</span>, SEL, <span class="built_in">BOOL</span>);</div><div class="line"><span class="keyword">int</span> i;</div><div class="line"></div><div class="line"><span class="keyword">setter</span> = (<span class="keyword">void</span> (*)(<span class="keyword">id</span>, SEL, <span class="built_in">BOOL</span>))[target methodForSelector:<span class="keyword">@selector</span>(setFilled:)];</div><div class="line"></div><div class="line"><span class="keyword">for</span> (i = <span class="number">0</span> ; i &lt; <span class="number">1000</span> ; i++)</div><div class="line">    <span class="keyword">setter</span>(targetList[i], <span class="keyword">@selector</span>(setFilled:), <span class="literal">YES</span>);</div></pre></td></tr></table></figure>
+<p>这里需要注意的就是函数指针的前两个参数必须是<code>id</code>和<code>SEL</code>。</p>
+<p>当然这种方式只适合于在类似于<code>for</code>循环这种情况下频繁调用同一方法，以提高性能的情况。另外，<code>methodForSelector:</code>是由Cocoa运行时提供的；它不是Objective-C语言的特性。</p>
+<h2 id="消息转发"><a href="#消息转发" class="headerlink" title="消息转发"></a>消息转发</h2><p>当一个对象能接收一个消息时，就会走正常的方法调用流程。但如果一个对象无法接收指定消息时，又会发生什么事呢？默认情况下，如果是以<code>[object message]</code>的方式调用方法，如果<code>object</code>无法响应<code>message</code>消息时，编译器会报错。但如果是以<code>perform...</code>的形式来调用，则需要等到运行时才能确定object是否能接收<code>message</code>消息。如果不能，则程序崩溃。</p>
+<p>通常，当我们不能确定一个对象是否能接收某个消息时，会先调用<code>respondsToSelector:</code>来判断一下。如下代码所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">if</span> ([<span class="keyword">self</span> respondsToSelector:<span class="keyword">@selector</span>(method)]) &#123;</div><div class="line">    [<span class="keyword">self</span> performSelector:<span class="keyword">@selector</span>(method)];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>不过，我们这边想讨论下不使用<code>respondsToSelector:</code>判断的情况。这才是我们这一节的重点。</p>
+<p>当一个对象无法接收某一消息时，就会启动所谓”<strong>消息转发(message forwarding)</strong>“机制，通过这一机制，我们可以告诉对象如何处理未知的消息。默认情况下，对象接收到未知的消息，会导致程序崩溃，通过控制台，我们可以看到以下异常信息：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">-[SUTRuntimeMethod method]: unrecognized selector sent to instance 0x100111940</div><div class="line"></div><div class="line">*** Terminating app due to uncaught exception 'NSInvalidArgumentException', reason: '-[SUTRuntimeMethod method]: unrecognized selector sent to instance 0x100111940'</div></pre></td></tr></table></figure>
+<p>这段异常信息实际上是由NSObject的”<code>doesNotRecognizeSelector</code>“方法抛出的。不过，我们可以采取一些措施，让我们的程序执行特定的逻辑，而避免程序的崩溃。</p>
+<p>消息转发机制基本上分为三个步骤：</p>
+<ol>
+<li>动态方法解析</li>
+<li>备用接收者</li>
+<li>完整转发</li>
+</ol>
+<p>下面我们详细讨论一下这三个步骤。</p>
+<h3 id="动态方法解析"><a href="#动态方法解析" class="headerlink" title="动态方法解析"></a>动态方法解析</h3><p>对象在接收到未知的消息时，首先会调用所属类的类方法<code>+resolveInstanceMethod:</code>(实例方法)或者<code>+resolveClassMethod:</code>(类方法)。在这个方法中，我们有机会为该未知消息新增一个”处理方法””。不过使用该方法的前提是我们已经实现了该”处理方法”，只需要在运行时通过<code>class_addMethod</code>函数动态添加到类里面就可以了。如下代码所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">void</span> functionForMethod1(<span class="keyword">id</span> <span class="keyword">self</span>, SEL _cmd) &#123;</div><div class="line">   <span class="built_in">NSLog</span>(<span class="string">@"%@, %p"</span>, <span class="keyword">self</span>, _cmd);</div><div class="line">&#125;</div><div class="line"></div><div class="line">	</div><div class="line"></div><div class="line">+ (<span class="built_in">BOOL</span>)resolveInstanceMethod:(SEL)sel &#123;</div><div class="line"></div><div class="line">    <span class="built_in">NSString</span> *selectorString = <span class="built_in">NSStringFromSelector</span>(sel);</div><div class="line">    <span class="keyword">if</span> ([selectorString isEqualToString:<span class="string">@"method1"</span>]) &#123;</div><div class="line">        class_addMethod(<span class="keyword">self</span>.class, <span class="keyword">@selector</span>(method1), (IMP)functionForMethod1, <span class="string">"@:"</span>);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="keyword">return</span> [<span class="keyword">super</span> resolveInstanceMethod:sel];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>不过这种方案更多的是为了实现<code>@dynamic</code>属性。</p>
+<h3 id="备用接收者"><a href="#备用接收者" class="headerlink" title="备用接收者"></a>备用接收者</h3><p>如果在上一步无法处理消息，则Runtime会继续调以下方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">id</span>)forwardingTargetForSelector:(SEL)aSelector</div></pre></td></tr></table></figure>
+<p>如果一个对象实现了这个方法，并返回一个非nil的结果，则这个对象会作为消息的新接收者，且消息会被分发到这个对象。当然这个对象不能是<code>self</code>自身，否则就是出现无限循环。当然，如果我们没有指定相应的对象来处理<code>aSelector</code>，则应该调用父类的实现来返回结果。</p>
+<p>使用这个方法通常是在对象内部，可能还有一系列其它对象能处理该消息，我们便可借这些对象来处理消息并返回，这样在对象外部看来，还是由该对象亲自处理了这一消息。如下代码所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">SUTRuntimeMethodHelper</span> : <span class="title">NSObject</span></span></div><div class="line"></div><div class="line">- (<span class="keyword">void</span>)method2;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">SUTRuntimeMethodHelper</span></span></div><div class="line"></div><div class="line">- (<span class="keyword">void</span>)method2 &#123;</div><div class="line">    <span class="built_in">NSLog</span>(<span class="string">@"%@, %p"</span>, <span class="keyword">self</span>, _cmd);</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div><div class="line"></div><div class="line"><span class="meta">#pragma mark -</span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">SUTRuntimeMethod</span> () </span>&#123;</div><div class="line">    SUTRuntimeMethodHelper *_helper;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">SUTRuntimeMethod</span></span></div><div class="line"></div><div class="line">+ (<span class="keyword">instancetype</span>)object &#123;</div><div class="line">    <span class="keyword">return</span> [[<span class="keyword">self</span> alloc] init];</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (<span class="keyword">instancetype</span>)init &#123;</div><div class="line"></div><div class="line">    <span class="keyword">self</span> = [<span class="keyword">super</span> init];</div><div class="line">    <span class="keyword">if</span> (<span class="keyword">self</span> != <span class="literal">nil</span>) &#123;</div><div class="line">        _helper = [[SUTRuntimeMethodHelper alloc] init];</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (<span class="keyword">void</span>)test &#123;</div><div class="line">    [<span class="keyword">self</span> performSelector:<span class="keyword">@selector</span>(method2)];</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (<span class="keyword">id</span>)forwardingTargetForSelector:(SEL)aSelector &#123;</div><div class="line"></div><div class="line">    <span class="built_in">NSLog</span>(<span class="string">@"forwardingTargetForSelector"</span>);</div><div class="line"></div><div class="line">    <span class="built_in">NSString</span> *selectorString = <span class="built_in">NSStringFromSelector</span>(aSelector);</div><div class="line"></div><div class="line">    <span class="comment">// 将消息转发给_helper来处理</span></div><div class="line">    <span class="keyword">if</span> ([selectorString isEqualToString:<span class="string">@"method2"</span>]) &#123;</div><div class="line">        <span class="keyword">return</span> _helper;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> [<span class="keyword">super</span> forwardingTargetForSelector:aSelector];</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>这一步合适于我们只想将消息转发到另一个能处理该消息的对象上。但这一步无法对消息进行处理，如操作消息的参数和返回值。</p>
+<h3 id="完整消息转发"><a href="#完整消息转发" class="headerlink" title="完整消息转发"></a>完整消息转发</h3><p>如果在上一步还不能处理未知消息，则唯一能做的就是启用完整的消息转发机制了。此时会调用以下方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)forwardInvocation:(<span class="built_in">NSInvocation</span> *)anInvocation</div></pre></td></tr></table></figure>
+<p>运行时系统会在这一步给消息接收者最后一次机会将消息转发给其它对象。对象会创建一个表示消息的<code>NSInvocation</code>对象，把与尚未处理的消息有关的全部细节都封装在<code>anInvocation</code>中，包括<code>selector</code>，目标(<code>target</code>)和参数。我们可以在<code>forwardInvocation</code>方法中选择将消息转发给其它对象。</p>
+<p><code>forwardInvocation:</code>方法的实现有两个任务：</p>
+<ol>
+<li>定位可以响应封装在<code>anInvocation</code>中的消息的对象。这个对象不需要能处理所有未知消息。</li>
+<li>使用<code>anInvocation</code>作为参数，将消息发送到选中的对象。<code>anInvocation</code>将会保留调用结果，运行时系统会提取这一结果并将其发送到消息的原始发送者。</li>
+</ol>
+<p>不过，在这个方法中我们可以实现一些更复杂的功能，我们可以对消息的内容进行修改，比如追回一个参数等，然后再去触发消息。另外，若发现某个消息不应由本类处理，则应调用父类的同名方法，以便继承体系中的每个类都有机会处理此调用请求。</p>
+<p>还有一个很重要的问题，我们必须重写以下方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">- (<span class="built_in">NSMethodSignature</span> *)methodSignatureForSelector:(SEL)aSelector</div></pre></td></tr></table></figure>
+<p>消息转发机制使用从这个方法中获取的信息来创建<code>NSInvocation</code>对象。因此我们必须重写这个方法，为给定的<code>selector</code>提供一个合适的方法签名。</p>
+<p>完整的示例如下所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line">- (<span class="built_in">NSMethodSignature</span> *)methodSignatureForSelector:(SEL)aSelector &#123;</div><div class="line"></div><div class="line">    <span class="built_in">NSMethodSignature</span> *signature = [<span class="keyword">super</span> methodSignatureForSelector:aSelector];</div><div class="line">    <span class="keyword">if</span> (!signature) &#123;</div><div class="line">        <span class="keyword">if</span> ([SUTRuntimeMethodHelper instancesRespondToSelector:aSelector]) &#123;</div><div class="line">            signature = [SUTRuntimeMethodHelper instanceMethodSignatureForSelector:aSelector];</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="keyword">return</span> signature;</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (<span class="keyword">void</span>)forwardInvocation:(<span class="built_in">NSInvocation</span> *)anInvocation &#123;</div><div class="line">    <span class="keyword">if</span> ([SUTRuntimeMethodHelper instancesRespondToSelector:anInvocation.selector]) &#123;</div><div class="line">        [anInvocation invokeWithTarget:_helper];</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>NSObject的<code>forwardInvocation:</code>方法实现只是简单调用了<code>doesNotRecognizeSelector:</code>方法，它不会转发任何消息。这样，如果不在以上所述的三个步骤中处理未知消息，则会引发一个异常。</p>
+<p>从某种意义上来讲，<code>forwardInvocation:</code>就像一个未知消息的分发中心，将这些未知的消息转发给其它对象。或者也可以像一个运输站一样将所有未知消息都发送给同一个接收对象。这取决于具体的实现。</p>
+<h3 id="消息转发与多重继承"><a href="#消息转发与多重继承" class="headerlink" title="消息转发与多重继承"></a>消息转发与多重继承</h3><p>回过头来看第二和第三步，通过这两个方法我们可以允许一个对象与其它对象建立关系，以处理某些未知消息，而表面上看仍然是该对象在处理消息。通过这种关系，我们可以模拟“多重继承”的某些特性，让对象可以“继承”其它对象的特性来处理一些事情。不过，这两者间有一个重要的区别：多重继承将不同的功能集成到一个对象中，它会让对象变得过大，涉及的东西过多；而消息转发将功能分解到独立的小的对象中，并通过某种方式将这些对象连接起来，并做相应的消息转发。</p>
+<p>不过消息转发虽然类似于继承，但NSObject的一些方法还是能区分两者。如<code>respondsToSelector:</code>和<code>isKindOfClass:</code>只能用于继承体系，而不能用于转发链。便如果我们想让这种消息转发看起来像是继承，则可以重写这些方法，如以下代码所示：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">- (<span class="built_in">BOOL</span>)respondsToSelector:(SEL)aSelector</div><div class="line">&#123;</div><div class="line">	<span class="keyword">if</span> ( [<span class="keyword">super</span> respondsToSelector:aSelector])</div><div class="line">		<span class="keyword">return</span> <span class="literal">YES</span>;</div><div class="line">	<span class="keyword">else</span> &#123;</div><div class="line">		<span class="comment">/* Here, test whether the aSelector message can     *</span></div><div class="line">		 * be forwarded to another object and whether that  *</div><div class="line">		 * object can respond to it. Return YES if it can.  */</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	<span class="keyword">return</span> <span class="literal">NO</span>; 	</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>在此，我们已经了解了Runtime中消息发送和转发的基本机制。这也是Runtime的强大之处，通过它，我们可以为程序增加很多动态的行为，虽然我们在实际开发中很少直接使用这些机制(如直接调用<code>objc_msgSend</code>)，但了解它们有助于我们更多地去了解底层的实现。其实在实际的编码过程中，我们也可以灵活地使用这些机制，去实现一些特殊的功能，如<code>hook</code>操作等。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/ObjCRuntimeRef" target="_blank" rel="external">Objective-C Runtime Reference</a></li>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Introduction/Introduction.html" target="_blank" rel="external">Objective-C Runtime Programming Guide</a></li>
+<li><a href="http://www.xcoder.cn/html/2013/objc_0304/1373.html" target="_blank" rel="external">Objective-C runtime之消息（二）</a></li>
+<li><a href="http://www.cnblogs.com/kesalin/archive/2011/08/15/objc_method_base.html" target="_blank" rel="external">深入浅出Cocoa之消息</a></li>
+</ol>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
                 <a class="post-title-link" href="/2014/10/30/objective-c-runtime-2/" itemprop="url">
                   Objective-C Runtime 运行时之二：成员变量与属性
                 </a>
@@ -2007,327 +2248,6 @@
 
 
     
-      
-
-  
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/2014/08/08/mvvm-tutorial-with-reactivecocoa-1/" itemprop="url">
-                  MVVM Tutorial with ReactiveCocoa: Part 1/2
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            <span class="post-meta-item-icon">
-              <i class="fa fa-calendar-o"></i>
-            </span>
-            <span class="post-meta-item-text">发表于</span>
-            <time itemprop="dateCreated" datetime="2014-08-08T18:54:42+08:00" content="2014-08-08">
-              2014-08-08
-            </time>
-          </span>
-
-          
-            <span class="post-category" >
-              &nbsp; | &nbsp;
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-              
-                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
-                  <a href="/categories/translate/" itemprop="url" rel="index">
-                    <span itemprop="name">翻译</span>
-                  </a>
-                </span>
-
-                
-                
-
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-
-          
-          
-
-          
-        </div>
-      </header>
-    
-
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>本文由<code>Colin Eberhardt</code>发表于<code>raywenderlich</code>，原文可查看<a href="http://www.raywenderlich.com/74106/mvvm-tutorial-with-reactivecocoa-part-1" target="_blank" rel="external">MVVM Tutorial with ReactiveCocoa: Part 1/2</a></p>
-<p>你可能已经在<code>Twitter</code>上听过这个这个笑话了：</p>
-<blockquote>
-<p>“iOS Architecture, where MVC stands for Massive View Controller”</p>
-</blockquote>
-<p>当然这在<code>iOS</code>开发圈内，这是个轻松的笑话，但我敢确定你大实践中遇到过这个问题：即视图控制器太大且难以管理。</p>
-<p>这篇文章将介绍另一种构建应用程序的模式–<code>MVVM(Model-View-ViewModel)</code>。通过结合<code>ReactiveCocoa</code>便利性，这个模式提供了一个很好的代替<code>MVC</code>的方案，它保证了让视图控制器的轻量性。</p>
-<p>在本文我，我们将通过构建一个简单的<code>Flickr</code>查询程序来一步步了解<code>MVVM</code>，这个程序的效果图如下所示：</p>
-<p><img src="http://cdn5.raywenderlich.com/wp-content/uploads/2014/06/FinishedApp.png" alt="image"></p>
-<p>在开始写代码之前，我们先来了解一些基本的原理。</p>
-<p>原文简要介绍了一下<code>ReactiveCocoa</code>，在此不再翻译，可以查看以下两篇译文：</p>
-<p><a href="http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-%5B%3F%5D-:xin-hao/">ReactiveCocoa Tutorial – The Definitive Introduction: Part 1/2</a></p>
-<p><a href="http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-er-:twittersou-suo-shi-li/">ReactiveCocoa Tutorial – The Definitive Introduction: Part 2/2</a></p>
-<h2 id="MVVM模式介绍"><a href="#MVVM模式介绍" class="headerlink" title="MVVM模式介绍"></a>MVVM模式介绍</h2><p>正如其名称一下，<code>MVVM</code>是一个<code>UI</code>设计模式。它是<code>MV*</code>模式集合中的一员。<code>MV*</code>模式还包含<code>MVC(Model View Controller)</code>、<code>MVP(Model View Presenter)</code>等。这些模式的目的在于将UI逻辑与业务逻辑分离，以让程序更容易开发和测试。为了更好的理解<code>MVVM</code>模式，我们可以看看其来源。</p>
-<p><code>MVC</code>是最初的<code>UI</code>设计模式，最早出现在<code>Smalltalk</code>语言中。下图展示了<code>MVC</code>模式的主要组成：</p>
-<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/06/MVCPattern-2.png" alt="image"></p>
-<p>这个模式将<code>UI</code>分成<code>Model</code>(表示程序状态)、<code>View</code>(由UI控件组成)、<code>Controller</code>(处理用户交互与更新<code>model</code>)。<code>MVC</code>模式的最大问题是其令人相当困惑。它的概念看起来很好，但当我们实现<code>MVC</code>时，就会产生上图这种<code>Model-View-Controller</code>之间的环状关系。这种相互关系将会导致可怕的混乱。</p>
-<p>最近<code>Martin Fowler</code>介绍了<code>MVC</code>模式的一个变种，这种模式命名为<code>MVVM</code>，并被微软广泛采用并推广。</p>
-<p><img src="http://cdn5.raywenderlich.com/wp-content/uploads/2014/06/MVVMPattern.png" alt="image"></p>
-<p>这个模式的核心是<code>ViewModel</code>，它是一种特殊的<code>model</code>类型，用于表示程序的<code>UI</code>状态。它包含描述每个<code>UI</code>控件的状态的属性。例如，文本输入域的当前文本，或者一个特定按钮是否可用。它同样暴露了视图可以执行哪些行为，如按钮点击或手势。</p>
-<p>我们可以将<code>ViewModel</code>看作是视图的模型(<code>model-of-the-view</code>)。<code>MVVM</code>模式中的三部分比<code>MVC</code>更加简洁，下面是一些严格的限制</p>
-<ol>
-<li><code>View</code>引用了<code>ViewModel</code>，但反过来不行。</li>
-<li><code>ViewModel</code>引用了<code>Model</code>，但反过来不行。</li>
-</ol>
-<p>如果我们破坏了这些规则，便无法正确地使用<code>MVVM</code>。</p>
-<p>这个模式有以下一些立竿见影的优势：</p>
-<ol>
-<li>轻量的视图：所有的UI逻辑都在<code>ViewModel</code>中。</li>
-<li>便于测试：我们可以在没有视图的情况下运行整个程序，这样大大地增加了它的可测试性。</li>
-</ol>
-<p>现在你可能注意到一个问题。如果<code>View</code>引用了<code>ViewModel</code>，但<code>ViewModel</code>没有引用<code>View</code>，那<code>ViewModel</code>如何更新视图呢？哈哈，这就得靠<code>MVVM</code>模式的私密武器了。</p>
-<h2 id="MVVM和数据绑定"><a href="#MVVM和数据绑定" class="headerlink" title="MVVM和数据绑定"></a>MVVM和数据绑定</h2><p><code>MVVM</code>模式依赖于数据绑定，它是一个框架级别的特性，用于自动连接对象属性和UI控件。例如，在微软的<code>WPF</code>框架中，下面的标签将一个<code>TextField</code>的<code>Text</code>属性绑定到<code>ViewModel</code>的<code>Username</code>属性中。</p>
-<figure class="highlight html"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="tag">&lt;<span class="name">TextField</span> <span class="attr">Text</span>=<span class="string">”&#123;DataBinding</span> <span class="attr">Path</span>=<span class="string">Username,</span> <span class="attr">Mode</span>=<span class="string">TwoWay&#125;”/</span>&gt;</span></div></pre></td></tr></table></figure>
-<p>WPF框架将这两个属性绑定到一起。</p>
-<p>不过可惜的是，<code>iOS</code>没有数据绑定框架，幸运的是我们可以通过<code>ReactiveCocoa</code>来实现这一功能。我们从<code>iOS</code>开发的角度来看看<code>MVVM</code>模式，<code>ViewController</code>及其相关的<code>UI</code>(<code>nib</code>, <code>stroyboard</code>或纯代码的<code>View</code>)组成了View:</p>
-<p><img src="http://cdn5.raywenderlich.com/wp-content/uploads/2014/06/MVVMReactiveCocoa.png" alt="image"></p>
-<p>……而<code>ReactiveCocoa</code>绑定了<code>View</code>和<code>ViewModel</code>。</p>
-<p>理论讲得差不多了，我们可以开始新的历程了。</p>
-<h2 id="启动项目结构"><a href="#启动项目结构" class="headerlink" title="启动项目结构"></a>启动项目结构</h2><p>可以从<a href="http://cdn5.raywenderlich.com/wp-content/uploads/2014/06/FlickrSearchStarterProject1.zip" target="_blank" rel="external">FlickrSearchStarterProject.zip</a>中下载启动项目。我们使用<code>Cocoapods</code>来管理第三方库，在对应目录下执行<code>pod install</code>命令生成依赖库后，我们就可以打开生成的<code>RWTFlickrSearch.xcworkspace</code>来运行我们的项目了，初始运行效果如下图：</p>
-<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/06/first-launch.jpg" alt="image"></p>
-<p>我们行熟悉下工程的结构：</p>
-<p><img src="http://cdn2.raywenderlich.com/wp-content/uploads/2014/06/EmptyInterface.png" alt="image"></p>
-<p><code>Model</code>和<code>ViewModel</code>分组目前是空的，我们会慢慢往里面添加东西。<code>View</code>分组包含以下几个类</p>
-<ol>
-<li><code>RWTFlickSearchViewController</code>：程序的主屏幕，包含一个搜索输入域和一个<code>GO</code>按钮。</li>
-<li><code>RWTRecentSearchItemTableViewCell</code>：用于在主页中显示搜索结果的<code>table cell</code></li>
-<li><code>RWTSearchResultsViewController</code>：搜索结果页，显示来自<code>Flickr</code>的<code>tableview</code></li>
-<li><code>RWTSearchResultsTableViewCell</code>：渲染来自<code>Flickr</code>的单个图片的<code>table cell</code>。</li>
-</ol>
-<p>现在来写我们的第一个<code>ViewModel</code>吧。</p>
-<h2 id="第一个ViewModel"><a href="#第一个ViewModel" class="headerlink" title="第一个ViewModel"></a>第一个ViewModel</h2><p>在<code>ViewModel</code>分组中添加一个继承自<code>NSObject</code>的新类<code>RWTFlickrSearchViewModel</code>。然后在该类的头文件中，添加以下两行代码：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) <span class="built_in">NSString</span> *searchText;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) <span class="built_in">NSString</span> *title;</div></pre></td></tr></table></figure>
-<p><code>searchText</code>属性表示文本域中显示文本，<code>title</code>属性表示导航条上的标题。</p>
-<p>打开<code>RWTFlickrSearchViewModel.m</code>文件添加以下代码：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">RWTFlickrSearchViewModel</span></span></div><div class="line"></div><div class="line">- (<span class="keyword">instancetype</span>)init</div><div class="line">&#123;</div><div class="line">    <span class="keyword">self</span> = [<span class="keyword">super</span> init];</div><div class="line">    </div><div class="line">    <span class="keyword">if</span> (<span class="keyword">self</span>)</div><div class="line">    &#123;</div><div class="line">        [<span class="keyword">self</span> initialize];</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (<span class="keyword">void</span>)initialize</div><div class="line">&#123;</div><div class="line">    <span class="keyword">self</span>.searchText = <span class="string">@"search text"</span>;</div><div class="line">    <span class="keyword">self</span>.title = <span class="string">@"Flickr Search"</span>;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
-<p>这段代码简单地设置了<code>ViewModel</code>的初始状态。</p>
-<p>接下来我们将连接<code>ViewModel</code>到<code>View</code>。记住<code>View</code>保存了一个<code>ViewModel</code>的引用。在这种情况下，添加一个给定<code>ViewModel</code>的初始化方法来构造<code>View</code>是很有必要的。打开<code>RWTFlickrSearchViewController.h</code>，并导入<code>ViewModel</code>头文件：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">"RWTFlickrSearchViewModel.h"</span></span></div></pre></td></tr></table></figure>
-<p>并添加以下初始化方法：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">RWTFlickrSearchViewController</span> : <span class="title">UIViewController</span></span></div><div class="line"></div><div class="line">- (<span class="keyword">instancetype</span>)initWithViewModel:(RWTFlickrSearchViewModel *)viewModel;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
-<p>在<code>RWTFlickrSearchViewController.m</code>中，在类的扩展中添加以下私有属性：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">@property</span> (<span class="keyword">weak</span>, <span class="keyword">nonatomic</span>) RWTFlickrSearchViewModel *viewModel;</div></pre></td></tr></table></figure>
-<p>然后添加以下方法：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">instancetype</span>)initWithViewModel:(RWTFlickrSearchViewModel *)viewModel</div><div class="line">&#123;</div><div class="line">    <span class="keyword">self</span> = [<span class="keyword">super</span> init];</div><div class="line">    </div><div class="line">    <span class="keyword">if</span> (<span class="keyword">self</span>)</div><div class="line">    &#123;</div><div class="line">        _viewModel = viewModel;</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>这就在<code>view</code>中存储了一个到<code>ViewModel</code>的引用。<em>注意这是一个弱引用，这样<code>View</code>引用了<code>ViewModel</code>，但没有拥有它。</em></p>
-<p>接下来在<code>viewDidLoad</code>里面添加下面代码：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">[<span class="keyword">self</span> bindViewModel];</div></pre></td></tr></table></figure>
-<p>该方法的实现如下：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)bindViewModel</div><div class="line">&#123;</div><div class="line">    <span class="keyword">self</span>.title = <span class="keyword">self</span>.viewModel.title;</div><div class="line">    <span class="keyword">self</span>.searchTextField.text = <span class="keyword">self</span>.viewModel.searchText;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>最后我们需要创建<code>ViewModel</code>，并将其提供给<code>View</code>。在<code>RWTAppDelegate.m</code>中，添加以下头文件：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">"RWTFlickrSearchViewModel.h"</span></span></div></pre></td></tr></table></figure>
-<p>同时添加一个私有属性：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) RWTFlickrSearchViewModel *viewModel;</div></pre></td></tr></table></figure>
-<p>我们会发现这个类中已以有一个<code>createInitialViewController</code>方法了，我们用以下代码来更新它：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">- (<span class="built_in">UIViewController</span> *)createInitialViewController &#123;</div><div class="line">    <span class="keyword">self</span>.viewModel = [RWTFlickrSearchViewModel new];</div><div class="line">    <span class="keyword">return</span> [[RWTFlickrSearchViewController alloc] initWithViewModel:<span class="keyword">self</span>.viewModel];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>这个方法创建了一个<code>ViewModel</code>实例，然后构造并返回了<code>View</code>。这个视图作程序导航控制器的初始视图。</p>
-<p>运行后的状态如下：</p>
-<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/06/ViewWithState-333x500.png" alt="image"></p>
-<p>这样我们就得到了第一个<code>ViewModel</code>。不过仍然有许多东西要学的。你可能已经发现了我们还没有使用<code>ReactiveCocoa</code>。到目前为止，用户在输入框上的输入操作不会影响到<code>ViewModel</code>。</p>
-<h2 id="检测可用的搜索状态"><a href="#检测可用的搜索状态" class="headerlink" title="检测可用的搜索状态"></a>检测可用的搜索状态</h2><p>现在，我们来看看如何用<code>ReactiveCocoa</code>来绑定<code>ViewModel</code>和<code>View</code>，以将搜索输入框和按钮连接到<code>ViewModel</code>。</p>
-<p>在<code>RWTFlickrSearchViewController.m</code>中，我们使用如下代码更新<code>bindViewModel</code>方法。</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)bindViewModel</div><div class="line">&#123;</div><div class="line">    <span class="keyword">self</span>.title = <span class="keyword">self</span>.viewModel.title;</div><div class="line">    RAC(<span class="keyword">self</span>.viewModel, searchText) = <span class="keyword">self</span>.searchTextField.rac_textSignal;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>在<code>ReactiveCocoa</code>中，使用了分类将<code>rac_textSignal</code>属性添加到<code>UITextField</code>类中。它是一个信号，在文本域每次更新时会发送一个包含当前文本的<code>next</code>事件。</p>
-<p><code>RAC</code>是一个用于做绑定操作的宏，上面的代码会使用<code>rac_textSignal</code>发出的<code>next</code>信号来更新<code>viewModel</code>的<code>searchText</code>属性。</p>
-<p>搜索按钮应该只有在用户输入有效时才可点击。为了方便起见，我们以输入字符大于<code>3</code>时输入有效为准。在<code>RWTFlickrSearchViewModel.m</code>中导入以下头文件。</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">&lt;ReactiveCocoa/ReactiveCocoa.h&gt;</span></span></div></pre></td></tr></table></figure>
-<p>然后更新初始化方法：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">void</span>)initialize</div><div class="line">&#123;</div><div class="line">    <span class="keyword">self</span>.title = <span class="string">@"Flickr Search"</span>;</div><div class="line">    </div><div class="line">    RACSignal *validSearchSignal =</div><div class="line">    [[RACObserve(<span class="keyword">self</span>, searchText)</div><div class="line">      map:^<span class="keyword">id</span>(<span class="built_in">NSString</span> *text) &#123;</div><div class="line">        <span class="keyword">return</span> @(text.length &gt; <span class="number">3</span>);</div><div class="line">    &#125;]</div><div class="line">     distinctUntilChanged];</div><div class="line">    </div><div class="line">    [validSearchSignal subscribeNext:^(<span class="keyword">id</span> x) &#123;</div><div class="line">        <span class="built_in">NSLog</span>(<span class="string">@"search text is valid %@"</span>, x);</div><div class="line">    &#125;];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>运行程序并在输入框中输入一些字符，在控制台中我们可以看到以下输出：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="number">2014</span><span class="number">-08</span><span class="number">-07</span> <span class="number">21</span>:<span class="number">50</span>:<span class="number">44.078</span> RWTFlickrSearch[<span class="number">3116</span>:<span class="number">60</span>b] search text is valid <span class="number">0</span></div><div class="line"><span class="number">2014</span><span class="number">-08</span><span class="number">-07</span> <span class="number">21</span>:<span class="number">50</span>:<span class="number">59.493</span> RWTFlickrSearch[<span class="number">3116</span>:<span class="number">60</span>b] search text is valid <span class="number">1</span></div><div class="line"><span class="number">2014</span><span class="number">-08</span><span class="number">-07</span> <span class="number">21</span>:<span class="number">51</span>:<span class="number">02.594</span> RWTFlickrSearch[<span class="number">3116</span>:<span class="number">60</span>b] search text is valid <span class="number">0</span></div></pre></td></tr></table></figure>
-<p>上面的代码使用<code>RACObserve</code>宏来从<code>ViewModel</code>的<code>searchText</code>属性创建一个信号。<code>map</code>操作将文本转化为一个<code>true</code>或<code>false</code>值的流。</p>
-<p>最后，<code>distinctUntilChanges</code>确保信号只有在状态改变时才发出值。</p>
-<p>到目前为止，我们可以看到<code>ReactiveCocoa</code>被用于将绑定<code>View</code>绑定到<code>ViewModel</code>，确保了这两者是同步的。另进一步地，<code>ViewModel</code>内部的<code>ReactiveCocoa</code>代码用于观察自己的状态及执行其它操作。</p>
-<p>这就是<code>MVVM</code>模式的基本处理过程。<code>ReactiveCocoa</code>通常用于绑定<code>View</code>和<code>ViewModel</code>，但在程序的其它层也非常有用。</p>
-<h2 id="添加搜索命令"><a href="#添加搜索命令" class="headerlink" title="添加搜索命令"></a>添加搜索命令</h2><p>本节将上面创建的<code>validSearchSignal</code>来创建绑定到<code>View</code>的操作。打开<code>RWTFlickrSearchViewModel.h</code>并添加以下头文件</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">&lt;ReactiveCocoa/ReactiveCocoa.h&gt;</span></span></div></pre></td></tr></table></figure>
-<p>同时添加以下属性</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">@property</span> (<span class="keyword">strong</span>, <span class="keyword">nonatomic</span>) RACCommand *executeSearch;</div></pre></td></tr></table></figure>
-<p><code>RACCommand</code>是<code>ReactiveCocoa</code>中用于表示<code>UI</code>操作的一个类。它包含一个代表了<code>UI</code>操作的结果的信号以及标识操作当前是否被执行的一个状态。</p>
-<p>在<code>RWTFlickrSearchViewModel.m</code>的<code>initialize</code>方法的最后添加以下代码：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">self</span>.executeSearch = [[RACCommand alloc] initWithEnabled:validSearchSignal</div><div class="line">                                             signalBlock:^RACSignal *(<span class="keyword">id</span> input) &#123;</div><div class="line">                                                 <span class="keyword">return</span> [<span class="keyword">self</span> executeSearchSignal];</div><div class="line">                                             &#125;];</div></pre></td></tr></table></figure>
-<p>这创建了一个在<code>validSearchSignal</code>发送<code>true</code>时可用的命令。另外，需要在下面实现<code>executeSearchSignal</code>方法，它提供了命令所执行的操作。</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">- (RACSignal *)executeSearchSignal</div><div class="line">&#123;</div><div class="line">    <span class="keyword">return</span> [[[[RACSignal empty] logAll] delay:<span class="number">2.0</span>] logAll];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>在这个方法中，我们执行一些业务逻辑操作，以作为命令执行的结果，并通过信号异步返回结果。</p>
-<p>到目前为止，上述代码只提供了一个简单的实现：空信号会立即完成。<code>delay</code>操作会将其所接收到的<code>next</code>或<code>complete</code>事件延迟两秒执行。</p>
-<p>最后一步是将这个命令连接到<code>View</code>中。打开<code>RWTFlickrSearchViewController.m</code>并在<code>bindViewModel</code>方法的结尾中添加以下代码：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">self</span>.searchButton.rac_command = <span class="keyword">self</span>.viewModel.executeSearch;</div></pre></td></tr></table></figure>
-<p><code>rac_command</code>属性是<code>UIButton</code>的<code>ReactiveCocoa</code>分类中添加的属性。上面的代码确保点击按钮执行给定的命令，且按钮的可点击状态反应了命令的可用状态。</p>
-<p>运行代码，输入一些字符并点击<code>GO</code>，得到如下结果：</p>
-<p><img src="http://cdn3.raywenderlich.com/wp-content/uploads/2014/06/GoButtonEnabled-333x500.png" alt="image"></p>
-<p>可以看到，当输入有效点击按钮时，按钮会置灰<code>2</code>秒钟，当执行的信号完成时又可点击。我们可以看下控制台的输出，可以发现空信号会立即完成，而延迟操作会在<code>2</code>秒后发出事件：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="number">2014</span><span class="number">-08</span><span class="number">-07</span> <span class="number">22</span>:<span class="number">21</span>:<span class="number">25.128</span> RWTFlickrSearch[<span class="number">3161</span>:<span class="number">60</span>b] &lt;RACDynamicSignal: <span class="number">0x17005ba20</span>&gt; name: +empty completed</div><div class="line"><span class="number">2014</span><span class="number">-08</span><span class="number">-07</span> <span class="number">22</span>:<span class="number">21</span>:<span class="number">27.329</span> RWTFlickrSearch[<span class="number">3161</span>:<span class="number">60</span>b] &lt;RACDynamicSignal: <span class="number">0x17005dd30</span>&gt; name: [+empty] -delay: <span class="number">2.000000</span> completed</div></pre></td></tr></table></figure>
-<p>是不是很酷？</p>
-<h2 id="绑定、绑定还是绑定"><a href="#绑定、绑定还是绑定" class="headerlink" title="绑定、绑定还是绑定"></a>绑定、绑定还是绑定</h2><p><code>RACCommand</code>监听了搜索按钮状态的更新，但处理<code>activity indicator</code>的可见性则由我们负责。<code>RACCommand</code>暴露了一个<code>executing</code>属性，它是一个信号，发送<code>true</code>或<code>false</code>来标明命令开始和结束执行的时间。我们可以用这个来影响当前命令的状态。</p>
-<p>在<code>RWTFlickrSearchViewController.m</code>中的<code>bindViewModel</code>方法结尾处添加以下代码：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">RAC([<span class="built_in">UIApplication</span> sharedApplication], networkActivityIndicatorVisible) = <span class="keyword">self</span>.viewModel.executeSearch.executing;</div></pre></td></tr></table></figure>
-<p>这将<code>UIApplication</code>的<code>networkActivityIndicatorVisible</code>属性绑定到命令的<code>executing</code>信号中。这确保了不管命令什么时候执行，状态栏中的网络<code>activity indicator</code>都会显示。</p>
-<p>接下来添加以下代码：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">RAC(<span class="keyword">self</span>.loadingIndicator, hidden) = [<span class="keyword">self</span>.viewModel.executeSearch.executing not];</div></pre></td></tr></table></figure>
-<p>当命令执行时，应该隐藏加载<code>indicator</code>。这可以通过<code>not</code>操作来反转信号。</p>
-<p>最后，添加以下代码：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">[<span class="keyword">self</span>.viewModel.executeSearch.executionSignals subscribeNext:^(<span class="keyword">id</span> x) &#123;</div><div class="line">    [<span class="keyword">self</span>.searchTextField resignFirstResponder];</div><div class="line">&#125;];</div></pre></td></tr></table></figure>
-<p>这段代码确保命令执行时隐藏键盘。<code>executionSignals</code>属性发送由命令每次执行时生成的信号。这个属性是信号的信号(见<a href="http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-%5B%3F%5D-:xin-hao/">ReactiveCocoa Tutorial – The Definitive Introduction: Part 1/2</a>)。当创建和发出一个新的命令执行信号时，隐藏键盘。</p>
-<p>运行程序看看效果如何吧。</p>
-<h2 id="Model在哪？"><a href="#Model在哪？" class="headerlink" title="Model在哪？"></a>Model在哪？</h2><p>到目前为止，我们已经有了一个清晰的<code>View(RWTFlickrSearchViewController)</code>和<code>ViewModel(RWTFlickrSearchViewModel</code>)，但是<code>Model</code>在哪呢？</p>
-<p>答案很简单：没有！</p>
-<p>当前的程序执行一个命令来响应用户点击搜索按钮的操作，但是实现不做任何值的处理。<code>ViewModel</code>真正需要做的是使用当前的<code>searchText</code>来搜索<code>Flickr</code>，并返回一个匹配的列表。</p>
-<p>我们应该可以直接在<code>ViewModel</code>添加业务逻辑，但相信我，你不希望这么做。如果这是一个<code>viewcontroller</code>，我打赌你一定会直接这么做。</p>
-<p><code>ViewModel</code>暴露属性来表示<code>UI</code>状态，它同样暴露命令来表示<code>UI</code>操作(通常是方法)。<code>ViewModel</code>负责管理基于用户交互的<code>UI</code>状态的改变。然而它不负责实际执行这些交互产生的的业务逻辑，那是<code>Model</code>的工作。</p>
-<p>接下来，我们将在程序中添加<code>Model</code>层。</p>
-<p>在<code>Model</code>分组中，添加<code>RWTFlickrSearch</code>协议并提供以下实现</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">&lt;ReactiveCocoa/ReactiveCocoa.h&gt;</span></span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@protocol</span> <span class="title">RWTFlickrSearch</span> &lt;<span class="title">NSObject</span>&gt;</span></div><div class="line"></div><div class="line">- (RACSignal *)flickrSearchSignal:(<span class="built_in">NSString</span> *)searchString;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
-<p>这个协议定义了<code>Model</code>层的初始接口，并将搜索<code>Flickr</code>的责任移出<code>ViewModel</code>。</p>
-<p>接下来在<code>Model</code>分组中添加<code>RWTFlickrSearchImpl</code>类，其继承自<code>NSObject</code>，并实现了<code>RWTFlickrSearch</code>协议，如下代码所示：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">"RWTFlickrSearch.h"</span></span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">RWTFlickrSearchImpl</span> : <span class="title">NSObject</span> &lt;<span class="title">RWTFlickrSearch</span>&gt;</span></div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
-<p>打开<code>RWTFlickrSearchImpl.m</code>文件，提供以下实现：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">RWTFlickrSearchImpl</span></span></div><div class="line"></div><div class="line">- (RACSignal *)flickrSearchSignal:(<span class="built_in">NSString</span> *)searchString</div><div class="line">&#123;</div><div class="line">    <span class="keyword">return</span> [[[[RACSignal empty] logAll] delay:<span class="number">2.0</span>] logAll];</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
-<p>看着是不是有点眼熟？没错，我们在上面的<code>ViewModel</code>中有相同的实现。</p>
-<p>接下来我们需要在<code>ViewModel</code>层中使用<code>Model</code>层。在<code>ViewModel</code>分组中添加<code>RWTViewModelServices</code>协议并如下实现：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">"RWTFlickrSearch.h"</span></span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@protocol</span> <span class="title">RWTViewModelServices</span> &lt;<span class="title">NSObject</span>&gt;</span></div><div class="line">- (<span class="keyword">id</span>&lt;RWTFlickrSearch&gt;)getFlickrSearchService;</div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
-<p>这个协议定义了唯一的一个方法，以允许<code>ViewModel</code>获取一个引用，以指向<code>RWTFlickrSearch</code>协议的实现对象。</p>
-<p>打开<code>RWTFlickrSearchViewModel.h</code>并导入头文件</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">"RWTViewModelServices.h"</span></span></div></pre></td></tr></table></figure>
-<p>更新初始化方法并将<code>RWTViewModelServices</code>作为一个参数：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">instancetype</span>)initWithServices:(<span class="keyword">id</span>&lt;RWTViewModelServices&gt;)services;</div></pre></td></tr></table></figure>
-<p>在<code>RWTFlickrSearchViewModel.m</code>中，添加类的分类并提供一个私有属性来维护一个到<code>RWTViewModelServices</code>的引用：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">RWTFlickrSearchViewModel</span> ()</span></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">weak</span>) <span class="keyword">id</span>&lt;RWTViewModelServices&gt; services;</div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
-<p>在该文件下面，添加初始化方法的实现：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">instancetype</span>)initWithServices:(<span class="keyword">id</span>&lt;RWTViewModelServices&gt;)services</div><div class="line">&#123;</div><div class="line">    <span class="keyword">self</span> = [<span class="keyword">super</span> init];</div><div class="line">    </div><div class="line">    <span class="keyword">if</span> (<span class="keyword">self</span>)</div><div class="line">    &#123;</div><div class="line">        _services = services;</div><div class="line">        [<span class="keyword">self</span> initialize];</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>这只是简单的存储了<code>services</code>的引用。</p>
-<p>最后，更新<code>executeSearchSignal</code>方法：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">- (RACSignal *)executeSearchSignal</div><div class="line">&#123;</div><div class="line">    <span class="keyword">return</span> [[<span class="keyword">self</span>.services getFlickrSearchService] flickrSearchSignal:<span class="keyword">self</span>.searchText];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>最后是连接<code>Model</code>和<code>ViewModel</code>。</p>
-<p>在工程的根分组中，添加一个<code>NSObject</code>的子类<code>RWTViewModelServicesImpl</code>。打开<code>RWTViewModelServicesImpl.h</code>并实现<code>RWTViewModelServices</code>协议：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">"RWTViewModelServices.h"</span></span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">RWTViewModelServicesImpl</span> : <span class="title">NSObject</span> &lt;<span class="title">RWTViewModelServices</span>&gt;</span></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
-<p>打开<code>RWTViewModelServicesImpl.m</code>，并添加实现：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">"RWTFlickrSearchImpl.h"</span></span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">RWTViewModelServicesImpl</span> ()</span></div><div class="line"></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">strong</span>, <span class="keyword">nonatomic</span>) RWTFlickrSearchImpl *searchService;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div><div class="line">  </div><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">RWTViewModelServicesImpl</span></span></div><div class="line">  </div><div class="line">- (<span class="keyword">instancetype</span>)init</div><div class="line">&#123;</div><div class="line">    <span class="keyword">if</span> (<span class="keyword">self</span> = [<span class="keyword">super</span> init])</div><div class="line">    &#123;</div><div class="line">        _searchService = [RWTFlickrSearchImpl new];</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (<span class="keyword">id</span>&lt;RWTFlickrSearch&gt;)getFlickrSearchService</div><div class="line">&#123;</div><div class="line">    <span class="keyword">return</span> <span class="keyword">self</span>.searchService;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
-<p>这个类简单创建了一个<code>RWTFlickrSearchImpl</code>实例，用于<code>Model</code>层搜索<code>Flickr</code>服务，并将其提供给<code>ViewModel</code>的请求。</p>
-<p>最后，在<code>RWTAppDelegate.m</code>中添加以下头文件</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">"RWTViewModelServicesImpl.h"</span></span></div></pre></td></tr></table></figure>
-<p>并添加一个新的私有属性</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) RWTViewModelServicesImpl *viewModelServices;</div></pre></td></tr></table></figure>
-<p>再更新<code>createInitialViewController</code>方法：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">- (<span class="built_in">UIViewController</span> *)createInitialViewController &#123;</div><div class="line">    <span class="keyword">self</span>.viewModelServices = [RWTViewModelServicesImpl new];</div><div class="line">    <span class="keyword">self</span>.viewModel = [[RWTFlickrSearchViewModel alloc] initWithServices:<span class="keyword">self</span>.viewModelServices];</div><div class="line">    <span class="keyword">return</span> [[RWTFlickrSearchViewController alloc] initWithViewModel:<span class="keyword">self</span>.viewModel];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>运行程序，验证程序有没有按之前的方式来工作。当然，这不是最有趣的变化，不过，可以看看新代码的形状了。</p>
-<p><code>Model</code>层暴露了一个<code>ViewModel</code>层使用的’服务’。一个协议定义了这个服务的接口，提供了松散的组合。</p>
-<p>我们可以使用这种方式来为单元测试提供一个类似的服务实现。程序现在有了正确的<code>MVVM</code>结构，让我们小结一下：</p>
-<ol>
-<li>Model层暴露服务并负责提供程序的业务逻辑实现。</li>
-<li><code>ViewModel</code>层表示程序的视图状态(<code>view-state</code>)。同时响应用户交互及来自<code>Model</code>层的事件，两者都受<code>view-state</code>变化的影响。</li>
-<li><code>View</code>层很薄，只提供<code>ViewModel</code>状态的显示及输出用户交互事件。</li>
-</ol>
-<h2 id="搜索Flickr"><a href="#搜索Flickr" class="headerlink" title="搜索Flickr"></a>搜索Flickr</h2><p>我们继续来完成Flickr的搜索实现，事情变得越来越有趣了。</p>
-<p>首先我们创建表示搜索结果的模型对象。在<code>Model</code>分组中，添加<code>RWTFlickrPhoto</code>类，并为其添加三个属性。</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">RWTFlickrPhoto</span> : <span class="title">NSObject</span></span></div><div class="line"></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) <span class="built_in">NSString</span> *title;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) <span class="built_in">NSURL</span> *url;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) <span class="built_in">NSString</span> *identifier;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
-<p>这个模型对象表示由<code>Flickr</code>搜索<code>API</code>返回一个图片。</p>
-<p>打开<code>RWTFlickrPhoto.m</code>，并添加以下描述方法的实现：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">- (<span class="built_in">NSString</span> *)description</div><div class="line">&#123;</div><div class="line">    <span class="keyword">return</span> <span class="keyword">self</span>.title;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>接下来，新建一个新的模型对象类<code>RWTFlickrSearchResults</code>，并添加以下属性：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">RWTFlickrSearchResults</span> : <span class="title">NSObject</span></span></div><div class="line"></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">strong</span>, <span class="keyword">nonatomic</span>) <span class="built_in">NSString</span> *searchString;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">strong</span>, <span class="keyword">nonatomic</span>) <span class="built_in">NSArray</span> *photos;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>) <span class="built_in">NSInteger</span> totalResults;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
-<p>这个类表示由<code>Flickr</code>搜索返回的照片集合。</p>
-<p>是时候实现搜索<code>Flickr</code>了。打开<code>RWTFlickrSearchImpl.m</code>并导入以下头文件：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">"RWTFlickrSearchResults.h"</span></span></div><div class="line"><span class="meta">#import <span class="meta-string">"RWTFlickrPhoto.h"</span></span></div><div class="line"><span class="meta">#import <span class="meta-string">&lt;objectiveflickr/ObjectiveFlickr.h&gt;</span></span></div><div class="line"><span class="meta">#import <span class="meta-string">&lt;LinqToObjectiveC/NSArray+LinqExtensions.h&gt;</span></span></div></pre></td></tr></table></figure>
-<p>然后添加以下类扩展：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">RWTFlickrSearchImpl</span> () &lt;<span class="title">OFFlickrAPIRequestDelegate</span>&gt;</span></div><div class="line"></div><div class="line"><span class="keyword">@property</span> (<span class="keyword">strong</span>, <span class="keyword">nonatomic</span>) <span class="built_in">NSMutableSet</span> *requests;</div><div class="line"><span class="keyword">@property</span> (<span class="keyword">strong</span>, <span class="keyword">nonatomic</span>) OFFlickrAPIContext *flickrContext;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
-<p>这个类实现了<code>OFFlickrAPIRequestDelegate</code>协议，并添加了两个私有属性。我们会很快看到如何使用这些值。</p>
-<p>继续添加代码：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">instancetype</span>)init</div><div class="line">&#123;</div><div class="line">    <span class="keyword">self</span> = [<span class="keyword">super</span> init];</div><div class="line">    </div><div class="line">    <span class="keyword">if</span> (<span class="keyword">self</span>)</div><div class="line">    &#123;</div><div class="line">        <span class="built_in">NSString</span> *OFSampleAppAPIKey = <span class="string">@"YOUR_API_KEY_GOES_HERE"</span>;</div><div class="line">        <span class="built_in">NSString</span> *OFSampleAppAPISharedSecret = <span class="string">@"YOUR_SECRET_GOES_HERE"</span>;</div><div class="line">        </div><div class="line">        _flickrContext = [[OFFlickrAPIContext alloc] initWithAPIKey:OFSampleAppAPIKey sharedSecret:OFSampleAppAPISharedSecret];</div><div class="line">        </div><div class="line">        _requests = [<span class="built_in">NSMutableSet</span> new];</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>这段代码创建了一个<code>Flickr</code>的上下文，用于存储<code>ObjectiveFlickr</code>请求的数据。</p>
-<p>当前<code>Model</code>层服务类提供的<code>API</code>有一个单独的方法，用于查找基于文本搜索字符的图片。不过我们一会会添加更多的方法。</p>
-<p>在<code>RWTFlickrSearchImpl.m</code>中添加以下方法：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div></pre></td><td class="code"><pre><div class="line">- (RACSignal *)signalFromAPIMethod:(<span class="built_in">NSString</span> *)method arguments:(<span class="built_in">NSDictionary</span> *)args transform:(<span class="keyword">id</span> (^)(<span class="built_in">NSDictionary</span> *response))block</div><div class="line">&#123;</div><div class="line">    <span class="comment">// 1. 创建请求信号</span></div><div class="line">    <span class="keyword">return</span> [RACSignal createSignal:^RACDisposable *(<span class="keyword">id</span>&lt;RACSubscriber&gt; subscriber) &#123;</div><div class="line">        </div><div class="line">        <span class="comment">// 2. 创建一个Flick请求对象</span></div><div class="line">        OFFlickrAPIRequest *flickrRequest = [[OFFlickrAPIRequest alloc] initWithAPIContext:<span class="keyword">self</span>.flickrContext];</div><div class="line">        flickrRequest.delegate = <span class="keyword">self</span>;</div><div class="line">        [<span class="keyword">self</span>.requests addObject:flickrRequest];</div><div class="line">        </div><div class="line">        <span class="comment">// 3. 从代理方法中创建一个信号</span></div><div class="line">        RACSignal *successSignal = [<span class="keyword">self</span> rac_signalForSelector:<span class="keyword">@selector</span>(flickrAPIRequest:didCompleteWithResponse:)</div><div class="line">                                                  fromProtocol:<span class="class"><span class="keyword">@protocol</span>(<span class="title">OFFlickrAPIRequestDelegate</span>)];</span></div><div class="line">        </div><div class="line">        <span class="comment">// 4. 处理响应</span></div><div class="line">        [[[successSignal</div><div class="line">         map:^<span class="keyword">id</span>(RACTuple *tuple) &#123;</div><div class="line">             <span class="keyword">return</span> tuple.second;</div><div class="line">         &#125;]</div><div class="line">         map:block]</div><div class="line">         subscribeNext:^(<span class="keyword">id</span> x) &#123;</div><div class="line">             [subscriber sendNext:x];</div><div class="line">             [subscriber sendCompleted];</div><div class="line">         &#125;];</div><div class="line">        </div><div class="line">        <span class="comment">// 5. 开始请求</span></div><div class="line">        [flickrRequest callAPIMethodWithGET:method arguments:args];</div><div class="line">        </div><div class="line">        <span class="comment">// 6. 完成后，移除请求的引用</span></div><div class="line">        <span class="keyword">return</span> [RACDisposable disposableWithBlock:^&#123;</div><div class="line">            [<span class="keyword">self</span>.requests removeObject:flickrRequest];</div><div class="line">        &#125;];</div><div class="line">    &#125;];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>这个方法需要传入请求方法及请求参数，然后使用<code>block</code>参数来转换响应对象。我们重点看一下第<code>4</code>步：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">[[[successSignal</div><div class="line">  <span class="comment">// 1. 从flickrAPIRequest:didCompleteWithResponse:代理方法中提取第二个参数</span></div><div class="line">  map:^<span class="keyword">id</span>(RACTuple *tuple) &#123;</div><div class="line">    <span class="keyword">return</span> tuple.second;</div><div class="line">  &#125;]</div><div class="line">  <span class="comment">// 2. 转换结果</span></div><div class="line">  map:block]</div><div class="line">  subscribeNext:^(<span class="keyword">id</span> x) &#123;</div><div class="line">    <span class="comment">// 3. 将结果发送给订阅者</span></div><div class="line">    [subscriber sendNext:x];</div><div class="line">    [subscriber sendCompleted];</div><div class="line">  &#125;];</div></pre></td></tr></table></figure>
-<p><code>rac_signalForSelector:fromProtocol:</code> 方法创建了<code>successSignal</code>，同样也在代理方法的调用中创建了信号。</p>
-<p>代理方法每次调用时，发出的<code>next</code>事件会附带包含方法参数的<code>RACTuple</code>。</p>
-<p>实现<code>Flickr</code>搜索的最后一步如下：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div></pre></td><td class="code"><pre><div class="line">- (RACSignal *)flickrSearchSignal:(<span class="built_in">NSString</span> *)searchString &#123;</div><div class="line">  <span class="keyword">return</span> [<span class="keyword">self</span> signalFromAPIMethod:<span class="string">@"flickr.photos.search"</span></div><div class="line">                         arguments:@&#123;<span class="string">@"text"</span>: searchString,</div><div class="line">                                     <span class="string">@"sort"</span>: <span class="string">@"interestingness-desc"</span>&#125;</div><div class="line">                         transform:^<span class="keyword">id</span>(<span class="built_in">NSDictionary</span> *response) &#123;</div><div class="line"> </div><div class="line">    RWTFlickrSearchResults *results = [RWTFlickrSearchResults new];</div><div class="line">    results.searchString = searchString;</div><div class="line">    results.totalResults = [[response valueForKeyPath:<span class="string">@"photos.total"</span>] integerValue];</div><div class="line"> </div><div class="line">    <span class="built_in">NSArray</span> *photos = [response valueForKeyPath:<span class="string">@"photos.photo"</span>];</div><div class="line">    results.photos = [photos linq_select:^<span class="keyword">id</span>(<span class="built_in">NSDictionary</span> *jsonPhoto) &#123;</div><div class="line">      RWTFlickrPhoto *photo = [RWTFlickrPhoto new];</div><div class="line">      photo.title = [jsonPhoto objectForKey:<span class="string">@"title"</span>];</div><div class="line">      photo.identifier = [jsonPhoto objectForKey:<span class="string">@"id"</span>];</div><div class="line">      photo.url = [<span class="keyword">self</span>.flickrContext photoSourceURLFromDictionary:jsonPhoto</div><div class="line">                                                              size:OFFlickrSmallSize];</div><div class="line">      <span class="keyword">return</span> photo;</div><div class="line">    &#125;];</div><div class="line"> </div><div class="line">    <span class="keyword">return</span> results;</div><div class="line">  &#125;];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>上面的方法使用<code>signalFromAPIMethod:arguments:transform:</code>方法。<code>flickr.photos.search</code>方法提供的字典来搜索照片。</p>
-<p>传递给<code>transform</code>参数的<code>block</code>简单地将<code>NSDictionary</code>响应转化为一个等价的模型对象，让它在<code>ViewModel</code>中更容易使用。</p>
-<p>最后一步是打开<code>RWTFlickrSearchViewModel.m</code>方法，然后更新搜索信号来记录日志：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">- (RACSignal *)executeSearchSignal &#123;</div><div class="line">  <span class="keyword">return</span> [[[<span class="keyword">self</span>.services getFlickrSearchService]</div><div class="line">           flickrSearchSignal:<span class="keyword">self</span>.searchText]</div><div class="line">           logAll];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>编译，运行并输入一些字符后可在控制台看到以下日志：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="number">2014</span><span class="number">-06</span><span class="number">-03</span> [...] &lt;RACDynamicSignal: <span class="number">0x8c368a0</span>&gt; name: +createSignal: next: searchString=wibble, totalresults=<span class="number">1973</span>, photos=(</div><div class="line">    <span class="string">"Wibble, wobble, wibble, wobble"</span>,</div><div class="line">    <span class="string">"unoa-army"</span>,</div><div class="line">    <span class="string">"Day 277: Cheers to the freakin' weekend!"</span>,</div><div class="line">    [...]</div><div class="line">    <span class="string">"Angry sky"</span>,</div><div class="line">    Nemesis</div><div class="line">)</div></pre></td></tr></table></figure>
-<p>这样我们<code>MVVM</code>指南的第一部分就差不多结束了，但在结束之前，让我们先看看内存问题吧。</p>
-<h2 id="内存管理"><a href="#内存管理" class="headerlink" title="内存管理"></a>内存管理</h2><p>正如在<a href="http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-er-:twittersou-suo-shi-li/">ReactiveCocoa Tutorial – The Definitive Introduction: Part 2/2</a>中所讲的一样，我们在<code>block</code>中使用了<code>self</code>，这可能会导致循环引用的问题。而为了避免此问题，我们需要使用<code>@weakify</code>和<code>@strongify</code>宏来打破这种循环引用。</p>
-<p>不过看看<code>signalFromAPIMethod:arguments:transform:</code>方法，你可能会迷惑为什么没有使用这两个宏来引用<code>self</code>？这是因为<code>block</code>是作为<code>createSignal:</code>方法的一个参数，它不会在<code>self</code>和<code>block</code>之间建立一个强引用关系。迷茫了吧？不相信的话只需要测试一样这段代码有没有内存泄露就行。当然这时候就得用<code>Instruments</code>了，自己去看吧。哈哈。</p>
-<h2 id="何去何从？"><a href="#何去何从？" class="headerlink" title="何去何从？"></a>何去何从？</h2><p>例子工程的完整代码可以在<a href="http://cdn4.raywenderlich.com/wp-content/uploads/2014/06/FlickrSearchPart1Project1.zip" target="_blank" rel="external">这里</a>下载。在下一部分中，我们将看看如何从<code>ViewModel</code>中初始化一个视图控制器并实现更多的<code>Flickr</code>请求操作。</p>
-
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
   </section>
 
   
@@ -2373,7 +2293,7 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/archives">
-              <span class="site-state-item-count">85</span>
+              <span class="site-state-item-count">86</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>
@@ -2387,6 +2307,13 @@
             </div>
           
 
+          
+            <div class="site-state-item site-state-tags">
+              
+                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-name">标签</span>
+              
+            </div>
           
 
         </nav>
@@ -2420,7 +2347,7 @@
         <div class="copyright" >
   
   &copy; 
-  <span itemprop="copyrightYear">2016</span>
+  <span itemprop="copyrightYear">2017</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
